@@ -1,0 +1,29 @@
+file 629 1539009701                                             
+version 2
+run simpleNet-0-20181008-10:41:38-41612
+attr configname simpleNet
+attr datetime 20181008-10:41:38
+attr experiment simpleNet
+attr inifile omnetpp.ini
+attr iterationvars ""
+attr iterationvarsf ""
+attr measurement ""
+attr network simpleNet
+attr processid 41612
+attr repetition 0
+attr replication #0
+attr resultdir results
+attr runnumber 0
+attr seedset 0
+
+vector 0 simpleNet.end[0] hopCount:vector ETV
+attr interpolationmode none
+attr source arrival
+attr title "hop count, vector"
+vector 1 simpleNet.end[1] hopCount:vector ETV
+attr interpolationmode none
+attr source arrival
+attr title "hop count, vector"
+0	612 8 1 1 0 0 1 0 0 0 0
+1	620 8 2 2 0 0 1 0 0 0 0
+
