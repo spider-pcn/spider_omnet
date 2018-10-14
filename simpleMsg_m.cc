@@ -181,10 +181,12 @@ Register_Class(simpleMsg)
 
 simpleMsg::simpleMsg(const char *name, short kind) : ::omnetpp::cMessage(name,kind)
 {
-    this->source = 0;
-    this->destination = 0;
+    this->amount = 0;
+    this->timeSent = 0;
+    this->sender = 0;
+    this->receiver = 0;
+    this->priorityClass = 0;
     this->hopCount = 0;
-    this->size = 0;
 }
 
 simpleMsg::simpleMsg(const simpleMsg& other) : ::omnetpp::cMessage(other)
@@ -206,48 +208,97 @@ simpleMsg& simpleMsg::operator=(const simpleMsg& other)
 
 void simpleMsg::copy(const simpleMsg& other)
 {
-    this->source = other.source;
-    this->destination = other.destination;
+    this->amount = other.amount;
+    this->timeSent = other.timeSent;
+    this->sender = other.sender;
+    this->receiver = other.receiver;
+    this->route = other.route;
+    this->priorityClass = other.priorityClass;
     this->hopCount = other.hopCount;
-    this->size = other.size;
 }
 
 void simpleMsg::parsimPack(omnetpp::cCommBuffer *b) const
 {
     ::omnetpp::cMessage::parsimPack(b);
-    doParsimPacking(b,this->source);
-    doParsimPacking(b,this->destination);
+    doParsimPacking(b,this->amount);
+    doParsimPacking(b,this->timeSent);
+    doParsimPacking(b,this->sender);
+    doParsimPacking(b,this->receiver);
+    doParsimPacking(b,this->route);
+    doParsimPacking(b,this->priorityClass);
     doParsimPacking(b,this->hopCount);
-    doParsimPacking(b,this->size);
 }
 
 void simpleMsg::parsimUnpack(omnetpp::cCommBuffer *b)
 {
     ::omnetpp::cMessage::parsimUnpack(b);
-    doParsimUnpacking(b,this->source);
-    doParsimUnpacking(b,this->destination);
+    doParsimUnpacking(b,this->amount);
+    doParsimUnpacking(b,this->timeSent);
+    doParsimUnpacking(b,this->sender);
+    doParsimUnpacking(b,this->receiver);
+    doParsimUnpacking(b,this->route);
+    doParsimUnpacking(b,this->priorityClass);
     doParsimUnpacking(b,this->hopCount);
-    doParsimUnpacking(b,this->size);
 }
 
-int simpleMsg::getSource() const
+double simpleMsg::getAmount() const
 {
-    return this->source;
+    return this->amount;
 }
 
-void simpleMsg::setSource(int source)
+void simpleMsg::setAmount(double amount)
 {
-    this->source = source;
+    this->amount = amount;
 }
 
-int simpleMsg::getDestination() const
+double simpleMsg::getTimeSent() const
 {
-    return this->destination;
+    return this->timeSent;
 }
 
-void simpleMsg::setDestination(int destination)
+void simpleMsg::setTimeSent(double timeSent)
 {
-    this->destination = destination;
+    this->timeSent = timeSent;
+}
+
+int simpleMsg::getSender() const
+{
+    return this->sender;
+}
+
+void simpleMsg::setSender(int sender)
+{
+    this->sender = sender;
+}
+
+int simpleMsg::getReceiver() const
+{
+    return this->receiver;
+}
+
+void simpleMsg::setReceiver(int receiver)
+{
+    this->receiver = receiver;
+}
+
+IntVector& simpleMsg::getRoute()
+{
+    return this->route;
+}
+
+void simpleMsg::setRoute(const IntVector& route)
+{
+    this->route = route;
+}
+
+int simpleMsg::getPriorityClass() const
+{
+    return this->priorityClass;
+}
+
+void simpleMsg::setPriorityClass(int priorityClass)
+{
+    this->priorityClass = priorityClass;
 }
 
 int simpleMsg::getHopCount() const
@@ -258,16 +309,6 @@ int simpleMsg::getHopCount() const
 void simpleMsg::setHopCount(int hopCount)
 {
     this->hopCount = hopCount;
-}
-
-int simpleMsg::getSize() const
-{
-    return this->size;
-}
-
-void simpleMsg::setSize(int size)
-{
-    this->size = size;
 }
 
 class simpleMsgDescriptor : public omnetpp::cClassDescriptor
@@ -335,7 +376,7 @@ const char *simpleMsgDescriptor::getProperty(const char *propertyname) const
 int simpleMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 4+basedesc->getFieldCount() : 4;
+    return basedesc ? 7+basedesc->getFieldCount() : 7;
 }
 
 unsigned int simpleMsgDescriptor::getFieldTypeFlags(int field) const
@@ -351,8 +392,11 @@ unsigned int simpleMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISCOMPOUND,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<4) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<7) ? fieldTypeFlags[field] : 0;
 }
 
 const char *simpleMsgDescriptor::getFieldName(int field) const
@@ -364,22 +408,28 @@ const char *simpleMsgDescriptor::getFieldName(int field) const
         field -= basedesc->getFieldCount();
     }
     static const char *fieldNames[] = {
-        "source",
-        "destination",
+        "amount",
+        "timeSent",
+        "sender",
+        "receiver",
+        "route",
+        "priorityClass",
         "hopCount",
-        "size",
     };
-    return (field>=0 && field<4) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<7) ? fieldNames[field] : nullptr;
 }
 
 int simpleMsgDescriptor::findField(const char *fieldName) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount() : 0;
-    if (fieldName[0]=='s' && strcmp(fieldName, "source")==0) return base+0;
-    if (fieldName[0]=='d' && strcmp(fieldName, "destination")==0) return base+1;
-    if (fieldName[0]=='h' && strcmp(fieldName, "hopCount")==0) return base+2;
-    if (fieldName[0]=='s' && strcmp(fieldName, "size")==0) return base+3;
+    if (fieldName[0]=='a' && strcmp(fieldName, "amount")==0) return base+0;
+    if (fieldName[0]=='t' && strcmp(fieldName, "timeSent")==0) return base+1;
+    if (fieldName[0]=='s' && strcmp(fieldName, "sender")==0) return base+2;
+    if (fieldName[0]=='r' && strcmp(fieldName, "receiver")==0) return base+3;
+    if (fieldName[0]=='r' && strcmp(fieldName, "route")==0) return base+4;
+    if (fieldName[0]=='p' && strcmp(fieldName, "priorityClass")==0) return base+5;
+    if (fieldName[0]=='h' && strcmp(fieldName, "hopCount")==0) return base+6;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -392,12 +442,15 @@ const char *simpleMsgDescriptor::getFieldTypeString(int field) const
         field -= basedesc->getFieldCount();
     }
     static const char *fieldTypeStrings[] = {
+        "double",
+        "double",
         "int",
         "int",
+        "IntVector",
         "int",
         "int",
     };
-    return (field>=0 && field<4) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<7) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **simpleMsgDescriptor::getFieldPropertyNames(int field) const
@@ -464,10 +517,13 @@ std::string simpleMsgDescriptor::getFieldValueAsString(void *object, int field, 
     }
     simpleMsg *pp = (simpleMsg *)object; (void)pp;
     switch (field) {
-        case 0: return long2string(pp->getSource());
-        case 1: return long2string(pp->getDestination());
-        case 2: return long2string(pp->getHopCount());
-        case 3: return long2string(pp->getSize());
+        case 0: return double2string(pp->getAmount());
+        case 1: return double2string(pp->getTimeSent());
+        case 2: return long2string(pp->getSender());
+        case 3: return long2string(pp->getReceiver());
+        case 4: {std::stringstream out; out << pp->getRoute(); return out.str();}
+        case 5: return long2string(pp->getPriorityClass());
+        case 6: return long2string(pp->getHopCount());
         default: return "";
     }
 }
@@ -482,10 +538,12 @@ bool simpleMsgDescriptor::setFieldValueAsString(void *object, int field, int i, 
     }
     simpleMsg *pp = (simpleMsg *)object; (void)pp;
     switch (field) {
-        case 0: pp->setSource(string2long(value)); return true;
-        case 1: pp->setDestination(string2long(value)); return true;
-        case 2: pp->setHopCount(string2long(value)); return true;
-        case 3: pp->setSize(string2long(value)); return true;
+        case 0: pp->setAmount(string2double(value)); return true;
+        case 1: pp->setTimeSent(string2double(value)); return true;
+        case 2: pp->setSender(string2long(value)); return true;
+        case 3: pp->setReceiver(string2long(value)); return true;
+        case 5: pp->setPriorityClass(string2long(value)); return true;
+        case 6: pp->setHopCount(string2long(value)); return true;
         default: return false;
     }
 }
@@ -499,6 +557,7 @@ const char *simpleMsgDescriptor::getFieldStructName(int field) const
         field -= basedesc->getFieldCount();
     }
     switch (field) {
+        case 4: return omnetpp::opp_typename(typeid(IntVector));
         default: return nullptr;
     };
 }
@@ -513,6 +572,7 @@ void *simpleMsgDescriptor::getFieldStructValuePointer(void *object, int field, i
     }
     simpleMsg *pp = (simpleMsg *)object; (void)pp;
     switch (field) {
+        case 4: return (void *)(&pp->getRoute()); break;
         default: return nullptr;
     }
 }

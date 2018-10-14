@@ -7,7 +7,7 @@
 // `license' for details on this and other legal matters.
 //
 
-simple endpointNode
+simple simpleNode
 {
     parameters:
         @signal[arrival](type="long");
@@ -19,14 +19,6 @@ simple endpointNode
         input in[];
         output out[];
 }
-
-simple routerNode
-{
-    gates:
-        input in[];
-        output out[];
-}
-
 
 
 network simpleNet
@@ -42,24 +34,24 @@ network simpleNet
         }
     submodules:
 
-        end[2]: endpointNode {}
+        node[4]: simpleNode {}
        // end1: endpointNode {}
-        router[2]: routerNode {}
+       
     connections:
 
 
 
-        router[0].out++ --> {  delay = 100ms; } --> router[1].in++;
-        router[0].in++ <-- {  delay = 100ms; } <-- router[1].out++;
+        node[0].out++ --> {  delay = 100ms; } --> node[1].in++;
+        node[0].in++ <-- {  delay = 100ms; } <-- node[1].out++;
 
 
-        end[0].out++ --> {  delay = 100ms; } --> router[0].in++;
-        end[0].in++ <-- {  delay = 100ms; } <-- router[0].out++;
+        node[1].out++ --> {  delay = 100ms; } --> node[2].in++;
+        node[1].in++ <-- {  delay = 100ms; } <-- node[2].out++;
 
       //  router[0].out++ --> {  delay = 100ms; } --> router[1].in++;
        // router[0].in++ <-- {  delay = 100ms; } <-- router[1].out++;
 
-        router[1].out++ --> {  delay = 100ms; } --> end[1].in++;
-        router[1].in++ <-- {  delay = 100ms; } <-- end[1].out++;
+        node[2].out++ --> {  delay = 100ms; } --> node[3].in++;
+        node[2].in++ <-- {  delay = 100ms; } <-- node[3].out++;
 
 }

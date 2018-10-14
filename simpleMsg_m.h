@@ -18,28 +18,37 @@
 
 
 
+// cplusplus {{
+#include <vector>
+typedef std::vector<int> IntVector;
+// }}
+
 /**
- * Class generated from <tt>simpleMsg.msg:16</tt> by nedtool.
+ * Class generated from <tt>simpleMsg.msg:23</tt> by nedtool.
  * <pre>
- * //
- * // Same as TictocMsg11
- * //
  * message simpleMsg
  * {
- *     int source;
- *     int destination;
+ *     double amount;
+ *     double timeSent;  //time after start time that job is active
+ *     int sender;
+ *     int receiver;
+ *     IntVector route;
+ *     int priorityClass;
  *     int hopCount = 0;
- *     int size;
+ * 
  * }
  * </pre>
  */
 class simpleMsg : public ::omnetpp::cMessage
 {
   protected:
-    int source;
-    int destination;
+    double amount;
+    double timeSent;
+    int sender;
+    int receiver;
+    IntVector route;
+    int priorityClass;
     int hopCount;
-    int size;
 
   private:
     void copy(const simpleMsg& other);
@@ -58,14 +67,21 @@ class simpleMsg : public ::omnetpp::cMessage
     virtual void parsimUnpack(omnetpp::cCommBuffer *b) override;
 
     // field getter/setter methods
-    virtual int getSource() const;
-    virtual void setSource(int source);
-    virtual int getDestination() const;
-    virtual void setDestination(int destination);
+    virtual double getAmount() const;
+    virtual void setAmount(double amount);
+    virtual double getTimeSent() const;
+    virtual void setTimeSent(double timeSent);
+    virtual int getSender() const;
+    virtual void setSender(int sender);
+    virtual int getReceiver() const;
+    virtual void setReceiver(int receiver);
+    virtual IntVector& getRoute();
+    virtual const IntVector& getRoute() const {return const_cast<simpleMsg*>(this)->getRoute();}
+    virtual void setRoute(const IntVector& route);
+    virtual int getPriorityClass() const;
+    virtual void setPriorityClass(int priorityClass);
     virtual int getHopCount() const;
     virtual void setHopCount(int hopCount);
-    virtual int getSize() const;
-    virtual void setSize(int size);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const simpleMsg& obj) {obj.parsimPack(b);}

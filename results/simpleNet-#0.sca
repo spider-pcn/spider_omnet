@@ -1,0 +1,62 @@
+version 2
+run simpleNet-0-20181014-19:06:38-14628
+attr configname simpleNet
+attr datetime 20181014-19:06:38
+attr experiment simpleNet
+attr inifile omnetpp.ini
+attr iterationvars ""
+attr iterationvarsf ""
+attr measurement ""
+attr network simpleNet
+attr processid 14628
+attr repetition 0
+attr replication #0
+attr resultdir results
+attr runnumber 0
+attr seedset 0
+
+statistic simpleNet.node[0] hopCount:stats
+field count 1
+field mean 2
+field stddev nan
+field min 2
+field max 2
+field sum 2
+field sqrsum 4
+attr interpolationmode none
+attr source arrival
+attr title "hop count, stats"
+statistic simpleNet.node[1] hopCount:stats
+field count 0
+field mean nan
+field stddev nan
+field min nan
+field max nan
+field sum 0
+field sqrsum 0
+attr interpolationmode none
+attr source arrival
+attr title "hop count, stats"
+statistic simpleNet.node[2] hopCount:stats
+field count 0
+field mean nan
+field stddev nan
+field min nan
+field max nan
+field sum 0
+field sqrsum 0
+attr interpolationmode none
+attr source arrival
+attr title "hop count, stats"
+statistic simpleNet.node[3] hopCount:stats
+field count 1
+field mean 3
+field stddev nan
+field min 3
+field max 3
+field sum 3
+field sqrsum 9
+attr interpolationmode none
+attr source arrival
+attr title "hop count, stats"
+

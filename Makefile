@@ -1,12 +1,12 @@
 #
-# OMNeT++/OMNEST Makefile for spider2
+# OMNeT++/OMNEST Makefile for spiderNet
 #
 # This file was generated with the command:
 #  opp_makemake -f --deep -O out -I.
 #
 
 # Name of target to be created (-o option)
-TARGET = spider2$(D)$(EXE_SUFFIX)
+TARGET = spiderNet$(D)$(EXE_SUFFIX)
 TARGET_DIR = .
 
 # User interface (uncomment one) (-u option)

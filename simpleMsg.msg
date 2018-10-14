@@ -12,11 +12,23 @@
 //
 // Same as TictocMsg11
 //
+cplusplus {{
+#include <vector>
+typedef std::vector<int> IntVector;
+}};
+
+class noncobject IntVector;
+
 message simpleMsg
 {
-    int source;
-    int destination;
+
+    double amount;
+    double timeSent;  //time after start time that job is active
+    int sender;
+    int receiver;
+    IntVector route;
+    int priorityClass;
     int hopCount = 0;
-    int size;
+
 }
 
