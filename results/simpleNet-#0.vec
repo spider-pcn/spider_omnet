@@ -1,14 +1,14 @@
 version 2
-run simpleNet-0-20181014-19:06:38-14628
+run simpleNet-0-20181014-21:32:05-16939
 attr configname simpleNet
-attr datetime 20181014-19:06:38
+attr datetime 20181014-21:32:05
 attr experiment simpleNet
 attr inifile omnetpp.ini
 attr iterationvars ""
 attr iterationvarsf ""
 attr measurement ""
 attr network simpleNet
-attr processid 14628
+attr processid 16939
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -19,10 +19,10 @@ vector 0 simpleNet.node[0] hopCount:vector ETV
 attr interpolationmode none
 attr source arrival
 attr title "hop count, vector"
-0	4	0.2	2
 vector 1 simpleNet.node[3] hopCount:vector ETV
 attr interpolationmode none
 attr source arrival
 attr title "hop count, vector"
+0	4	0.2	2
 1	5	0.3	3
 

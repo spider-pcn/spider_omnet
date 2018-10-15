@@ -4,6 +4,7 @@
 #include <vector>
 #include "simpleMsg_m.h"
 #include <deque>
+#include <map>
 
 using namespace omnetpp;
 
@@ -33,6 +34,8 @@ public:
 vector<Job> job_list;
 int numNodes = 4;
 map<int, vector<int>> channels;
+map<tuple<int,int>,double> capacities; // where <int,int> is <source, destination>
+
 vector<int> breathFirstSearch(int sender, int receiver){
     deque<vector<int>> nodesToVisit;
     bool visitedNodes[numNodes];
@@ -93,13 +96,16 @@ class simpleNode : public cSimpleModule
 private:
     simsignal_t arrivalSignal;
     vector< Job > my_jobs;
-    vector< Job > queued_jobs;
+    map<int, cGate*> node_to_gate; //key is node index,
+    map<int, double> node_to_capacity;
+    map<int, deque<tuple<int, double , simpleMsg *>>> node_to_queued_jobs;
 protected:
     virtual simpleMsg *generateMessage(Job job);
     //virtual void forwardMessage(simpleMsg *msg);
     virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
     virtual void forwardMessage(simpleMsg *msg);
+    //forwardMessage called only when guaranteed enough channel funds to get across
 };
 Define_Module(simpleNode);
 
@@ -127,6 +133,15 @@ void simpleNode::initialize()
         channels[1] = v1;
         channels[2] = v2;
         channels[3] = v3;
+
+        capacities[make_tuple(0,1)] = 10;
+        capacities[make_tuple(1,0)] = 10;
+
+        capacities[make_tuple(1,2)] = 10;
+        capacities[make_tuple(2,1)] = 10;
+
+        capacities[make_tuple(2,3)] = 10;
+        capacities[make_tuple(3,2)] = 10;
     }
 
     //iterate through the global job_list and find my jobs
@@ -136,6 +151,43 @@ void simpleNode::initialize()
             my_jobs.push_back(job_list[i]);
         }
     }
+
+    //find gate indices corresponding to node indicies and set channel capacities
+    const char * gateName = "out";
+      cGate *destGate = NULL;
+      bool found = false;
+
+      int i = 0;
+      int gateSize = gate(gateName, 0)->size();
+
+      do {
+          destGate = gate(gateName, i++);
+          cGate *nextGate = destGate->getNextGate();
+          if (nextGate ) {
+              node_to_gate[nextGate->getOwnerModule()->getIndex()] = destGate;
+          }
+      } while (!found && i < gateSize);
+      // here: found equals to false means that a packet was not sent
+
+      //get map for (getIndex, dest) = channel capacity
+      for(map<int,cGate *>::iterator iter = node_to_gate.begin(); iter != node_to_gate.end(); ++iter)
+      {
+      int key =  iter->first;
+      node_to_capacity[key] = capacities[make_tuple(getIndex(),key)];
+      //ignore value
+      //Value v = iter->second;
+      }
+      //initialize node_to_queued_jobs
+      for(map<int,cGate *>::iterator iter = node_to_gate.begin(); iter != node_to_gate.end(); ++iter)
+      {
+           int key =  iter->first;
+           deque<tuple<int, double , simpleMsg *>> temp;
+           node_to_queued_jobs[key] = temp;
+           //ignore value
+           //Value v = iter->second;
+     }
+
+
 
     arrivalSignal = registerSignal("arrival");
 
@@ -172,7 +224,17 @@ simpleMsg *simpleNode::generateMessage(Job job)
 }
 
 
-
+bool sortFunction(const tuple<int,double, simpleMsg*> &a,
+              const tuple<int,double, simpleMsg*> &b)
+{
+    if (get<0>(a) < get<0>(b)){
+        return true;
+    }
+    else if (get<0>(a) == get<0>(b)){
+        return (get<1>(a) < get<1>(b));
+    }
+    return false;
+}
 
 void simpleNode::handleMessage(cMessage *msg)
 {
@@ -203,13 +265,37 @@ void simpleNode::handleMessage(cMessage *msg)
         delete ttmsg;
         }
         else{
-            forwardMessage(ttmsg);
+            // Message arrived
+            //readjust channel capacities
+            int hopcount = ttmsg->getHopCount();
+            int sender = ttmsg->getRoute()[hopcount-1];
+            node_to_capacity[sender] = node_to_capacity[sender] + ttmsg->getAmount();
+            //add message to queue for next stop
+            int nextStop = ttmsg->getRoute()[hopcount+1];
+
+            deque<tuple<int, double , simpleMsg *>> q = node_to_queued_jobs[nextStop];
+
+            q.push_back(make_tuple(ttmsg->getPriorityClass(), ttmsg->getAmount(),
+                    ttmsg));
+            // resort queued jobs for next stop based on lowest priority, then lowest amount
+            sort(q.begin(), q.end(), sortFunction);
+
+            // see if newly received job can be sent out
+            while((int)q.size()>0 && get<1>(q[0])<=node_to_capacity[nextStop]){
+                            forwardMessage(get<2>(q[0]));
+                            q.pop_front();
+             }
+
+            //see if any new messages can be sent out based on priority for the channel that just came in
+            q = node_to_queued_jobs[sender];
+            //send jobs until channel funds are too low;
+            while((int)q.size()>0 && get<1>(q[0])<=node_to_capacity[sender]){
+                forwardMessage(get<2>(q[0]));
+                q.pop_front();
+            }
         }
 
 }
-
-
-
 
 
 void simpleNode::forwardMessage(simpleMsg *msg)
@@ -229,7 +315,10 @@ void simpleNode::forwardMessage(simpleMsg *msg)
 
     //NEED TO CLARIFY HOW TO SEND MESSAGE
     EV << "Forwarding message " << msg << " on gate[" << nextDest << "]\n";
-
+    int amt = msg->getAmount();
+    node_to_capacity[nextDest] = node_to_capacity[nextDest] - amt;
+    send(msg, node_to_gate[nextDest]);
+/*
     const char * gateName = "out";
     int destIndex = nextDest; // index of destination lcn
     cGate *destGate = NULL;
@@ -247,5 +336,5 @@ void simpleNode::forwardMessage(simpleMsg *msg)
         }
     } while (!found && i < gateSize);
     // here: found equals to false means that a packet was not sent
-
+*/
 }
