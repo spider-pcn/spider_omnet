@@ -105,6 +105,7 @@ protected:
     virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
     virtual void forwardMessage(simpleMsg *msg);
+    virtual void processJobs(int dest, deque<tuple<int, double , simpleMsg *>>& q);
     //forwardMessage called only when guaranteed enough channel funds to get across
 };
 Define_Module(simpleNode);
@@ -118,8 +119,8 @@ void simpleNode::initialize()
     if (getIndex() == 0){    //main initialization for global parameters
 
         // create job queue
-        Job j1 = Job(3,2,0,3,0);
-        Job j2 = Job(5,0.5,2,0,0);
+        Job j1 = Job(3,0,0,3,0);
+        Job j2 = Job(5,0.25,2,0,0);
         job_list.push_back(j1);
         job_list.push_back(j2);
 
@@ -192,14 +193,20 @@ void simpleNode::initialize()
     arrivalSignal = registerSignal("arrival");
 
     //send my first message  - not yet implementing timeSent parameter, send all msgs at beginning
-   if ((int)my_jobs.size()>0){
+   for (int i=0 ; i<(int)my_jobs.size(); i++){
+       Job j = my_jobs[i];
+       double timeSent = j.timeSent;
+       simpleMsg *msg = generateMessage(j);
+       scheduleAt(timeSent, msg);
+   }
+   /*
+    if ((int)my_jobs.size()>0){
 
-    Job firstJob = my_jobs[0];
-    my_jobs.erase(my_jobs.begin()+0);
+
     simpleMsg *msg = generateMessage(firstJob);
     //scheduleAt(1.0, msg); //this is just sending a self message
     forwardMessage(msg);//send message
-   }
+   }*/
 
    }
 
@@ -263,17 +270,29 @@ void simpleNode::handleMessage(cMessage *msg)
         bubble("ARRIVED, starting new one!");
 
         delete ttmsg;
+
+
         }
-        else{
+        else{deque<tuple<int, double , simpleMsg *>> q;
+
             // Message arrived
-            //readjust channel capacities
+            if (msg -> isSelfMessage()){
+            //re-adjust channel capacities
             int hopcount = ttmsg->getHopCount();
             int sender = ttmsg->getRoute()[hopcount-1];
             node_to_capacity[sender] = node_to_capacity[sender] + ttmsg->getAmount();
             //add message to queue for next stop
+
+            //see if any new messages can be sent out based on priority for the channel that just came in
+          q = node_to_queued_jobs[sender];
+              //send jobs until channel funds are too low;
+             processJobs(sender, q);
+            }
+
+
             int nextStop = ttmsg->getRoute()[hopcount+1];
 
-            deque<tuple<int, double , simpleMsg *>> q = node_to_queued_jobs[nextStop];
+             q = node_to_queued_jobs[nextStop];
 
             q.push_back(make_tuple(ttmsg->getPriorityClass(), ttmsg->getAmount(),
                     ttmsg));
@@ -281,22 +300,20 @@ void simpleNode::handleMessage(cMessage *msg)
             sort(q.begin(), q.end(), sortFunction);
 
             // see if newly received job can be sent out
-            while((int)q.size()>0 && get<1>(q[0])<=node_to_capacity[nextStop]){
-                            forwardMessage(get<2>(q[0]));
-                            q.pop_front();
-             }
+            processJobs(nextStop, q);
 
-            //see if any new messages can be sent out based on priority for the channel that just came in
-            q = node_to_queued_jobs[sender];
-            //send jobs until channel funds are too low;
-            while((int)q.size()>0 && get<1>(q[0])<=node_to_capacity[sender]){
-                forwardMessage(get<2>(q[0]));
-                q.pop_front();
-            }
+
         }
 
 }
 
+void simpleNode:: processJobs(int dest, deque<tuple<int, double , simpleMsg *>>& q){
+    while((int)q.size()>0 && get<1>(q[0])<=node_to_capacity[dest]){
+          forwardMessage(get<2>(q[0]));
+          q.pop_front();
+    } //end while
+
+}
 
 void simpleNode::forwardMessage(simpleMsg *msg)
 {
