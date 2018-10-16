@@ -7,7 +7,7 @@
 // `license' for details on this and other legal matters.
 //
 
-simple simpleNode
+simple routerNode
 {
     parameters:
         @signal[arrival](type="long");
@@ -34,7 +34,7 @@ network simpleNet
         }
     submodules:
 
-        node[4]: simpleNode {}
+        node[4]: routerNode {}
        // end1: endpointNode {}
        
     connections:
