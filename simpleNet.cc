@@ -35,28 +35,35 @@ map<int, vector<int>> channels; //adjacency list format of graph edges of networ
 map<tuple<int,int>,double> balances;
 //map of balances for each edge; key = <int,int> is <source, destination>
 
-vector<int> breathFirstSearch(int sender, int receiver){
-   deque<vector<int>> nodesToVisit;
-   bool visitedNodes[numNodes];
-   for (int i=0; i<numNodes; i++){
-      visitedNodes[i] =false;
-   }
-   visitedNodes[sender] = true;
-   vector<int> temp;
-   temp.push_back(sender);
-   nodesToVisit.push_back(temp);
-   while ((int)nodesToVisit.size()>0){
-      vector<int> current = nodesToVisit[0];
-      nodesToVisit.pop_front();
-      int lastNode = current.back();
-      for (int i=0; i<(int)channels[lastNode].size();i++){
-         if (!visitedNodes[channels[lastNode][i]]){
-            temp = current; // assignment copies in case of vector
-            temp.push_back(channels[lastNode][i]);
-            nodesToVisit.push_back(temp);
-            visitedNodes[channels[lastNode][i]] = true;
-            if (channels[lastNode][i]==receiver){
-               return temp;
+vector<int> breadthFirstSearch(int sender, int receiver){
+    deque<vector<int>> nodesToVisit;
+    bool visitedNodes[numNodes];
+    for (int i=0; i<numNodes; i++){
+        visitedNodes[i] =false;
+    }
+    visitedNodes[sender] = true;
+
+    vector<int> temp;
+    temp.push_back(sender);
+    nodesToVisit.push_back(temp);
+
+    while ((int)nodesToVisit.size()>0){
+
+        vector<int> current = nodesToVisit[0];
+         nodesToVisit.pop_front();
+        int lastNode = current.back();
+        for (int i=0; i<(int)channels[lastNode].size();i++){
+
+            if (!visitedNodes[channels[lastNode][i]]){
+                temp = current; // assignment copies in case of vector
+                temp.push_back(channels[lastNode][i]);
+                nodesToVisit.push_back(temp);
+                visitedNodes[channels[lastNode][i]] = true;
+
+                if (channels[lastNode][i]==receiver){
+
+                    return temp;
+                }
             }
          }
       }
@@ -70,8 +77,18 @@ vector<int> breathFirstSearch(int sender, int receiver){
  *  includes sender and reciever as first and last entry
  */
 vector<int> get_route(int sender, int receiver){
-   vector<int> route =  breathFirstSearch(sender, receiver);
-   return route;
+  //do searching without regard for channel capacities, DFS right now
+
+  // printf("sender: %i; receiver: %i \n [", sender, receiver);
+   vector<int> route =  breadthFirstSearch(sender, receiver);
+/*
+   for (int i=0; i<(int)route.size(); i++){
+        printf("%i, ", route[i]);
+    }
+    printf("] \n");
+*/
+    return route;
+
 }
 
 
