@@ -3,8 +3,12 @@
 #include <omnetpp.h>
 #include <vector>
 #include "simpleMsg_m.h"
+#include <iostream>
+#include <string>
+#include <sstream>
 #include <deque>
 #include <map>
+#include <fstream>
 
 using namespace omnetpp;
 
@@ -16,7 +20,7 @@ class transUnit{
       double timeSent;  //time delay after start time of simulation that trans-unit is active
       int sender;
       int receiver;
-      vector<int> route; //includes sender and reciever as first and last entries
+      //vector<int> route; //includes sender and reciever as first and last entries
       int priorityClass;
 
       transUnit(double amount1, double timeSent1, int sender1, int receiver1, int priorityClass1){
@@ -95,7 +99,7 @@ vector<int> get_route(int sender, int receiver){
 class routerNode : public cSimpleModule
 {
    private:
-      simsignal_t arrivalSignal;
+      //simsignal_t arrivalSignal;
       vector< transUnit > my_trans_units; //list of transUnits that have me as sender
       map<int, cGate*> node_to_gate; //map that takes in index of node adjacent to me, returns gate to that node
       map<int, double> node_to_balance; //map takes in index of adjacent node, returns outgoing balance
@@ -125,6 +129,106 @@ string routerNode:: string_node_to_balance(){
    return result;
 }
 
+
+vector<string> split(string str, char delimiter) {
+  vector<string> internal;
+  stringstream ss(str); // Turn the string into a stream.
+  string tok;
+
+  while(getline(ss, tok, delimiter)) {
+    internal.push_back(tok);
+  }
+
+  return internal;
+}
+
+/* generate_channels_balances_map - reads from file and constructs adjacency list of graph topology (channels), and hash map
+ *      of directed edges to initial balances, modifies global maps in place
+ *      each line of file is of form
+ *      [node1] [node2] [1->2 delay] [2->1 delay] [balance at node1 end] [balance at node2 end]
+ */
+void generate_channels_balances_map(map<int, vector<int>> &channels, map<tuple<int,int>,double> &balances){
+      string line;
+      ifstream myfile ("sample-topology.txt");
+      if (myfile.is_open())
+      {
+        while ( getline (myfile,line) )
+        {
+          vector<string> data = split(line, ' ');
+           for (int i=0; i<data.size(); i++){
+               cout << data[i] << "\n";
+
+           }
+          //generate channels - adjacency map
+          int node1 = stoi(data[0]); //
+          int node2 = stoi(data[1]); //
+          if (channels.count(node1)==0){ //node 1 is not in map
+              vector<int> tempVector = {node2};
+              channels[node1] = tempVector;
+          }
+          else{ //(node1 is in map)
+              if ( find(channels[node1].begin(), channels[node1].end(), node2) == channels[node1].end() ){ //(node2 is not already in node1's adjacency list')
+                 channels[node1].push_back(node2);
+              }
+          }
+
+          if (channels.count(node2)==0){ //node 1 is not in map
+                      vector<int> tempVector = {node1};
+                      channels[node2] = tempVector;
+                  }
+                  else{ //(node1 is in map)
+                      if ( find(channels[node2].begin(), channels[node2].end(), node1) == channels[node2].end() ){ //(node2 is not already in node1's adjacency list')
+                         channels[node2].push_back(node1);
+                      }
+                  }
+          //generate balances map
+          double balance1 = stod( data[4]);
+          double balance2 = stod( data[5]);
+          balances[make_tuple(node1,node2)] = balance1;
+          balances[make_tuple(node2,node1)] = balance2;
+        }
+        myfile.close();
+      }
+
+      else cout << "Unable to open file";
+
+    return;
+}
+/*
+ *  generate_trans_unit_list - reads from file and generates global transaction unit job list.
+ *      each line of file is of form:
+ *      [amount] [timeSent] [sender] [receiver] [priorityClass]
+ */
+void generate_trans_unit_list(vector<transUnit> &trans_unit_list){
+          string line;
+          ifstream myfile ("sample-workload.txt");
+          if (myfile.is_open())
+          {
+            while ( getline (myfile,line) )
+            {
+              vector<string> data = split(line, ' ');
+              //data[0] = amount, data[1] = timeSent, data[2] = sender, data[3] = receiver, data[4] = priority class
+              double amount = stod(data[0]);
+              double timeSent = stod(data[1]);
+              int sender = stoi(data[2]);
+              int receiver = stoi(data[3]);
+              int priorityClass = stoi(data[4]);
+
+              // instantiate all the transUnits that need to be sent
+              transUnit tempTU = transUnit(amount, timeSent, sender, receiver, priorityClass);
+
+                 // add all the transUnits into global list
+              trans_unit_list.push_back(tempTU);
+
+            }
+            myfile.close();
+          }
+
+          else cout << "Unable to open file";
+          return;
+
+}
+
 /* initialize() -
  *  if node index is 0:
  *      - initialize global parameters: instantiate all transUnits, and add to global list "trans_unit_list"
@@ -145,42 +249,23 @@ string routerNode:: string_node_to_balance(){
 
 void routerNode::initialize()
 {
+    cout << "here, before initialization" << endl;
 
    if (getIndex() == 0){  //main initialization for global parameters
       // instantiate all the transUnits that need to be sent
-      transUnit j1 = transUnit(3,0,0,3,0);
-      transUnit j2 = transUnit(5,0.25,2,0,0);
-      transUnit j3 = transUnit(5,0.25,2,0,0);
-      transUnit j4 = transUnit(5,0.25,2,0,0);
-      transUnit j5 = transUnit(3,0.5,0,3,0);
-      transUnit j6 = transUnit(3,0.75,0,3,0);
+
       // add all the transUnits into global list
-      trans_unit_list.push_back(j1);
-      trans_unit_list.push_back(j2);
-      trans_unit_list.push_back(j3);
-      trans_unit_list.push_back(j4);
-      trans_unit_list.push_back(j5);
-      trans_unit_list.push_back(j6);
 
-      //create "channels" map
-      vector<int>v0 = {1};
-      vector<int>v1 = {0,2};
-      vector<int>v2 = {1,3};
-      vector<int>v3 = {2};
-      channels[0] = v0;
-      channels[1] = v1;
-      channels[2] = v2;
-      channels[3] = v3;
-      //create "balances" map
-      balances[make_tuple(0,1)] = 10;
-      balances[make_tuple(1,0)] = 10;
+      generate_trans_unit_list(trans_unit_list);
 
-      balances[make_tuple(1,2)] = 10;
-      balances[make_tuple(2,1)] = 10;
+      //create "channels" map - from topology file
+      //create "balances" map - from topology file
 
-      balances[make_tuple(2,3)] = 10;
-      balances[make_tuple(3,2)] = 10;
+      generate_channels_balances_map(channels, balances );
+
    }
+   cout << getIndex() << endl;
+   cout << "here, after initialization \n";
 
    //iterate through the global trans_unit_list and find my transUnits
    for (int i=0; i<(int)trans_unit_list.size(); i++){
@@ -221,7 +306,7 @@ void routerNode::initialize()
       node_to_queued_trans_units[key] = temp;
    }
 
-   arrivalSignal = registerSignal("arrival");
+   //arrivalSignal = registerSignal("arrival");
 
    //implementing timeSent parameter, send all msgs at beginning
    for (int i=0 ; i<(int)my_trans_units.size(); i++){
@@ -230,6 +315,8 @@ void routerNode::initialize()
       simpleMsg *msg = generateMessage(j);
       scheduleAt(timeSent, msg);
    }
+   cout << getIndex() << endl;
+    cout << "here, after initialization \n";
 
 }
 
@@ -241,6 +328,7 @@ void routerNode::initialize()
 
 simpleMsg *routerNode::generateMessage(transUnit transUnit)
 {
+
    char msgname[20];
    sprintf(msgname, "tic-%d-to-%d", transUnit.sender, transUnit.receiver);
    simpleMsg *msg = new simpleMsg(msgname);
@@ -293,7 +381,7 @@ void routerNode::handleMessage(cMessage *msg)
    }
 
    if(getIndex() == ttmsg->getReceiver()){
-      emit(arrivalSignal, hopcount);
+      //emit(arrivalSignal, hopcount);
       EV << "Message " << ttmsg << " arrived after " << hopcount << " hops.\n";
       bubble("Message arrived!");
       delete ttmsg;
