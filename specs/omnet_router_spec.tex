@@ -77,7 +77,7 @@ This follows from the flowchart above.
 \begin{itemize}
     \item Receipt of a transaction $t$: 
         \begin{itemize}
-            \item Increment balance for self by t.amount on the incoming channel
+            \item Increment balance for self by t.amount on the incoming channel and decrement other party's balance
             \item Check if any transactions were queued for the incoming channel (in the opposite direction) that can now be sent out because of the increment in balance
             \item Send as many as you can in priority order on that incoming channel
         \end{itemize}
@@ -90,7 +90,7 @@ This follows from the flowchart above.
         \end{itemize}
     \item Send transaction $t$:
         \begin{itemize}
-            \item Decrement balance for outgoing channel
+            \item Decrement balance for outgoing channel and increment other party's balance
             \item Send message on the outgoing channel (assume some propagation delay after which it will be received there)
         \end{itemize}
 \end{itemize}
@@ -202,7 +202,7 @@ This follows from the flowchart above.
                 \end{itemize}
             \item Send HTLC $t$ to downstream router:
                 \begin{itemize}
-                    \item Decrement balance for outgoing channel
+                    \item Decrement balance for outgoing channel (don't yet increment other party's balance)
                     \item Add $t$ and the amount to outgoing inflight transaction set
                     \item Send ``HTLC Initiate'' message on the outgoing channel (assume some propagation delay after which it will be received there)
                 \end{itemize}
@@ -213,11 +213,12 @@ This follows from the flowchart above.
                 \begin{itemize}
                     \item Remove $t$ from outgoing inflight transaction set on (me - downstream) router channel
                     \item Send ``balance update'' message to the downstream router with your own balance decremented and the other router's incremented
+                    \item Increment your local view of the other party's balance
                     \item Send ``HTLC ack'' to upstream router
                 \end{itemize}
             \item Failure Ack:
                 \begin{itemize}
-                    \item Remove $t$ from outgoing inflight transaction set and increment my side of the balance
+                    \item Remove $t$ from outgoing inflight transaction set and (only) increment my side of the balance
                     \item Send ``Failure HTLC ack'' to upstream router
                     \item Remove $t$ from incoming inflight transaction set for the corresponding channel it came in on
                 \end{itemize}
@@ -225,7 +226,7 @@ This follows from the flowchart above.
         \end{itemize}
     \item Receipt of balance update
         \begin{itemize}
-            \item Increment my side of the balance by the corresponding amount
+            \item Increment my side of the balance by the corresponding amount and decrement other party's.
             \item Check if any transactions were queued for the incoming channel (in the opposite direction) that can now be sent out because of the increment in balance
             \item Send as many as you can in priority order on that incoming channel
 
