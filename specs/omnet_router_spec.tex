@@ -34,7 +34,7 @@ The high level flow per transaction unit is as follows. Let's consider a transac
 $A$ whose next hop is $B$, we first check if there is already a queue of \TUs waiting to be sent out to $B$. If so, we add this new \TU (let's say $t$) to it. If not, we check 
 if there were sufficient funds available to send out $t$. If not, we add $t$ to the queue and are done for this transaction unit. If there are funds available, 
 we update the balances (decrement) on $A$'s end for the $A-B$ channel. When $B$ receives the same \TU, it increments its balance on the $A-B$ channel. Note that this naturally introduces a delay
-in the balance update because of ``propagation delay`` of the \TU. If this balance increment frees up any funds for further \TUs currently queued at $B$, they should be sent out on the $B-A$ channel.
+in the balance update because of ``propagation delay'' of the \TU. If this balance increment frees up any funds for further \TUs currently queued at $B$, they should be sent out on the $B-A$ channel.
 
 Once $B$ has completed the updates for the $A-B$ channel for the original \TU $t$, it looks at the next hop and repeats the procedure on the outgoing channel at $B$.
 
@@ -53,7 +53,7 @@ we update the balances (decrement) on $A$'s end for the $A-B$ channel. This mean
 outgone HTLCs which represents the set of HTLCs that have been attempted but not cleared yet. 
 
 When $B$ receives the same HTLC, it adds $t$ to a set of inflight incoming HTLCs (that have been received but haven't been cleared yet). Note that this naturally introduces a delay in adding $t$ to the HTLCs at $B$.
-This is because of ``propagation delay`` of the HTLC. Once $B$ has completed this, it looks at the next hop and repeats the procedure on the outgoing channel at $B$.
+This is because of ``propagation delay'' of the HTLC. Once $B$ has completed this, it looks at the next hop and repeats the procedure on the outgoing channel at $B$.
 
 \NewPara{Successful Acks} Now, once the HTLC has been received at the destination node, this node will relay a successful {\em{ack}} backwards along the route of the transaction which will effectively clear 
 the transactions from the ``inflight HTLC'' queues on individual routers for each channel. For instance, when $B$ receives a successful ack for some HTLC
@@ -102,6 +102,7 @@ This is illustrated in the following flowchart.
     \item HTLC Ack
         \begin{itemize}
             \item Transaction id for which the Ack is received
+            \item Route for the ack (reverse of the path the transaction was sent on
             \item Status (Success or Failure) - just in case we want to simulate failures and propagate them upwards
             \item Secret - Dummy field for now (might never change)
         \end{itemize}
@@ -147,19 +148,19 @@ This follows from the flowchart above.
         \begin{itemize}
             \item Successful ack:
                 \begin{itemize}
-                    \item Remove $t$ from outgoing inflight transaction set on (me - downstream router channel)
+                    \item Remove $t$ from outgoing inflight transaction set on (me - downstream) router channel
                     \item Send ``balance update'' message to the downstream router with your own balance decremented and the other router's incremented
                     \item Send ``HTLC ack'' to upstream router
                 \end{itemize}
             \item Failure Ack:
                 \begin{itemize}
                     \item Remove $t$ from outgoing inflight transaction set and increment my side of the balance
-                    \item Send `` Failure HTLC ack'' to upstream router
+                    \item Send ``Failure HTLC ack'' to upstream router
                     \item Remove $t$ from incoming inflight transaction set for the corresponding channel it came in on
                 \end{itemize}
 
         \end{itemize}
-    \item Receipt of balance update"
+    \item Receipt of balance update
         \begin{itemize}
             \item Increment my side of the balance by the corresponding amount
             \item Check if any transactions were queued for the incoming channel (in the opposite direction) that can now be sent out because of the increment in balance
