@@ -182,6 +182,7 @@ This necessiates the following states at a router and the ability to update them
     \item Per channel state:
         \begin{itemize}
             \item Balance for oneself \sout{and for the other party}
+            \item Total Channel Capacity
             \item Queue of \TUs (in the above example, it would be a queue at A of \TUs it wanted to send to B but didn't have funds for)
             \item Inflight transactions that were sent out on this channel - hashmap with transaction ids as keys and amount as value
             \item Inflight transactions that came into this channel - hashmap with transaction ids as keys and amount as value
