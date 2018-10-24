@@ -9,6 +9,7 @@
 \setlength\parindent{0pt}
 \usepackage[margin=0.7in]{geometry}
 \usepackage{xspace}
+\usepackage[normalem]{ulem}
 
 \title{Omnet Router Specification}
 
@@ -180,7 +181,7 @@ This necessiates the following states at a router and the ability to update them
         you can use it to index into a table that contains every channel's state (described below).
     \item Per channel state:
         \begin{itemize}
-            \item Balance for oneself and for the other party
+            \item Balance for oneself \sout{and for the other party}
             \item Queue of \TUs (in the above example, it would be a queue at A of \TUs it wanted to send to B but didn't have funds for)
             \item Inflight transactions that were sent out on this channel - hashmap with transaction ids as keys and amount as value
             \item Inflight transactions that came into this channel - hashmap with transaction ids as keys and amount as value
@@ -202,7 +203,7 @@ This follows from the flowchart above.
                 \end{itemize}
             \item Send HTLC $t$ to downstream router:
                 \begin{itemize}
-                    \item Decrement balance for outgoing channel (don't yet increment other party's balance)
+                    \item Decrement balance for outgoing channel \sout{don't yet increment other party's balance}
                     \item Add $t$ and the amount to outgoing inflight transaction set
                     \item Send ``HTLC Initiate'' message on the outgoing channel (assume some propagation delay after which it will be received there)
                 \end{itemize}
@@ -213,7 +214,7 @@ This follows from the flowchart above.
                 \begin{itemize}
                     \item Remove $t$ from outgoing inflight transaction set on (me - downstream) router channel
                     \item Send ``balance update'' message to the downstream router with your own balance decremented and the other router's incremented
-                    \item Increment your local view of the other party's balance
+                    \item \sout{Increment your local view of the other party's balance}
                     \item Send ``HTLC ack'' to upstream router
                 \end{itemize}
             \item Failure Ack:
@@ -226,7 +227,7 @@ This follows from the flowchart above.
         \end{itemize}
     \item Receipt of balance update
         \begin{itemize}
-            \item Increment my side of the balance by the corresponding amount and decrement other party's.
+            \item Increment my side of the balance by the corresponding amount \sout{and decrement other party's}.
             \item Check if any transactions were queued for the incoming channel (in the opposite direction) that can now be sent out because of the increment in balance
             \item Send as many as you can in priority order on that incoming channel
 
