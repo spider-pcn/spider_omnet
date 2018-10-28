@@ -207,6 +207,9 @@ void generate_trans_unit_list(vector<transUnit> &trans_unit_list){
             while ( getline (myfile,line) )
             {
               vector<string> data = split(line, ' ');
+              for (int i=0; i< data.size(); i++){
+                  cout<< data[i]<<endl;
+              }
               //data[0] = amount, data[1] = timeSent, data[2] = sender, data[3] = receiver, data[4] = priority class
               double amount = stod(data[0]);
               double timeSent = stod(data[1]);
