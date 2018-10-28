@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 5.4 from simpleMsg.msg.
+// Generated file, do not edit! Created by nedtool 5.4 from transactionMsg.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:
@@ -26,7 +26,7 @@
 
 #include <iostream>
 #include <sstream>
-#include "simpleMsg_m.h"
+#include "transactionMsg_m.h"
 
 namespace omnetpp {
 
@@ -177,147 +177,134 @@ inline std::ostream& operator<<(std::ostream& out, const std::vector<T,A>& vec)
     return out;
 }
 
-Register_Class(simpleMsg)
+Register_Class(transactionMsg)
 
-simpleMsg::simpleMsg(const char *name, short kind) : ::omnetpp::cMessage(name,kind)
+transactionMsg::transactionMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
 {
     this->amount = 0;
     this->timeSent = 0;
     this->sender = 0;
     this->receiver = 0;
     this->priorityClass = 0;
-    this->hopCount = 0;
+    this->transactionId = 0;
 }
 
-simpleMsg::simpleMsg(const simpleMsg& other) : ::omnetpp::cMessage(other)
+transactionMsg::transactionMsg(const transactionMsg& other) : ::omnetpp::cPacket(other)
 {
     copy(other);
 }
 
-simpleMsg::~simpleMsg()
+transactionMsg::~transactionMsg()
 {
 }
 
-simpleMsg& simpleMsg::operator=(const simpleMsg& other)
+transactionMsg& transactionMsg::operator=(const transactionMsg& other)
 {
     if (this==&other) return *this;
-    ::omnetpp::cMessage::operator=(other);
+    ::omnetpp::cPacket::operator=(other);
     copy(other);
     return *this;
 }
 
-void simpleMsg::copy(const simpleMsg& other)
+void transactionMsg::copy(const transactionMsg& other)
 {
     this->amount = other.amount;
     this->timeSent = other.timeSent;
     this->sender = other.sender;
     this->receiver = other.receiver;
-    this->route = other.route;
     this->priorityClass = other.priorityClass;
-    this->hopCount = other.hopCount;
+    this->transactionId = other.transactionId;
 }
 
-void simpleMsg::parsimPack(omnetpp::cCommBuffer *b) const
+void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
 {
-    ::omnetpp::cMessage::parsimPack(b);
+    ::omnetpp::cPacket::parsimPack(b);
     doParsimPacking(b,this->amount);
     doParsimPacking(b,this->timeSent);
     doParsimPacking(b,this->sender);
     doParsimPacking(b,this->receiver);
-    doParsimPacking(b,this->route);
     doParsimPacking(b,this->priorityClass);
-    doParsimPacking(b,this->hopCount);
+    doParsimPacking(b,this->transactionId);
 }
 
-void simpleMsg::parsimUnpack(omnetpp::cCommBuffer *b)
+void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
 {
-    ::omnetpp::cMessage::parsimUnpack(b);
+    ::omnetpp::cPacket::parsimUnpack(b);
     doParsimUnpacking(b,this->amount);
     doParsimUnpacking(b,this->timeSent);
     doParsimUnpacking(b,this->sender);
     doParsimUnpacking(b,this->receiver);
-    doParsimUnpacking(b,this->route);
     doParsimUnpacking(b,this->priorityClass);
-    doParsimUnpacking(b,this->hopCount);
+    doParsimUnpacking(b,this->transactionId);
 }
 
-double simpleMsg::getAmount() const
+double transactionMsg::getAmount() const
 {
     return this->amount;
 }
 
-void simpleMsg::setAmount(double amount)
+void transactionMsg::setAmount(double amount)
 {
     this->amount = amount;
 }
 
-double simpleMsg::getTimeSent() const
+double transactionMsg::getTimeSent() const
 {
     return this->timeSent;
 }
 
-void simpleMsg::setTimeSent(double timeSent)
+void transactionMsg::setTimeSent(double timeSent)
 {
     this->timeSent = timeSent;
 }
 
-int simpleMsg::getSender() const
+int transactionMsg::getSender() const
 {
     return this->sender;
 }
 
-void simpleMsg::setSender(int sender)
+void transactionMsg::setSender(int sender)
 {
     this->sender = sender;
 }
 
-int simpleMsg::getReceiver() const
+int transactionMsg::getReceiver() const
 {
     return this->receiver;
 }
 
-void simpleMsg::setReceiver(int receiver)
+void transactionMsg::setReceiver(int receiver)
 {
     this->receiver = receiver;
 }
 
-IntVector& simpleMsg::getRoute()
-{
-    return this->route;
-}
-
-void simpleMsg::setRoute(const IntVector& route)
-{
-    this->route = route;
-}
-
-int simpleMsg::getPriorityClass() const
+int transactionMsg::getPriorityClass() const
 {
     return this->priorityClass;
 }
 
-void simpleMsg::setPriorityClass(int priorityClass)
+void transactionMsg::setPriorityClass(int priorityClass)
 {
     this->priorityClass = priorityClass;
 }
 
-int simpleMsg::getHopCount() const
+int transactionMsg::getTransactionId() const
 {
-    return this->hopCount;
+    return this->transactionId;
 }
 
-void simpleMsg::setHopCount(int hopCount)
+void transactionMsg::setTransactionId(int transactionId)
 {
-    this->hopCount = hopCount;
+    this->transactionId = transactionId;
 }
 
-class simpleMsgDescriptor : public omnetpp::cClassDescriptor
+class transactionMsgDescriptor : public omnetpp::cClassDescriptor
 {
   private:
     mutable const char **propertynames;
   public:
-    simpleMsgDescriptor();
-    virtual ~simpleMsgDescriptor();
+    transactionMsgDescriptor();
+    virtual ~transactionMsgDescriptor();
 
     virtual bool doesSupport(omnetpp::cObject *obj) const override;
     virtual const char **getPropertyNames() const override;
@@ -339,24 +326,24 @@ class simpleMsgDescriptor : public omnetpp::cClassDescriptor
     virtual void *getFieldStructValuePointer(void *object, int field, int i) const override;
 };
 
-Register_ClassDescriptor(simpleMsgDescriptor)
+Register_ClassDescriptor(transactionMsgDescriptor)
 
-simpleMsgDescriptor::simpleMsgDescriptor() : omnetpp::cClassDescriptor("simpleMsg", "omnetpp::cMessage")
+transactionMsgDescriptor::transactionMsgDescriptor() : omnetpp::cClassDescriptor("transactionMsg", "omnetpp::cPacket")
 {
     propertynames = nullptr;
 }
 
-simpleMsgDescriptor::~simpleMsgDescriptor()
+transactionMsgDescriptor::~transactionMsgDescriptor()
 {
     delete[] propertynames;
 }
 
-bool simpleMsgDescriptor::doesSupport(omnetpp::cObject *obj) const
+bool transactionMsgDescriptor::doesSupport(omnetpp::cObject *obj) const
 {
-    return dynamic_cast<simpleMsg *>(obj)!=nullptr;
+    return dynamic_cast<transactionMsg *>(obj)!=nullptr;
 }
 
-const char **simpleMsgDescriptor::getPropertyNames() const
+const char **transactionMsgDescriptor::getPropertyNames() const
 {
     if (!propertynames) {
         static const char *names[] = {  nullptr };
@@ -367,19 +354,19 @@ const char **simpleMsgDescriptor::getPropertyNames() const
     return propertynames;
 }
 
-const char *simpleMsgDescriptor::getProperty(const char *propertyname) const
+const char *transactionMsgDescriptor::getProperty(const char *propertyname) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     return basedesc ? basedesc->getProperty(propertyname) : nullptr;
 }
 
-int simpleMsgDescriptor::getFieldCount() const
+int transactionMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 7+basedesc->getFieldCount() : 7;
+    return basedesc ? 6+basedesc->getFieldCount() : 6;
 }
 
-unsigned int simpleMsgDescriptor::getFieldTypeFlags(int field) const
+unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -392,14 +379,13 @@ unsigned int simpleMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
-        FD_ISCOMPOUND,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
     };
-    return (field>=0 && field<7) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<6) ? fieldTypeFlags[field] : 0;
 }
 
-const char *simpleMsgDescriptor::getFieldName(int field) const
+const char *transactionMsgDescriptor::getFieldName(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -412,14 +398,13 @@ const char *simpleMsgDescriptor::getFieldName(int field) const
         "timeSent",
         "sender",
         "receiver",
-        "route",
         "priorityClass",
-        "hopCount",
+        "transactionId",
     };
-    return (field>=0 && field<7) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<6) ? fieldNames[field] : nullptr;
 }
 
-int simpleMsgDescriptor::findField(const char *fieldName) const
+int transactionMsgDescriptor::findField(const char *fieldName) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount() : 0;
@@ -427,13 +412,12 @@ int simpleMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='t' && strcmp(fieldName, "timeSent")==0) return base+1;
     if (fieldName[0]=='s' && strcmp(fieldName, "sender")==0) return base+2;
     if (fieldName[0]=='r' && strcmp(fieldName, "receiver")==0) return base+3;
-    if (fieldName[0]=='r' && strcmp(fieldName, "route")==0) return base+4;
-    if (fieldName[0]=='p' && strcmp(fieldName, "priorityClass")==0) return base+5;
-    if (fieldName[0]=='h' && strcmp(fieldName, "hopCount")==0) return base+6;
+    if (fieldName[0]=='p' && strcmp(fieldName, "priorityClass")==0) return base+4;
+    if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+5;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
-const char *simpleMsgDescriptor::getFieldTypeString(int field) const
+const char *transactionMsgDescriptor::getFieldTypeString(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -446,14 +430,13 @@ const char *simpleMsgDescriptor::getFieldTypeString(int field) const
         "double",
         "int",
         "int",
-        "IntVector",
         "int",
         "int",
     };
-    return (field>=0 && field<7) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<6) ? fieldTypeStrings[field] : nullptr;
 }
 
-const char **simpleMsgDescriptor::getFieldPropertyNames(int field) const
+const char **transactionMsgDescriptor::getFieldPropertyNames(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -466,7 +449,7 @@ const char **simpleMsgDescriptor::getFieldPropertyNames(int field) const
     }
 }
 
-const char *simpleMsgDescriptor::getFieldProperty(int field, const char *propertyname) const
+const char *transactionMsgDescriptor::getFieldProperty(int field, const char *propertyname) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -479,7 +462,7 @@ const char *simpleMsgDescriptor::getFieldProperty(int field, const char *propert
     }
 }
 
-int simpleMsgDescriptor::getFieldArraySize(void *object, int field) const
+int transactionMsgDescriptor::getFieldArraySize(void *object, int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -487,13 +470,13 @@ int simpleMsgDescriptor::getFieldArraySize(void *object, int field) const
             return basedesc->getFieldArraySize(object, field);
         field -= basedesc->getFieldCount();
     }
-    simpleMsg *pp = (simpleMsg *)object; (void)pp;
+    transactionMsg *pp = (transactionMsg *)object; (void)pp;
     switch (field) {
         default: return 0;
     }
 }
 
-const char *simpleMsgDescriptor::getFieldDynamicTypeString(void *object, int field, int i) const
+const char *transactionMsgDescriptor::getFieldDynamicTypeString(void *object, int field, int i) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -501,13 +484,13 @@ const char *simpleMsgDescriptor::getFieldDynamicTypeString(void *object, int fie
             return basedesc->getFieldDynamicTypeString(object,field,i);
         field -= basedesc->getFieldCount();
     }
-    simpleMsg *pp = (simpleMsg *)object; (void)pp;
+    transactionMsg *pp = (transactionMsg *)object; (void)pp;
     switch (field) {
         default: return nullptr;
     }
 }
 
-std::string simpleMsgDescriptor::getFieldValueAsString(void *object, int field, int i) const
+std::string transactionMsgDescriptor::getFieldValueAsString(void *object, int field, int i) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -515,20 +498,19 @@ std::string simpleMsgDescriptor::getFieldValueAsString(void *object, int field, 
             return basedesc->getFieldValueAsString(object,field,i);
         field -= basedesc->getFieldCount();
     }
-    simpleMsg *pp = (simpleMsg *)object; (void)pp;
+    transactionMsg *pp = (transactionMsg *)object; (void)pp;
     switch (field) {
         case 0: return double2string(pp->getAmount());
         case 1: return double2string(pp->getTimeSent());
         case 2: return long2string(pp->getSender());
         case 3: return long2string(pp->getReceiver());
-        case 4: {std::stringstream out; out << pp->getRoute(); return out.str();}
-        case 5: return long2string(pp->getPriorityClass());
-        case 6: return long2string(pp->getHopCount());
+        case 4: return long2string(pp->getPriorityClass());
+        case 5: return long2string(pp->getTransactionId());
         default: return "";
     }
 }
 
-bool simpleMsgDescriptor::setFieldValueAsString(void *object, int field, int i, const char *value) const
+bool transactionMsgDescriptor::setFieldValueAsString(void *object, int field, int i, const char *value) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -536,19 +518,19 @@ bool simpleMsgDescriptor::setFieldValueAsString(void *object, int field, int i, 
             return basedesc->setFieldValueAsString(object,field,i,value);
         field -= basedesc->getFieldCount();
     }
-    simpleMsg *pp = (simpleMsg *)object; (void)pp;
+    transactionMsg *pp = (transactionMsg *)object; (void)pp;
     switch (field) {
         case 0: pp->setAmount(string2double(value)); return true;
         case 1: pp->setTimeSent(string2double(value)); return true;
         case 2: pp->setSender(string2long(value)); return true;
         case 3: pp->setReceiver(string2long(value)); return true;
-        case 5: pp->setPriorityClass(string2long(value)); return true;
-        case 6: pp->setHopCount(string2long(value)); return true;
+        case 4: pp->setPriorityClass(string2long(value)); return true;
+        case 5: pp->setTransactionId(string2long(value)); return true;
         default: return false;
     }
 }
 
-const char *simpleMsgDescriptor::getFieldStructName(int field) const
+const char *transactionMsgDescriptor::getFieldStructName(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -557,12 +539,11 @@ const char *simpleMsgDescriptor::getFieldStructName(int field) const
         field -= basedesc->getFieldCount();
     }
     switch (field) {
-        case 4: return omnetpp::opp_typename(typeid(IntVector));
         default: return nullptr;
     };
 }
 
-void *simpleMsgDescriptor::getFieldStructValuePointer(void *object, int field, int i) const
+void *transactionMsgDescriptor::getFieldStructValuePointer(void *object, int field, int i) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -570,9 +551,8 @@ void *simpleMsgDescriptor::getFieldStructValuePointer(void *object, int field, i
             return basedesc->getFieldStructValuePointer(object, field, i);
         field -= basedesc->getFieldCount();
     }
-    simpleMsg *pp = (simpleMsg *)object; (void)pp;
+    transactionMsg *pp = (transactionMsg *)object; (void)pp;
     switch (field) {
-        case 4: return (void *)(&pp->getRoute()); break;
         default: return nullptr;
     }
 }

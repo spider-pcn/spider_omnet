@@ -2,7 +2,9 @@
 #include <string.h>
 #include <omnetpp.h>
 #include <vector>
-#include "simpleMsg_m.h"
+#include "routerMsg_m.h"
+#include "transactionMsg_m.h"
+#include "ackMsg_m.h"
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -67,11 +69,10 @@ vector<int> breadthFirstSearch(int sender, int receiver){
                 if (channels[lastNode][i]==receiver){
 
                     return temp;
-                }
-            }
-         }
-      }
-   }
+                } //end if (channels[lastNode][i]==receiver)
+            } //end if (!visitedNodes[channels[lastNode][i]])
+         }//end for (i)
+      }//end while
    vector<int> empty;
    return empty;
 }
@@ -103,14 +104,14 @@ class routerNode : public cSimpleModule
       vector< transUnit > my_trans_units; //list of transUnits that have me as sender
       map<int, cGate*> node_to_gate; //map that takes in index of node adjacent to me, returns gate to that node
       map<int, double> node_to_balance; //map takes in index of adjacent node, returns outgoing balance
-      map<int, deque<tuple<int, double , simpleMsg *>>> node_to_queued_trans_units;
+      map<int, deque<tuple<int, double , routerMsg *>>> node_to_queued_trans_units;
           //map takes in index of adjacent node, returns queue of trans_units to send to that node
    protected:
-      virtual simpleMsg *generateMessage(transUnit transUnit);
+      virtual routerMsg *generateTransactionMessage(transUnit transUnit);
       virtual void initialize() override;
       virtual void handleMessage(cMessage *msg) override;
-      virtual void forwardMessage(simpleMsg *msg);
-      virtual void processTransUnits(int dest, deque<tuple<int, double , simpleMsg *>>& q);
+      virtual void forwardMessage(routerMsg *msg);
+      virtual void processTransUnits(int dest, deque<tuple<int, double , routerMsg *>>& q);
       virtual string string_node_to_balance();
 };
 Define_Module(routerNode);
@@ -246,7 +247,7 @@ void generate_trans_unit_list(vector<transUnit> &trans_unit_list){
  *          to this node (key is adjacent node index; value is remaining outgoing balance)
  *      - create "node_to_queued_trans_units" map - map to get transUnit queue for outgoing transUnits,
  *          one queue corresponding to each adjacent node/each connected channel
- *      - send all transUnits in my_trans_units as a message (using generateMessage), sent to myself (node index),
+ *      - send all transUnits in my_trans_units as a message (using generateTransactionMessage), sent to myself (node index),
  *          scheduled to arrive at timeSent parameter field in transUnit
  */
 
@@ -305,7 +306,7 @@ void routerNode::initialize()
    for(map<int,cGate *>::iterator iter = node_to_gate.begin(); iter != node_to_gate.end(); ++iter)
    {
       int key =  iter->first;
-      deque<tuple<int, double , simpleMsg *>> temp;
+      deque<tuple<int, double , routerMsg *>> temp;
       node_to_queued_trans_units[key] = temp;
    }
 
@@ -315,7 +316,7 @@ void routerNode::initialize()
    for (int i=0 ; i<(int)my_trans_units.size(); i++){
       transUnit j = my_trans_units[i];
       double timeSent = j.timeSent;
-      simpleMsg *msg = generateMessage(j);
+      routerMsg *msg = generateTransactionMessage(j);
       scheduleAt(timeSent, msg);
    }
    cout << getIndex() << endl;
@@ -323,34 +324,48 @@ void routerNode::initialize()
 
 }
 
-/* generateMessage - takes in a transUnit object and returns corresponding simpleMsg message;
- *      transUnit and simpleMsg have the same fields except simpleMsg has extra field "hopCount",
+/* generateTransactionMessage - takes in a transUnit object and returns corresponding routerMsg message;
+ *      transUnit and routerMsg have the same fields except routerMsg has extra field "hopCount",
  *      representing distance traveled so far
  *      note: calls get_route function to get route from sender to receiver
  */
 
-simpleMsg *routerNode::generateMessage(transUnit transUnit)
+routerMsg *routerNode::generateTransactionMessage(transUnit transUnit)
 {
 
-   char msgname[20];
-   sprintf(msgname, "tic-%d-to-%d", transUnit.sender, transUnit.receiver);
-   simpleMsg *msg = new simpleMsg(msgname);
+   char msgname[30];
+   sprintf(msgname, "tic-%d-to-%d transactionMsg", transUnit.sender, transUnit.receiver);
+   transactionMsg *msg = new transactionMsg(msgname);
    msg->setAmount(transUnit.amount);
    msg->setTimeSent(transUnit.timeSent);
    msg->setSender(transUnit.sender);
    msg->setReceiver(transUnit.receiver);
-   msg->setRoute(get_route(transUnit.sender,transUnit.receiver));
    msg->setPriorityClass(transUnit.priorityClass);
-   msg->setHopCount(0);
-   return msg;
+   msg->setTransactionId(msg->getId());
+   // msg->set transactionId; "use .getId()"?
+
+   sprintf(msgname, "tic-%d-to-%d routerMsg", transUnit.sender, transUnit.receiver);
+   routerMsg *rMsg = new routerMsg(msgname);
+   // rMsg->set route = get_route(transUnit.sender,transUnit.receiver) , hopcount = 0, encapIsAck = false;
+   rMsg->setRoute(get_route(transUnit.sender,transUnit.receiver));
+   rMsg->setHopCount(0);
+   rMsg->setEncapIsAck(false);
+   rMsg->setAmount(transUnit.amount);
+   rMsg->setPriorityClass(transUnit.priorityClass);
+
+   //encapsulate msg inside rMsg
+   rMsg->encapsulate(msg);
+
+
+   return rMsg;
 }
 
 /*
  * sortFunction - helper function used to sort queued transUnit list by ascending priorityClass, then by
  *      ascending amount
  */
-bool sortFunction(const tuple<int,double, simpleMsg*> &a,
-      const tuple<int,double, simpleMsg*> &b)
+bool sortFunction(const tuple<int,double, routerMsg*> &a,
+      const tuple<int,double, routerMsg*> &b)
 {
    if (get<0>(a) < get<0>(b)){
       return true;
@@ -370,20 +385,25 @@ bool sortFunction(const tuple<int,double, simpleMsg*> &a,
  */
 void routerNode::handleMessage(cMessage *msg)
 {
-   simpleMsg *ttmsg = check_and_cast<simpleMsg *>(msg);
+   routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
    int hopcount = ttmsg->getHopCount();
-   deque<tuple<int, double , simpleMsg *>> q;
+   deque<tuple<int, double , routerMsg *>> q;
 
    if (!(msg -> isSelfMessage())){
       int hopcount = ttmsg->getHopCount();
       int sender = ttmsg->getRoute()[hopcount-1];
+
       node_to_balance[sender] = node_to_balance[sender] + ttmsg->getAmount();
       //see if any new messages can be sent out based on priority for the channel that just came in
       q = node_to_queued_trans_units[sender];
       processTransUnits(sender, q);
    }
 
-   if(getIndex() == ttmsg->getReceiver()){
+   if(ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
+       //TODO: decapsulate message
+
+
+
       //emit(arrivalSignal, hopcount);
       EV << "Message " << ttmsg << " arrived after " << hopcount << " hops.\n";
       bubble("Message arrived!");
@@ -407,7 +427,7 @@ void routerNode::handleMessage(cMessage *msg)
  * processTransUnits - given an adjacent node, and transUnit queue of things to send to that node, sends
  *  transUnits until channel funds are too low by calling forwardMessage on message representing transUnit
  */
-void routerNode:: processTransUnits(int dest, deque<tuple<int, double , simpleMsg *>>& q){
+void routerNode:: processTransUnits(int dest, deque<tuple<int, double , routerMsg *>>& q){
    while((int)q.size()>0 && get<1>(q[0])<=node_to_balance[dest]){
       forwardMessage(get<2>(q[0]));
       q.pop_front();
@@ -418,7 +438,7 @@ void routerNode:: processTransUnits(int dest, deque<tuple<int, double , simpleMs
  *  forwardMessage - given a message representing a transUnit, increments hopCount, finds next destination,
  *      adjusts (decrements) channel balance, sends message to next node on route
  */
-void routerNode::forwardMessage(simpleMsg *msg)
+void routerNode::forwardMessage(routerMsg *msg)
 {
    // Increment hop count.
    msg->setHopCount(msg->getHopCount()+1);

@@ -1,12 +1,12 @@
 //
-// Generated file, do not edit! Created by nedtool 5.4 from simpleMsg.msg.
+// Generated file, do not edit! Created by nedtool 5.4 from transactionMsg.msg.
 //
 
 #if defined(__clang__)
 #  pragma clang diagnostic ignored "-Wreserved-id-macro"
 #endif
-#ifndef __SIMPLEMSG_M_H
-#define __SIMPLEMSG_M_H
+#ifndef __TRANSACTIONMSG_M_H
+#define __TRANSACTIONMSG_M_H
 
 #include <omnetpp.h>
 
@@ -18,51 +18,43 @@
 
 
 
-// cplusplus {{
-#include <vector>
-typedef std::vector<int> IntVector;
-// }}
-
 /**
- * Class generated from <tt>simpleMsg.msg:23</tt> by nedtool.
+ * Class generated from <tt>transactionMsg.msg:17</tt> by nedtool.
  * <pre>
- * message simpleMsg
+ * packet transactionMsg
  * {
  *     double amount;
  *     double timeSent;  //time after start time that job is active
  *     int sender;
  *     int receiver;
- *     IntVector route;
  *     int priorityClass;
- *     int hopCount = 0;
- * 
+ *     int transactionId; //is messageID of transactionMsg
  * }
  * </pre>
  */
-class simpleMsg : public ::omnetpp::cMessage
+class transactionMsg : public ::omnetpp::cPacket
 {
   protected:
     double amount;
     double timeSent;
     int sender;
     int receiver;
-    IntVector route;
     int priorityClass;
-    int hopCount;
+    int transactionId;
 
   private:
-    void copy(const simpleMsg& other);
+    void copy(const transactionMsg& other);
 
   protected:
     // protected and unimplemented operator==(), to prevent accidental usage
-    bool operator==(const simpleMsg&);
+    bool operator==(const transactionMsg&);
 
   public:
-    simpleMsg(const char *name=nullptr, short kind=0);
-    simpleMsg(const simpleMsg& other);
-    virtual ~simpleMsg();
-    simpleMsg& operator=(const simpleMsg& other);
-    virtual simpleMsg *dup() const override {return new simpleMsg(*this);}
+    transactionMsg(const char *name=nullptr, short kind=0);
+    transactionMsg(const transactionMsg& other);
+    virtual ~transactionMsg();
+    transactionMsg& operator=(const transactionMsg& other);
+    virtual transactionMsg *dup() const override {return new transactionMsg(*this);}
     virtual void parsimPack(omnetpp::cCommBuffer *b) const override;
     virtual void parsimUnpack(omnetpp::cCommBuffer *b) override;
 
@@ -75,18 +67,15 @@ class simpleMsg : public ::omnetpp::cMessage
     virtual void setSender(int sender);
     virtual int getReceiver() const;
     virtual void setReceiver(int receiver);
-    virtual IntVector& getRoute();
-    virtual const IntVector& getRoute() const {return const_cast<simpleMsg*>(this)->getRoute();}
-    virtual void setRoute(const IntVector& route);
     virtual int getPriorityClass() const;
     virtual void setPriorityClass(int priorityClass);
-    virtual int getHopCount() const;
-    virtual void setHopCount(int hopCount);
+    virtual int getTransactionId() const;
+    virtual void setTransactionId(int transactionId);
 };
 
-inline void doParsimPacking(omnetpp::cCommBuffer *b, const simpleMsg& obj) {obj.parsimPack(b);}
-inline void doParsimUnpacking(omnetpp::cCommBuffer *b, simpleMsg& obj) {obj.parsimUnpack(b);}
+inline void doParsimPacking(omnetpp::cCommBuffer *b, const transactionMsg& obj) {obj.parsimPack(b);}
+inline void doParsimUnpacking(omnetpp::cCommBuffer *b, transactionMsg& obj) {obj.parsimUnpack(b);}
 
 
-#endif // ifndef __SIMPLEMSG_M_H
+#endif // ifndef __TRANSACTIONMSG_M_H
 
