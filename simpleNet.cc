@@ -12,28 +12,15 @@
 #include <deque>
 #include <map>
 #include <fstream>
+#include "routerNode.h"
+
+
 
 using namespace omnetpp;
 
 using namespace std;
 
-class transUnit{
-   public:
-      double amount;
-      double timeSent;  //time delay after start time of simulation that trans-unit is active
-      int sender;
-      int receiver;
-      //vector<int> route; //includes sender and reciever as first and last entries
-      int priorityClass;
 
-      transUnit(double amount1, double timeSent1, int sender1, int receiver1, int priorityClass1){
-         amount = amount1;
-         timeSent = timeSent1;
-         sender = sender1;
-         receiver = receiver1;
-         priorityClass=  priorityClass1;
-      }
-};
 
 //global parameters
 vector<transUnit> trans_unit_list; //list of all transUnits
@@ -98,39 +85,13 @@ vector<int> get_route(int sender, int receiver){
 }
 
 
-class routerNode : public cSimpleModule
-{
-   private:
-      //simsignal_t arrivalSignal;
-      vector< transUnit > my_trans_units; //list of transUnits that have me as sender
-      map<int, cGate*> node_to_gate; //map that takes in index of node adjacent to me, returns gate to that node
-      map<int, double> node_to_balance; //map takes in index of adjacent node, returns outgoing balance
-      map<int, deque<tuple<int, double , routerMsg *>>> node_to_queued_trans_units;
-      map<int, double> want_ack_trans_units;
-      map<int, double> sent_ack_trans_units;
-          //map takes in index of adjacent node, returns queue of trans_units to send to that node
-   protected:
-      virtual routerMsg *generateTransactionMessage(transUnit transUnit);
-      virtual routerMsg *generateAckMessage(routerMsg *msg);
-      virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
-          //just generates routerMsg with no encapsulated msg inside
-      virtual void initialize() override;
-      virtual void handleMessage(cMessage *msg) override;
-      virtual void handleTransactionMessage(routerMsg *msg);
-      virtual void handleAckMessage(routerMsg *msg);
-      virtual void handleUpdateMessage(routerMsg *msg);
-      virtual void forwardTransactionMessage(routerMsg *msg);
-      virtual void forwardAckMessage(routerMsg *msg);
-      virtual void forwardUpdateMessage(routerMsg *msg);
-      virtual void processTransUnits(int dest, deque<tuple<int, double , routerMsg *>>& q);
-      virtual string string_node_to_balance();
-};
+
 Define_Module(routerNode);
 
 /* string_node_to_balance - helper function, turns the node_to_balance map into printable string
  *
  */
-string routerNode:: string_node_to_balance(){
+string routerNode::string_node_to_balance(){
    string result = "";
    for(map<int,double>::iterator iter = node_to_balance.begin(); iter != node_to_balance.end(); ++iter)
    {
