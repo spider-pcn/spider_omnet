@@ -30,7 +30,13 @@ PROJECTRELATIVE_PATH =
 O = $(PROJECT_OUTPUT_DIR)/$(CONFIGNAME)/$(PROJECTRELATIVE_PATH)
 
 # Object files for local .cc, .msg and .sm files
-OBJS = $O/simpleNet.o $O/ackMsg_m.o $O/routerMsg_m.o $O/transactionMsg_m.o
+OBJS = \
+    $O/initialize.o \
+    $O/routerNode.o \
+    $O/simpleNet.o \
+    $O/ackMsg_m.o \
+    $O/routerMsg_m.o \
+    $O/transactionMsg_m.o
 
 # Message files
 MSGFILES = \

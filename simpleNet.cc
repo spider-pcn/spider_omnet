@@ -1,90 +1,7 @@
-#include <stdio.h>
-#include <string.h>
-#include <omnetpp.h>
-#include <vector>
-#include "routerMsg_m.h"
-#include "transactionMsg_m.h"
-#include "ackMsg_m.h"
-#include <iostream>
-#include <algorithm>
-#include <string>
-#include <sstream>
-#include <deque>
-#include <map>
-#include <fstream>
+
+
+#include "initialize.h"
 #include "routerNode.h"
-
-
-
-using namespace omnetpp;
-
-using namespace std;
-
-
-
-//global parameters
-vector<transUnit> trans_unit_list; //list of all transUnits
-int numNodes = 4; //number of nodes in network
-map<int, vector<int>> channels; //adjacency list format of graph edges of network
-map<tuple<int,int>,double> balances;
-//map of balances for each edge; key = <int,int> is <source, destination>
-
-vector<int> breadthFirstSearch(int sender, int receiver){
-    deque<vector<int>> nodesToVisit;
-    bool visitedNodes[numNodes];
-    for (int i=0; i<numNodes; i++){
-        visitedNodes[i] =false;
-    }
-    visitedNodes[sender] = true;
-
-    vector<int> temp;
-    temp.push_back(sender);
-    nodesToVisit.push_back(temp);
-
-    while ((int)nodesToVisit.size()>0){
-
-        vector<int> current = nodesToVisit[0];
-         nodesToVisit.pop_front();
-        int lastNode = current.back();
-        for (int i=0; i<(int)channels[lastNode].size();i++){
-
-            if (!visitedNodes[channels[lastNode][i]]){
-                temp = current; // assignment copies in case of vector
-                temp.push_back(channels[lastNode][i]);
-                nodesToVisit.push_back(temp);
-                visitedNodes[channels[lastNode][i]] = true;
-
-                if (channels[lastNode][i]==receiver){
-
-                    return temp;
-                } //end if (channels[lastNode][i]==receiver)
-            } //end if (!visitedNodes[channels[lastNode][i]])
-         }//end for (i)
-      }//end while
-   vector<int> empty;
-   return empty;
-}
-
-/*get_route- take in sender and receiver graph indicies, and returns
- *  BFS shortest path from sender to receiver in form of node indicies,
- *  includes sender and reciever as first and last entry
- */
-vector<int> get_route(int sender, int receiver){
-  //do searching without regard for channel capacities, DFS right now
-
-  // printf("sender: %i; receiver: %i \n [", sender, receiver);
-   vector<int> route =  breadthFirstSearch(sender, receiver);
-/*
-   for (int i=0; i<(int)route.size(); i++){
-        printf("%i, ", route[i]);
-    }
-    printf("] \n");
-*/
-    return route;
-
-}
-
-
 
 Define_Module(routerNode);
 
@@ -100,108 +17,6 @@ string routerNode::string_node_to_balance(){
       result = result + "("+to_string(key)+":"+to_string(value)+") ";
    }
    return result;
-}
-
-
-vector<string> split(string str, char delimiter) {
-  vector<string> internal;
-  stringstream ss(str); // Turn the string into a stream.
-  string tok;
-
-  while(getline(ss, tok, delimiter)) {
-    internal.push_back(tok);
-  }
-  return internal;
-}
-
-/* generate_channels_balances_map - reads from file and constructs adjacency list of graph topology (channels), and hash map
- *      of directed edges to initial balances, modifies global maps in place
- *      each line of file is of form
- *      [node1] [node2] [1->2 delay] [2->1 delay] [balance at node1 end] [balance at node2 end]
- */
-void generate_channels_balances_map(map<int, vector<int>> &channels, map<tuple<int,int>,double> &balances){
-      string line;
-      ifstream myfile ("sample-topology.txt");
-      if (myfile.is_open())
-      {
-        while ( getline (myfile,line) )
-        {
-          vector<string> data = split(line, ' ');
-           for (int i=0; i<data.size(); i++){
-               cout << data[i] << "\n";
-
-           }
-          //generate channels - adjacency map
-          int node1 = stoi(data[0]); //
-          int node2 = stoi(data[1]); //
-          if (channels.count(node1)==0){ //node 1 is not in map
-              vector<int> tempVector = {node2};
-              channels[node1] = tempVector;
-          }
-          else{ //(node1 is in map)
-              if ( find(channels[node1].begin(), channels[node1].end(), node2) == channels[node1].end() ){ //(node2 is not already in node1's adjacency list')
-                 channels[node1].push_back(node2);
-              }
-          }
-
-          if (channels.count(node2)==0){ //node 1 is not in map
-                      vector<int> tempVector = {node1};
-                      channels[node2] = tempVector;
-                  }
-                  else{ //(node1 is in map)
-                      if ( find(channels[node2].begin(), channels[node2].end(), node1) == channels[node2].end() ){ //(node2 is not already in node1's adjacency list')
-                         channels[node2].push_back(node1);
-                      }
-                  }
-          //generate balances map
-          double balance1 = stod( data[4]);
-          double balance2 = stod( data[5]);
-          balances[make_tuple(node1,node2)] = balance1;
-          balances[make_tuple(node2,node1)] = balance2;
-        }
-        myfile.close();
-      }
-
-      else cout << "Unable to open file";
-
-    return;
-}
-/*
- *  generate_trans_unit_list - reads from file and generates global transaction unit job list.
- *      each line of file is of form:
- *      [amount] [timeSent] [sender] [receiver] [priorityClass]
- */
-void generate_trans_unit_list(vector<transUnit> &trans_unit_list){
-          string line;
-          ifstream myfile ("sample-workload.txt");
-          if (myfile.is_open())
-          {
-            while ( getline (myfile,line) )
-            {
-              vector<string> data = split(line, ' ');
-              for (int i=0; i< data.size(); i++){
-                  cout<< data[i]<<endl;
-              }
-              //data[0] = amount, data[1] = timeSent, data[2] = sender, data[3] = receiver, data[4] = priority class
-              double amount = stod(data[0]);
-              double timeSent = stod(data[1]);
-              int sender = stoi(data[2]);
-              int receiver = stoi(data[3]);
-              int priorityClass = stoi(data[4]);
-
-              // instantiate all the transUnits that need to be sent
-              transUnit tempTU = transUnit(amount, timeSent, sender, receiver, priorityClass);
-
-                 // add all the transUnits into global list
-              trans_unit_list.push_back(tempTU);
-
-            }
-            myfile.close();
-          }
-
-          else cout << "Unable to open file";
-          return;
-
 }
 
 /* initialize() -
@@ -231,6 +46,7 @@ void routerNode::initialize()
 
       // add all the transUnits into global list
 
+      numNodes= 4;
       generate_trans_unit_list(trans_unit_list);
 
       //create "channels" map - from topology file
@@ -280,9 +96,7 @@ void routerNode::initialize()
       deque<tuple<int, double , routerMsg *>> temp;
       node_to_queued_trans_units[key] = temp;
    }
-
    //arrivalSignal = registerSignal("arrival");
-
    //implementing timeSent parameter, send all msgs at beginning
    for (int i=0 ; i<(int)my_trans_units.size(); i++){
       transUnit j = my_trans_units[i];
@@ -292,113 +106,32 @@ void routerNode::initialize()
    }
    cout << getIndex() << endl;
     cout << "here, after initialization \n";
-
 }
 
-routerMsg *routerNode::generateAckMessage(routerMsg* msg){
-    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
-    char msgname[30];
-     sprintf(msgname, "receiver-%d-to-sender-%d ackMsg", transMsg->getReceiver(), transMsg->getSender());
-
-     ackMsg *aMsg = new ackMsg(msgname);
-     /*
-     virtual void setTransactionId(int transactionId);
-        virtual bool getIsSuccess() const;
-        virtual void setIsSuccess(bool isSuccess);
-        virtual const char * getSecret() const;
-        virtual void setSecret(const char * secret);
-     */
-     aMsg->setTransactionId(transMsg->getTransactionId());
-     aMsg->setIsSuccess(true);
-     //no need to set secret;
-     vector<int> route=msg->getRoute();
-     reverse(route.begin(), route.end());
-     msg->setRoute(route);
-     msg->setHopCount(0);
-     msg->setMessageType(1); //now an ack message
-     msg->decapsulate(); // remove encapsulated packet
-     delete transMsg;
-     msg->encapsulate(aMsg);
-
-
-    return msg;
-}
-// virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
-routerMsg *routerNode::generateUpdateMessage(int transId, int receiver, double amount){
-
-    char msgname[30];
-      sprintf(msgname, "tic-%d-to-%d updateMsg", getIndex(), receiver);
-
-      routerMsg *rMsg = new routerMsg(msgname);
-      // rMsg->set route = get_route(transUnit.sender,transUnit.receiver) , hopcount = 0, encapIsAck = false;
-      vector<int> route={getIndex(),receiver};
-      rMsg->setRoute(route);
-      rMsg->setHopCount(0);
-      rMsg->setMessageType(2); //2 means nothing encapsulated inside
-      rMsg->setAmount(amount);
-      rMsg->setTransactionId(transId);
-
-
-      return rMsg;
-
-}
-
-
-/* generateTransactionMessage - takes in a transUnit object and returns corresponding routerMsg message;
- *      transUnit and routerMsg have the same fields except routerMsg has extra field "hopCount",
- *      representing distance traveled so far
- *      note: calls get_route function to get route from sender to receiver
- */
-
-routerMsg *routerNode::generateTransactionMessage(transUnit transUnit)
+void routerNode::handleMessage(cMessage *msg)
 {
+   routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
+   if (ttmsg->getMessageType()==1){
+       handleAckMessage(ttmsg);
+   }
+   else if(ttmsg->getMessageType()==0){
+       handleTransactionMessage(ttmsg);
 
-   char msgname[30];
-   sprintf(msgname, "tic-%d-to-%d transactionMsg", transUnit.sender, transUnit.receiver);
-   transactionMsg *msg = new transactionMsg(msgname);
-   msg->setAmount(transUnit.amount);
-   msg->setTimeSent(transUnit.timeSent);
-   msg->setSender(transUnit.sender);
-   msg->setReceiver(transUnit.receiver);
-   msg->setPriorityClass(transUnit.priorityClass);
-   msg->setTransactionId(msg->getId());
-   // msg->set transactionId; "use .getId()"?
+   }
+   else if(ttmsg->getMessageType()==2){
+       handleUpdateMessage(ttmsg);
 
-   sprintf(msgname, "tic-%d-to-%d routerMsg", transUnit.sender, transUnit.receiver);
-   routerMsg *rMsg = new routerMsg(msgname);
-   // rMsg->set route = get_route(transUnit.sender,transUnit.receiver) , hopcount = 0, encapIsAck = false;
-   rMsg->setRoute(get_route(transUnit.sender,transUnit.receiver));
-   rMsg->setHopCount(0);
-   rMsg->setMessageType(0);
-   rMsg->setAmount(transUnit.amount);
-   rMsg->setPriorityClass(transUnit.priorityClass);
-   rMsg->setTransactionId(msg->getId());
-
-   //encapsulate msg inside rMsg
-   rMsg->encapsulate(msg);
-
-
-   return rMsg;
+   }
 }
 
-/*
- * sortFunction - helper function used to sort queued transUnit list by ascending priorityClass, then by
- *      ascending amount
+
+/* handleAckMessage - passes on ack message if not at end of root else deletes it
+ *      - generates and sends corresponding update message
+ *      - erases transId on received ack msg from "want_ack_trans_units"
+ *      - adds transId to "sent_ack_trans_units", list of transUnits waiting for
+ *          balance update message with their transId (in forwardAckMessage())
  */
-bool sortFunction(const tuple<int,double, routerMsg*> &a,
-      const tuple<int,double, routerMsg*> &b)
-{
-   if (get<0>(a) < get<0>(b)){
-      return true;
-   }
-   else if (get<0>(a) == get<0>(b)){
-      return (get<1>(a) < get<1>(b));
-   }
-   return false;
-}
-
 void routerNode::handleAckMessage(routerMsg* ttmsg){
-
     EV << "in handleAckMessage \n";
     //generate updateMsg
     int sender = ttmsg->getRoute()[ttmsg->getHopCount()-1];
@@ -420,6 +153,57 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
     }
 }
 
+/*
+ * generateAckMessage - called only when a transactionMsg reaches end of its path, keeps routerMsg casing of msg
+ *   and reuses it to send ackMsg in reversed order of route
+ */
+routerMsg *routerNode::generateAckMessage(routerMsg* msg){
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
+    char msgname[30];
+     sprintf(msgname, "receiver-%d-to-sender-%d ackMsg", transMsg->getReceiver(), transMsg->getSender());
+
+     ackMsg *aMsg = new ackMsg(msgname);
+
+     aMsg->setTransactionId(transMsg->getTransactionId());
+     aMsg->setIsSuccess(true);
+     //no need to set secret;
+     vector<int> route=msg->getRoute();
+     reverse(route.begin(), route.end());
+     msg->setRoute(route);
+     msg->setHopCount(0);
+     msg->setMessageType(1); //now an ack message
+     msg->decapsulate(); // remove encapsulated packet
+     delete transMsg;
+     msg->encapsulate(aMsg);
+    return msg;
+}
+
+
+/*
+ * forwardAckMessage - called inside handleAckMsg, sends ackMsg to next destination, and
+ *      adds transId to sent_ack_trans_units list
+ */
+void routerNode::forwardAckMessage(routerMsg *msg){
+    // Increment hop count.
+       msg->setHopCount(msg->getHopCount()+1);
+       //use hopCount to find next destination
+       int nextDest = msg->getRoute()[msg->getHopCount()];
+       EV << "Forwarding message " << msg << " on gate[" << nextDest << "]\n";
+       int amt = msg->getAmount();
+       //node_to_balance[nextDest] = node_to_balance[nextDest] - amt;
+
+       int transId = msg->getTransactionId();
+       int amount = msg->getAmount();
+       sent_ack_trans_units[transId] = amount;
+       EV << "before forwarding ack, nextDest is "<<nextDest<<" \n";
+       send(msg, node_to_gate[nextDest]);
+       EV << "after forwarding ack \n";
+}
+
+/*
+ * handleUpdateMessage - called when receive update message, increment back funds, see if we can
+ *      process more jobs with new funds, delete update message
+ */
 void routerNode::handleUpdateMessage(routerMsg* msg){
     deque<tuple<int, double , routerMsg *>> q;
     int sender = msg->getRoute()[msg->getHopCount()-1];
@@ -435,30 +219,48 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
 }
 
 
-/* handleMessage -
- *    1. checks if message is self-message (sent from initialize function); if not self-message, DO NOT re-adjust
- *      (increment) balance, DO NOT send out jobs if possible to node that just sent me units (call processTransUnits)
- *    2. checks if message is has arrived. If has arrived delete message. If not arrived, add new job to queue,
- *       send out jobs if possible to node that is the next node of message I received
- *          - deals with checking if transUnit queue is empty, then only send if enough balance left
+/*
+ *  generateUpdateMessage - creates new message to send as updateMessage
+ *      - note: all update messages have route length of exactly 2
+ *
+ */
+// virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
+routerMsg *routerNode::generateUpdateMessage(int transId, int receiver, double amount){
+    char msgname[30];
+      sprintf(msgname, "tic-%d-to-%d updateMsg", getIndex(), receiver);
+
+      routerMsg *rMsg = new routerMsg(msgname);
+      // rMsg->set route = get_route(transUnit.sender,transUnit.receiver) , hopcount = 0, encapIsAck = false;
+      vector<int> route={getIndex(),receiver};
+      rMsg->setRoute(route);
+      rMsg->setHopCount(0);
+      rMsg->setMessageType(2); //2 means nothing encapsulated inside
+      rMsg->setAmount(amount);
+      rMsg->setTransactionId(transId);
+      return rMsg;
+}
+
+/*
+ * forwardUpdateMessage - sends updateMessage to appropriate destination
+ */
+void routerNode::forwardUpdateMessage(routerMsg *msg){
+    // Increment hop count.
+          msg->setHopCount(msg->getHopCount()+1);
+          //use hopCount to find next destination
+          int nextDest = msg->getRoute()[msg->getHopCount()];
+          EV << "Forwarding message " << msg << " on gate[" << nextDest << "]\n";
+         send(msg, node_to_gate[nextDest]);
+}
+
+
+/* handleTransactionMessage - checks if message has arrived
+ *      1. has arrived - turn transactionMsg into ackMsg, forward ackMsg
+ *      2. has not arrived - add to appropriate job queue q, process q as
+ *          much as we have funds for
  */
 void routerNode::handleTransactionMessage(routerMsg* ttmsg){
     int hopcount = ttmsg->getHopCount();
        deque<tuple<int, double , routerMsg *>> q;
-
-       if (!(ttmsg -> isSelfMessage())){
-          int hopcount = ttmsg->getHopCount();
-          int sender = ttmsg->getRoute()[hopcount-1];
-          //NOTE: do not increment amount back, implementing in-flight funds
-          /*
-          node_to_balance[sender] = node_to_balance[sender] + ttmsg->getAmount();
-          */
-          //NOTE: do not see if any new messages can be sent out based on priority for the channel that just came in
-          /*
-          q = node_to_queued_trans_units[sender];
-          processTransUnits(sender, q);
-          */
-       }
 
        if(ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
 
@@ -488,21 +290,37 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
 }
 
 
-void routerNode::handleMessage(cMessage *msg)
+/* generateTransactionMessage - takes in a transUnit object and returns corresponding routerMsg message
+ *      with encapsulated transactionMsg inside.
+ *      note: calls get_route function to get route from sender to receiver
+ */
+routerMsg *routerNode::generateTransactionMessage(transUnit transUnit)
 {
-   routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
-   if (ttmsg->getMessageType()==1){
-       handleAckMessage(ttmsg);
-   }
-   else if(ttmsg->getMessageType()==0){
-       handleTransactionMessage(ttmsg);
+   char msgname[30];
+   sprintf(msgname, "tic-%d-to-%d transactionMsg", transUnit.sender, transUnit.receiver);
+   transactionMsg *msg = new transactionMsg(msgname);
+   msg->setAmount(transUnit.amount);
+   msg->setTimeSent(transUnit.timeSent);
+   msg->setSender(transUnit.sender);
+   msg->setReceiver(transUnit.receiver);
+   msg->setPriorityClass(transUnit.priorityClass);
+   msg->setTransactionId(msg->getId());
+   // msg->set transactionId; "use .getId()"?
 
-   }
-   else if(ttmsg->getMessageType()==2){
-       handleUpdateMessage(ttmsg);
-
-   }
+   sprintf(msgname, "tic-%d-to-%d routerMsg", transUnit.sender, transUnit.receiver);
+   routerMsg *rMsg = new routerMsg(msgname);
+   // rMsg->set route = get_route(transUnit.sender,transUnit.receiver) , hopcount = 0, encapIsAck = false;
+   rMsg->setRoute(get_route(transUnit.sender,transUnit.receiver));
+   rMsg->setHopCount(0);
+   rMsg->setMessageType(0);
+   rMsg->setAmount(transUnit.amount);
+   rMsg->setPriorityClass(transUnit.priorityClass);
+   rMsg->setTransactionId(msg->getId());
+   //encapsulate msg inside rMsg
+   rMsg->encapsulate(msg);
+   return rMsg;
 }
+
 
 /*
  * processTransUnits - given an adjacent node, and transUnit queue of things to send to that node, sends
@@ -516,35 +334,8 @@ void routerNode:: processTransUnits(int dest, deque<tuple<int, double , routerMs
 }
 
 
-void routerNode::forwardUpdateMessage(routerMsg *msg){
-    // Increment hop count.
-          msg->setHopCount(msg->getHopCount()+1);
-          //use hopCount to find next destination
-          int nextDest = msg->getRoute()[msg->getHopCount()];
-          EV << "Forwarding message " << msg << " on gate[" << nextDest << "]\n";
-         send(msg, node_to_gate[nextDest]);
-}
-
-
-void routerNode::forwardAckMessage(routerMsg *msg){
-    // Increment hop count.
-       msg->setHopCount(msg->getHopCount()+1);
-       //use hopCount to find next destination
-       int nextDest = msg->getRoute()[msg->getHopCount()];
-       EV << "Forwarding message " << msg << " on gate[" << nextDest << "]\n";
-       int amt = msg->getAmount();
-       //node_to_balance[nextDest] = node_to_balance[nextDest] - amt;
-
-       int transId = msg->getTransactionId();
-       int amount = msg->getAmount();
-       sent_ack_trans_units[transId] = amount;
-       EV << "before forwarding ack, nextDest is "<<nextDest<<" \n";
-       send(msg, node_to_gate[nextDest]);
-       EV << "after forwarding ack \n";
-}
-
 /*
- *  forwardMessage - given a message representing a transUnit, increments hopCount, finds next destination,
+ *  forwardTransactionMessage - given a message representing a transUnit, increments hopCount, finds next destination,
  *      adjusts (decrements) channel balance, sends message to next node on route
  */
 void routerNode::forwardTransactionMessage(routerMsg *msg)
@@ -556,9 +347,7 @@ void routerNode::forwardTransactionMessage(routerMsg *msg)
    EV << "Forwarding message " << msg << " on gate[" << nextDest << "]\n";
    int amt = msg->getAmount();
    node_to_balance[nextDest] = node_to_balance[nextDest] - amt;
-
    int transId = msg->getTransactionId();
-
    want_ack_trans_units[transId] = amt;
    EV << "before forwarding, nextDest is "<<nextDest<<" \n";
    send(msg, node_to_gate[nextDest]);

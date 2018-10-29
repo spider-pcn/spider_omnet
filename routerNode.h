@@ -1,3 +1,6 @@
+#ifndef ROUTERNODE_H
+#define ROUTERNODE_H
+
 #include <stdio.h>
 #include <string.h>
 #include <omnetpp.h>
@@ -14,9 +17,9 @@
 #include <fstream>
 #include "transUnit.h"
 
+using namespace std;
 using namespace omnetpp;
 
-using namespace std;
 
 class routerNode : public cSimpleModule
 {
@@ -45,3 +48,14 @@ class routerNode : public cSimpleModule
       virtual void processTransUnits(int dest, deque<tuple<int, double , routerMsg *>>& q);
       virtual string string_node_to_balance();
 };
+
+
+//global parameters
+extern vector<transUnit> trans_unit_list; //list of all transUnits
+extern int numNodes;
+//number of nodes in network
+extern map<int, vector<int>> channels; //adjacency list format of graph edges of network
+extern map<tuple<int,int>,double> balances;
+//map of balances for each edge; key = <int,int> is <source, destination>
+
+#endif
