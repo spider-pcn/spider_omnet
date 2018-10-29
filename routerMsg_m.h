@@ -30,10 +30,10 @@ typedef std::vector<int> IntVector;
  * {
  *     IntVector route;
  *     int hopCount = 0;
- *     bool encapIsAck = false;  //false for transaction, true for ack
- *     int amount;
+ *     int messageType;  //0 for transaction, 1 for ack, 2 for balance update
+ *     double amount;
  *     int priorityClass;
- * 
+ *     int transactionId;
  * }
  * </pre>
  */
@@ -42,9 +42,10 @@ class routerMsg : public ::omnetpp::cPacket
   protected:
     IntVector route;
     int hopCount;
-    bool encapIsAck;
-    int amount;
+    int messageType;
+    double amount;
     int priorityClass;
+    int transactionId;
 
   private:
     void copy(const routerMsg& other);
@@ -68,12 +69,14 @@ class routerMsg : public ::omnetpp::cPacket
     virtual void setRoute(const IntVector& route);
     virtual int getHopCount() const;
     virtual void setHopCount(int hopCount);
-    virtual bool getEncapIsAck() const;
-    virtual void setEncapIsAck(bool encapIsAck);
-    virtual int getAmount() const;
-    virtual void setAmount(int amount);
+    virtual int getMessageType() const;
+    virtual void setMessageType(int messageType);
+    virtual double getAmount() const;
+    virtual void setAmount(double amount);
     virtual int getPriorityClass() const;
     virtual void setPriorityClass(int priorityClass);
+    virtual int getTransactionId() const;
+    virtual void setTransactionId(int transactionId);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const routerMsg& obj) {obj.parsimPack(b);}

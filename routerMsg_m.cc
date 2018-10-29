@@ -182,9 +182,10 @@ Register_Class(routerMsg)
 routerMsg::routerMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
 {
     this->hopCount = 0;
-    this->encapIsAck = false;
+    this->messageType = 0;
     this->amount = 0;
     this->priorityClass = 0;
+    this->transactionId = 0;
 }
 
 routerMsg::routerMsg(const routerMsg& other) : ::omnetpp::cPacket(other)
@@ -208,9 +209,10 @@ void routerMsg::copy(const routerMsg& other)
 {
     this->route = other.route;
     this->hopCount = other.hopCount;
-    this->encapIsAck = other.encapIsAck;
+    this->messageType = other.messageType;
     this->amount = other.amount;
     this->priorityClass = other.priorityClass;
+    this->transactionId = other.transactionId;
 }
 
 void routerMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -218,9 +220,10 @@ void routerMsg::parsimPack(omnetpp::cCommBuffer *b) const
     ::omnetpp::cPacket::parsimPack(b);
     doParsimPacking(b,this->route);
     doParsimPacking(b,this->hopCount);
-    doParsimPacking(b,this->encapIsAck);
+    doParsimPacking(b,this->messageType);
     doParsimPacking(b,this->amount);
     doParsimPacking(b,this->priorityClass);
+    doParsimPacking(b,this->transactionId);
 }
 
 void routerMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -228,9 +231,10 @@ void routerMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     ::omnetpp::cPacket::parsimUnpack(b);
     doParsimUnpacking(b,this->route);
     doParsimUnpacking(b,this->hopCount);
-    doParsimUnpacking(b,this->encapIsAck);
+    doParsimUnpacking(b,this->messageType);
     doParsimUnpacking(b,this->amount);
     doParsimUnpacking(b,this->priorityClass);
+    doParsimUnpacking(b,this->transactionId);
 }
 
 IntVector& routerMsg::getRoute()
@@ -253,22 +257,22 @@ void routerMsg::setHopCount(int hopCount)
     this->hopCount = hopCount;
 }
 
-bool routerMsg::getEncapIsAck() const
+int routerMsg::getMessageType() const
 {
-    return this->encapIsAck;
+    return this->messageType;
 }
 
-void routerMsg::setEncapIsAck(bool encapIsAck)
+void routerMsg::setMessageType(int messageType)
 {
-    this->encapIsAck = encapIsAck;
+    this->messageType = messageType;
 }
 
-int routerMsg::getAmount() const
+double routerMsg::getAmount() const
 {
     return this->amount;
 }
 
-void routerMsg::setAmount(int amount)
+void routerMsg::setAmount(double amount)
 {
     this->amount = amount;
 }
@@ -281,6 +285,16 @@ int routerMsg::getPriorityClass() const
 void routerMsg::setPriorityClass(int priorityClass)
 {
     this->priorityClass = priorityClass;
+}
+
+int routerMsg::getTransactionId() const
+{
+    return this->transactionId;
+}
+
+void routerMsg::setTransactionId(int transactionId)
+{
+    this->transactionId = transactionId;
 }
 
 class routerMsgDescriptor : public omnetpp::cClassDescriptor
@@ -348,7 +362,7 @@ const char *routerMsgDescriptor::getProperty(const char *propertyname) const
 int routerMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 5+basedesc->getFieldCount() : 5;
+    return basedesc ? 6+basedesc->getFieldCount() : 6;
 }
 
 unsigned int routerMsgDescriptor::getFieldTypeFlags(int field) const
@@ -365,8 +379,9 @@ unsigned int routerMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<5) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<6) ? fieldTypeFlags[field] : 0;
 }
 
 const char *routerMsgDescriptor::getFieldName(int field) const
@@ -380,11 +395,12 @@ const char *routerMsgDescriptor::getFieldName(int field) const
     static const char *fieldNames[] = {
         "route",
         "hopCount",
-        "encapIsAck",
+        "messageType",
         "amount",
         "priorityClass",
+        "transactionId",
     };
-    return (field>=0 && field<5) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<6) ? fieldNames[field] : nullptr;
 }
 
 int routerMsgDescriptor::findField(const char *fieldName) const
@@ -393,9 +409,10 @@ int routerMsgDescriptor::findField(const char *fieldName) const
     int base = basedesc ? basedesc->getFieldCount() : 0;
     if (fieldName[0]=='r' && strcmp(fieldName, "route")==0) return base+0;
     if (fieldName[0]=='h' && strcmp(fieldName, "hopCount")==0) return base+1;
-    if (fieldName[0]=='e' && strcmp(fieldName, "encapIsAck")==0) return base+2;
+    if (fieldName[0]=='m' && strcmp(fieldName, "messageType")==0) return base+2;
     if (fieldName[0]=='a' && strcmp(fieldName, "amount")==0) return base+3;
     if (fieldName[0]=='p' && strcmp(fieldName, "priorityClass")==0) return base+4;
+    if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+5;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -410,11 +427,12 @@ const char *routerMsgDescriptor::getFieldTypeString(int field) const
     static const char *fieldTypeStrings[] = {
         "IntVector",
         "int",
-        "bool",
+        "int",
+        "double",
         "int",
         "int",
     };
-    return (field>=0 && field<5) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<6) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **routerMsgDescriptor::getFieldPropertyNames(int field) const
@@ -483,9 +501,10 @@ std::string routerMsgDescriptor::getFieldValueAsString(void *object, int field, 
     switch (field) {
         case 0: {std::stringstream out; out << pp->getRoute(); return out.str();}
         case 1: return long2string(pp->getHopCount());
-        case 2: return bool2string(pp->getEncapIsAck());
-        case 3: return long2string(pp->getAmount());
+        case 2: return long2string(pp->getMessageType());
+        case 3: return double2string(pp->getAmount());
         case 4: return long2string(pp->getPriorityClass());
+        case 5: return long2string(pp->getTransactionId());
         default: return "";
     }
 }
@@ -501,9 +520,10 @@ bool routerMsgDescriptor::setFieldValueAsString(void *object, int field, int i, 
     routerMsg *pp = (routerMsg *)object; (void)pp;
     switch (field) {
         case 1: pp->setHopCount(string2long(value)); return true;
-        case 2: pp->setEncapIsAck(string2bool(value)); return true;
-        case 3: pp->setAmount(string2long(value)); return true;
+        case 2: pp->setMessageType(string2long(value)); return true;
+        case 3: pp->setAmount(string2double(value)); return true;
         case 4: pp->setPriorityClass(string2long(value)); return true;
+        case 5: pp->setTransactionId(string2long(value)); return true;
         default: return false;
     }
 }

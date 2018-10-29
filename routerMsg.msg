@@ -24,9 +24,9 @@ packet routerMsg
 {
     IntVector route;
     int hopCount = 0;
-    bool encapIsAck = false;  //false for transaction, true for ack
-    int amount;
+    int messageType;  //0 for transaction, 1 for ack, 2 for balance update
+    double amount;
     int priorityClass;
-    
+    int transactionId;
 }
 
