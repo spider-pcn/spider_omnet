@@ -5,7 +5,7 @@ linkfile = open(sys.argv[1]).readlines()
 #a text file where each line contains the ids of two neighbouring nodes that have a payment channel between them, relative delays in each direction, initial balance on each end (see sample-topology.txt)
 #each line is of form:
 # [node1] [node2] [1->2 delay] [2->1 delay] [balance @ 1] [balance @ 2]
-outfile = open(sys.argv[3], "w")
+outfile = open(sys.argv[2], "w")
 
 
 #metadata used for forwarding table

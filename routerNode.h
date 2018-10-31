@@ -50,6 +50,7 @@ class routerNode : public cSimpleModule
       virtual void processTransUnits(int dest, deque<tuple<int, double , routerMsg *>>& q);
       virtual string string_node_to_balance();
       virtual void print_private_values();
+      virtual void print_message(routerMsg* msg);
 };
 
 
