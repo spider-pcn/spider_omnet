@@ -19,6 +19,86 @@ string routerNode::string_node_to_balance(){
    return result;
 }
 
+
+void routerNode::print_private_values(){
+
+
+
+
+
+    EV << getIndex()<< " - node_to_queued_trans_units:";
+
+
+    typedef map<int, deque<tuple<int, double , routerMsg *>>>::const_iterator queueMapIter;
+    for (queueMapIter iter = node_to_queued_trans_units.begin(); iter != node_to_queued_trans_units.end(); iter++)
+       {
+
+           EV << "{"<< iter->first << "size " << (iter->second).size() << ": " ;
+
+           typedef  deque<tuple<int, double , routerMsg *>>::const_iterator queueIter;
+           for (queueIter iter_inner = iter->second.begin(); iter_inner != iter->second.end(); iter_inner++){
+               EV << "(" << get<0>(*iter_inner);
+               EV << "," << get<1>(*iter_inner) << ")   ";
+           }
+
+           EV << "}   ";
+
+       }
+       EV << endl;
+
+
+
+    //print map - channel balance
+    EV << getIndex() <<  " - node_to_balance: ";
+    typedef map<int, double>::const_iterator MapIterator2;
+    for (MapIterator2 iter_inner = node_to_balance.begin(); iter_inner != node_to_balance.end(); iter_inner++){
+        EV << "(" << iter_inner->first << "," << iter_inner->second << ")   ";}
+
+    EV << endl;
+    //print map - outgoing_trans_units
+
+    //print map - incoming_trans_units
+
+
+
+    EV << getIndex() << "- incoming_trans_units: ";
+
+    typedef map<int, map<int, double>>::const_iterator MapIterator;
+    for (MapIterator iter = incoming_trans_units.begin(); iter != incoming_trans_units.end(); iter++)
+    {
+        EV << "{"<< iter->first << ": " ;
+        typedef map<int, double>::const_iterator MapIterator;
+        for (MapIterator iter_inner = iter->second.begin(); iter_inner != iter->second.end(); iter_inner++)
+            EV << "(" << iter_inner->first << "," << iter_inner->second << ")   ";
+        EV << "}   ";
+
+    }
+    EV << endl;
+
+    EV << getIndex() << " - outgoing_trans_units: ";
+    typedef map<int, map<int, double>>::const_iterator MapIterator;
+    for (MapIterator iter = outgoing_trans_units.begin(); iter != outgoing_trans_units.end(); iter++)
+    {
+        EV << "{"<< iter->first << ": " ;
+        typedef map<int, double>::const_iterator MapIterator;
+        for (MapIterator iter_inner = iter->second.begin(); iter_inner != iter->second.end(); iter_inner++)
+            EV << "(" << iter_inner->first << "," << iter_inner->second << ")   ";
+        EV << "}   ";
+
+    }
+    EV <<  endl;
+
+
+
+
+}
+
+
+
+
+
+
+
 /* initialize() -
  *  if node index is 0:
  *      - initialize global parameters: instantiate all transUnits, and add to global list "trans_unit_list"
@@ -112,14 +192,26 @@ void routerNode::handleMessage(cMessage *msg)
 {
    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
    if (ttmsg->getMessageType()==1){
+       EV<< "[NODE "<< getIndex() <<": RECEIVED ACK MSG] \n";
+       print_private_values();
        handleAckMessage(ttmsg);
+       EV<< "[AFTER HANDLING:]\n";
+       print_private_values();
    }
    else if(ttmsg->getMessageType()==0){
+       EV<< "[NODE "<< getIndex() <<": RECEIVED TRANSACTION MSG]  \n";
+       print_private_values();
        handleTransactionMessage(ttmsg);
-
+       EV<< "[AFTER HANDLING:] \n";
+       print_private_values();
    }
    else if(ttmsg->getMessageType()==2){
+       EV<< "[NODE "<< getIndex() <<": RECEIVED UPDATE MSG] \n";
+
+       print_private_values();
        handleUpdateMessage(ttmsg);
+       EV<< "[AFTER HANDLING:]  \n";
+       print_private_values();
 
    }
 }
@@ -132,10 +224,14 @@ void routerNode::handleMessage(cMessage *msg)
  *          balance update message with their transId (in forwardAckMessage())
  */
 void routerNode::handleAckMessage(routerMsg* ttmsg){
-    EV << "in handleAckMessage \n";
+
+
     //generate updateMsg
     int sender = ttmsg->getRoute()[ttmsg->getHopCount()-1];
-    EV <<"need to send update message to "<< sender << "\n";
+
+    //remove transaction from outgoing_trans_unit
+    outgoing_trans_units[sender].erase(ttmsg->getTransactionId());
+
     // virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
      routerMsg* updateMsg =  generateUpdateMessage(ttmsg->getTransactionId(),sender, ttmsg->getAmount() );
      forwardUpdateMessage(updateMsg);
@@ -157,23 +253,24 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
  * generateAckMessage - called only when a transactionMsg reaches end of its path, keeps routerMsg casing of msg
  *   and reuses it to send ackMsg in reversed order of route
  */
-routerMsg *routerNode::generateAckMessage(routerMsg* msg){
-    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
+routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg){
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
     char msgname[30];
      sprintf(msgname, "receiver-%d-to-sender-%d ackMsg", transMsg->getReceiver(), transMsg->getSender());
-
+     routerMsg *msg = new routerMsg(msgname);
      ackMsg *aMsg = new ackMsg(msgname);
-
      aMsg->setTransactionId(transMsg->getTransactionId());
      aMsg->setIsSuccess(true);
      //no need to set secret;
-     vector<int> route=msg->getRoute();
+     vector<int> route=ttmsg->getRoute();
      reverse(route.begin(), route.end());
      msg->setRoute(route);
      msg->setHopCount(0);
+     msg->setAmount(ttmsg->getAmount());
      msg->setMessageType(1); //now an ack message
-     msg->decapsulate(); // remove encapsulated packet
+     ttmsg->decapsulate(); // remove encapsulated packet
      delete transMsg;
+     delete ttmsg;
      msg->encapsulate(aMsg);
     return msg;
 }
@@ -188,16 +285,16 @@ void routerNode::forwardAckMessage(routerMsg *msg){
        msg->setHopCount(msg->getHopCount()+1);
        //use hopCount to find next destination
        int nextDest = msg->getRoute()[msg->getHopCount()];
-       EV << "Forwarding message " << msg << " on gate[" << nextDest << "]\n";
+      // EV << "Forwarding message " << msg << " on gate[" << nextDest << "]\n";
        int amt = msg->getAmount();
        //node_to_balance[nextDest] = node_to_balance[nextDest] - amt;
 
        int transId = msg->getTransactionId();
        int amount = msg->getAmount();
        sent_ack_trans_units[transId] = amount;
-       EV << "before forwarding ack, nextDest is "<<nextDest<<" \n";
+     //  EV << "before forwarding ack, nextDest is "<<nextDest<<" \n";
        send(msg, node_to_gate[nextDest]);
-       EV << "after forwarding ack \n";
+      // EV << "after forwarding ack \n";
 }
 
 /*
@@ -205,17 +302,30 @@ void routerNode::forwardAckMessage(routerMsg *msg){
  *      process more jobs with new funds, delete update message
  */
 void routerNode::handleUpdateMessage(routerMsg* msg){
-    deque<tuple<int, double , routerMsg *>> q;
+    deque<tuple<int, double , routerMsg *>> *q;
     int sender = msg->getRoute()[msg->getHopCount()-1];
     //remove value from sent_ack_trans_units  --- note: sent_ack means want_update
     sent_ack_trans_units.erase(msg->getTransactionId());
     //increment the in flight funds back
+
+    print_private_values();
+
     node_to_balance[sender] = node_to_balance[sender] + msg->getAmount();
+    EV <<"ADDED FUNDS BACK, sender: " <<sender << ", amount: "<< msg->getAmount() << endl;
+
+    print_private_values();
+    //remove transaction from incoming_trans_units
+
+    incoming_trans_units[sender].erase(msg->getTransactionId());
+
+
     delete msg; //delete update message
 
     //see if we can send more jobs out
-    q = node_to_queued_trans_units[sender];
-   processTransUnits(sender, q);
+    q = &node_to_queued_trans_units[sender];
+
+   processTransUnits(sender, *q);
+
 }
 
 
@@ -235,6 +345,7 @@ routerMsg *routerNode::generateUpdateMessage(int transId, int receiver, double a
       rMsg->setRoute(route);
       rMsg->setHopCount(0);
       rMsg->setMessageType(2); //2 means nothing encapsulated inside
+     EV << "generateUpdateMessage with AMOUNT: "<< amount <<endl;
       rMsg->setAmount(amount);
       rMsg->setTransactionId(transId);
       return rMsg;
@@ -248,7 +359,6 @@ void routerNode::forwardUpdateMessage(routerMsg *msg){
           msg->setHopCount(msg->getHopCount()+1);
           //use hopCount to find next destination
           int nextDest = msg->getRoute()[msg->getHopCount()];
-          EV << "Forwarding message " << msg << " on gate[" << nextDest << "]\n";
          send(msg, node_to_gate[nextDest]);
 }
 
@@ -260,7 +370,7 @@ void routerNode::forwardUpdateMessage(routerMsg *msg){
  */
 void routerNode::handleTransactionMessage(routerMsg* ttmsg){
     int hopcount = ttmsg->getHopCount();
-       deque<tuple<int, double , routerMsg *>> q;
+       deque<tuple<int, double , routerMsg *>> *q;
 
        if(ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
 
@@ -279,12 +389,14 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
           //displays string of balances remaining on connected channels
           bubble(string_node_to_balance().c_str());
           int nextStop = ttmsg->getRoute()[hopcount+1];
-          q = node_to_queued_trans_units[nextStop];
-          q.push_back(make_tuple(ttmsg->getPriorityClass(), ttmsg->getAmount(),
+          q = &node_to_queued_trans_units[nextStop];
+          q->push_back(make_tuple(ttmsg->getPriorityClass(), ttmsg->getAmount(),
                    ttmsg));
           // re-sort queued transUnits for next stop based on lowest priority, then lowest amount
-          sort(q.begin(), q.end(), sortFunction);
-          processTransUnits(nextStop, q);
+          sort(q->begin(), q->end(), sortFunction);
+          EV << "added to job queue:" <<endl;
+          print_private_values();
+          processTransUnits(nextStop, *q);
           bubble(string_node_to_balance().c_str());
        }
 }
@@ -328,8 +440,13 @@ routerMsg *routerNode::generateTransactionMessage(transUnit transUnit)
  */
 void routerNode:: processTransUnits(int dest, deque<tuple<int, double , routerMsg *>>& q){
    while((int)q.size()>0 && get<1>(q[0])<=node_to_balance[dest]){
+
       forwardTransactionMessage(get<2>(q[0]));
+        print_private_values();
       q.pop_front();
+      EV << "processed something" <<endl;
+      print_private_values();
+
    }
 }
 
@@ -340,17 +457,48 @@ void routerNode:: processTransUnits(int dest, deque<tuple<int, double , routerMs
  */
 void routerNode::forwardTransactionMessage(routerMsg *msg)
 {
+
+
+
+  //if hopCount>0, add amount to incoming map
+   if ((msg->getHopCount())>0){
+       int sender = msg->getRoute()[msg->getHopCount()-1];
+
+       if ( incoming_trans_units.find(sender) == incoming_trans_units.end() ) {
+           map<int,double> tempMap = {};
+           tempMap[msg->getTransactionId()]= msg->getAmount();
+           incoming_trans_units[sender] = tempMap;
+         // not found
+       } else {
+
+           incoming_trans_units[sender][msg->getTransactionId()] = msg->getAmount();
+         // found
+       }
+
+   }
+
    // Increment hop count.
    msg->setHopCount(msg->getHopCount()+1);
    //use hopCount to find next destination
    int nextDest = msg->getRoute()[msg->getHopCount()];
-   EV << "Forwarding message " << msg << " on gate[" << nextDest << "]\n";
+   //add amount to outgoing map
+
+   if ( outgoing_trans_units.find(nextDest) == outgoing_trans_units.end() ) {
+             map<int,double> tempMap = {};
+             tempMap[msg->getTransactionId()]= msg->getAmount();
+             outgoing_trans_units[nextDest] = tempMap;
+           // not found
+     } else {
+             outgoing_trans_units[nextDest][msg->getTransactionId()] = msg->getAmount();
+           // found
+    }
+  // EV << "Forwarding message " << msg << " on gate[" << nextDest << "]\n";
    int amt = msg->getAmount();
    node_to_balance[nextDest] = node_to_balance[nextDest] - amt;
    int transId = msg->getTransactionId();
    want_ack_trans_units[transId] = amt;
-   EV << "before forwarding, nextDest is "<<nextDest<<" \n";
+  // EV << "before forwarding, nextDest is "<<nextDest<<" \n";
    send(msg, node_to_gate[nextDest]);
-   EV << "after forwarding \n";
+  // EV << "after forwarding \n";
 
 }
