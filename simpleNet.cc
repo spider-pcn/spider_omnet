@@ -103,13 +103,17 @@ void routerNode::initialize()
 
       // add all the transUnits into global list
 
-      numNodes= 4;
+      set_num_nodes();
+      //numNodes= 4;
       generate_trans_unit_list(trans_unit_list);
 
       //create "channels" map - from topology file
       //create "balances" map - from topology file
 
-      generate_channels_balances_map(channels, balances );
+      generate_channels_balances_map(channels, balances );  //also sets numNodes
+      dijkstra(0,0);
+
+      dijkstra(1,0);
 
    }
    cout << getIndex() << endl;

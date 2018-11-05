@@ -12,12 +12,20 @@ network simpleNet
 		double linkDelay @unit("s") = default(100us);
 		double linkDataRate @unit("Gbps") = default(1Gbps);
 	submodules:
-		node[4]: routerNode {} 
+		node[5]: routerNode {} 
  connections: 
-		node[1].out++ --> {delay = 10.0ms; } --> node[2].in++;  
-		node[1].in++ <-- {delay = 20.0ms; } <-- node[2].out++;  
-		node[2].out++ --> {delay = 20.0ms; } --> node[0].in++;  
-		node[2].in++ <-- {delay = 100.0ms; } <-- node[0].out++;  
-		node[2].out++ --> {delay = 20.0ms; } --> node[3].in++;  
+		node[0].out++ --> {delay = 30.0ms; } --> node[4].in++;  
+		node[0].in++ <-- {delay = 30.0ms; } <-- node[4].out++;  
+		node[0].out++ --> {delay = 30.0ms; } --> node[3].in++;  
+		node[0].in++ <-- {delay = 30.0ms; } <-- node[3].out++;  
+		node[0].out++ --> {delay = 30.0ms; } --> node[1].in++;  
+		node[0].in++ <-- {delay = 30.0ms; } <-- node[1].out++;  
+		node[2].out++ --> {delay = 30.0ms; } --> node[3].in++;  
 		node[2].in++ <-- {delay = 30.0ms; } <-- node[3].out++;  
+		node[2].out++ --> {delay = 30.0ms; } --> node[4].in++;  
+		node[2].in++ <-- {delay = 30.0ms; } <-- node[4].out++;  
+		node[2].out++ --> {delay = 30.0ms; } --> node[1].in++;  
+		node[2].in++ <-- {delay = 30.0ms; } <-- node[1].out++;  
+		node[1].out++ --> {delay = 30.0ms; } --> node[3].in++;  
+		node[1].in++ <-- {delay = 30.0ms; } <-- node[3].out++;  
 }

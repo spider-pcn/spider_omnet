@@ -58,7 +58,7 @@ class routerNode : public cSimpleModule
 extern vector<transUnit> trans_unit_list; //list of all transUnits
 extern int numNodes;
 //number of nodes in network
-extern map<int, vector<int>> channels; //adjacency list format of graph edges of network
+extern map<int, vector<pair<int,int>>> channels; //adjacency list format of graph edges of network
 extern map<tuple<int,int>,double> balances;
 //map of balances for each edge; key = <int,int> is <source, destination>
 
