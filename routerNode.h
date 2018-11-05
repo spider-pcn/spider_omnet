@@ -24,7 +24,9 @@ using namespace omnetpp;
 class routerNode : public cSimpleModule
 {
    private:
-      //simsignal_t arrivalSignal;
+      int statNumProcessed;
+      simsignal_t numInQueueSignal;
+      simsignal_t numProcessedSignal; //whenever something is removed from incoming or outgoing
       vector< transUnit > my_trans_units; //list of transUnits that have me as sender
       map<int, cGate*> node_to_gate; //map that takes in index of node adjacent to me, returns gate to that node
       map<int, double> node_to_balance; //map takes in index of adjacent node, returns outgoing balance
@@ -39,11 +41,14 @@ class routerNode : public cSimpleModule
       virtual routerMsg *generateAckMessage(routerMsg *msg);
       virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
           //just generates routerMsg with no encapsulated msg inside
+      virtual routerMsg *generateStatMessage();
+
       virtual void initialize() override;
       virtual void handleMessage(cMessage *msg) override;
       virtual void handleTransactionMessage(routerMsg *msg);
       virtual void handleAckMessage(routerMsg *msg);
       virtual void handleUpdateMessage(routerMsg *msg);
+      virtual void handleStatMessage(routerMsg *msg);
       virtual void forwardTransactionMessage(routerMsg *msg);
       virtual void forwardAckMessage(routerMsg *msg);
       virtual void forwardUpdateMessage(routerMsg *msg);
@@ -60,6 +65,7 @@ extern int numNodes;
 //number of nodes in network
 extern map<int, vector<pair<int,int>>> channels; //adjacency list format of graph edges of network
 extern map<tuple<int,int>,double> balances;
+extern double statRate;
 //map of balances for each edge; key = <int,int> is <source, destination>
 
 #endif

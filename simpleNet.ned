@@ -1,6 +1,12 @@
 simple routerNode
 {
 	parameters:
+	    @signal[numInQueue](type="long");
+        @statistic[numInQueue](title="total num in queue"; source="numInQueue"; record=vector,stats; interpolationmode=none);
+        @display("i=block/routing");
+       	@signal[numProcessed](type="long");
+        @statistic[numProcessed](title="num processed in statRate time"; source="numProcessed"; record=vector,stats; interpolationmode=none);
+        @display("i=block/routing");
 	gates:
 		input in[];
 		output out[];

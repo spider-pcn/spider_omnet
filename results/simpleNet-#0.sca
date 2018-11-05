@@ -1,0 +1,128 @@
+version 2
+run simpleNet-0-20181105-05:57:34-11412
+attr configname simpleNet
+attr datetime 20181105-05:57:34
+attr experiment simpleNet
+attr inifile omnetpp.ini
+attr iterationvars ""
+attr iterationvarsf ""
+attr measurement ""
+attr network simpleNet
+attr processid 11412
+attr repetition 0
+attr replication #0
+attr resultdir results
+attr runnumber 0
+attr seedset 0
+
+statistic simpleNet.node[0] numProcessed:stats
+field count 202
+field mean 0.2970297029703
+field stddev 0.95202903981217
+field min 0
+field max 4
+field sum 60
+field sqrsum 200
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, stats"
+statistic simpleNet.node[0] numInQueue:stats
+field count 202
+field mean 65.742574257426
+field stddev 53.214043234097
+field min 0
+field max 160
+field sum 13280
+field sqrsum 1442240
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, stats"
+statistic simpleNet.node[1] numProcessed:stats
+field count 202
+field mean 0.2970297029703
+field stddev 0.95202903981217
+field min 0
+field max 4
+field sum 60
+field sqrsum 200
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, stats"
+statistic simpleNet.node[1] numInQueue:stats
+field count 202
+field mean 82.871287128713
+field stddev 57.043871284051
+field min 0
+field max 180
+field sum 16740
+field sqrsum 2041320
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, stats"
+statistic simpleNet.node[2] numProcessed:stats
+field count 202
+field mean 2.1782178217822
+field stddev 2.2981543085593
+field min 0
+field max 7
+field sum 440
+field sqrsum 2020
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, stats"
+statistic simpleNet.node[2] numInQueue:stats
+field count 202
+field mean 32.871287128713
+field stddev 26.607021617048
+field min 0
+field max 80
+field sum 6640
+field sqrsum 360560
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, stats"
+statistic simpleNet.node[3] numProcessed:stats
+field count 202
+field mean 0.2970297029703
+field stddev 1.3047525409606
+field min 0
+field max 6
+field sum 60
+field sqrsum 360
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, stats"
+statistic simpleNet.node[3] numInQueue:stats
+field count 202
+field mean 165.74257425743
+field stddev 114.0877425681
+field min 0
+field max 360
+field sum 33480
+field sqrsum 8165280
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, stats"
+statistic simpleNet.node[4] numProcessed:stats
+field count 202
+field mean 2.0792079207921
+field stddev 2.1239368698718
+field min 0
+field max 5
+field sum 420
+field sqrsum 1780
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, stats"
+statistic simpleNet.node[4] numInQueue:stats
+field count 202
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, stats"
+

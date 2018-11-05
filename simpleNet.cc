@@ -94,9 +94,16 @@ void routerNode::print_private_values(){
  *          scheduled to arrive at timeSent parameter field in transUnit
  */
 
+
 void routerNode::initialize()
 {
     cout << "here, before initialization" << endl;
+    statNumProcessed = 0;
+
+    //register signals
+    numInQueueSignal = registerSignal("numInQueue");
+    numProcessedSignal = registerSignal("numProcessed");
+
 
    if (getIndex() == 0){  //main initialization for global parameters
       // instantiate all the transUnits that need to be sent
@@ -111,9 +118,9 @@ void routerNode::initialize()
       //create "balances" map - from topology file
 
       generate_channels_balances_map(channels, balances );  //also sets numNodes
-      dijkstra(0,0);
+      //dijkstra(0,0);
 
-      dijkstra(1,0);
+      //dijkstra(1,0);
 
    }
    cout << getIndex() << endl;
@@ -165,6 +172,14 @@ void routerNode::initialize()
       routerMsg *msg = generateTransactionMessage(j);
       scheduleAt(timeSent, msg);
    }
+   //set statRate
+   statRate = 0.5;
+   //get stat message
+   routerMsg *statMsg = generateStatMessage();
+   scheduleAt(0, statMsg);
+
+
+
    cout << getIndex() << endl;
     cout << "here, after initialization \n";
 }
@@ -197,6 +212,55 @@ void routerNode::handleMessage(cMessage *msg)
        print_private_values();
 
    }
+   else if (ttmsg->getMessageType() ==3){
+       handleStatMessage(ttmsg);
+   }
+}
+
+
+routerMsg *routerNode::generateStatMessage(){
+    char msgname[30];
+      sprintf(msgname, "node-%d statMsg", getIndex());
+
+      routerMsg *rMsg = new routerMsg(msgname);
+
+      rMsg->setMessageType(3); //3 means statMsg
+      return rMsg;
+}
+
+
+
+void routerNode::handleStatMessage(routerMsg* ttmsg){
+    if (simTime() >100){
+        delete ttmsg;
+
+    }
+    else{
+    scheduleAt(simTime()+statRate, ttmsg);
+    }
+
+    //
+
+    int statNumInQueue = 0;
+    //  map<int, deque<tuple<int, double , routerMsg *>>> node_to_queued_trans_units;
+    for ( map<int, deque<tuple<int, double , routerMsg *>>>::iterator it = node_to_queued_trans_units.begin();
+           it!= node_to_queued_trans_units.end(); it++){
+        EV << "node "<< getIndex() << ": queued "<<(it->second).size();
+        statNumInQueue = statNumInQueue + (it->second).size();
+
+    }
+
+    printf("numInQueue %i \n", statNumInQueue);
+
+
+    EV << "node "<< getIndex() << ": numProcessed "<< statNumProcessed;
+    emit(numInQueueSignal, statNumInQueue);
+    emit(numProcessedSignal, statNumProcessed);
+
+
+    statNumProcessed = 0;
+
+    //send out statistics here
 }
 
 
@@ -212,6 +276,9 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
 
     //remove transaction from outgoing_trans_unit
     outgoing_trans_units[sender].erase(ttmsg->getTransactionId());
+
+    //increment signal numProcessed
+    statNumProcessed++;
 
     // virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
      routerMsg* updateMsg =  generateUpdateMessage(ttmsg->getTransactionId(),sender, ttmsg->getAmount() );
@@ -298,6 +365,8 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
     //remove transaction from incoming_trans_units
 
     incoming_trans_units[sender].erase(msg->getTransactionId());
+    //increment numProcessed signal
+    statNumProcessed++;
 
 
     delete msg; //delete update message

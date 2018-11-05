@@ -1,29 +1,69 @@
-file 658 1539669400                                             
+file 28451 1541415460                                           
 version 2
-run simpleNet-0-20181016-01:56:23-2948
+run simpleNet-0-20181105-05:57:34-11412
 attr configname simpleNet
-attr datetime 20181016-01:56:23
+attr datetime 20181105-05:57:34
 attr experiment simpleNet
 attr inifile omnetpp.ini
 attr iterationvars ""
 attr iterationvarsf ""
 attr measurement ""
 attr network simpleNet
-attr processid 2948
+attr processid 11412
 attr repetition 0
 attr replication #0
 attr resultdir results
 attr runnumber 0
 attr seedset 0
 
-vector 0 simpleNet.node[3] hopCount:vector ETV
+vector 0 simpleNet.node[0] numInQueue:vector ETV
 attr interpolationmode none
-attr source arrival
-attr title "hop count, vector"
-vector 1 simpleNet.node[0] hopCount:vector ETV
+attr source numInQueue
+attr title "total num in queue, vector"
+vector 1 simpleNet.node[0] numProcessed:vector ETV
 attr interpolationmode none
-attr source arrival
-attr title "hop count, vector"
-0	612 21 7 16 0.3 0.8 2 3 3 6 18
-1	633 24 10 11 0.45 0.45 2 2 2 4 8
+attr source numProcessed
+attr title "num processed in statRate time, vector"
+vector 2 simpleNet.node[1] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+vector 3 simpleNet.node[1] numProcessed:vector ETV
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, vector"
+vector 4 simpleNet.node[2] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+vector 5 simpleNet.node[2] numProcessed:vector ETV
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, vector"
+vector 6 simpleNet.node[3] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+vector 7 simpleNet.node[3] numProcessed:vector ETV
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, vector"
+vector 8 simpleNet.node[4] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+vector 9 simpleNet.node[4] numProcessed:vector ETV
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, vector"
+0	1842 2785 3 3866 0 100.5 202 0 160 13280 1442240
+1	4627 2567 3 3866 0 100.5 202 0 4 60 200
+2	7194 2825 6 3867 0 100.5 202 0 180 16740 2041320
+3	10019 2567 6 3867 0 100.5 202 0 4 60 200
+4	12586 2712 10 3868 0 100.5 202 0 80 6640 360560
+5	15298 2568 10 3868 0 100.5 202 0 7 440 2020
+6	17866 2880 15 3869 0 100.5 202 0 360 33480 8165280
+7	20746 2568 15 3869 0 100.5 202 0 6 60 360
+8	23314 2568 18 3870 0 100.5 202 0 0 0 0
+9	25882 2568 18 3870 0 100.5 202 0 5 420 1780
 
