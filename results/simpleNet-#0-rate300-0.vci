@@ -1,0 +1,63 @@
+file 4976 1541586910                                            
+version 2
+run simpleNet-0-20181107-05:35:06-31388
+attr configname simpleNet
+attr datetime 20181107-05:35:06
+attr experiment simpleNet
+attr inifile omnetpp.ini
+attr iterationvars ""
+attr iterationvarsf ""
+attr measurement ""
+attr network simpleNet
+attr processid 31388
+attr repetition 0
+attr replication #0
+attr resultdir results
+attr runnumber 0
+attr seedset 0
+
+vector 0 simpleNet.node[0] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+0	1690 262 2 6485 0 10.5 22 0 0 0 0
+vector 1 simpleNet.node[0] numProcessed:vector ETV
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, vector"
+1	1952 263 2 6485 0 10.5 22 0 50 50 2500
+vector 2 simpleNet.node[1] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+2	2215 317 3 6486 0 10.5 22 0 2950 33270 69630120
+vector 3 simpleNet.node[1] numProcessed:vector ETV
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, vector"
+3	2532 264 3 6486 0 10.5 22 0 100 100 10000
+vector 4 simpleNet.node[2] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+4	2796 262 4 6487 0 10.5 22 0 0 0 0
+vector 5 simpleNet.node[2] numProcessed:vector ETV
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, vector"
+5	3058 264 4 6487 0 10.5 22 0 100 100 10000
+vector 6 simpleNet.node[3] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+6	3322 262 5 6488 0 10.5 22 0 0 0 0
+vector 7 simpleNet.node[3] numProcessed:vector ETV
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, vector"
+7	3584 263 5 6488 0 10.5 22 0 50 50 2500
+vector 8 simpleNet.node[0] completionTime:vector ETV
+attr interpolationmode none
+attr source completionTime
+attr title "completionTime, vector"
+8	3847 1129 211 593 0.18 0.343333333333 50 0.18 0.18 9 1.62

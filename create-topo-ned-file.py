@@ -39,9 +39,22 @@ outfile.write("import mlnxnet.nodes.ethernet.MLNX_EtherSwitch4FatTree;\n")
 
 outfile.write("simple routerNode\n")
 outfile.write("{\n")
-outfile.write("\tparameters:\n\tgates:\n\t\tinput in[];\n\t\toutput out[];\n}\n\n")
+outfile.write("\tparameters:\n")
+
+#signals
+#outfile.write("\t\t \n")
+
+outfile.write('\t\t@signal[numInQueue](type="long"); \n')
+outfile.write('\t\t@statistic[numInQueue](title="total num in queue"; source="numInQueue"; record=vector,stats; interpolationmode=none); \n\n')
+outfile.write('\t\t@signal[numProcessed](type="long"); \n')
+outfile.write('\t\t@statistic[numProcessed](title="num processed in statRate time"; source="numProcessed"; record=vector,stats; interpolationmode=none); \n\n')
+outfile.write('\t\t@signal[completionTime](type="long"); \n')
+outfile.write('\t\t@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); \n\n')
+outfile.write('\t\t@display("i=block/routing"); \n')
 
 
+
+outfile.write("\tgates:\n\t\tinput in[];\n\t\toutput out[];\n}\n\n")
 outfile.write("network simpleNet\n")
 outfile.write("{\n")
 

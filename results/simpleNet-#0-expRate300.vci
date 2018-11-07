@@ -1,0 +1,68 @@
+file 193210 1541590267                                          
+version 2
+run simpleNet-0-20181107-06:30:36-31662
+attr configname simpleNet
+attr datetime 20181107-06:30:36
+attr experiment simpleNet
+attr inifile omnetpp.ini
+attr iterationvars ""
+attr iterationvarsf ""
+attr measurement ""
+attr network simpleNet
+attr processid 31662
+attr repetition 0
+attr replication #0
+attr resultdir results
+attr runnumber 0
+attr seedset 0
+
+vector 0 simpleNet.node[0] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+0	1834 281 2 59599 0 10.5 22 0 0 0 0
+vector 1 simpleNet.node[0] numProcessed:vector ETV
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, vector"
+1	2115 323 2 59599 0 10.5 22 0 332 5934 1708856
+vector 2 simpleNet.node[1] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+2	2438 311 3 59600 0 10.5 22 0 140 1916 204304
+vector 3 simpleNet.node[1] numProcessed:vector ETV
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, vector"
+3	2749 323 3 59600 0 10.5 22 0 666 11868 6838516
+vector 4 simpleNet.node[2] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+4	3072 281 4 59601 0 10.5 22 0 4 4 16
+vector 5 simpleNet.node[2] numProcessed:vector ETV
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, vector"
+5	3353 323 4 59601 0 10.5 22 0 656 11868 6831926
+vector 6 simpleNet.node[3] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+6	3676 281 6 59602 0 10.5 22 0 0 0 0
+vector 7 simpleNet.node[3] numProcessed:vector ETV
+attr interpolationmode none
+attr source numProcessed
+attr title "num processed in statRate time, vector"
+7	3957 323 6 59602 0 10.5 22 0 333 5934 1709710
+vector 8 simpleNet.node[0] completionTime:vector ETV
+attr interpolationmode none
+attr source completionTime
+attr title "completionTime, vector"
+8	4280 106450 362 59588 0.18 10.32917272238 2992 0.18 0.69940355553 1423.7894076716 733.93818511139
+vector 9 simpleNet.node[3] completionTime:vector ETV
+attr interpolationmode none
+attr source completionTime
+attr title "completionTime, vector"
+9	110730 82480 364 59276 0.18 10.17917272238 2942 0.18 0.22333196966 533.92223962069 96.966690390399

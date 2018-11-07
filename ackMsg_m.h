@@ -24,6 +24,7 @@
  * packet ackMsg
  * {
  *     int transactionId;
+ *     double timeSent;
  *     bool isSuccess; //status, true for success, false for failure
  *     string secret = "";
  * }
@@ -33,6 +34,7 @@ class ackMsg : public ::omnetpp::cPacket
 {
   protected:
     int transactionId;
+    double timeSent;
     bool isSuccess;
     ::omnetpp::opp_string secret;
 
@@ -55,6 +57,8 @@ class ackMsg : public ::omnetpp::cPacket
     // field getter/setter methods
     virtual int getTransactionId() const;
     virtual void setTransactionId(int transactionId);
+    virtual double getTimeSent() const;
+    virtual void setTimeSent(double timeSent);
     virtual bool getIsSuccess() const;
     virtual void setIsSuccess(bool isSuccess);
     virtual const char * getSecret() const;

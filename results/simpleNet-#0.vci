@@ -1,15 +1,15 @@
-file 28451 1541415460                                           
+file 157167 1541591492                                          
 version 2
-run simpleNet-0-20181105-05:57:34-11412
+run simpleNet-0-20181107-06:50:32-31788
 attr configname simpleNet
-attr datetime 20181105-05:57:34
+attr datetime 20181107-06:50:32
 attr experiment simpleNet
 attr inifile omnetpp.ini
 attr iterationvars ""
 attr iterationvarsf ""
 attr measurement ""
 attr network simpleNet
-attr processid 11412
+attr processid 31788
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -48,22 +48,22 @@ vector 7 simpleNet.node[3] numProcessed:vector ETV
 attr interpolationmode none
 attr source numProcessed
 attr title "num processed in statRate time, vector"
-vector 8 simpleNet.node[4] numInQueue:vector ETV
+vector 8 simpleNet.node[0] completionTime:vector ETV
 attr interpolationmode none
-attr source numInQueue
-attr title "total num in queue, vector"
-vector 9 simpleNet.node[4] numProcessed:vector ETV
+attr source completionTime
+attr title "completionTime, vector"
+vector 9 simpleNet.node[3] completionTime:vector ETV
 attr interpolationmode none
-attr source numProcessed
-attr title "num processed in statRate time, vector"
-0	1842 2785 3 3866 0 100.5 202 0 160 13280 1442240
-1	4627 2567 3 3866 0 100.5 202 0 4 60 200
-2	7194 2825 6 3867 0 100.5 202 0 180 16740 2041320
-3	10019 2567 6 3867 0 100.5 202 0 4 60 200
-4	12586 2712 10 3868 0 100.5 202 0 80 6640 360560
-5	15298 2568 10 3868 0 100.5 202 0 7 440 2020
-6	17866 2880 15 3869 0 100.5 202 0 360 33480 8165280
-7	20746 2568 15 3869 0 100.5 202 0 6 60 360
-8	23314 2568 18 3870 0 100.5 202 0 0 0 0
-9	25882 2568 18 3870 0 100.5 202 0 5 420 1780
+attr source completionTime
+attr title "completionTime, vector"
+0	1834 282 2 80085 0 10.5 22 0 0 0 0
+1	2116 324 2 80085 0 10.5 22 0 400 8000 3129248
+2	2440 282 3 80086 0 10.5 22 0 0 0 0
+3	2722 324 3 80086 0 10.5 22 0 800 16000 12516992
+4	3046 282 4 80087 0 10.5 22 0 0 0 0
+5	3328 324 4 80087 0 10.5 22 0 800 16000 12516992
+6	3652 282 6 80088 0 10.5 22 0 0 0 0
+7	3934 324 6 80088 0 10.5 22 0 400 8000 3129248
+8	4258 76454 548 80056 0.18 10.1775 4000 0.18 0.18 719.99999999996 129.59999999999
+9	80712 76454 550 80058 0.18 10.1775 4000 0.18 0.18 719.99999999996 129.59999999999
 

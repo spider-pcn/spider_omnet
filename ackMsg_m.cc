@@ -182,6 +182,7 @@ Register_Class(ackMsg)
 ackMsg::ackMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
 {
     this->transactionId = 0;
+    this->timeSent = 0;
     this->isSuccess = false;
     this->secret = "";
 }
@@ -206,6 +207,7 @@ ackMsg& ackMsg::operator=(const ackMsg& other)
 void ackMsg::copy(const ackMsg& other)
 {
     this->transactionId = other.transactionId;
+    this->timeSent = other.timeSent;
     this->isSuccess = other.isSuccess;
     this->secret = other.secret;
 }
@@ -214,6 +216,7 @@ void ackMsg::parsimPack(omnetpp::cCommBuffer *b) const
 {
     ::omnetpp::cPacket::parsimPack(b);
     doParsimPacking(b,this->transactionId);
+    doParsimPacking(b,this->timeSent);
     doParsimPacking(b,this->isSuccess);
     doParsimPacking(b,this->secret);
 }
@@ -222,6 +225,7 @@ void ackMsg::parsimUnpack(omnetpp::cCommBuffer *b)
 {
     ::omnetpp::cPacket::parsimUnpack(b);
     doParsimUnpacking(b,this->transactionId);
+    doParsimUnpacking(b,this->timeSent);
     doParsimUnpacking(b,this->isSuccess);
     doParsimUnpacking(b,this->secret);
 }
@@ -234,6 +238,16 @@ int ackMsg::getTransactionId() const
 void ackMsg::setTransactionId(int transactionId)
 {
     this->transactionId = transactionId;
+}
+
+double ackMsg::getTimeSent() const
+{
+    return this->timeSent;
+}
+
+void ackMsg::setTimeSent(double timeSent)
+{
+    this->timeSent = timeSent;
 }
 
 bool ackMsg::getIsSuccess() const
@@ -321,7 +335,7 @@ const char *ackMsgDescriptor::getProperty(const char *propertyname) const
 int ackMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 3+basedesc->getFieldCount() : 3;
+    return basedesc ? 4+basedesc->getFieldCount() : 4;
 }
 
 unsigned int ackMsgDescriptor::getFieldTypeFlags(int field) const
@@ -336,8 +350,9 @@ unsigned int ackMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<3) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<4) ? fieldTypeFlags[field] : 0;
 }
 
 const char *ackMsgDescriptor::getFieldName(int field) const
@@ -350,10 +365,11 @@ const char *ackMsgDescriptor::getFieldName(int field) const
     }
     static const char *fieldNames[] = {
         "transactionId",
+        "timeSent",
         "isSuccess",
         "secret",
     };
-    return (field>=0 && field<3) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<4) ? fieldNames[field] : nullptr;
 }
 
 int ackMsgDescriptor::findField(const char *fieldName) const
@@ -361,8 +377,9 @@ int ackMsgDescriptor::findField(const char *fieldName) const
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount() : 0;
     if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+0;
-    if (fieldName[0]=='i' && strcmp(fieldName, "isSuccess")==0) return base+1;
-    if (fieldName[0]=='s' && strcmp(fieldName, "secret")==0) return base+2;
+    if (fieldName[0]=='t' && strcmp(fieldName, "timeSent")==0) return base+1;
+    if (fieldName[0]=='i' && strcmp(fieldName, "isSuccess")==0) return base+2;
+    if (fieldName[0]=='s' && strcmp(fieldName, "secret")==0) return base+3;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -376,10 +393,11 @@ const char *ackMsgDescriptor::getFieldTypeString(int field) const
     }
     static const char *fieldTypeStrings[] = {
         "int",
+        "double",
         "bool",
         "string",
     };
-    return (field>=0 && field<3) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<4) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **ackMsgDescriptor::getFieldPropertyNames(int field) const
@@ -447,8 +465,9 @@ std::string ackMsgDescriptor::getFieldValueAsString(void *object, int field, int
     ackMsg *pp = (ackMsg *)object; (void)pp;
     switch (field) {
         case 0: return long2string(pp->getTransactionId());
-        case 1: return bool2string(pp->getIsSuccess());
-        case 2: return oppstring2string(pp->getSecret());
+        case 1: return double2string(pp->getTimeSent());
+        case 2: return bool2string(pp->getIsSuccess());
+        case 3: return oppstring2string(pp->getSecret());
         default: return "";
     }
 }
@@ -464,8 +483,9 @@ bool ackMsgDescriptor::setFieldValueAsString(void *object, int field, int i, con
     ackMsg *pp = (ackMsg *)object; (void)pp;
     switch (field) {
         case 0: pp->setTransactionId(string2long(value)); return true;
-        case 1: pp->setIsSuccess(string2bool(value)); return true;
-        case 2: pp->setSecret((value)); return true;
+        case 1: pp->setTimeSent(string2double(value)); return true;
+        case 2: pp->setIsSuccess(string2bool(value)); return true;
+        case 3: pp->setSecret((value)); return true;
         default: return false;
     }
 }

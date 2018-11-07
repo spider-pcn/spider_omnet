@@ -17,6 +17,7 @@
 packet ackMsg
 {
  	int transactionId;
+ 	double timeSent;
  	bool isSuccess; //status, true for success, false for failure
     string secret=""; 
  }

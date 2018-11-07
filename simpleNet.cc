@@ -103,6 +103,7 @@ void routerNode::initialize()
     //register signals
     numInQueueSignal = registerSignal("numInQueue");
     numProcessedSignal = registerSignal("numProcessed");
+    completionTimeSignal = registerSignal("completionTime");
 
 
    if (getIndex() == 0){  //main initialization for global parameters
@@ -231,7 +232,7 @@ routerMsg *routerNode::generateStatMessage(){
 
 
 void routerNode::handleStatMessage(routerMsg* ttmsg){
-    if (simTime() >100){
+    if (simTime() >10){
         delete ttmsg;
 
     }
@@ -289,8 +290,15 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
         forwardAckMessage(ttmsg);
     }
     else{
-        //delete ack message
+
+        //broadcast completion time signal
         ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
+        simtime_t timeTaken = simTime() - aMsg->getTimeSent();
+
+        emit(completionTimeSignal, timeTaken);
+
+        //delete ack message
+
         ttmsg->decapsulate();
         delete aMsg;
         delete ttmsg;
@@ -309,6 +317,7 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg){
      ackMsg *aMsg = new ackMsg(msgname);
      aMsg->setTransactionId(transMsg->getTransactionId());
      aMsg->setIsSuccess(true);
+     aMsg->setTimeSent(transMsg->getTimeSent());
      //no need to set secret;
      vector<int> route=ttmsg->getRoute();
      reverse(route.begin(), route.end());
