@@ -232,7 +232,7 @@ routerMsg *routerNode::generateStatMessage(){
 
 
 void routerNode::handleStatMessage(routerMsg* ttmsg){
-    if (simTime() >10){
+    if (simTime() >30){
         delete ttmsg;
 
     }
@@ -293,9 +293,9 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
 
         //broadcast completion time signal
         ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
-        simtime_t timeTaken = simTime() - aMsg->getTimeSent();
+        simtime_t timeTakenInMilli = 1000*(simTime() - aMsg->getTimeSent());
 
-        emit(completionTimeSignal, timeTaken);
+        emit(completionTimeSignal, timeTakenInMilli);
 
         //delete ack message
 

@@ -1,14 +1,14 @@
 version 2
-run simpleNet-0-20181107-06:50:32-31788
+run simpleNet-0-20181114-03:40:49-81226
 attr configname simpleNet
-attr datetime 20181107-06:50:32
+attr datetime 20181114-03:40:49
 attr experiment simpleNet
 attr inifile omnetpp.ini
 attr iterationvars ""
 attr iterationvarsf ""
 attr measurement ""
 attr network simpleNet
-attr processid 31788
+attr processid 81226
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -16,29 +16,29 @@ attr runnumber 0
 attr seedset 0
 
 statistic simpleNet.node[0] completionTime:stats
-field count 4000
-field mean 0.17999999999999
-field stddev 4.5006146082647e-08
-field min 0.18
-field max 0.18
-field sum 719.99999999996
-field sqrsum 129.59999999999
+field count 1081
+field mean 530.30194640647
+field stddev 183.17298164796
+field min 180
+field max 828.092969818
+field sum 573256.4040654
+field sqrsum 340235515.36812
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, stats"
 statistic simpleNet.node[0] numProcessed:stats
-field count 22
-field mean 363.63636363636
-field stddev 102.38979927547
+field count 7
+field mean 271.42857142857
+field stddev 125.98525990879
 field min 0
-field max 400
-field sum 8000
-field sqrsum 3129248
+field max 347
+field sum 1900
+field sqrsum 610948
 attr interpolationmode none
 attr source numProcessed
-attr title "num processed in statRate time, stats"
+attr title "num processing events in statRate, stats"
 statistic simpleNet.node[0] numInQueue:stats
-field count 22
+field count 7
 field mean 0
 field stddev 0
 field min 0
@@ -60,24 +60,24 @@ attr interpolationmode none
 attr source completionTime
 attr title "completionTime, stats"
 statistic simpleNet.node[1] numProcessed:stats
-field count 22
-field mean 727.27272727273
-field stddev 204.77959855094
+field count 7
+field mean 545.57142857143
+field stddev 251.27133882376
 field min 0
-field max 800
-field sum 16000
-field sqrsum 12516992
+field max 676
+field sum 3819
+field sqrsum 2462361
 attr interpolationmode none
 attr source numProcessed
-attr title "num processed in statRate time, stats"
+attr title "num processing events in statRate, stats"
 statistic simpleNet.node[1] numInQueue:stats
-field count 22
-field mean 0
-field stddev 0
+field count 7
+field mean 130.14285714286
+field stddev 83.111227824381
 field min 0
-field max 0
-field sum 0
-field sqrsum 0
+field max 239
+field sum 911
+field sqrsum 160005
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, stats"
@@ -93,51 +93,51 @@ attr interpolationmode none
 attr source completionTime
 attr title "completionTime, stats"
 statistic simpleNet.node[2] numProcessed:stats
-field count 22
-field mean 727.27272727273
-field stddev 204.77959855094
+field count 7
+field mean 543.71428571429
+field stddev 250.16109095655
 field min 0
-field max 800
-field sum 16000
-field sqrsum 12516992
+field max 676
+field sum 3806
+field sqrsum 2444860
 attr interpolationmode none
 attr source numProcessed
-attr title "num processed in statRate time, stats"
+attr title "num processing events in statRate, stats"
 statistic simpleNet.node[2] numInQueue:stats
-field count 22
-field mean 0
-field stddev 0
+field count 7
+field mean 90.857142857143
+field stddev 65.806353724213
 field min 0
-field max 0
-field sum 0
-field sqrsum 0
+field max 187
+field sum 636
+field sqrsum 83768
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, stats"
 statistic simpleNet.node[3] completionTime:stats
-field count 4000
-field mean 0.17999999999999
-field stddev 4.5006146082647e-08
-field min 0.18
-field max 0.18
-field sum 719.99999999996
-field sqrsum 129.59999999999
+field count 1088
+field mean 427.02885741433
+field stddev 137.74475689693
+field min 180
+field max 696.889914402
+field sum 464607.39686679
+field sqrsum 219025088.65344
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, stats"
 statistic simpleNet.node[3] numProcessed:stats
-field count 22
-field mean 363.63636363636
-field stddev 102.38979927547
+field count 7
+field mean 271.42857142857
+field stddev 126.04874340621
 field min 0
-field max 400
-field sum 8000
-field sqrsum 3129248
+field max 351
+field sum 1900
+field sqrsum 611044
 attr interpolationmode none
 attr source numProcessed
-attr title "num processed in statRate time, stats"
+attr title "num processing events in statRate, stats"
 statistic simpleNet.node[3] numInQueue:stats
-field count 22
+field count 7
 field mean 0
 field stddev 0
 field min 0

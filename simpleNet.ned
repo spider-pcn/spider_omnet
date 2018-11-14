@@ -5,7 +5,7 @@ simple routerNode
 		@statistic[numInQueue](title="total num in queue"; source="numInQueue"; record=vector,stats; interpolationmode=none); 
 
 		@signal[numProcessed](type="long"); 
-		@statistic[numProcessed](title="num processed in statRate time"; source="numProcessed"; record=vector,stats; interpolationmode=none); 
+		@statistic[numProcessed](title="num processing events in statRate"; source="numProcessed"; record=vector,stats; interpolationmode=none); 
 
 		@signal[completionTime](type="long"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 

@@ -7,7 +7,7 @@ import numpy as np
 
 outfile = open(sys.argv[1], "w")
 
-totalTime = 10
+totalTime = 30
 
 #edge a->b appears in index i as rateListStart[i]=a, and rateListEnd[i]=b
 #rateListStart = [0,3,0,1,2,3,2,4]; 
@@ -16,7 +16,7 @@ totalTime = 10
 
 rateListStart = [0,3]; 
 rateListEnd = [3,0]; 
-rateListAmt = [300, 300];
+rateListAmt = [400, 400];
 
 
 
