@@ -3,9 +3,11 @@ To setup, first follow the omnet installation instructions from [Omnet Installat
 Following this, clone this repo in the `samples` directory of the omnet installation.
 
 Then, run the following commands:
-```cd samples/spider_omnet/
+```
+cd samples/spider_omnet/
 make
-omnetpp```
+omnetpp
+```
 
 This should open the Omnet IDE and you can click on the `simpleNet.ned` file and run the OmnetSimulation from there.
 
