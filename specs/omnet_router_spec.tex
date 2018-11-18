@@ -10,6 +10,7 @@
 \usepackage[margin=0.7in]{geometry}
 \usepackage{xspace}
 \usepackage[normalem]{ulem}
+\usepackage{wrapfig}
 
 \title{Omnet Router Specification}
 
@@ -235,6 +236,90 @@ This follows from the flowchart above.
         \end{itemize}
 \end{itemize}
 
+\section{Waterfilling Algorithm}
+\subsection{Heuristic Idea}
+The essence of the waterfilling algorithm is to maintain balance across a fixed set of paths by always trying to send on the path(s) with maximum bottleneck balance
+in the direction that you want to send. The bottleneck balance is defined as the minimum balance amongst the edges or payment channels on the path from the source
+to the destination. For instance, if you have the following payment channel network (Fig.~\ref{fig:sample_graph}), the bottleneck balances on $P_1$, $P_2$, $P_3$ and $P_4$ between $s$ and $t$
+are 20, 15, 10 and 5.
+
+\begin{wrapfigure}[14]{L}{0.3\textwidth}
+\includegraphics[height=4.5cm]{sample_graph.pdf}
+\caption{Numbers on edges denote the balance in that direction on the payment channel}
+\label{fig:sample_graph}
+\end{wrapfigure}
+
+If one had to send a payment of $18$ units, the first $5$ would be sent on $P_1$, the next $10$ would be sent equally on $P_1$ and $P_2$ (with $5$ on each) and the
+last $3$ would be sent one each on paths $P_1$, $P_2$ and $P_3$. If the payment isn't fully completed in this process, any remaining amount is queued at the sender
+until the deadline on the sender for the payment expires.
+
+\subsection{Simulation Overview}
+Inferring the bottleneck balances is not a trivial task since nodes don't have a global view of every other node/payment channel balance. Thus, this algorithm
+breaks down into two phases: querying for channel balances and processing of the probes to compute the waterfilling splits. These two phases will run at slightly
+different time scales. The querying/probing will happen on every RTT; we send out a probe immediately after receiving the response from the previous one. The 
+computation of the splits happens as necessary when the next \TU to send is computed.
+
+\subsection{Message Types}
+\begin{itemize}
+    \item Query Channel Balance
+        \begin{itemize}
+            \item Sender
+            \item Receiver
+            \item Path 
+            \item Is this probe on the reverse path and coming back?
+            \item Current Hop Number (starts at 0 when the sender creates this message)
+            \item Empty Map of node to channel balance on the outgoing channel from that node along the path
+        \end{itemize}
+\end{itemize}
+
+\subsection{Processing Channel Balance Query at every node}
+\begin{itemize}
+    \item The sender is reponsible for creating this probe message for every path that it wants to probe and initialize the fields including the empty map
+    \item Every intermediate node on the forward path (check by checking is the flag for reverse path is set to true) 
+        is responsible for (a) ensuring that it is on the path (at index denoted by hop number), (b) finding
+        the balance on the (me - nextHop) channel and adding it to the map and (c) forwarding the probe to the next hop. 
+    \item When the probe is received at the receiver, it changes the direction of the probe by reversing the path and resetting the hop number to $0$. It also
+        needs to set the reverse path flag to $0$.
+    \item Every intermediate node (along the path) on the reverse direction merely forwards the probe and doesn't need to do anything else. An added check is to
+        verify that the current node is on the path (at the index denoted by hop number) and then forward it to the next hop (denoted by the item at the next index
+        on the path)
+\end{itemize}
+
+\subsection{State per Sender}
+\begin{itemize}
+    \item Per destination state
+        \begin{itemize}
+            \item Destination
+            \item Set of paths (let's start with $2$ shortest edge disjoint paths)
+            \item Bottleneck balance on each of those paths
+        \end{itemize}
+    \item Set of pending transactions (some of these might have been partially completed relative to the initial amount they started with)
+\end{itemize}
+
+\subsection{Event Handlers for a Sender}
+\begin{itemize}
+    \item Receipt of completed probe
+        \begin{itemize}
+            \item Update the information in the per-destination table with the latest bottleneck balance for that path
+            \item Involves computing the minimum across all the balances on that path
+        \end{itemize}
+
+    \item New Transaction To Send
+        \begin{itemize}
+            \item Look up the corresponding set of paths for that destination and the associated bottleneck balances
+            \item Compute the splits for that transaction according to the balances on each of those paths. This means, send as much as you can on the path with highest bottleneck balance 
+                until its balance falls to the second highest one. Then send equal amounts on the two highest bottleneck balance paths until their balances fall to the third and so on. 
+            \item Create separate transactions with those splits that are then sent on each of the paths. Add some identifier to recognize what parent transaction they were part of.
+            \item If the payment is not completed in the process, queue the remaining at the sender for trying later into the set or queue that is tracking pending payments.
+        \end{itemize}
+
+    \item Received feedback from a payment that was attempted
+        \begin{itemize}
+            \item Successful Ack: Do nothing. When splitting the payment, we already assumed it would go through and only queued up the remaining amount.
+            \item Failure Ack: Add the failed amount to the pending transaction set. If there was already something associated with this transaction, coalesce the two by just adding the failed amount to it.
+            \item Treat any remaining part of the parent transaction that this Ack was a part of as a new transaction and follow the above procedure. ?
+        \end{itemize}
+\end{itemize}
 \end{document}
 
 
