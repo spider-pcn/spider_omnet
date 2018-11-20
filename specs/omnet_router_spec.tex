@@ -11,7 +11,10 @@
 \usepackage{xspace}
 \usepackage[normalem]{ulem}
 \usepackage{wrapfig}
+<<<<<<< HEAD
 \usepackage{program}
+=======
+>>>>>>> added figure 4b workload and topology
 
 \title{Omnet Router Specification}
 
@@ -257,9 +260,14 @@ until the deadline on the sender for the payment expires.
 \subsection{Simulation Overview}
 Inferring the bottleneck balances is not a trivial task since nodes don't have a global view of every other node/payment channel balance. Thus, this algorithm
 breaks down into two phases: querying for channel balances and processing of the probes to compute the waterfilling splits. These two phases will run at slightly
+<<<<<<< HEAD
 different time scales. The querying/probing will happen on every RTT; we send out a probe immediately after receiving the response from the previous one. 
 We start these probes the only once we receive a payment that is to be sent out to that recipient and stop once there is no more demand/transaction to be sent
 to avoid unnecessary probing overhead. The computation of the splits happens as necessary when the next \TU to send arrives or a current set of splits complete/fail.
+=======
+different time scales. The querying/probing will happen on every RTT; we send out a probe immediately after receiving the response from the previous one. The 
+computation of the splits happens as necessary when the next \TU to send is computed.
+>>>>>>> added figure 4b workload and topology
 
 \subsection{Message Types}
 \begin{itemize}
@@ -272,26 +280,38 @@ to avoid unnecessary probing overhead. The computation of the splits happens as 
             \item Current Hop Number (starts at 0 when the sender creates this message)
             \item Empty Map of node to channel balance on the outgoing channel from that node along the path
         \end{itemize}
+<<<<<<< HEAD
 
     \item Modification to HTLC Initiate/ACK/Balance update:
         \begin{itemize}
             \item Additional sequence number to identify what chunk of the original transaction this is
         \end{itemize}
+=======
+>>>>>>> added figure 4b workload and topology
 \end{itemize}
 
 \subsection{Processing Channel Balance Query at every node}
 \begin{itemize}
     \item The sender is reponsible for creating this probe message for every path that it wants to probe and initialize the fields including the empty map
+<<<<<<< HEAD
     \item Every intermediate node on the forward path (check by checking is the flag for reverse path is set to {\em{false}}) 
         is responsible for (a) ensuring that it is on the path (at index denoted by hop number), (b) finding
         the balance on the (me - nextHop) channel and adding it to the map and (c) forwarding the probe to the next hop. 
     \item When the probe is received at the receiver, it changes the direction of the probe by changing the path field to the reverse of the original. 
         The hop number needs to be reset to $0$ and the reverse path flag to {\em{true}}.
+=======
+    \item Every intermediate node on the forward path (check by checking is the flag for reverse path is set to true) 
+        is responsible for (a) ensuring that it is on the path (at index denoted by hop number), (b) finding
+        the balance on the (me - nextHop) channel and adding it to the map and (c) forwarding the probe to the next hop. 
+    \item When the probe is received at the receiver, it changes the direction of the probe by reversing the path and resetting the hop number to $0$. It also
+        needs to set the reverse path flag to $0$.
+>>>>>>> added figure 4b workload and topology
     \item Every intermediate node (along the path) on the reverse direction merely forwards the probe and doesn't need to do anything else. An added check is to
         verify that the current node is on the path (at the index denoted by hop number) and then forward it to the next hop (denoted by the item at the next index
         on the path)
 \end{itemize}
 
+<<<<<<< HEAD
 \subsection{New State}
 \begin{itemize}
     \item State Per Sender
@@ -315,6 +335,19 @@ to avoid unnecessary probing overhead. The computation of the splits happens as 
 \end{itemize}
 
 
+=======
+\subsection{State per Sender}
+\begin{itemize}
+    \item Per destination state
+        \begin{itemize}
+            \item Destination
+            \item Set of paths (let's start with $2$ shortest edge disjoint paths)
+            \item Bottleneck balance on each of those paths
+        \end{itemize}
+    \item Set of pending transactions (some of these might have been partially completed relative to the initial amount they started with)
+\end{itemize}
+
+>>>>>>> added figure 4b workload and topology
 \subsection{Event Handlers for a Sender}
 \begin{itemize}
     \item Receipt of completed probe
@@ -325,6 +358,7 @@ to avoid unnecessary probing overhead. The computation of the splits happens as 
 
     \item New Transaction To Send
         \begin{itemize}
+<<<<<<< HEAD
             \item If this is a brand new transaction (Sequence number - $0$), first send out a probe and wait for the response.
             \item Look up the corresponding set of paths for that destination and the associated bottleneck balances. 
             \item Compute the splits for that transaction according to the balances on each of those paths. This means, send as much as you can on the path with highest bottleneck balance 
@@ -363,6 +397,12 @@ to avoid unnecessary probing overhead. The computation of the splits happens as 
 
             \item Create separate transactions with those splits that are then sent on each of the paths. Give each of them a unique sequence number incrementing from the last one used or starting
                 from 1.
+=======
+            \item Look up the corresponding set of paths for that destination and the associated bottleneck balances
+            \item Compute the splits for that transaction according to the balances on each of those paths. This means, send as much as you can on the path with highest bottleneck balance 
+                until its balance falls to the second highest one. Then send equal amounts on the two highest bottleneck balance paths until their balances fall to the third and so on. 
+            \item Create separate transactions with those splits that are then sent on each of the paths. Add some identifier to recognize what parent transaction they were part of.
+>>>>>>> added figure 4b workload and topology
             \item If the payment is not completed in the process, queue the remaining at the sender for trying later into the set or queue that is tracking pending payments.
         \end{itemize}
 
@@ -370,7 +410,11 @@ to avoid unnecessary probing overhead. The computation of the splits happens as 
         \begin{itemize}
             \item Successful Ack: Do nothing. When splitting the payment, we already assumed it would go through and only queued up the remaining amount.
             \item Failure Ack: Add the failed amount to the pending transaction set. If there was already something associated with this transaction, coalesce the two by just adding the failed amount to it.
+<<<<<<< HEAD
             \item Treat any remaining part of the parent transaction that this Ack was a part of as a new transaction and follow the above procedure.
+=======
+            \item Treat any remaining part of the parent transaction that this Ack was a part of as a new transaction and follow the above procedure. ?
+>>>>>>> added figure 4b workload and topology
         \end{itemize}
 \end{itemize}
 \end{document}
