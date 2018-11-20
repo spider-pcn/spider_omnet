@@ -11,6 +11,7 @@
 \usepackage{xspace}
 \usepackage[normalem]{ulem}
 \usepackage{wrapfig}
+\usepackage{program}
 
 \title{Omnet Router Specification}
 
@@ -256,8 +257,9 @@ until the deadline on the sender for the payment expires.
 \subsection{Simulation Overview}
 Inferring the bottleneck balances is not a trivial task since nodes don't have a global view of every other node/payment channel balance. Thus, this algorithm
 breaks down into two phases: querying for channel balances and processing of the probes to compute the waterfilling splits. These two phases will run at slightly
-different time scales. The querying/probing will happen on every RTT; we send out a probe immediately after receiving the response from the previous one. The 
-computation of the splits happens as necessary when the next \TU to send is computed.
+different time scales. The querying/probing will happen on every RTT; we send out a probe immediately after receiving the response from the previous one. 
+We start these probes the only once we receive a payment that is to be sent out to that recipient and stop once there is no more demand/transaction to be sent
+to avoid unnecessary probing overhead. The computation of the splits happens as necessary when the next \TU to send arrives or a current set of splits complete/fail.
 
 \subsection{Message Types}
 \begin{itemize}
@@ -270,31 +272,48 @@ computation of the splits happens as necessary when the next \TU to send is comp
             \item Current Hop Number (starts at 0 when the sender creates this message)
             \item Empty Map of node to channel balance on the outgoing channel from that node along the path
         \end{itemize}
+
+    \item Modification to HTLC Initiate/ACK/Balance update:
+        \begin{itemize}
+            \item Additional sequence number to identify what chunk of the original transaction this is
+        \end{itemize}
 \end{itemize}
 
 \subsection{Processing Channel Balance Query at every node}
 \begin{itemize}
     \item The sender is reponsible for creating this probe message for every path that it wants to probe and initialize the fields including the empty map
-    \item Every intermediate node on the forward path (check by checking is the flag for reverse path is set to true) 
+    \item Every intermediate node on the forward path (check by checking is the flag for reverse path is set to {\em{false}}) 
         is responsible for (a) ensuring that it is on the path (at index denoted by hop number), (b) finding
         the balance on the (me - nextHop) channel and adding it to the map and (c) forwarding the probe to the next hop. 
-    \item When the probe is received at the receiver, it changes the direction of the probe by reversing the path and resetting the hop number to $0$. It also
-        needs to set the reverse path flag to $0$.
+    \item When the probe is received at the receiver, it changes the direction of the probe by changing the path field to the reverse of the original. 
+        The hop number needs to be reset to $0$ and the reverse path flag to {\em{true}}.
     \item Every intermediate node (along the path) on the reverse direction merely forwards the probe and doesn't need to do anything else. An added check is to
         verify that the current node is on the path (at the index denoted by hop number) and then forward it to the next hop (denoted by the item at the next index
         on the path)
 \end{itemize}
 
-\subsection{State per Sender}
+\subsection{New State}
 \begin{itemize}
-    \item Per destination state
+    \item State Per Sender
         \begin{itemize}
-            \item Destination
-            \item Set of paths (let's start with $2$ shortest edge disjoint paths)
-            \item Bottleneck balance on each of those paths
+            \item Per destination state (updated/initialized when a probe is received)
+                \begin{itemize}
+                    \item Destination
+                    \item Set of paths (let's start with $2$ shortest edge disjoint paths)
+                    \item Bottleneck balance on each of those paths
+                \end{itemize}
+            \item Set of pending transactions (some of these might have been partially completed relative to the initial amount they started with) along with the last sequence
+                number that was used for each of them. This must be updated every time a new transaction is split or an old one is coalesced due to a failure.
         \end{itemize}
-    \item Set of pending transactions (some of these might have been partially completed relative to the initial amount they started with)
+    
+    \item State Per Receiver
+        \begin{itemize}
+            \item Transaction Id of transactions received
+            \item Set of sequence numbers for the given transaction id that have been already received/acked successfully.
+        \end{itemize}
+
 \end{itemize}
+
 
 \subsection{Event Handlers for a Sender}
 \begin{itemize}
@@ -306,10 +325,40 @@ computation of the splits happens as necessary when the next \TU to send is comp
 
     \item New Transaction To Send
         \begin{itemize}
-            \item Look up the corresponding set of paths for that destination and the associated bottleneck balances
+            \item If this is a brand new transaction (Sequence number - $0$), first send out a probe and wait for the response.
+            \item Look up the corresponding set of paths for that destination and the associated bottleneck balances. 
             \item Compute the splits for that transaction according to the balances on each of those paths. This means, send as much as you can on the path with highest bottleneck balance 
                 until its balance falls to the second highest one. Then send equal amounts on the two highest bottleneck balance paths until their balances fall to the third and so on. 
-            \item Create separate transactions with those splits that are then sent on each of the paths. Add some identifier to recognize what parent transaction they were part of.
+		
+		\begin{program}
+                \mbox{Computes output path\_list which consists of tuples (path, amount on path)}
+		\BEGIN \\ %
+                  |path_list| := \emptyset
+		  \FOR i:=1 \TO k \DO
+		     B_i := |compute_bottleneck_bal|(P_i)\\ PQ := PQ \cup (P_i, B_i); %
+		\rcomment{Insert balances into some heap PQ}
+		\END \\
+
+
+                \DO \IF |size|(PQ) > 0 \AND |txn_amt| > 0	    
+		  |highest_bal| := |PQ.poll()| % 
+		  \rcomment{Let the path with this highest balance be $p_{max}$}\\
+		  |second_highest_bal| := |PQ.peek()|\\
+		  |diff_to_send| := |highest_bal| - |second_highest_bal|\\% 
+                  |amt_to_send| := min(|txn_amt|/(|size|(|path_list|) + 1), |diff_to_send|)
+		  
+                  \FOR p \  |in| \ |path_list| \DO
+		    |amt|_p := |amt|_p + |amt_to_send|
+		    |txn_amt| := |txn_amt| - |amt_to_send|
+		  \END
+		  |path_list| := |path_list| \cup (p_{max}, |amt_to_send|)
+		\END
+            \END
+
+		\end{program}
+
+            \item Create separate transactions with those splits that are then sent on each of the paths. Give each of them a unique sequence number incrementing from the last one used or starting
+                from 1.
             \item If the payment is not completed in the process, queue the remaining at the sender for trying later into the set or queue that is tracking pending payments.
         \end{itemize}
 
@@ -317,7 +366,7 @@ computation of the splits happens as necessary when the next \TU to send is comp
         \begin{itemize}
             \item Successful Ack: Do nothing. When splitting the payment, we already assumed it would go through and only queued up the remaining amount.
             \item Failure Ack: Add the failed amount to the pending transaction set. If there was already something associated with this transaction, coalesce the two by just adding the failed amount to it.
-            \item Treat any remaining part of the parent transaction that this Ack was a part of as a new transaction and follow the above procedure. ?
+            \item Treat any remaining part of the parent transaction that this Ack was a part of as a new transaction and follow the above procedure.
         \end{itemize}
 \end{itemize}
 \end{document}
