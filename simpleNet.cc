@@ -232,7 +232,7 @@ routerMsg *routerNode::generateStatMessage(){
 
 
 void routerNode::handleStatMessage(routerMsg* ttmsg){
-    if (simTime() >30){
+    if (simTime() >10){
         delete ttmsg;
 
     }

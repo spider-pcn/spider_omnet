@@ -1,27 +1,15 @@
-<<<<<<< HEAD
-file 1623 1542411959                                            
-version 2
-run simpleNet-0-20181116-15:45:35-31891
-attr configname simpleNet
-attr datetime 20181116-15:45:35
-=======
 file 6939 1542584713                                            
 version 2
 run simpleNet-0-20181118-18:45:11-1999
 attr configname simpleNet
 attr datetime 20181118-18:45:11
->>>>>>> added figure4b topology and workload generator
 attr experiment simpleNet
 attr inifile omnetpp.ini
 attr iterationvars ""
 attr iterationvarsf ""
 attr measurement ""
 attr network simpleNet
-<<<<<<< HEAD
-attr processid 31891
-=======
 attr processid 1999
->>>>>>> added figure4b topology and workload generator
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -32,99 +20,74 @@ vector 0 simpleNet.node[0] numInQueue:vector ETV
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, vector"
+0	2605 240 3 626 0 10.5 22 0 0 0 0
 vector 1 simpleNet.node[0] numProcessed:vector ETV
 attr interpolationmode none
 attr source numProcessed
-<<<<<<< HEAD
-attr title "num processing events in statRate, vector"
-0	661 8 2 2 0 0 1 0 0 0 0
-1	669 8 2 2 0 0 1 0 0 0 0
-=======
 attr title "num processing events in statRate time, vector"
->>>>>>> added figure4b topology and workload generator
+1	2845 240 3 626 0 10.5 22 0 3 40 100
 vector 2 simpleNet.node[1] numInQueue:vector ETV
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, vector"
+2	3085 240 5 627 0 10.5 22 0 0 0 0
 vector 3 simpleNet.node[1] numProcessed:vector ETV
 attr interpolationmode none
 attr source numProcessed
-<<<<<<< HEAD
-attr title "num processing events in statRate, vector"
-2	976 8 3 3 0 0 1 0 0 0 0
-3	984 8 3 3 0 0 1 0 0 0 0
-=======
 attr title "num processing events in statRate time, vector"
->>>>>>> added figure4b topology and workload generator
+3	3325 240 5 627 0 10.5 22 0 3 40 100
 vector 4 simpleNet.node[2] numInQueue:vector ETV
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, vector"
+4	3565 240 8 628 0 10.5 22 0 0 0 0
 vector 5 simpleNet.node[2] numProcessed:vector ETV
 attr interpolationmode none
 attr source numProcessed
-<<<<<<< HEAD
-attr title "num processing events in statRate, vector"
-4	1291 8 4 4 0 0 1 0 0 0 0
-5	1299 8 4 4 0 0 1 0 0 0 0
-=======
 attr title "num processing events in statRate time, vector"
->>>>>>> added figure4b topology and workload generator
+5	3805 240 8 628 0 10.5 22 0 4 70 250
 vector 6 simpleNet.node[3] numInQueue:vector ETV
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, vector"
+6	4045 241 11 629 0 10.5 22 0 0 0 0
 vector 7 simpleNet.node[3] numProcessed:vector ETV
 attr interpolationmode none
 attr source numProcessed
-<<<<<<< HEAD
-attr title "num processing events in statRate, vector"
-6	1606 8 6 6 0 0 1 0 0 0 0
-7	1614 8 6 6 0 0 1 0 0 0 0
-=======
 attr title "num processing events in statRate time, vector"
+7	4286 241 11 629 0 10.5 22 0 3 60 180
 vector 8 simpleNet.node[4] numInQueue:vector ETV
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, vector"
+8	4527 241 13 630 0 10.5 22 0 0 0 0
 vector 9 simpleNet.node[4] numProcessed:vector ETV
 attr interpolationmode none
 attr source numProcessed
 attr title "num processing events in statRate time, vector"
+9	4768 241 13 630 0 10.5 22 0 3 50 130
 vector 10 simpleNet.node[0] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+10	5009 296 22 581 0.06 9.06 20 60 60 1200 72000
 vector 11 simpleNet.node[1] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+11	5305 297 24 611 0.06 9.56 20 60 60 1200 72000
 vector 12 simpleNet.node[2] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+12	5602 445 25 612 0.06 9.56 30 60 60 1800 108000
 vector 13 simpleNet.node[3] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+13	6047 594 27 614 0.06 9.56 40 60 60 2400 144000
 vector 14 simpleNet.node[4] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
-0	2605 240 3 626 0 10.5 22 0 0 0 0
-1	2845 240 3 626 0 10.5 22 0 3 40 100
-2	3085 240 5 627 0 10.5 22 0 0 0 0
-3	3325 240 5 627 0 10.5 22 0 3 40 100
-4	3565 240 8 628 0 10.5 22 0 0 0 0
-5	3805 240 8 628 0 10.5 22 0 4 70 250
-6	4045 241 11 629 0 10.5 22 0 0 0 0
-7	4286 241 11 629 0 10.5 22 0 3 60 180
-8	4527 241 13 630 0 10.5 22 0 0 0 0
-9	4768 241 13 630 0 10.5 22 0 3 50 130
-10	5009 296 22 581 0.06 9.06 20 60 60 1200 72000
-11	5305 297 24 611 0.06 9.56 20 60 60 1200 72000
-12	5602 445 25 612 0.06 9.56 30 60 60 1800 108000
-13	6047 594 27 614 0.06 9.56 40 60 60 2400 144000
-14	6641 297 29 615 0.06 9.56 20 60 60 1200 72000
->>>>>>> added figure4b topology and workload generator
-
+14	6641 298 29 615 0.06 9.56 20 60 60 1200 72000
