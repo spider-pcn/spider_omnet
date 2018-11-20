@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 file 1623 1542411959                                            
 version 2
 run simpleNet-0-20181116-15:45:35-31891
@@ -13,18 +14,31 @@ attr configname simpleNet
 attr datetime 20181118-18:45:11
 >>>>>>> added figure4b topology and workload generator
 =======
+=======
+>>>>>>> added dynamically sized signals
 file 11746 1542741078                                           
 version 2
 run simpleNet-0-20181120-14:11:16-7896
 attr configname simpleNet
 attr datetime 20181120-14:11:16
+<<<<<<< HEAD
 >>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
+=======
+=======
+file 1623 1542411959                                            
+version 2
+run simpleNet-0-20181116-15:45:35-31891
+attr configname simpleNet
+attr datetime 20181116-15:45:35
+>>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
+>>>>>>> added dynamically sized signals
 attr experiment simpleNet
 attr inifile omnetpp.ini
 attr iterationvars ""
 attr iterationvarsf ""
 attr measurement ""
 attr network simpleNet
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 attr processid 31891
@@ -34,6 +48,12 @@ attr processid 1999
 =======
 attr processid 7896
 >>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
+=======
+attr processid 7896
+=======
+attr processid 31891
+>>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
+>>>>>>> added dynamically sized signals
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -151,39 +171,61 @@ attr title "total num in queue, vector"
 vector 4 simpleNet.node[0] numProcessed:vector ETV
 attr interpolationmode none
 attr source numProcessed
+<<<<<<< HEAD
 attr title "num processing events in statRate time, vector"
 vector 5 simpleNet.node[1] "numInQueuePerChannelSignal(dest node 0):vector" ETV
 vector 6 simpleNet.node[1] "numInQueuePerChannelSignal(dest node 2):vector" ETV
 vector 7 simpleNet.node[1] "numInQueuePerChannelSignal(dest node 3):vector" ETV
 vector 8 simpleNet.node[1] numInQueue:vector ETV
+=======
+attr title "num processing events in statRate, vector"
+0	661 8 2 2 0 0 1 0 0 0 0
+1	669 8 2 2 0 0 1 0 0 0 0
+vector 2 simpleNet.node[1] numInQueue:vector ETV
+>>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, vector"
 vector 9 simpleNet.node[1] numProcessed:vector ETV
 attr interpolationmode none
 attr source numProcessed
+<<<<<<< HEAD
 attr title "num processing events in statRate time, vector"
 vector 10 simpleNet.node[2] "numInQueuePerChannelSignal(dest node 1):vector" ETV
 vector 11 simpleNet.node[2] "numInQueuePerChannelSignal(dest node 3):vector" ETV
 vector 12 simpleNet.node[2] "numInQueuePerChannelSignal(dest node 4):vector" ETV
 vector 13 simpleNet.node[2] numInQueue:vector ETV
+=======
+attr title "num processing events in statRate, vector"
+2	976 8 3 3 0 0 1 0 0 0 0
+3	984 8 3 3 0 0 1 0 0 0 0
+vector 4 simpleNet.node[2] numInQueue:vector ETV
+>>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, vector"
 vector 14 simpleNet.node[2] numProcessed:vector ETV
 attr interpolationmode none
 attr source numProcessed
+<<<<<<< HEAD
 attr title "num processing events in statRate time, vector"
 vector 15 simpleNet.node[3] "numInQueuePerChannelSignal(dest node 0):vector" ETV
 vector 16 simpleNet.node[3] "numInQueuePerChannelSignal(dest node 1):vector" ETV
 vector 17 simpleNet.node[3] "numInQueuePerChannelSignal(dest node 2):vector" ETV
 vector 18 simpleNet.node[3] numInQueue:vector ETV
+=======
+attr title "num processing events in statRate, vector"
+4	1291 8 4 4 0 0 1 0 0 0 0
+5	1299 8 4 4 0 0 1 0 0 0 0
+vector 6 simpleNet.node[3] numInQueue:vector ETV
+>>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, vector"
 vector 19 simpleNet.node[3] numProcessed:vector ETV
 attr interpolationmode none
 attr source numProcessed
+<<<<<<< HEAD
 attr title "num processing events in statRate time, vector"
 vector 20 simpleNet.node[4] "numInQueuePerChannelSignal(dest node 0):vector" ETV
 vector 21 simpleNet.node[4] "numInQueuePerChannelSignal(dest node 2):vector" ETV
@@ -244,5 +286,13 @@ attr title "completionTime, vector"
 26	10409 445 25 612 0.06 9.56 30 60 60 1800 108000
 27	10854 594 27 614 0.06 9.56 40 60 60 2400 144000
 28	11448 297 29 615 0.06 9.56 20 60 60 1200 72000
+<<<<<<< HEAD
 >>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
+=======
+=======
+attr title "num processing events in statRate, vector"
+6	1606 8 6 6 0 0 1 0 0 0 0
+7	1614 8 6 6 0 0 1 0 0 0 0
+>>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
+>>>>>>> added dynamically sized signals
 
