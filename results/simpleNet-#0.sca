@@ -1,62 +1,60 @@
 version 2
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-run simpleNet-0-20181116-15:45:35-31891
+run simpleNet-0-20181120-18:53:56-9021
 attr configname simpleNet
-attr datetime 20181116-15:45:35
-=======
-run simpleNet-0-20181118-18:45:11-1999
-attr configname simpleNet
-attr datetime 20181118-18:45:11
->>>>>>> added figure4b topology and workload generator
-=======
-run simpleNet-0-20181120-14:11:16-7896
-attr configname simpleNet
-attr datetime 20181120-14:11:16
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-run simpleNet-0-20181120-14:11:16-7896
-attr configname simpleNet
-attr datetime 20181120-14:11:16
-=======
-run simpleNet-0-20181116-15:45:35-31891
-attr configname simpleNet
-attr datetime 20181116-15:45:35
->>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
->>>>>>> added dynamically sized signals
+attr datetime 20181120-18:53:56
 attr experiment simpleNet
 attr inifile omnetpp.ini
 attr iterationvars ""
 attr iterationvarsf ""
 attr measurement ""
 attr network simpleNet
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-attr processid 31891
-=======
-attr processid 1999
->>>>>>> added figure4b topology and workload generator
-=======
-attr processid 7896
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-attr processid 7896
-=======
-attr processid 31891
->>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
->>>>>>> added dynamically sized signals
+attr processid 9021
 attr repetition 0
 attr replication #0
 attr resultdir results
 attr runnumber 0
 attr seedset 0
 
-<<<<<<< HEAD
-statistic simpleNet.node[0] completionTime:stats
-<<<<<<< HEAD
-=======
+statistic simpleNet.node[0] "numProcessedPerChannelSignal(dest node 4):stats"
+field count 22
+field mean 0.45454545454545
+field stddev 0.50964719143763
+field min 0
+field max 1
+field sum 10
+field sqrsum 10
+statistic simpleNet.node[0] "numProcessedPerChannelSignal(dest node 3):stats"
+field count 22
+field mean 0.90909090909091
+field stddev 0.29424494316825
+field min 0
+field max 1
+field sum 20
+field sqrsum 20
+statistic simpleNet.node[0] "numProcessedPerChannelSignal(dest node 2):stats"
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
+statistic simpleNet.node[0] "numProcessedPerChannelSignal(dest node 1):stats"
+field count 22
+field mean 0.45454545454545
+field stddev 0.50964719143763
+field min 0
+field max 1
+field sum 10
+field sqrsum 10
+statistic simpleNet.node[0] "numProcessedPerChannelSignal(dest node 0):stats"
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
 statistic simpleNet.node[0] "numInQueuePerChannelSignal(dest node 4):stats"
 field count 22
 field mean 0
@@ -90,7 +88,6 @@ field max 0
 field sum 0
 field sqrsum 0
 statistic simpleNet.node[0] "numInQueuePerChannelSignal(dest node 0):stats"
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
 field count 0
 field mean nan
 field stddev nan
@@ -98,15 +95,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-<<<<<<< HEAD
-=======
-=======
 statistic simpleNet.node[0] completionTime:stats
-<<<<<<< HEAD
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-<<<<<<< HEAD
->>>>>>> added dynamically sized signals
 field count 20
 field mean 60
 field stddev 0
@@ -114,13 +103,10 @@ field min 60
 field max 60
 field sum 1200
 field sqrsum 72000
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> added figure4b topology and workload generator
-=======
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-=======
+attr interpolationmode none
+attr source completionTime
+attr title "completionTime, stats"
+statistic simpleNet.node[0] numProcessed:stats
 field count 0
 field mean nan
 field stddev nan
@@ -128,77 +114,13 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
->>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
->>>>>>> added dynamically sized signals
-attr interpolationmode none
-attr source completionTime
-attr title "completionTime, stats"
-statistic simpleNet.node[0] numProcessed:stats
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-field count 1
-field mean 0
-field stddev nan
-field min 0
-field max 0
-field sum 0
-field sqrsum 0
-=======
-=======
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
->>>>>>> added dynamically sized signals
-field count 22
-field mean 1.8181818181818
-field stddev 1.1396057645964
-field min 0
-field max 3
-field sum 40
-field sqrsum 100
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> added figure4b topology and workload generator
-=======
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-=======
-field count 1
-field mean 0
-field stddev nan
-field min 0
-field max 0
-field sum 0
-field sqrsum 0
->>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
->>>>>>> added dynamically sized signals
 attr interpolationmode none
 attr source numProcessed
 attr title "num processing events in statRate time, stats"
 statistic simpleNet.node[0] numInQueue:stats
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-field count 1
-=======
 field count 22
->>>>>>> added figure4b topology and workload generator
 field mean 0
-field stddev nan
-=======
-=======
->>>>>>> added dynamically sized signals
-field count 22
-=======
-field count 1
->>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
-field mean 0
-<<<<<<< HEAD
 field stddev 0
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-field stddev nan
->>>>>>> added dynamically sized signals
 field min 0
 field max 0
 field sum 0
@@ -206,8 +128,46 @@ field sqrsum 0
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, stats"
-<<<<<<< HEAD
-=======
+statistic simpleNet.node[1] "numProcessedPerChannelSignal(dest node 4):stats"
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
+statistic simpleNet.node[1] "numProcessedPerChannelSignal(dest node 3):stats"
+field count 22
+field mean 0.90909090909091
+field stddev 0.29424494316825
+field min 0
+field max 1
+field sum 20
+field sqrsum 20
+statistic simpleNet.node[1] "numProcessedPerChannelSignal(dest node 2):stats"
+field count 22
+field mean 0.45454545454545
+field stddev 0.50964719143763
+field min 0
+field max 1
+field sum 10
+field sqrsum 10
+statistic simpleNet.node[1] "numProcessedPerChannelSignal(dest node 1):stats"
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
+statistic simpleNet.node[1] "numProcessedPerChannelSignal(dest node 0):stats"
+field count 22
+field mean 0.45454545454545
+field stddev 0.50964719143763
+field min 0
+field max 1
+field sum 10
+field sqrsum 10
 statistic simpleNet.node[1] "numInQueuePerChannelSignal(dest node 4):stats"
 field count 0
 field mean nan
@@ -248,7 +208,6 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
 statistic simpleNet.node[1] completionTime:stats
 field count 20
 field mean 60
@@ -261,74 +220,20 @@ attr interpolationmode none
 attr source completionTime
 attr title "completionTime, stats"
 statistic simpleNet.node[1] numProcessed:stats
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-field count 1
-field mean 0
+field count 0
+field mean nan
 field stddev nan
-field min 0
-field max 0
+field min nan
+field max nan
 field sum 0
 field sqrsum 0
-=======
-=======
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
->>>>>>> added dynamically sized signals
-field count 22
-field mean 1.8181818181818
-field stddev 1.1396057645964
-field min 0
-field max 3
-field sum 40
-field sqrsum 100
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> added figure4b topology and workload generator
-=======
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-=======
-field count 1
-field mean 0
-field stddev nan
-field min 0
-field max 0
-field sum 0
-field sqrsum 0
->>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
->>>>>>> added dynamically sized signals
 attr interpolationmode none
 attr source numProcessed
 attr title "num processing events in statRate time, stats"
 statistic simpleNet.node[1] numInQueue:stats
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-field count 1
-field mean 0
-field stddev nan
-=======
 field count 22
 field mean 0
 field stddev 0
->>>>>>> added figure4b topology and workload generator
-=======
-field count 22
-field mean 0
-field stddev 0
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-field count 22
-field mean 0
-field stddev 0
-=======
-field count 1
-field mean 0
-field stddev nan
->>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
->>>>>>> added dynamically sized signals
 field min 0
 field max 0
 field sum 0
@@ -336,8 +241,46 @@ field sqrsum 0
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, stats"
-<<<<<<< HEAD
-=======
+statistic simpleNet.node[2] "numProcessedPerChannelSignal(dest node 4):stats"
+field count 22
+field mean 1.8181818181818
+field stddev 0.5884898863365
+field min 0
+field max 2
+field sum 40
+field sqrsum 80
+statistic simpleNet.node[2] "numProcessedPerChannelSignal(dest node 3):stats"
+field count 22
+field mean 0.90909090909091
+field stddev 0.29424494316825
+field min 0
+field max 1
+field sum 20
+field sqrsum 20
+statistic simpleNet.node[2] "numProcessedPerChannelSignal(dest node 2):stats"
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
+statistic simpleNet.node[2] "numProcessedPerChannelSignal(dest node 1):stats"
+field count 22
+field mean 0.45454545454545
+field stddev 0.50964719143763
+field min 0
+field max 1
+field sum 10
+field sqrsum 10
+statistic simpleNet.node[2] "numProcessedPerChannelSignal(dest node 0):stats"
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
 statistic simpleNet.node[2] "numInQueuePerChannelSignal(dest node 4):stats"
 field count 22
 field mean 0
@@ -378,7 +321,6 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
 statistic simpleNet.node[2] completionTime:stats
 field count 30
 field mean 60
@@ -391,87 +333,6 @@ attr interpolationmode none
 attr source completionTime
 attr title "completionTime, stats"
 statistic simpleNet.node[2] numProcessed:stats
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-field count 1
-field mean 0
-field stddev nan
-field min 0
-field max 0
-field sum 0
-field sqrsum 0
-=======
-=======
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
->>>>>>> added dynamically sized signals
-field count 22
-field mean 3.1818181818182
-field stddev 1.1396057645964
-field min 0
-field max 4
-field sum 70
-field sqrsum 250
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> added figure4b topology and workload generator
-=======
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-=======
-field count 1
-field mean 0
-field stddev nan
-field min 0
-field max 0
-field sum 0
-field sqrsum 0
->>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
->>>>>>> added dynamically sized signals
-attr interpolationmode none
-attr source numProcessed
-attr title "num processing events in statRate time, stats"
-statistic simpleNet.node[2] numInQueue:stats
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-field count 1
-field mean 0
-field stddev nan
-=======
-field count 22
-field mean 0
-field stddev 0
->>>>>>> added figure4b topology and workload generator
-=======
-field count 22
-field mean 0
-field stddev 0
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-field count 22
-field mean 0
-field stddev 0
-=======
-field count 1
-field mean 0
-field stddev nan
->>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
->>>>>>> added dynamically sized signals
-field min 0
-field max 0
-field sum 0
-field sqrsum 0
-attr interpolationmode none
-attr source numInQueue
-attr title "total num in queue, stats"
-<<<<<<< HEAD
-statistic simpleNet.node[3] completionTime:stats
-<<<<<<< HEAD
-=======
-statistic simpleNet.node[3] "numInQueuePerChannelSignal(dest node 4):stats"
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
 field count 0
 field mean nan
 field stddev nan
@@ -479,9 +340,68 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-<<<<<<< HEAD
-=======
-=======
+attr interpolationmode none
+attr source numProcessed
+attr title "num processing events in statRate time, stats"
+statistic simpleNet.node[2] numInQueue:stats
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, stats"
+statistic simpleNet.node[3] "numProcessedPerChannelSignal(dest node 4):stats"
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
+statistic simpleNet.node[3] "numProcessedPerChannelSignal(dest node 3):stats"
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
+statistic simpleNet.node[3] "numProcessedPerChannelSignal(dest node 2):stats"
+field count 22
+field mean 0.90909090909091
+field stddev 0.29424494316825
+field min 0
+field max 1
+field sum 20
+field sqrsum 20
+statistic simpleNet.node[3] "numProcessedPerChannelSignal(dest node 1):stats"
+field count 22
+field mean 0.90909090909091
+field stddev 0.29424494316825
+field min 0
+field max 1
+field sum 20
+field sqrsum 20
+statistic simpleNet.node[3] "numProcessedPerChannelSignal(dest node 0):stats"
+field count 22
+field mean 0.90909090909091
+field stddev 0.29424494316825
+field min 0
+field max 1
+field sum 20
+field sqrsum 20
+statistic simpleNet.node[3] "numInQueuePerChannelSignal(dest node 4):stats"
+field count 0
+field mean nan
+field stddev nan
+field min nan
+field max nan
+field sum 0
+field sqrsum 0
 statistic simpleNet.node[3] "numInQueuePerChannelSignal(dest node 3):stats"
 field count 0
 field mean nan
@@ -515,11 +435,6 @@ field max 0
 field sum 0
 field sqrsum 0
 statistic simpleNet.node[3] completionTime:stats
-<<<<<<< HEAD
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-<<<<<<< HEAD
->>>>>>> added dynamically sized signals
 field count 40
 field mean 60
 field stddev 0
@@ -527,13 +442,10 @@ field min 60
 field max 60
 field sum 2400
 field sqrsum 144000
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> added figure4b topology and workload generator
-=======
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-=======
+attr interpolationmode none
+attr source completionTime
+attr title "completionTime, stats"
+statistic simpleNet.node[3] numProcessed:stats
 field count 0
 field mean nan
 field stddev nan
@@ -541,63 +453,10 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
->>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
->>>>>>> added dynamically sized signals
-attr interpolationmode none
-attr source completionTime
-attr title "completionTime, stats"
-statistic simpleNet.node[3] numProcessed:stats
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-field count 1
-field mean 0
-field stddev nan
-field min 0
-field max 0
-field sum 0
-field sqrsum 0
-=======
-=======
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
->>>>>>> added dynamically sized signals
-field count 22
-field mean 2.7272727272727
-field stddev 0.88273482950475
-field min 0
-field max 3
-field sum 60
-field sqrsum 180
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> added figure4b topology and workload generator
-=======
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-=======
-field count 1
-field mean 0
-field stddev nan
-field min 0
-field max 0
-field sum 0
-field sqrsum 0
->>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
->>>>>>> added dynamically sized signals
 attr interpolationmode none
 attr source numProcessed
 attr title "num processing events in statRate time, stats"
 statistic simpleNet.node[3] numInQueue:stats
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-field count 1
-=======
-=======
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
->>>>>>> added dynamically sized signals
 field count 22
 field mean 0
 field stddev 0
@@ -608,8 +467,46 @@ field sqrsum 0
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, stats"
-<<<<<<< HEAD
-=======
+statistic simpleNet.node[4] "numProcessedPerChannelSignal(dest node 4):stats"
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
+statistic simpleNet.node[4] "numProcessedPerChannelSignal(dest node 3):stats"
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
+statistic simpleNet.node[4] "numProcessedPerChannelSignal(dest node 2):stats"
+field count 22
+field mean 1.8181818181818
+field stddev 0.5884898863365
+field min 0
+field max 2
+field sum 40
+field sqrsum 80
+statistic simpleNet.node[4] "numProcessedPerChannelSignal(dest node 1):stats"
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
+statistic simpleNet.node[4] "numProcessedPerChannelSignal(dest node 0):stats"
+field count 22
+field mean 0.45454545454545
+field stddev 0.50964719143763
+field min 0
+field max 1
+field sum 10
+field sqrsum 10
 statistic simpleNet.node[4] "numInQueuePerChannelSignal(dest node 4):stats"
 field count 0
 field mean nan
@@ -650,7 +547,6 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
 statistic simpleNet.node[4] completionTime:stats
 field count 20
 field mean 60
@@ -663,34 +559,20 @@ attr interpolationmode none
 attr source completionTime
 attr title "completionTime, stats"
 statistic simpleNet.node[4] numProcessed:stats
-field count 22
-field mean 2.2727272727273
-field stddev 0.88273482950475
-field min 0
-field max 3
-field sum 50
-field sqrsum 130
+field count 0
+field mean nan
+field stddev nan
+field min nan
+field max nan
+field sum 0
+field sqrsum 0
 attr interpolationmode none
 attr source numProcessed
 attr title "num processing events in statRate time, stats"
 statistic simpleNet.node[4] numInQueue:stats
 field count 22
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> added figure4b topology and workload generator
-field mean 0
-field stddev nan
-=======
 field mean 0
 field stddev 0
->>>>>>> made dynamically sized queue of signals "numInQueuePerChannelSignals"
-=======
-=======
-field count 1
->>>>>>> d795e099ef38d6f5641c4c8a1fe3e49da50f4ce0
-field mean 0
-field stddev nan
->>>>>>> added dynamically sized signals
 field min 0
 field max 0
 field sum 0

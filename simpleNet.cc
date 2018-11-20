@@ -98,7 +98,7 @@ void routerNode::print_private_values(){
 void routerNode::initialize()
 {
     cout << "here, before initialization" << endl;
-    statNumProcessed = 0;
+    //statNumProcessed = 0;
 
     //register signals
     numInQueueSignal = registerSignal("numInQueue");
@@ -141,6 +141,20 @@ void routerNode::initialize()
 
 
 
+
+   for (int i = 0; i < numNodes; ++i) {
+         char signalName[64];
+         sprintf(signalName, "numProcessedPerChannelSignal(dest node %d)", i);
+         simsignal_t signal = registerSignal(signalName);
+         cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numProcessedPerChannelTemplate");
+         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+         numProcessedPerChannelSignals.push_back(signal);
+     }
+
+   //initialize statNumProcessed vector
+   for (int i=0 ; i<numNodes; i++){
+       statNumProcessed.push_back(0);
+   }
    cout << getIndex() << endl;
    cout << "here, after initialization \n";
 
@@ -272,17 +286,22 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
 
     printf("numInQueue %i \n", statNumInQueue);
 
+    for (int i=0; i<numNodes; i++){
+        emit(numProcessedPerChannelSignals[i], statNumProcessed[i]);
+        statNumProcessed[i] = 0;
+    }
 
-    EV << "node "<< getIndex() << ": numProcessed "<< statNumProcessed;
+    //EV << "node "<< getIndex() << ": numProcessed "<< statNumProcessed;
     //int arrSignal[2] = {statNumInQueue};
     //int arrSignal[4] = {10,20,30,40};
 
 
+
     emit(numInQueueSignal, statNumInQueue);
-    emit(numProcessedSignal, statNumProcessed);
+    //emit(numProcessedSignal, statNumProcessed);
 
 
-    statNumProcessed = 0;
+    //statNumProcessed = 0;
 
     //send out statistics here
 }
@@ -302,7 +321,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
     outgoing_trans_units[sender].erase(ttmsg->getTransactionId());
 
     //increment signal numProcessed
-    statNumProcessed++;
+    statNumProcessed[sender] = statNumProcessed[sender]+1;
 
     // virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
      routerMsg* updateMsg =  generateUpdateMessage(ttmsg->getTransactionId(),sender, ttmsg->getAmount() );
@@ -398,7 +417,8 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
 
     incoming_trans_units[sender].erase(msg->getTransactionId());
     //increment numProcessed signal
-    statNumProcessed++;
+    statNumProcessed[sender] = statNumProcessed[sender]+1;
+    //statNumProcessed++;
 
 
     delete msg; //delete update message

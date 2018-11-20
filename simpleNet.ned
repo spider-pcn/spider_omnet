@@ -14,7 +14,10 @@ simple routerNode
 		
 		@signal[numInQueuePerChannel*](type="long"); // note an asterisk and the type of emitted values
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);
-	gates:
+
+		@signal[numProcessedPerChannel*](type="long"); // note an asterisk and the type of emitted values
+		@statisticTemplate[numProcessedPerChannelTemplate](record=vector, stats);
+    gates:
 		input in[];
 		output out[];
 }

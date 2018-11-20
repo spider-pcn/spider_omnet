@@ -24,11 +24,14 @@ using namespace omnetpp;
 class routerNode : public cSimpleModule
 {
    private:
-      int statNumProcessed;
+      //int statNumProcessed;
+      vector<int> statNumProcessed;
       simsignal_t numInQueueSignal;
       simsignal_t numProcessedSignal; //whenever something is removed from incoming or outgoing
       simsignal_t completionTimeSignal;
       vector<simsignal_t> numInQueuePerChannelSignals;
+      vector<simsignal_t> numProcessedPerChannelSignals;
+
       vector< transUnit > my_trans_units; //list of transUnits that have me as sender
       map<int, cGate*> node_to_gate; //map that takes in index of node adjacent to me, returns gate to that node
       map<int, double> node_to_balance; //map takes in index of adjacent node, returns outgoing balance

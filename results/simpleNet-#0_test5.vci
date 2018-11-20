@@ -17,131 +17,130 @@ attr runnumber 0
 attr seedset 0
 
 vector 0 simpleNet.node[0] "numInQueuePerChannelSignal(dest node 1):vector" ETV
+0	4989 240 3 626 0 10.5 22 0 0 0 0
 vector 1 simpleNet.node[0] "numInQueuePerChannelSignal(dest node 3):vector" ETV
+1	5229 240 3 626 0 10.5 22 0 0 0 0
 vector 2 simpleNet.node[0] "numInQueuePerChannelSignal(dest node 4):vector" ETV
+2	5469 240 3 626 0 10.5 22 0 0 0 0
 vector 3 simpleNet.node[0] "numProcessedPerChannelSignal(dest node 0):vector" ETV
+3	5709 240 3 626 0 10.5 22 0 0 0 0
 vector 4 simpleNet.node[0] "numProcessedPerChannelSignal(dest node 1):vector" ETV
+4	5949 240 3 626 0 10.5 22 0 1 10 10
 vector 5 simpleNet.node[0] "numProcessedPerChannelSignal(dest node 2):vector" ETV
+5	6189 240 3 626 0 10.5 22 0 0 0 0
 vector 6 simpleNet.node[0] "numProcessedPerChannelSignal(dest node 3):vector" ETV
+6	6429 240 3 626 0 10.5 22 0 1 20 20
 vector 7 simpleNet.node[0] "numProcessedPerChannelSignal(dest node 4):vector" ETV
+7	6669 240 3 626 0 10.5 22 0 1 10 10
 vector 8 simpleNet.node[0] numInQueue:vector ETV
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, vector"
+8	6909 240 3 626 0 10.5 22 0 0 0 0
 vector 9 simpleNet.node[1] "numInQueuePerChannelSignal(dest node 0):vector" ETV
+9	7149 240 5 627 0 10.5 22 0 0 0 0
 vector 10 simpleNet.node[1] "numInQueuePerChannelSignal(dest node 2):vector" ETV
+10	7389 262 5 627 0 10.5 22 0 0 0 0
 vector 11 simpleNet.node[1] "numInQueuePerChannelSignal(dest node 3):vector" ETV
+11	7651 262 5 627 0 10.5 22 0 0 0 0
 vector 12 simpleNet.node[1] "numProcessedPerChannelSignal(dest node 0):vector" ETV
+12	7913 262 5 627 0 10.5 22 0 1 10 10
 vector 13 simpleNet.node[1] "numProcessedPerChannelSignal(dest node 1):vector" ETV
+13	8175 262 5 627 0 10.5 22 0 0 0 0
 vector 14 simpleNet.node[1] "numProcessedPerChannelSignal(dest node 2):vector" ETV
+14	8437 262 5 627 0 10.5 22 0 1 10 10
 vector 15 simpleNet.node[1] "numProcessedPerChannelSignal(dest node 3):vector" ETV
+15	8699 262 5 627 0 10.5 22 0 1 20 20
 vector 16 simpleNet.node[1] "numProcessedPerChannelSignal(dest node 4):vector" ETV
+16	8961 262 5 627 0 10.5 22 0 0 0 0
 vector 17 simpleNet.node[1] numInQueue:vector ETV
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, vector"
+17	9223 262 5 627 0 10.5 22 0 0 0 0
 vector 18 simpleNet.node[2] "numInQueuePerChannelSignal(dest node 1):vector" ETV
+18	9485 262 8 628 0 10.5 22 0 0 0 0
 vector 19 simpleNet.node[2] "numInQueuePerChannelSignal(dest node 3):vector" ETV
+19	9747 262 8 628 0 10.5 22 0 0 0 0
 vector 20 simpleNet.node[2] "numInQueuePerChannelSignal(dest node 4):vector" ETV
+20	10009 262 8 628 0 10.5 22 0 0 0 0
 vector 21 simpleNet.node[2] "numProcessedPerChannelSignal(dest node 0):vector" ETV
+21	10271 262 8 628 0 10.5 22 0 0 0 0
 vector 22 simpleNet.node[2] "numProcessedPerChannelSignal(dest node 1):vector" ETV
+22	10533 262 8 628 0 10.5 22 0 1 10 10
 vector 23 simpleNet.node[2] "numProcessedPerChannelSignal(dest node 2):vector" ETV
+23	10795 262 8 628 0 10.5 22 0 0 0 0
 vector 24 simpleNet.node[2] "numProcessedPerChannelSignal(dest node 3):vector" ETV
+24	11057 262 8 628 0 10.5 22 0 1 20 20
 vector 25 simpleNet.node[2] "numProcessedPerChannelSignal(dest node 4):vector" ETV
+25	11319 262 8 628 0 10.5 22 0 2 40 80
 vector 26 simpleNet.node[2] numInQueue:vector ETV
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, vector"
+26	11581 262 8 628 0 10.5 22 0 0 0 0
 vector 27 simpleNet.node[3] "numInQueuePerChannelSignal(dest node 0):vector" ETV
+27	11843 263 11 629 0 10.5 22 0 0 0 0
 vector 28 simpleNet.node[3] "numInQueuePerChannelSignal(dest node 1):vector" ETV
+28	12106 263 11 629 0 10.5 22 0 0 0 0
 vector 29 simpleNet.node[3] "numInQueuePerChannelSignal(dest node 2):vector" ETV
+29	12369 263 11 629 0 10.5 22 0 0 0 0
 vector 30 simpleNet.node[3] "numProcessedPerChannelSignal(dest node 0):vector" ETV
+30	12632 263 11 629 0 10.5 22 0 1 20 20
 vector 31 simpleNet.node[3] "numProcessedPerChannelSignal(dest node 1):vector" ETV
+31	12895 263 11 629 0 10.5 22 0 1 20 20
 vector 32 simpleNet.node[3] "numProcessedPerChannelSignal(dest node 2):vector" ETV
+32	13158 263 11 629 0 10.5 22 0 1 20 20
 vector 33 simpleNet.node[3] "numProcessedPerChannelSignal(dest node 3):vector" ETV
+33	13421 263 11 629 0 10.5 22 0 0 0 0
 vector 34 simpleNet.node[3] "numProcessedPerChannelSignal(dest node 4):vector" ETV
+34	13684 263 11 629 0 10.5 22 0 0 0 0
 vector 35 simpleNet.node[3] numInQueue:vector ETV
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, vector"
+35	13947 263 11 629 0 10.5 22 0 0 0 0
 vector 36 simpleNet.node[4] "numInQueuePerChannelSignal(dest node 0):vector" ETV
+36	14210 263 13 630 0 10.5 22 0 0 0 0
 vector 37 simpleNet.node[4] "numInQueuePerChannelSignal(dest node 2):vector" ETV
+37	14473 263 13 630 0 10.5 22 0 0 0 0
 vector 38 simpleNet.node[4] "numProcessedPerChannelSignal(dest node 0):vector" ETV
+38	14736 263 13 630 0 10.5 22 0 1 10 10
 vector 39 simpleNet.node[4] "numProcessedPerChannelSignal(dest node 1):vector" ETV
+39	14999 263 13 630 0 10.5 22 0 0 0 0
 vector 40 simpleNet.node[4] "numProcessedPerChannelSignal(dest node 2):vector" ETV
+40	15262 263 13 630 0 10.5 22 0 2 40 80
 vector 41 simpleNet.node[4] "numProcessedPerChannelSignal(dest node 3):vector" ETV
+41	15525 263 13 630 0 10.5 22 0 0 0 0
 vector 42 simpleNet.node[4] "numProcessedPerChannelSignal(dest node 4):vector" ETV
+42	15788 263 13 630 0 10.5 22 0 0 0 0
 vector 43 simpleNet.node[4] numInQueue:vector ETV
 attr interpolationmode none
 attr source numInQueue
 attr title "total num in queue, vector"
+43	16051 263 13 630 0 10.5 22 0 0 0 0
 vector 44 simpleNet.node[0] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+44	16314 296 22 581 0.06 9.06 20 60 60 1200 72000
 vector 45 simpleNet.node[1] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+45	16610 297 24 611 0.06 9.56 20 60 60 1200 72000
 vector 46 simpleNet.node[2] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+46	16907 445 25 612 0.06 9.56 30 60 60 1800 108000
 vector 47 simpleNet.node[3] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+47	17352 594 27 614 0.06 9.56 40 60 60 2400 144000
 vector 48 simpleNet.node[4] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
-0	4989 240 3 626 0 10.5 22 0 0 0 0
-1	5229 240 3 626 0 10.5 22 0 0 0 0
-2	5469 240 3 626 0 10.5 22 0 0 0 0
-3	5709 240 3 626 0 10.5 22 0 0 0 0
-4	5949 240 3 626 0 10.5 22 0 1 10 10
-5	6189 240 3 626 0 10.5 22 0 0 0 0
-6	6429 240 3 626 0 10.5 22 0 1 20 20
-7	6669 240 3 626 0 10.5 22 0 1 10 10
-8	6909 240 3 626 0 10.5 22 0 0 0 0
-9	7149 240 5 627 0 10.5 22 0 0 0 0
-10	7389 262 5 627 0 10.5 22 0 0 0 0
-11	7651 262 5 627 0 10.5 22 0 0 0 0
-12	7913 262 5 627 0 10.5 22 0 1 10 10
-13	8175 262 5 627 0 10.5 22 0 0 0 0
-14	8437 262 5 627 0 10.5 22 0 1 10 10
-15	8699 262 5 627 0 10.5 22 0 1 20 20
-16	8961 262 5 627 0 10.5 22 0 0 0 0
-17	9223 262 5 627 0 10.5 22 0 0 0 0
-18	9485 262 8 628 0 10.5 22 0 0 0 0
-19	9747 262 8 628 0 10.5 22 0 0 0 0
-20	10009 262 8 628 0 10.5 22 0 0 0 0
-21	10271 262 8 628 0 10.5 22 0 0 0 0
-22	10533 262 8 628 0 10.5 22 0 1 10 10
-23	10795 262 8 628 0 10.5 22 0 0 0 0
-24	11057 262 8 628 0 10.5 22 0 1 20 20
-25	11319 262 8 628 0 10.5 22 0 2 40 80
-26	11581 262 8 628 0 10.5 22 0 0 0 0
-27	11843 263 11 629 0 10.5 22 0 0 0 0
-28	12106 263 11 629 0 10.5 22 0 0 0 0
-29	12369 263 11 629 0 10.5 22 0 0 0 0
-30	12632 263 11 629 0 10.5 22 0 1 20 20
-31	12895 263 11 629 0 10.5 22 0 1 20 20
-32	13158 263 11 629 0 10.5 22 0 1 20 20
-33	13421 263 11 629 0 10.5 22 0 0 0 0
-34	13684 263 11 629 0 10.5 22 0 0 0 0
-35	13947 263 11 629 0 10.5 22 0 0 0 0
-36	14210 263 13 630 0 10.5 22 0 0 0 0
-37	14473 263 13 630 0 10.5 22 0 0 0 0
-38	14736 263 13 630 0 10.5 22 0 1 10 10
-39	14999 263 13 630 0 10.5 22 0 0 0 0
-40	15262 263 13 630 0 10.5 22 0 2 40 80
-41	15525 263 13 630 0 10.5 22 0 0 0 0
-42	15788 263 13 630 0 10.5 22 0 0 0 0
-43	16051 263 13 630 0 10.5 22 0 0 0 0
-44	16314 296 22 581 0.06 9.06 20 60 60 1200 72000
-45	16610 297 24 611 0.06 9.56 20 60 60 1200 72000
-46	16907 445 25 612 0.06 9.56 30 60 60 1800 108000
-47	17352 594 27 614 0.06 9.56 40 60 60 2400 144000
-48	17946 297 29 615 0.06 9.56 20 60 60 1200 72000
-
+48	17946 298 29 615 0.06 9.56 20 60 60 1200 72000
