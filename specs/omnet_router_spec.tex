@@ -334,11 +334,12 @@ to avoid unnecessary probing overhead. The computation of the splits happens as 
                 \mbox{Computes output path\_list which consists of tuples (path, amount on path)}
 		\BEGIN \\ %
                   |path_list| := \emptyset
+                  ~\\
 		  \FOR i:=1 \TO k \DO
 		     B_i := |compute_bottleneck_bal|(P_i)\\ PQ := PQ \cup (P_i, B_i); %
 		\rcomment{Insert balances into some heap PQ}
 		\END \\
-
+                ~\\
 
                 \DO \IF |size|(PQ) > 0 \AND |txn_amt| > 0	    
 		  |highest_bal| := |PQ.poll()| % 
@@ -346,11 +347,14 @@ to avoid unnecessary probing overhead. The computation of the splits happens as 
 		  |second_highest_bal| := |PQ.peek()|\\
 		  |diff_to_send| := |highest_bal| - |second_highest_bal|\\% 
                   |amt_to_send| := min(|txn_amt|/(|size|(|path_list|) + 1), |diff_to_send|)
-		  
+		 
+                  ~\\
                   \FOR p \  |in| \ |path_list| \DO
 		    |amt|_p := |amt|_p + |amt_to_send|
 		    |txn_amt| := |txn_amt| - |amt_to_send|
 		  \END
+                  ~\\
+
 		  |path_list| := |path_list| \cup (p_{max}, |amt_to_send|)
 		\END
             \END
