@@ -11,6 +11,9 @@ simple routerNode
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 
 
 		@display("i=block/routing"); 
+		
+		@signal[numInQueuePerChannel*](type="long"); // note an asterisk and the type of emitted values
+		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);
 	gates:
 		input in[];
 		output out[];

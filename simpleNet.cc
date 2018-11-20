@@ -106,6 +106,10 @@ void routerNode::initialize()
     completionTimeSignal = registerSignal("completionTime");
 
 
+
+
+
+
    if (getIndex() == 0){  //main initialization for global parameters
       // instantiate all the transUnits that need to be sent
 
@@ -124,6 +128,19 @@ void routerNode::initialize()
       //dijkstra(1,0);
 
    }
+
+
+   for (int i = 0; i < numNodes; ++i) {
+        char signalName[64];
+        sprintf(signalName, "numInQueuePerChannelSignal(dest node %d)", i);
+        simsignal_t signal = registerSignal(signalName);
+        cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numInQueuePerChannelTemplate");
+        getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+        numInQueuePerChannelSignals.push_back(signal);
+    }
+
+
+
    cout << getIndex() << endl;
    cout << "here, after initialization \n";
 
@@ -248,13 +265,19 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
            it!= node_to_queued_trans_units.end(); it++){
         EV << "node "<< getIndex() << ": queued "<<(it->second).size();
         statNumInQueue = statNumInQueue + (it->second).size();
+        emit(numInQueuePerChannelSignals[it->first], (it->second).size());
 
     }
+
 
     printf("numInQueue %i \n", statNumInQueue);
 
 
     EV << "node "<< getIndex() << ": numProcessed "<< statNumProcessed;
+    //int arrSignal[2] = {statNumInQueue};
+    //int arrSignal[4] = {10,20,30,40};
+
+
     emit(numInQueueSignal, statNumInQueue);
     emit(numProcessedSignal, statNumProcessed);
 
