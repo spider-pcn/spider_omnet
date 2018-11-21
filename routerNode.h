@@ -28,8 +28,8 @@ class routerNode : public cSimpleModule
       vector<int> statNumProcessed;
       vector<int> statNumCompleted;
       vector<int> statNumAttempted;
-      simsignal_t numInQueueSignal;
-      simsignal_t numProcessedSignal; //whenever something is removed from incoming or outgoing
+      //simsignal_t numInQueueSignal;
+      //simsignal_t numProcessedSignal; //whenever something is removed from incoming or outgoing
       simsignal_t completionTimeSignal;
       vector<simsignal_t> numInQueuePerChannelSignals;
       vector<simsignal_t> numProcessedPerChannelSignals;

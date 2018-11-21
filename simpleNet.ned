@@ -1,11 +1,6 @@
 simple routerNode
 {
 	parameters:
-		@signal[numInQueue](type="long"); 
-		@statistic[numInQueue](title="total num in queue"; source="numInQueue"; record=vector,stats; interpolationmode=none); 
-
-		@signal[numProcessed](type="long"); 
-		@statistic[numProcessed](title="num processing events in statRate time"; source="numProcessed"; record=vector,stats; interpolationmode=none); 
 
 		@signal[completionTime](type="long"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 

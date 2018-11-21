@@ -101,9 +101,9 @@ void routerNode::initialize()
     //statNumProcessed = 0;
 
     //register signals
-    numInQueueSignal = registerSignal("numInQueue");
-    numProcessedSignal = registerSignal("numProcessed");
-    completionTimeSignal = registerSignal("completionTime");
+    //numInQueueSignal = registerSignal("numInQueue");
+    //numProcessedSignal = registerSignal("numProcessed");
+    completionTimeSignal = registerSignal("completionTime (milliseconds)");
 
 
 
@@ -326,7 +326,7 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
 
 
 
-    emit(numInQueueSignal, statNumInQueue);
+    //emit(numInQueueSignal, statNumInQueue);
     //emit(numProcessedSignal, statNumProcessed);
 
 

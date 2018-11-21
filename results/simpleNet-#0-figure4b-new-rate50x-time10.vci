@@ -1,0 +1,178 @@
+file 214312 1542760294                                          
+version 2
+run simpleNet-0-20181120-19:31:31-10512
+attr configname simpleNet
+attr datetime 20181120-19:31:31
+attr experiment simpleNet
+attr inifile omnetpp.ini
+attr iterationvars ""
+attr iterationvarsf ""
+attr measurement ""
+attr network simpleNet
+attr processid 10512
+attr repetition 0
+attr replication #0
+attr resultdir results
+attr runnumber 0
+attr seedset 0
+
+vector 0 simpleNet.node[0] "numAttemptedPerDestSignal(dest node 4):vector" ETV
+0	6326 7918 1 14340 0 9.98 500 1 500 125250 41791750
+vector 1 simpleNet.node[0] "numAttemptedPerDestSignal(dest node 1):vector" ETV
+1	14244 7918 2 14341 0 9.98 500 1 500 125250 41791750
+vector 2 simpleNet.node[0] "numInQueuePerChannelSignal(other node 1):vector" ETV
+2	22162 302 3 14406 0 10.5 22 0 400 3816 1101016
+vector 3 simpleNet.node[0] "numInQueuePerChannelSignal(other node 3):vector" ETV
+3	22464 271 3 14406 0 10.5 22 0 0 0 0
+vector 4 simpleNet.node[0] "numInQueuePerChannelSignal(other node 4):vector" ETV
+4	22735 302 3 14406 0 10.5 22 0 400 3816 1101016
+vector 5 simpleNet.node[0] "numProcessedPerChannelSignal(other node 0):vector" ETV
+5	23037 271 3 14406 0 10.5 22 0 0 0 0
+vector 6 simpleNet.node[0] "numProcessedPerChannelSignal(other node 1):vector" ETV
+6	23308 275 3 14406 0 10.5 22 0 25 100 2368
+vector 7 simpleNet.node[0] "numProcessedPerChannelSignal(other node 2):vector" ETV
+7	23583 271 3 14406 0 10.5 22 0 0 0 0
+vector 8 simpleNet.node[0] "numProcessedPerChannelSignal(other node 3):vector" ETV
+8	23854 273 3 14406 0 10.5 22 0 50 100 4262
+vector 9 simpleNet.node[0] "numProcessedPerChannelSignal(other node 4):vector" ETV
+9	24127 275 3 14406 0 10.5 22 0 25 100 2368
+vector 10 simpleNet.node[0] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+10	24402 326 3 14406 0 10.5 22 0 800 7632 4404064
+vector 11 simpleNet.node[1] "numAttemptedPerDestSignal(dest node 3):vector" ETV
+11	24728 17067 4 14354 0 9.99 1000 1 1000 500500 333833500
+vector 12 simpleNet.node[1] "numInQueuePerChannelSignal(other node 0):vector" ETV
+12	41795 293 5 14407 0 10.5 22 0 0 0 0
+vector 13 simpleNet.node[1] "numInQueuePerChannelSignal(other node 2):vector" ETV
+13	42088 293 5 14407 0 10.5 22 0 0 0 0
+vector 14 simpleNet.node[1] "numInQueuePerChannelSignal(other node 3):vector" ETV
+14	42381 330 5 14407 0 10.5 22 0 900 9468 6097818
+vector 15 simpleNet.node[1] "numProcessedPerChannelSignal(other node 0):vector" ETV
+15	42711 297 5 14407 0 10.5 22 0 25 100 2332
+vector 16 simpleNet.node[1] "numProcessedPerChannelSignal(other node 1):vector" ETV
+16	43008 293 5 14407 0 10.5 22 0 0 0 0
+vector 17 simpleNet.node[1] "numProcessedPerChannelSignal(other node 2):vector" ETV
+17	43301 297 5 14407 0 10.5 22 0 25 100 2332
+vector 18 simpleNet.node[1] "numProcessedPerChannelSignal(other node 3):vector" ETV
+18	43598 295 5 14407 0 10.5 22 0 50 100 4472
+vector 19 simpleNet.node[1] "numProcessedPerChannelSignal(other node 4):vector" ETV
+19	43893 293 5 14407 0 10.5 22 0 0 0 0
+vector 20 simpleNet.node[1] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+20	44186 330 5 14407 0 10.5 22 0 900 9468 6097818
+vector 21 simpleNet.node[2] "numAttemptedPerDestSignal(dest node 1):vector" ETV
+21	44516 8418 6 14343 0 9.98 500 1 500 125250 41791750
+vector 22 simpleNet.node[2] "numAttemptedPerDestSignal(dest node 4):vector" ETV
+22	52934 17068 7 14355 0 9.99 1000 1 1000 500500 333833500
+vector 23 simpleNet.node[2] "numInQueuePerChannelSignal(other node 1):vector" ETV
+23	70002 324 8 14408 0 10.5 22 0 400 3816 1101016
+vector 24 simpleNet.node[2] "numInQueuePerChannelSignal(other node 3):vector" ETV
+24	70326 293 8 14408 0 10.5 22 0 0 0 0
+vector 25 simpleNet.node[2] "numInQueuePerChannelSignal(other node 4):vector" ETV
+25	70619 293 8 14408 0 10.5 22 0 0 0 0
+vector 26 simpleNet.node[2] "numProcessedPerChannelSignal(other node 0):vector" ETV
+26	70912 293 8 14408 0 10.5 22 0 0 0 0
+vector 27 simpleNet.node[2] "numProcessedPerChannelSignal(other node 1):vector" ETV
+27	71205 297 8 14408 0 10.5 22 0 25 100 2368
+vector 28 simpleNet.node[2] "numProcessedPerChannelSignal(other node 2):vector" ETV
+28	71502 293 8 14408 0 10.5 22 0 0 0 0
+vector 29 simpleNet.node[2] "numProcessedPerChannelSignal(other node 3):vector" ETV
+29	71795 295 8 14408 0 10.5 22 0 50 100 4262
+vector 30 simpleNet.node[2] "numProcessedPerChannelSignal(other node 4):vector" ETV
+30	72090 333 8 14408 0 10.5 22 0 100 2000 197450
+vector 31 simpleNet.node[2] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+31	72423 324 8 14408 0 10.5 22 0 400 3816 1101016
+vector 32 simpleNet.node[3] "numAttemptedPerDestSignal(dest node 0):vector" ETV
+32	72747 17068 9 14356 0 9.99 1000 1 1000 500500 333833500
+vector 33 simpleNet.node[3] "numAttemptedPerDestSignal(dest node 2):vector" ETV
+33	89815 17069 10 14357 0 9.99 1000 1 1000 500500 333833500
+vector 34 simpleNet.node[3] "numInQueuePerChannelSignal(other node 0):vector" ETV
+34	106884 331 11 14409 0 10.5 22 0 900 9468 6097818
+vector 35 simpleNet.node[3] "numInQueuePerChannelSignal(other node 1):vector" ETV
+35	107215 294 11 14409 0 10.5 22 0 0 0 0
+vector 36 simpleNet.node[3] "numInQueuePerChannelSignal(other node 2):vector" ETV
+36	107509 331 11 14409 0 10.5 22 0 900 9468 6097818
+vector 37 simpleNet.node[3] "numProcessedPerChannelSignal(other node 0):vector" ETV
+37	107840 296 11 14409 0 10.5 22 0 50 100 4472
+vector 38 simpleNet.node[3] "numProcessedPerChannelSignal(other node 1):vector" ETV
+38	108136 296 11 14409 0 10.5 22 0 50 100 4262
+vector 39 simpleNet.node[3] "numProcessedPerChannelSignal(other node 2):vector" ETV
+39	108432 296 11 14409 0 10.5 22 0 50 100 4472
+vector 40 simpleNet.node[3] "numProcessedPerChannelSignal(other node 3):vector" ETV
+40	108728 294 11 14409 0 10.5 22 0 0 0 0
+vector 41 simpleNet.node[3] "numProcessedPerChannelSignal(other node 4):vector" ETV
+41	109022 294 11 14409 0 10.5 22 0 0 0 0
+vector 42 simpleNet.node[3] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+42	109316 342 11 14409 0 10.5 22 0 1800 18936 24391272
+vector 43 simpleNet.node[4] "numAttemptedPerDestSignal(dest node 2):vector" ETV
+43	109658 17069 12 14358 0 9.99 1000 1 1000 500500 333833500
+vector 44 simpleNet.node[4] "numInQueuePerChannelSignal(other node 0):vector" ETV
+44	126727 294 13 14410 0 10.5 22 0 0 0 0
+vector 45 simpleNet.node[4] "numInQueuePerChannelSignal(other node 2):vector" ETV
+45	127021 294 13 14410 0 10.5 22 0 0 0 0
+vector 46 simpleNet.node[4] "numProcessedPerChannelSignal(other node 0):vector" ETV
+46	127315 298 13 14410 0 10.5 22 0 25 100 2332
+vector 47 simpleNet.node[4] "numProcessedPerChannelSignal(other node 1):vector" ETV
+47	127613 294 13 14410 0 10.5 22 0 0 0 0
+vector 48 simpleNet.node[4] "numProcessedPerChannelSignal(other node 2):vector" ETV
+48	127907 334 13 14410 0 10.5 22 0 100 2000 197450
+vector 49 simpleNet.node[4] "numProcessedPerChannelSignal(other node 3):vector" ETV
+49	128241 294 13 14410 0 10.5 22 0 0 0 0
+vector 50 simpleNet.node[4] "numProcessedPerChannelSignal(other node 4):vector" ETV
+50	128535 294 13 14410 0 10.5 22 0 0 0 0
+vector 51 simpleNet.node[4] numInQueue:vector ETV
+attr interpolationmode none
+attr source numInQueue
+attr title "total num in queue, vector"
+51	128829 294 13 14410 0 10.5 22 0 0 0 0
+vector 52 simpleNet.node[0] completionTime:vector ETV
+attr interpolationmode none
+attr source completionTime
+attr title "completionTime, vector"
+52	129123 3112 79 4342 0.06 2.04 200 60 60 12000 720000
+vector 53 simpleNet.node[0] "numCompletedPerDestSignal(source node 4):vector" ETV
+53	132235 1548 79 4341 0.06 2.04 100 1 100 5050 338350
+vector 54 simpleNet.node[0] "numCompletedPerDestSignal(source node 1):vector" ETV
+54	133783 1548 80 4342 0.06 2.04 100 1 100 5050 338350
+vector 55 simpleNet.node[1] completionTime:vector ETV
+attr interpolationmode none
+attr source completionTime
+attr title "completionTime, vector"
+55	135331 1550 81 2636 0.06 1.05 100 60 60 6000 360000
+vector 56 simpleNet.node[1] "numCompletedPerDestSignal(source node 3):vector" ETV
+56	136881 1542 81 2636 0.06 1.05 100 1 100 5050 338350
+vector 57 simpleNet.node[2] completionTime:vector ETV
+attr interpolationmode none
+attr source completionTime
+attr title "completionTime, vector"
+57	138423 17759 82 14396 0.06 10.05 1100 60 60 66000 3960000
+vector 58 simpleNet.node[2] "numCompletedPerDestSignal(source node 1):vector" ETV
+58	156182 1549 82 4343 0.06 2.04 100 1 100 5050 338350
+vector 59 simpleNet.node[2] "numCompletedPerDestSignal(source node 4):vector" ETV
+59	157731 17095 83 14396 0.06 10.05 1000 1 1000 500500 333833500
+vector 60 simpleNet.node[3] completionTime:vector ETV
+attr interpolationmode none
+attr source completionTime
+attr title "completionTime, vector"
+60	174826 3102 84 2639 0.06 1.05 200 60 60 12000 720000
+vector 61 simpleNet.node[3] "numCompletedPerDestSignal(source node 0):vector" ETV
+61	177928 1543 84 2638 0.06 1.05 100 1 100 5050 338350
+vector 62 simpleNet.node[3] "numCompletedPerDestSignal(source node 2):vector" ETV
+62	179471 1543 85 2639 0.06 1.05 100 1 100 5050 338350
+vector 63 simpleNet.node[4] completionTime:vector ETV
+attr interpolationmode none
+attr source completionTime
+attr title "completionTime, vector"
+63	181014 16202 86 14397 0.06 10.05 1000 60 60 60000 3600000
+vector 64 simpleNet.node[4] "numCompletedPerDestSignal(source node 2):vector" ETV
+64	197216 17096 86 14397 0.06 10.05 1000 1 1000 500500 333833500
