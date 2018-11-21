@@ -132,7 +132,7 @@ void routerNode::initialize()
 
    for (int i = 0; i < numNodes; ++i) {
         char signalName[64];
-        sprintf(signalName, "numInQueuePerChannelSignal(dest node %d)", i);
+        sprintf(signalName, "numInQueuePerChannelSignal(other node %d)", i);
         simsignal_t signal = registerSignal(signalName);
         cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numInQueuePerChannelTemplate");
         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
@@ -140,11 +140,9 @@ void routerNode::initialize()
     }
 
 
-
-
    for (int i = 0; i < numNodes; ++i) {
          char signalName[64];
-         sprintf(signalName, "numProcessedPerChannelSignal(dest node %d)", i);
+         sprintf(signalName, "numProcessedPerChannelSignal(other node %d)", i);
          simsignal_t signal = registerSignal(signalName);
          cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numProcessedPerChannelTemplate");
          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
@@ -155,6 +153,37 @@ void routerNode::initialize()
    for (int i=0 ; i<numNodes; i++){
        statNumProcessed.push_back(0);
    }
+
+   for (int i = 0; i < numNodes; ++i) {
+            char signalName[64];
+            sprintf(signalName, "numCompletedPerDestSignal(source node %d)", i);
+            simsignal_t signal = registerSignal(signalName);
+            cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numCompletedPerDestTemplate");
+            getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+            numCompletedPerDestSignals.push_back(signal);
+        }
+   //initialize statNumCompleted vector
+   for (int i=0 ; i<numNodes; i++){
+       statNumCompleted.push_back(0);
+   }
+
+
+   for (int i = 0; i < numNodes; ++i) {
+               char signalName[64];
+               sprintf(signalName, "numAttemptedPerDestSignal(dest node %d)", i);
+               simsignal_t signal = registerSignal(signalName);
+               cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numAttemptedPerDestTemplate");
+               getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+               numAttemptedPerDestSignals.push_back(signal);
+           }
+      //initialize statNumAttempted vector
+      for (int i=0 ; i<numNodes; i++){
+          statNumAttempted.push_back(0);
+      }
+
+
+
+
    cout << getIndex() << endl;
    cout << "here, after initialization \n";
 
@@ -333,11 +362,18 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
     }
     else{
 
+
+        int destNode = ttmsg->getRoute()[0]; //destination of origin transUnit job
+
+        statNumCompleted[destNode] = statNumCompleted[destNode]+1;
+
         //broadcast completion time signal
         ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
         simtime_t timeTakenInMilli = 1000*(simTime() - aMsg->getTimeSent());
 
         emit(completionTimeSignal, timeTakenInMilli);
+        emit(numCompletedPerDestSignals[destNode], statNumCompleted[destNode]);
+
 
         //delete ack message
 
@@ -489,6 +525,11 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
                          incoming_trans_units[sender][ttmsg->getTransactionId()] = ttmsg->getAmount();
                        // found
                      }
+       }
+       else{ //is a self-message
+           int destNode = ttmsg->getRoute()[ttmsg->getRoute().size()-1];
+           statNumAttempted[destNode] = statNumAttempted[destNode]+1;
+           emit(numAttemptedPerDestSignals[destNode], statNumAttempted[destNode]);
        }
 
        if(ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route

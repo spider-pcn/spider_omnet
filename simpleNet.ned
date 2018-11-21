@@ -17,6 +17,12 @@ simple routerNode
 
 		@signal[numProcessedPerChannel*](type="long"); // note an asterisk and the type of emitted values
 		@statisticTemplate[numProcessedPerChannelTemplate](record=vector, stats);
+		
+		@signal[numCompletedPerDest*](type="long"); // note an asterisk and the type of emitted values
+		@statisticTemplate[numCompletedPerDestTemplate](record=vector, stats);
+		
+		@signal[numAttemptedPerDest*](type="long"); // note an asterisk and the type of emitted values
+		@statisticTemplate[numAttemptedPerDestTemplate](record=vector, stats);
     gates:
 		input in[];
 		output out[];
