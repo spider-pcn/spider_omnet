@@ -103,7 +103,7 @@ void routerNode::initialize()
     //register signals
     //numInQueueSignal = registerSignal("numInQueue");
     //numProcessedSignal = registerSignal("numProcessed");
-    completionTimeSignal = registerSignal("completionTime (milliseconds)");
+    completionTimeSignal = registerSignal("completionTime");
 
 
 
@@ -132,7 +132,7 @@ void routerNode::initialize()
 
    for (int i = 0; i < numNodes; ++i) {
         char signalName[64];
-        sprintf(signalName, "numInQueuePerChannelSignal(other node %d)", i);
+        sprintf(signalName, "numInQueuePerChannel(node %d)", i);
         simsignal_t signal = registerSignal(signalName);
         cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numInQueuePerChannelTemplate");
         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
@@ -142,7 +142,7 @@ void routerNode::initialize()
 
    for (int i = 0; i < numNodes; ++i) {
          char signalName[64];
-         sprintf(signalName, "numProcessedPerChannelSignal(other node %d)", i);
+         sprintf(signalName, "numProcessedPerChannel(node %d)", i);
          simsignal_t signal = registerSignal(signalName);
          cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numProcessedPerChannelTemplate");
          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
@@ -156,7 +156,7 @@ void routerNode::initialize()
 
    for (int i = 0; i < numNodes; ++i) {
             char signalName[64];
-            sprintf(signalName, "numCompletedPerDestSignal(source node %d)", i);
+            sprintf(signalName, "numCompletedPerDest_Total(dest node %d)", i);
             simsignal_t signal = registerSignal(signalName);
             cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numCompletedPerDestTemplate");
             getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
@@ -170,7 +170,7 @@ void routerNode::initialize()
 
    for (int i = 0; i < numNodes; ++i) {
                char signalName[64];
-               sprintf(signalName, "numAttemptedPerDestSignal(dest node %d)", i);
+               sprintf(signalName, "numAttemptedPerDest_Total(dest node %d)", i);
                simsignal_t signal = registerSignal(signalName);
                cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numAttemptedPerDestTemplate");
                getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
@@ -372,6 +372,8 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
         simtime_t timeTakenInMilli = 1000*(simTime() - aMsg->getTimeSent());
 
         emit(completionTimeSignal, timeTakenInMilli);
+
+
         emit(numCompletedPerDestSignals[destNode], statNumCompleted[destNode]);
 
 

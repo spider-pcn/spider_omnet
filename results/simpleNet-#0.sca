@@ -1,29 +1,29 @@
 version 2
-run simpleNet-0-20181120-20:13:11-13298
+run simpleNet-0-20181120-20:40:16-15017
 attr configname simpleNet
-attr datetime 20181120-20:13:11
+attr datetime 20181120-20:40:16
 attr experiment simpleNet
 attr inifile omnetpp.ini
 attr iterationvars ""
 attr iterationvarsf ""
 attr measurement ""
 attr network simpleNet
-attr processid 13298
+attr processid 15017
 attr repetition 0
 attr replication #0
 attr resultdir results
 attr runnumber 0
 attr seedset 0
 
-statistic simpleNet.node[0] "numAttemptedPerDestSignal(dest node 4):stats"
-field count 10
-field mean 5.5
-field stddev 3.0276503540975
+statistic simpleNet.node[0] "numAttemptedPerDest_Total(dest node 4):stats"
+field count 500
+field mean 250.5
+field stddev 144.481832768
 field min 1
-field max 10
-field sum 55
-field sqrsum 385
-statistic simpleNet.node[0] "numAttemptedPerDestSignal(dest node 3):stats"
+field max 500
+field sum 125250
+field sqrsum 41791750
+statistic simpleNet.node[0] "numAttemptedPerDest_Total(dest node 3):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -31,7 +31,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[0] "numAttemptedPerDestSignal(dest node 2):stats"
+statistic simpleNet.node[0] "numAttemptedPerDest_Total(dest node 2):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -39,15 +39,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[0] "numAttemptedPerDestSignal(dest node 1):stats"
-field count 10
-field mean 5.5
-field stddev 3.0276503540975
+statistic simpleNet.node[0] "numAttemptedPerDest_Total(dest node 1):stats"
+field count 500
+field mean 250.5
+field stddev 144.481832768
 field min 1
-field max 10
-field sum 55
-field sqrsum 385
-statistic simpleNet.node[0] "numAttemptedPerDestSignal(dest node 0):stats"
+field max 500
+field sum 125250
+field sqrsum 41791750
+statistic simpleNet.node[0] "numAttemptedPerDest_Total(dest node 0):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -55,15 +55,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[0] "numCompletedPerDestSignal(source node 4):stats"
-field count 10
-field mean 5.5
-field stddev 3.0276503540975
+statistic simpleNet.node[0] "numCompletedPerDest_Total(dest node 4):stats"
+field count 100
+field mean 50.5
+field stddev 29.011491975882
 field min 1
-field max 10
-field sum 55
-field sqrsum 385
-statistic simpleNet.node[0] "numCompletedPerDestSignal(source node 3):stats"
+field max 100
+field sum 5050
+field sqrsum 338350
+statistic simpleNet.node[0] "numCompletedPerDest_Total(dest node 3):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -71,7 +71,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[0] "numCompletedPerDestSignal(source node 2):stats"
+statistic simpleNet.node[0] "numCompletedPerDest_Total(dest node 2):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -79,15 +79,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[0] "numCompletedPerDestSignal(source node 1):stats"
-field count 10
-field mean 5.5
-field stddev 3.0276503540975
+statistic simpleNet.node[0] "numCompletedPerDest_Total(dest node 1):stats"
+field count 100
+field mean 50.5
+field stddev 29.011491975882
 field min 1
-field max 10
-field sum 55
-field sqrsum 385
-statistic simpleNet.node[0] "numCompletedPerDestSignal(source node 0):stats"
+field max 100
+field sum 5050
+field sqrsum 338350
+statistic simpleNet.node[0] "numCompletedPerDest_Total(dest node 0):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -95,39 +95,23 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[0] "numProcessedPerChannelSignal(other node 4):stats"
+statistic simpleNet.node[0] "numProcessedPerChannel(node 4):stats"
 field count 22
-field mean 0.45454545454545
-field stddev 0.50964719143763
+field mean 4.5454545454545
+field stddev 9.5455163881732
 field min 0
-field max 1
-field sum 10
-field sqrsum 10
-statistic simpleNet.node[0] "numProcessedPerChannelSignal(other node 3):stats"
+field max 25
+field sum 100
+field sqrsum 2368
+statistic simpleNet.node[0] "numProcessedPerChannel(node 3):stats"
 field count 22
-field mean 0.90909090909091
-field stddev 0.29424494316825
+field mean 4.5454545454545
+field stddev 13.465042120519
 field min 0
-field max 1
-field sum 20
-field sqrsum 20
-statistic simpleNet.node[0] "numProcessedPerChannelSignal(other node 2):stats"
-field count 22
-field mean 0
-field stddev 0
-field min 0
-field max 0
-field sum 0
-field sqrsum 0
-statistic simpleNet.node[0] "numProcessedPerChannelSignal(other node 1):stats"
-field count 22
-field mean 0.45454545454545
-field stddev 0.50964719143763
-field min 0
-field max 1
-field sum 10
-field sqrsum 10
-statistic simpleNet.node[0] "numProcessedPerChannelSignal(other node 0):stats"
+field max 50
+field sum 100
+field sqrsum 4262
+statistic simpleNet.node[0] "numProcessedPerChannel(node 2):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -135,7 +119,15 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[0] "numInQueuePerChannelSignal(other node 4):stats"
+statistic simpleNet.node[0] "numProcessedPerChannel(node 1):stats"
+field count 22
+field mean 4.5454545454545
+field stddev 9.5455163881732
+field min 0
+field max 25
+field sum 100
+field sqrsum 2368
+statistic simpleNet.node[0] "numProcessedPerChannel(node 0):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -143,7 +135,15 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[0] "numInQueuePerChannelSignal(other node 3):stats"
+statistic simpleNet.node[0] "numInQueuePerChannel(node 4):stats"
+field count 22
+field mean 173.45454545455
+field stddev 144.6034733406
+field min 0
+field max 400
+field sum 3816
+field sqrsum 1101016
+statistic simpleNet.node[0] "numInQueuePerChannel(node 3):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -151,7 +151,7 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[0] "numInQueuePerChannelSignal(other node 2):stats"
+statistic simpleNet.node[0] "numInQueuePerChannel(node 2):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -159,15 +159,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[0] "numInQueuePerChannelSignal(other node 1):stats"
+statistic simpleNet.node[0] "numInQueuePerChannel(node 1):stats"
 field count 22
-field mean 0
-field stddev 0
+field mean 173.45454545455
+field stddev 144.6034733406
 field min 0
-field max 0
-field sum 0
-field sqrsum 0
-statistic simpleNet.node[0] "numInQueuePerChannelSignal(other node 0):stats"
+field max 400
+field sum 3816
+field sqrsum 1101016
+statistic simpleNet.node[0] "numInQueuePerChannel(node 0):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -176,17 +176,17 @@ field max nan
 field sum 0
 field sqrsum 0
 statistic simpleNet.node[0] completionTime:stats
-field count 0
-field mean nan
-field stddev nan
-field min nan
-field max nan
-field sum 0
-field sqrsum 0
+field count 200
+field mean 60
+field stddev 0
+field min 60
+field max 60
+field sum 12000
+field sqrsum 720000
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, stats"
-statistic simpleNet.node[1] "numAttemptedPerDestSignal(dest node 4):stats"
+statistic simpleNet.node[1] "numAttemptedPerDest_Total(dest node 4):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -194,15 +194,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[1] "numAttemptedPerDestSignal(dest node 3):stats"
-field count 20
-field mean 10.5
-field stddev 5.9160797830996
+statistic simpleNet.node[1] "numAttemptedPerDest_Total(dest node 3):stats"
+field count 1000
+field mean 500.5
+field stddev 288.81943609575
 field min 1
-field max 20
-field sum 210
-field sqrsum 2870
-statistic simpleNet.node[1] "numAttemptedPerDestSignal(dest node 2):stats"
+field max 1000
+field sum 500500
+field sqrsum 333833500
+statistic simpleNet.node[1] "numAttemptedPerDest_Total(dest node 2):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -210,7 +210,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[1] "numAttemptedPerDestSignal(dest node 1):stats"
+statistic simpleNet.node[1] "numAttemptedPerDest_Total(dest node 1):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -218,7 +218,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[1] "numAttemptedPerDestSignal(dest node 0):stats"
+statistic simpleNet.node[1] "numAttemptedPerDest_Total(dest node 0):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -226,7 +226,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[1] "numCompletedPerDestSignal(source node 4):stats"
+statistic simpleNet.node[1] "numCompletedPerDest_Total(dest node 4):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -234,15 +234,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[1] "numCompletedPerDestSignal(source node 3):stats"
-field count 20
-field mean 10.5
-field stddev 5.9160797830996
+statistic simpleNet.node[1] "numCompletedPerDest_Total(dest node 3):stats"
+field count 100
+field mean 50.5
+field stddev 29.011491975882
 field min 1
-field max 20
-field sum 210
-field sqrsum 2870
-statistic simpleNet.node[1] "numCompletedPerDestSignal(source node 2):stats"
+field max 100
+field sum 5050
+field sqrsum 338350
+statistic simpleNet.node[1] "numCompletedPerDest_Total(dest node 2):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -250,7 +250,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[1] "numCompletedPerDestSignal(source node 1):stats"
+statistic simpleNet.node[1] "numCompletedPerDest_Total(dest node 1):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -258,7 +258,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[1] "numCompletedPerDestSignal(source node 0):stats"
+statistic simpleNet.node[1] "numCompletedPerDest_Total(dest node 0):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -266,7 +266,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[1] "numProcessedPerChannelSignal(other node 4):stats"
+statistic simpleNet.node[1] "numProcessedPerChannel(node 4):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -274,23 +274,23 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[1] "numProcessedPerChannelSignal(other node 3):stats"
+statistic simpleNet.node[1] "numProcessedPerChannel(node 3):stats"
 field count 22
-field mean 0.90909090909091
-field stddev 0.29424494316825
+field mean 4.5454545454545
+field stddev 13.831390360602
 field min 0
-field max 1
-field sum 20
-field sqrsum 20
-statistic simpleNet.node[1] "numProcessedPerChannelSignal(other node 2):stats"
+field max 50
+field sum 100
+field sqrsum 4472
+statistic simpleNet.node[1] "numProcessedPerChannel(node 2):stats"
 field count 22
-field mean 0.45454545454545
-field stddev 0.50964719143763
+field mean 4.5454545454545
+field stddev 9.4552946756089
 field min 0
-field max 1
-field sum 10
-field sqrsum 10
-statistic simpleNet.node[1] "numProcessedPerChannelSignal(other node 1):stats"
+field max 25
+field sum 100
+field sqrsum 2332
+statistic simpleNet.node[1] "numProcessedPerChannel(node 1):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -298,15 +298,15 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[1] "numProcessedPerChannelSignal(other node 0):stats"
+statistic simpleNet.node[1] "numProcessedPerChannel(node 0):stats"
 field count 22
-field mean 0.45454545454545
-field stddev 0.50964719143763
+field mean 4.5454545454545
+field stddev 9.4552946756089
 field min 0
-field max 1
-field sum 10
-field sqrsum 10
-statistic simpleNet.node[1] "numInQueuePerChannelSignal(other node 4):stats"
+field max 25
+field sum 100
+field sqrsum 2332
+statistic simpleNet.node[1] "numInQueuePerChannel(node 4):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -314,7 +314,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[1] "numInQueuePerChannelSignal(other node 3):stats"
+statistic simpleNet.node[1] "numInQueuePerChannel(node 3):stats"
+field count 22
+field mean 430.36363636364
+field stddev 310.38647881918
+field min 0
+field max 900
+field sum 9468
+field sqrsum 6097818
+statistic simpleNet.node[1] "numInQueuePerChannel(node 2):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -322,15 +330,7 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[1] "numInQueuePerChannelSignal(other node 2):stats"
-field count 22
-field mean 0
-field stddev 0
-field min 0
-field max 0
-field sum 0
-field sqrsum 0
-statistic simpleNet.node[1] "numInQueuePerChannelSignal(other node 1):stats"
+statistic simpleNet.node[1] "numInQueuePerChannel(node 1):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -338,7 +338,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[1] "numInQueuePerChannelSignal(other node 0):stats"
+statistic simpleNet.node[1] "numInQueuePerChannel(node 0):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -347,25 +347,25 @@ field max 0
 field sum 0
 field sqrsum 0
 statistic simpleNet.node[1] completionTime:stats
-field count 0
-field mean nan
-field stddev nan
-field min nan
-field max nan
-field sum 0
-field sqrsum 0
+field count 100
+field mean 60
+field stddev 0
+field min 60
+field max 60
+field sum 6000
+field sqrsum 360000
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, stats"
-statistic simpleNet.node[2] "numAttemptedPerDestSignal(dest node 4):stats"
-field count 20
-field mean 10.5
-field stddev 5.9160797830996
+statistic simpleNet.node[2] "numAttemptedPerDest_Total(dest node 4):stats"
+field count 1000
+field mean 500.5
+field stddev 288.81943609575
 field min 1
-field max 20
-field sum 210
-field sqrsum 2870
-statistic simpleNet.node[2] "numAttemptedPerDestSignal(dest node 3):stats"
+field max 1000
+field sum 500500
+field sqrsum 333833500
+statistic simpleNet.node[2] "numAttemptedPerDest_Total(dest node 3):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -373,7 +373,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[2] "numAttemptedPerDestSignal(dest node 2):stats"
+statistic simpleNet.node[2] "numAttemptedPerDest_Total(dest node 2):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -381,15 +381,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[2] "numAttemptedPerDestSignal(dest node 1):stats"
-field count 10
-field mean 5.5
-field stddev 3.0276503540975
+statistic simpleNet.node[2] "numAttemptedPerDest_Total(dest node 1):stats"
+field count 500
+field mean 250.5
+field stddev 144.481832768
 field min 1
-field max 10
-field sum 55
-field sqrsum 385
-statistic simpleNet.node[2] "numAttemptedPerDestSignal(dest node 0):stats"
+field max 500
+field sum 125250
+field sqrsum 41791750
+statistic simpleNet.node[2] "numAttemptedPerDest_Total(dest node 0):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -397,15 +397,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[2] "numCompletedPerDestSignal(source node 4):stats"
-field count 20
-field mean 10.5
-field stddev 5.9160797830996
+statistic simpleNet.node[2] "numCompletedPerDest_Total(dest node 4):stats"
+field count 1000
+field mean 500.5
+field stddev 288.81943609575
 field min 1
-field max 20
-field sum 210
-field sqrsum 2870
-statistic simpleNet.node[2] "numCompletedPerDestSignal(source node 3):stats"
+field max 1000
+field sum 500500
+field sqrsum 333833500
+statistic simpleNet.node[2] "numCompletedPerDest_Total(dest node 3):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -413,7 +413,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[2] "numCompletedPerDestSignal(source node 2):stats"
+statistic simpleNet.node[2] "numCompletedPerDest_Total(dest node 2):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -421,15 +421,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[2] "numCompletedPerDestSignal(source node 1):stats"
-field count 10
-field mean 5.5
-field stddev 3.0276503540975
+statistic simpleNet.node[2] "numCompletedPerDest_Total(dest node 1):stats"
+field count 100
+field mean 50.5
+field stddev 29.011491975882
 field min 1
-field max 10
-field sum 55
-field sqrsum 385
-statistic simpleNet.node[2] "numCompletedPerDestSignal(source node 0):stats"
+field max 100
+field sum 5050
+field sqrsum 338350
+statistic simpleNet.node[2] "numCompletedPerDest_Total(dest node 0):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -437,39 +437,23 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[2] "numProcessedPerChannelSignal(other node 4):stats"
+statistic simpleNet.node[2] "numProcessedPerChannel(node 4):stats"
 field count 22
-field mean 1.8181818181818
-field stddev 0.5884898863365
+field mean 90.909090909091
+field stddev 27.283187027404
 field min 0
-field max 2
-field sum 40
-field sqrsum 80
-statistic simpleNet.node[2] "numProcessedPerChannelSignal(other node 3):stats"
+field max 100
+field sum 2000
+field sqrsum 197450
+statistic simpleNet.node[2] "numProcessedPerChannel(node 3):stats"
 field count 22
-field mean 0.90909090909091
-field stddev 0.29424494316825
+field mean 4.5454545454545
+field stddev 13.465042120519
 field min 0
-field max 1
-field sum 20
-field sqrsum 20
-statistic simpleNet.node[2] "numProcessedPerChannelSignal(other node 2):stats"
-field count 22
-field mean 0
-field stddev 0
-field min 0
-field max 0
-field sum 0
-field sqrsum 0
-statistic simpleNet.node[2] "numProcessedPerChannelSignal(other node 1):stats"
-field count 22
-field mean 0.45454545454545
-field stddev 0.50964719143763
-field min 0
-field max 1
-field sum 10
-field sqrsum 10
-statistic simpleNet.node[2] "numProcessedPerChannelSignal(other node 0):stats"
+field max 50
+field sum 100
+field sqrsum 4262
+statistic simpleNet.node[2] "numProcessedPerChannel(node 2):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -477,7 +461,15 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[2] "numInQueuePerChannelSignal(other node 4):stats"
+statistic simpleNet.node[2] "numProcessedPerChannel(node 1):stats"
+field count 22
+field mean 4.5454545454545
+field stddev 9.5455163881732
+field min 0
+field max 25
+field sum 100
+field sqrsum 2368
+statistic simpleNet.node[2] "numProcessedPerChannel(node 0):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -485,7 +477,7 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[2] "numInQueuePerChannelSignal(other node 3):stats"
+statistic simpleNet.node[2] "numInQueuePerChannel(node 4):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -493,7 +485,15 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[2] "numInQueuePerChannelSignal(other node 2):stats"
+statistic simpleNet.node[2] "numInQueuePerChannel(node 3):stats"
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
+statistic simpleNet.node[2] "numInQueuePerChannel(node 2):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -501,15 +501,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[2] "numInQueuePerChannelSignal(other node 1):stats"
+statistic simpleNet.node[2] "numInQueuePerChannel(node 1):stats"
 field count 22
-field mean 0
-field stddev 0
+field mean 173.45454545455
+field stddev 144.6034733406
 field min 0
-field max 0
-field sum 0
-field sqrsum 0
-statistic simpleNet.node[2] "numInQueuePerChannelSignal(other node 0):stats"
+field max 400
+field sum 3816
+field sqrsum 1101016
+statistic simpleNet.node[2] "numInQueuePerChannel(node 0):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -518,17 +518,17 @@ field max nan
 field sum 0
 field sqrsum 0
 statistic simpleNet.node[2] completionTime:stats
-field count 0
-field mean nan
-field stddev nan
-field min nan
-field max nan
-field sum 0
-field sqrsum 0
+field count 1100
+field mean 60
+field stddev 0
+field min 60
+field max 60
+field sum 66000
+field sqrsum 3960000
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, stats"
-statistic simpleNet.node[3] "numAttemptedPerDestSignal(dest node 4):stats"
+statistic simpleNet.node[3] "numAttemptedPerDest_Total(dest node 4):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -536,7 +536,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[3] "numAttemptedPerDestSignal(dest node 3):stats"
+statistic simpleNet.node[3] "numAttemptedPerDest_Total(dest node 3):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -544,15 +544,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[3] "numAttemptedPerDestSignal(dest node 2):stats"
-field count 20
-field mean 10.5
-field stddev 5.9160797830996
+statistic simpleNet.node[3] "numAttemptedPerDest_Total(dest node 2):stats"
+field count 1000
+field mean 500.5
+field stddev 288.81943609575
 field min 1
-field max 20
-field sum 210
-field sqrsum 2870
-statistic simpleNet.node[3] "numAttemptedPerDestSignal(dest node 1):stats"
+field max 1000
+field sum 500500
+field sqrsum 333833500
+statistic simpleNet.node[3] "numAttemptedPerDest_Total(dest node 1):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -560,15 +560,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[3] "numAttemptedPerDestSignal(dest node 0):stats"
-field count 20
-field mean 10.5
-field stddev 5.9160797830996
+statistic simpleNet.node[3] "numAttemptedPerDest_Total(dest node 0):stats"
+field count 1000
+field mean 500.5
+field stddev 288.81943609575
 field min 1
-field max 20
-field sum 210
-field sqrsum 2870
-statistic simpleNet.node[3] "numCompletedPerDestSignal(source node 4):stats"
+field max 1000
+field sum 500500
+field sqrsum 333833500
+statistic simpleNet.node[3] "numCompletedPerDest_Total(dest node 4):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -576,7 +576,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[3] "numCompletedPerDestSignal(source node 3):stats"
+statistic simpleNet.node[3] "numCompletedPerDest_Total(dest node 3):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -584,15 +584,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[3] "numCompletedPerDestSignal(source node 2):stats"
-field count 20
-field mean 10.5
-field stddev 5.9160797830996
+statistic simpleNet.node[3] "numCompletedPerDest_Total(dest node 2):stats"
+field count 100
+field mean 50.5
+field stddev 29.011491975882
 field min 1
-field max 20
-field sum 210
-field sqrsum 2870
-statistic simpleNet.node[3] "numCompletedPerDestSignal(source node 1):stats"
+field max 100
+field sum 5050
+field sqrsum 338350
+statistic simpleNet.node[3] "numCompletedPerDest_Total(dest node 1):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -600,15 +600,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[3] "numCompletedPerDestSignal(source node 0):stats"
-field count 20
-field mean 10.5
-field stddev 5.9160797830996
+statistic simpleNet.node[3] "numCompletedPerDest_Total(dest node 0):stats"
+field count 100
+field mean 50.5
+field stddev 29.011491975882
 field min 1
-field max 20
-field sum 210
-field sqrsum 2870
-statistic simpleNet.node[3] "numProcessedPerChannelSignal(other node 4):stats"
+field max 100
+field sum 5050
+field sqrsum 338350
+statistic simpleNet.node[3] "numProcessedPerChannel(node 4):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -616,7 +616,7 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[3] "numProcessedPerChannelSignal(other node 3):stats"
+statistic simpleNet.node[3] "numProcessedPerChannel(node 3):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -624,31 +624,31 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[3] "numProcessedPerChannelSignal(other node 2):stats"
+statistic simpleNet.node[3] "numProcessedPerChannel(node 2):stats"
 field count 22
-field mean 0.90909090909091
-field stddev 0.29424494316825
+field mean 4.5454545454545
+field stddev 13.831390360602
 field min 0
-field max 1
-field sum 20
-field sqrsum 20
-statistic simpleNet.node[3] "numProcessedPerChannelSignal(other node 1):stats"
+field max 50
+field sum 100
+field sqrsum 4472
+statistic simpleNet.node[3] "numProcessedPerChannel(node 1):stats"
 field count 22
-field mean 0.90909090909091
-field stddev 0.29424494316825
+field mean 4.5454545454545
+field stddev 13.465042120519
 field min 0
-field max 1
-field sum 20
-field sqrsum 20
-statistic simpleNet.node[3] "numProcessedPerChannelSignal(other node 0):stats"
+field max 50
+field sum 100
+field sqrsum 4262
+statistic simpleNet.node[3] "numProcessedPerChannel(node 0):stats"
 field count 22
-field mean 0.90909090909091
-field stddev 0.29424494316825
+field mean 4.5454545454545
+field stddev 13.831390360602
 field min 0
-field max 1
-field sum 20
-field sqrsum 20
-statistic simpleNet.node[3] "numInQueuePerChannelSignal(other node 4):stats"
+field max 50
+field sum 100
+field sqrsum 4472
+statistic simpleNet.node[3] "numInQueuePerChannel(node 4):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -656,7 +656,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[3] "numInQueuePerChannelSignal(other node 3):stats"
+statistic simpleNet.node[3] "numInQueuePerChannel(node 3):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -664,7 +664,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[3] "numInQueuePerChannelSignal(other node 2):stats"
+statistic simpleNet.node[3] "numInQueuePerChannel(node 2):stats"
+field count 22
+field mean 430.36363636364
+field stddev 310.38647881918
+field min 0
+field max 900
+field sum 9468
+field sqrsum 6097818
+statistic simpleNet.node[3] "numInQueuePerChannel(node 1):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -672,34 +680,26 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[3] "numInQueuePerChannelSignal(other node 1):stats"
+statistic simpleNet.node[3] "numInQueuePerChannel(node 0):stats"
 field count 22
-field mean 0
-field stddev 0
+field mean 430.36363636364
+field stddev 310.38647881918
 field min 0
-field max 0
-field sum 0
-field sqrsum 0
-statistic simpleNet.node[3] "numInQueuePerChannelSignal(other node 0):stats"
-field count 22
-field mean 0
-field stddev 0
-field min 0
-field max 0
-field sum 0
-field sqrsum 0
+field max 900
+field sum 9468
+field sqrsum 6097818
 statistic simpleNet.node[3] completionTime:stats
-field count 0
-field mean nan
-field stddev nan
-field min nan
-field max nan
-field sum 0
-field sqrsum 0
+field count 200
+field mean 60
+field stddev 0
+field min 60
+field max 60
+field sum 12000
+field sqrsum 720000
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, stats"
-statistic simpleNet.node[4] "numAttemptedPerDestSignal(dest node 4):stats"
+statistic simpleNet.node[4] "numAttemptedPerDest_Total(dest node 4):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -707,7 +707,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[4] "numAttemptedPerDestSignal(dest node 3):stats"
+statistic simpleNet.node[4] "numAttemptedPerDest_Total(dest node 3):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -715,15 +715,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[4] "numAttemptedPerDestSignal(dest node 2):stats"
-field count 20
-field mean 10.5
-field stddev 5.9160797830996
+statistic simpleNet.node[4] "numAttemptedPerDest_Total(dest node 2):stats"
+field count 1000
+field mean 500.5
+field stddev 288.81943609575
 field min 1
-field max 20
-field sum 210
-field sqrsum 2870
-statistic simpleNet.node[4] "numAttemptedPerDestSignal(dest node 1):stats"
+field max 1000
+field sum 500500
+field sqrsum 333833500
+statistic simpleNet.node[4] "numAttemptedPerDest_Total(dest node 1):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -731,7 +731,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[4] "numAttemptedPerDestSignal(dest node 0):stats"
+statistic simpleNet.node[4] "numAttemptedPerDest_Total(dest node 0):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -739,7 +739,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[4] "numCompletedPerDestSignal(source node 4):stats"
+statistic simpleNet.node[4] "numCompletedPerDest_Total(dest node 4):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -747,7 +747,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[4] "numCompletedPerDestSignal(source node 3):stats"
+statistic simpleNet.node[4] "numCompletedPerDest_Total(dest node 3):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -755,15 +755,15 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[4] "numCompletedPerDestSignal(source node 2):stats"
-field count 20
-field mean 10.5
-field stddev 5.9160797830996
+statistic simpleNet.node[4] "numCompletedPerDest_Total(dest node 2):stats"
+field count 1000
+field mean 500.5
+field stddev 288.81943609575
 field min 1
-field max 20
-field sum 210
-field sqrsum 2870
-statistic simpleNet.node[4] "numCompletedPerDestSignal(source node 1):stats"
+field max 1000
+field sum 500500
+field sqrsum 333833500
+statistic simpleNet.node[4] "numCompletedPerDest_Total(dest node 1):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -771,7 +771,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[4] "numCompletedPerDestSignal(source node 0):stats"
+statistic simpleNet.node[4] "numCompletedPerDest_Total(dest node 0):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -779,7 +779,7 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[4] "numProcessedPerChannelSignal(other node 4):stats"
+statistic simpleNet.node[4] "numProcessedPerChannel(node 4):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -787,7 +787,7 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[4] "numProcessedPerChannelSignal(other node 3):stats"
+statistic simpleNet.node[4] "numProcessedPerChannel(node 3):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -795,47 +795,15 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[4] "numProcessedPerChannelSignal(other node 2):stats"
+statistic simpleNet.node[4] "numProcessedPerChannel(node 2):stats"
 field count 22
-field mean 1.8181818181818
-field stddev 0.5884898863365
+field mean 90.909090909091
+field stddev 27.283187027404
 field min 0
-field max 2
-field sum 40
-field sqrsum 80
-statistic simpleNet.node[4] "numProcessedPerChannelSignal(other node 1):stats"
-field count 22
-field mean 0
-field stddev 0
-field min 0
-field max 0
-field sum 0
-field sqrsum 0
-statistic simpleNet.node[4] "numProcessedPerChannelSignal(other node 0):stats"
-field count 22
-field mean 0.45454545454545
-field stddev 0.50964719143763
-field min 0
-field max 1
-field sum 10
-field sqrsum 10
-statistic simpleNet.node[4] "numInQueuePerChannelSignal(other node 4):stats"
-field count 0
-field mean nan
-field stddev nan
-field min nan
-field max nan
-field sum 0
-field sqrsum 0
-statistic simpleNet.node[4] "numInQueuePerChannelSignal(other node 3):stats"
-field count 0
-field mean nan
-field stddev nan
-field min nan
-field max nan
-field sum 0
-field sqrsum 0
-statistic simpleNet.node[4] "numInQueuePerChannelSignal(other node 2):stats"
+field max 100
+field sum 2000
+field sqrsum 197450
+statistic simpleNet.node[4] "numProcessedPerChannel(node 1):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -843,7 +811,15 @@ field min 0
 field max 0
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[4] "numInQueuePerChannelSignal(other node 1):stats"
+statistic simpleNet.node[4] "numProcessedPerChannel(node 0):stats"
+field count 22
+field mean 4.5454545454545
+field stddev 9.4552946756089
+field min 0
+field max 25
+field sum 100
+field sqrsum 2332
+statistic simpleNet.node[4] "numInQueuePerChannel(node 4):stats"
 field count 0
 field mean nan
 field stddev nan
@@ -851,7 +827,31 @@ field min nan
 field max nan
 field sum 0
 field sqrsum 0
-statistic simpleNet.node[4] "numInQueuePerChannelSignal(other node 0):stats"
+statistic simpleNet.node[4] "numInQueuePerChannel(node 3):stats"
+field count 0
+field mean nan
+field stddev nan
+field min nan
+field max nan
+field sum 0
+field sqrsum 0
+statistic simpleNet.node[4] "numInQueuePerChannel(node 2):stats"
+field count 22
+field mean 0
+field stddev 0
+field min 0
+field max 0
+field sum 0
+field sqrsum 0
+statistic simpleNet.node[4] "numInQueuePerChannel(node 1):stats"
+field count 0
+field mean nan
+field stddev nan
+field min nan
+field max nan
+field sum 0
+field sqrsum 0
+statistic simpleNet.node[4] "numInQueuePerChannel(node 0):stats"
 field count 22
 field mean 0
 field stddev 0
@@ -860,13 +860,13 @@ field max 0
 field sum 0
 field sqrsum 0
 statistic simpleNet.node[4] completionTime:stats
-field count 0
-field mean nan
-field stddev nan
-field min nan
-field max nan
-field sum 0
-field sqrsum 0
+field count 1000
+field mean 60
+field stddev 0
+field min 60
+field max 60
+field sum 60000
+field sqrsum 3600000
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, stats"

@@ -17,138 +17,137 @@ attr runnumber 0
 attr seedset 0
 
 vector 0 simpleNet.node[0] "numAttemptedPerDest_Total(dest node 4):vector" ETV
+0	5137 7918 1 14340 0 9.98 500 1 500 125250 41791750
 vector 1 simpleNet.node[0] "numAttemptedPerDest_Total(dest node 1):vector" ETV
+1	13055 7918 2 14341 0 9.98 500 1 500 125250 41791750
 vector 2 simpleNet.node[0] "numInQueuePerChannel(node 1):vector" ETV
+2	20973 302 3 14406 0 10.5 22 0 400 3816 1101016
 vector 3 simpleNet.node[0] "numInQueuePerChannel(node 3):vector" ETV
+3	21275 271 3 14406 0 10.5 22 0 0 0 0
 vector 4 simpleNet.node[0] "numInQueuePerChannel(node 4):vector" ETV
+4	21546 302 3 14406 0 10.5 22 0 400 3816 1101016
 vector 5 simpleNet.node[0] "numProcessedPerChannel(node 0):vector" ETV
+5	21848 271 3 14406 0 10.5 22 0 0 0 0
 vector 6 simpleNet.node[0] "numProcessedPerChannel(node 1):vector" ETV
+6	22119 275 3 14406 0 10.5 22 0 25 100 2368
 vector 7 simpleNet.node[0] "numProcessedPerChannel(node 2):vector" ETV
+7	22394 271 3 14406 0 10.5 22 0 0 0 0
 vector 8 simpleNet.node[0] "numProcessedPerChannel(node 3):vector" ETV
+8	22665 273 3 14406 0 10.5 22 0 50 100 4262
 vector 9 simpleNet.node[0] "numProcessedPerChannel(node 4):vector" ETV
+9	22938 275 3 14406 0 10.5 22 0 25 100 2368
 vector 10 simpleNet.node[1] "numAttemptedPerDest_Total(dest node 3):vector" ETV
+10	23213 17067 4 14354 0 9.99 1000 1 1000 500500 333833500
 vector 11 simpleNet.node[1] "numInQueuePerChannel(node 0):vector" ETV
+11	40280 293 5 14407 0 10.5 22 0 0 0 0
 vector 12 simpleNet.node[1] "numInQueuePerChannel(node 2):vector" ETV
+12	40573 293 5 14407 0 10.5 22 0 0 0 0
 vector 13 simpleNet.node[1] "numInQueuePerChannel(node 3):vector" ETV
+13	40866 330 5 14407 0 10.5 22 0 900 9468 6097818
 vector 14 simpleNet.node[1] "numProcessedPerChannel(node 0):vector" ETV
+14	41196 297 5 14407 0 10.5 22 0 25 100 2332
 vector 15 simpleNet.node[1] "numProcessedPerChannel(node 1):vector" ETV
+15	41493 293 5 14407 0 10.5 22 0 0 0 0
 vector 16 simpleNet.node[1] "numProcessedPerChannel(node 2):vector" ETV
+16	41786 297 5 14407 0 10.5 22 0 25 100 2332
 vector 17 simpleNet.node[1] "numProcessedPerChannel(node 3):vector" ETV
+17	42083 295 5 14407 0 10.5 22 0 50 100 4472
 vector 18 simpleNet.node[1] "numProcessedPerChannel(node 4):vector" ETV
+18	42378 293 5 14407 0 10.5 22 0 0 0 0
 vector 19 simpleNet.node[2] "numAttemptedPerDest_Total(dest node 1):vector" ETV
+19	42671 8418 6 14343 0 9.98 500 1 500 125250 41791750
 vector 20 simpleNet.node[2] "numAttemptedPerDest_Total(dest node 4):vector" ETV
+20	51089 17068 7 14355 0 9.99 1000 1 1000 500500 333833500
 vector 21 simpleNet.node[2] "numInQueuePerChannel(node 1):vector" ETV
+21	68157 324 8 14408 0 10.5 22 0 400 3816 1101016
 vector 22 simpleNet.node[2] "numInQueuePerChannel(node 3):vector" ETV
+22	68481 293 8 14408 0 10.5 22 0 0 0 0
 vector 23 simpleNet.node[2] "numInQueuePerChannel(node 4):vector" ETV
+23	68774 293 8 14408 0 10.5 22 0 0 0 0
 vector 24 simpleNet.node[2] "numProcessedPerChannel(node 0):vector" ETV
+24	69067 293 8 14408 0 10.5 22 0 0 0 0
 vector 25 simpleNet.node[2] "numProcessedPerChannel(node 1):vector" ETV
+25	69360 297 8 14408 0 10.5 22 0 25 100 2368
 vector 26 simpleNet.node[2] "numProcessedPerChannel(node 2):vector" ETV
+26	69657 293 8 14408 0 10.5 22 0 0 0 0
 vector 27 simpleNet.node[2] "numProcessedPerChannel(node 3):vector" ETV
+27	69950 295 8 14408 0 10.5 22 0 50 100 4262
 vector 28 simpleNet.node[2] "numProcessedPerChannel(node 4):vector" ETV
+28	70245 333 8 14408 0 10.5 22 0 100 2000 197450
 vector 29 simpleNet.node[3] "numAttemptedPerDest_Total(dest node 0):vector" ETV
+29	70578 17068 9 14356 0 9.99 1000 1 1000 500500 333833500
 vector 30 simpleNet.node[3] "numAttemptedPerDest_Total(dest node 2):vector" ETV
+30	87646 17069 10 14357 0 9.99 1000 1 1000 500500 333833500
 vector 31 simpleNet.node[3] "numInQueuePerChannel(node 0):vector" ETV
+31	104715 331 11 14409 0 10.5 22 0 900 9468 6097818
 vector 32 simpleNet.node[3] "numInQueuePerChannel(node 1):vector" ETV
+32	105046 294 11 14409 0 10.5 22 0 0 0 0
 vector 33 simpleNet.node[3] "numInQueuePerChannel(node 2):vector" ETV
+33	105340 331 11 14409 0 10.5 22 0 900 9468 6097818
 vector 34 simpleNet.node[3] "numProcessedPerChannel(node 0):vector" ETV
+34	105671 296 11 14409 0 10.5 22 0 50 100 4472
 vector 35 simpleNet.node[3] "numProcessedPerChannel(node 1):vector" ETV
+35	105967 296 11 14409 0 10.5 22 0 50 100 4262
 vector 36 simpleNet.node[3] "numProcessedPerChannel(node 2):vector" ETV
+36	106263 296 11 14409 0 10.5 22 0 50 100 4472
 vector 37 simpleNet.node[3] "numProcessedPerChannel(node 3):vector" ETV
+37	106559 294 11 14409 0 10.5 22 0 0 0 0
 vector 38 simpleNet.node[3] "numProcessedPerChannel(node 4):vector" ETV
+38	106853 294 11 14409 0 10.5 22 0 0 0 0
 vector 39 simpleNet.node[4] "numAttemptedPerDest_Total(dest node 2):vector" ETV
+39	107147 17069 12 14358 0 9.99 1000 1 1000 500500 333833500
 vector 40 simpleNet.node[4] "numInQueuePerChannel(node 0):vector" ETV
+40	124216 294 13 14410 0 10.5 22 0 0 0 0
 vector 41 simpleNet.node[4] "numInQueuePerChannel(node 2):vector" ETV
+41	124510 294 13 14410 0 10.5 22 0 0 0 0
 vector 42 simpleNet.node[4] "numProcessedPerChannel(node 0):vector" ETV
+42	124804 298 13 14410 0 10.5 22 0 25 100 2332
 vector 43 simpleNet.node[4] "numProcessedPerChannel(node 1):vector" ETV
+43	125102 294 13 14410 0 10.5 22 0 0 0 0
 vector 44 simpleNet.node[4] "numProcessedPerChannel(node 2):vector" ETV
+44	125396 334 13 14410 0 10.5 22 0 100 2000 197450
 vector 45 simpleNet.node[4] "numProcessedPerChannel(node 3):vector" ETV
+45	125730 294 13 14410 0 10.5 22 0 0 0 0
 vector 46 simpleNet.node[4] "numProcessedPerChannel(node 4):vector" ETV
+46	126024 294 13 14410 0 10.5 22 0 0 0 0
 vector 47 simpleNet.node[0] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+47	126318 3112 79 4342 0.06 2.04 200 60 60 12000 720000
 vector 48 simpleNet.node[0] "numCompletedPerDest_Total(dest node 4):vector" ETV
+48	129430 1548 79 4341 0.06 2.04 100 1 100 5050 338350
 vector 49 simpleNet.node[0] "numCompletedPerDest_Total(dest node 1):vector" ETV
+49	130978 1548 80 4342 0.06 2.04 100 1 100 5050 338350
 vector 50 simpleNet.node[1] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+50	132526 1550 81 2636 0.06 1.05 100 60 60 6000 360000
 vector 51 simpleNet.node[1] "numCompletedPerDest_Total(dest node 3):vector" ETV
+51	134076 1542 81 2636 0.06 1.05 100 1 100 5050 338350
 vector 52 simpleNet.node[2] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+52	135618 17759 82 14396 0.06 10.05 1100 60 60 66000 3960000
 vector 53 simpleNet.node[2] "numCompletedPerDest_Total(dest node 1):vector" ETV
+53	153377 1549 82 4343 0.06 2.04 100 1 100 5050 338350
 vector 54 simpleNet.node[2] "numCompletedPerDest_Total(dest node 4):vector" ETV
+54	154926 17095 83 14396 0.06 10.05 1000 1 1000 500500 333833500
 vector 55 simpleNet.node[3] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+55	172021 3102 84 2639 0.06 1.05 200 60 60 12000 720000
 vector 56 simpleNet.node[3] "numCompletedPerDest_Total(dest node 0):vector" ETV
+56	175123 1543 84 2638 0.06 1.05 100 1 100 5050 338350
 vector 57 simpleNet.node[3] "numCompletedPerDest_Total(dest node 2):vector" ETV
+57	176666 1543 85 2639 0.06 1.05 100 1 100 5050 338350
 vector 58 simpleNet.node[4] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
-vector 59 simpleNet.node[4] "numCompletedPerDest_Total(dest node 2):vector" ETV
-0	5137 7918 1 14340 0 9.98 500 1 500 125250 41791750
-1	13055 7918 2 14341 0 9.98 500 1 500 125250 41791750
-2	20973 302 3 14406 0 10.5 22 0 400 3816 1101016
-3	21275 271 3 14406 0 10.5 22 0 0 0 0
-4	21546 302 3 14406 0 10.5 22 0 400 3816 1101016
-5	21848 271 3 14406 0 10.5 22 0 0 0 0
-6	22119 275 3 14406 0 10.5 22 0 25 100 2368
-7	22394 271 3 14406 0 10.5 22 0 0 0 0
-8	22665 273 3 14406 0 10.5 22 0 50 100 4262
-9	22938 275 3 14406 0 10.5 22 0 25 100 2368
-10	23213 17067 4 14354 0 9.99 1000 1 1000 500500 333833500
-11	40280 293 5 14407 0 10.5 22 0 0 0 0
-12	40573 293 5 14407 0 10.5 22 0 0 0 0
-13	40866 330 5 14407 0 10.5 22 0 900 9468 6097818
-14	41196 297 5 14407 0 10.5 22 0 25 100 2332
-15	41493 293 5 14407 0 10.5 22 0 0 0 0
-16	41786 297 5 14407 0 10.5 22 0 25 100 2332
-17	42083 295 5 14407 0 10.5 22 0 50 100 4472
-18	42378 293 5 14407 0 10.5 22 0 0 0 0
-19	42671 8418 6 14343 0 9.98 500 1 500 125250 41791750
-20	51089 17068 7 14355 0 9.99 1000 1 1000 500500 333833500
-21	68157 324 8 14408 0 10.5 22 0 400 3816 1101016
-22	68481 293 8 14408 0 10.5 22 0 0 0 0
-23	68774 293 8 14408 0 10.5 22 0 0 0 0
-24	69067 293 8 14408 0 10.5 22 0 0 0 0
-25	69360 297 8 14408 0 10.5 22 0 25 100 2368
-26	69657 293 8 14408 0 10.5 22 0 0 0 0
-27	69950 295 8 14408 0 10.5 22 0 50 100 4262
-28	70245 333 8 14408 0 10.5 22 0 100 2000 197450
-29	70578 17068 9 14356 0 9.99 1000 1 1000 500500 333833500
-30	87646 17069 10 14357 0 9.99 1000 1 1000 500500 333833500
-31	104715 331 11 14409 0 10.5 22 0 900 9468 6097818
-32	105046 294 11 14409 0 10.5 22 0 0 0 0
-33	105340 331 11 14409 0 10.5 22 0 900 9468 6097818
-34	105671 296 11 14409 0 10.5 22 0 50 100 4472
-35	105967 296 11 14409 0 10.5 22 0 50 100 4262
-36	106263 296 11 14409 0 10.5 22 0 50 100 4472
-37	106559 294 11 14409 0 10.5 22 0 0 0 0
-38	106853 294 11 14409 0 10.5 22 0 0 0 0
-39	107147 17069 12 14358 0 9.99 1000 1 1000 500500 333833500
-40	124216 294 13 14410 0 10.5 22 0 0 0 0
-41	124510 294 13 14410 0 10.5 22 0 0 0 0
-42	124804 298 13 14410 0 10.5 22 0 25 100 2332
-43	125102 294 13 14410 0 10.5 22 0 0 0 0
-44	125396 334 13 14410 0 10.5 22 0 100 2000 197450
-45	125730 294 13 14410 0 10.5 22 0 0 0 0
-46	126024 294 13 14410 0 10.5 22 0 0 0 0
-47	126318 3112 79 4342 0.06 2.04 200 60 60 12000 720000
-48	129430 1548 79 4341 0.06 2.04 100 1 100 5050 338350
-49	130978 1548 80 4342 0.06 2.04 100 1 100 5050 338350
-50	132526 1550 81 2636 0.06 1.05 100 60 60 6000 360000
-51	134076 1542 81 2636 0.06 1.05 100 1 100 5050 338350
-52	135618 17759 82 14396 0.06 10.05 1100 60 60 66000 3960000
-53	153377 1549 82 4343 0.06 2.04 100 1 100 5050 338350
-54	154926 17095 83 14396 0.06 10.05 1000 1 1000 500500 333833500
-55	172021 3102 84 2639 0.06 1.05 200 60 60 12000 720000
-56	175123 1543 84 2638 0.06 1.05 100 1 100 5050 338350
-57	176666 1543 85 2639 0.06 1.05 100 1 100 5050 338350
 58	178209 16202 86 14397 0.06 10.05 1000 60 60 60000 3600000
-59	194411 17095 86 14397 0.06 10.05 1000 1 1000 500500 333833500
-
+vector 59 simpleNet.node[4] "numCompletedPerDest_Total(dest node 2):vector" ETV
+59	194411 17096 86 14397 0.06 10.05 1000 1 1000 500500 333833500
