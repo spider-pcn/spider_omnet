@@ -182,7 +182,14 @@ void routerNode::initialize()
       }
 
 
-
+      for (int i = 0; i < numNodes; ++i) {
+                    char signalName[64];
+                    sprintf(signalName, "balancePerChannel(node %d)", i);
+                    simsignal_t signal = registerSignal(signalName);
+                    cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "balancePerChannelTemplate");
+                    getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+                    balancePerChannelSignals.push_back(signal);
+                }
 
    cout << getIndex() << endl;
    cout << "here, after initialization \n";
@@ -249,28 +256,28 @@ void routerNode::handleMessage(cMessage *msg)
 {
    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
    if (ttmsg->getMessageType()==1){
-       EV<< "[NODE "<< getIndex() <<": RECEIVED ACK MSG] \n";
-       print_message(ttmsg);
-       print_private_values();
+      // EV<< "[NODE "<< getIndex() <<": RECEIVED ACK MSG] \n";
+       //print_message(ttmsg);
+       //print_private_values();
        handleAckMessage(ttmsg);
-       EV<< "[AFTER HANDLING:]\n";
-       print_private_values();
+      // EV<< "[AFTER HANDLING:]\n";
+      // print_private_values();
    }
    else if(ttmsg->getMessageType()==0){
-       EV<< "[NODE "<< getIndex() <<": RECEIVED TRANSACTION MSG]  \n";
-       print_message(ttmsg);
-       print_private_values();
+      // EV<< "[NODE "<< getIndex() <<": RECEIVED TRANSACTION MSG]  \n";
+      // print_message(ttmsg);
+      // print_private_values();
        handleTransactionMessage(ttmsg);
-       EV<< "[AFTER HANDLING:] \n";
-       print_private_values();
+      // EV<< "[AFTER HANDLING:] \n";
+      // print_private_values();
    }
    else if(ttmsg->getMessageType()==2){
-       EV<< "[NODE "<< getIndex() <<": RECEIVED UPDATE MSG] \n";
-       print_message(ttmsg);
-       print_private_values();
+     //  EV<< "[NODE "<< getIndex() <<": RECEIVED UPDATE MSG] \n";
+      // print_message(ttmsg);
+      // print_private_values();
        handleUpdateMessage(ttmsg);
-       EV<< "[AFTER HANDLING:]  \n";
-       print_private_values();
+      // EV<< "[AFTER HANDLING:]  \n";
+       //print_private_values();
 
    }
    else if (ttmsg->getMessageType() ==3){
@@ -306,13 +313,23 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
     //  map<int, deque<tuple<int, double , routerMsg *>>> node_to_queued_trans_units;
     for ( map<int, deque<tuple<int, double , routerMsg *>>>::iterator it = node_to_queued_trans_units.begin();
            it!= node_to_queued_trans_units.end(); it++){
-        EV << "node "<< getIndex() << ": queued "<<(it->second).size();
+        //EV << "node "<< getIndex() << ": queued "<<(it->second).size();
         statNumInQueue = statNumInQueue + (it->second).size();
         emit(numInQueuePerChannelSignals[it->first], (it->second).size());
 
     }
 
+   // map<int, double> node_to_balance;
 
+    //emit balancePerChannelSignals
+    for ( map<int, double>::iterator it = node_to_balance.begin();
+             it!= node_to_balance.end(); it++){
+          //EV << "node "<< getIndex() << ": queued "<<(it->second).size();
+          //statNumInQueue = statNumInQueue + (it->second).size();
+          emit(balancePerChannelSignals[it->first], it->second);
+
+      }
+    //emit num processed signals
     printf("numInQueue %i \n", statNumInQueue);
 
     for (int i=0; i<numNodes; i++){
@@ -485,7 +502,7 @@ routerMsg *routerNode::generateUpdateMessage(int transId, int receiver, double a
       rMsg->setRoute(route);
       rMsg->setHopCount(0);
       rMsg->setMessageType(2); //2 means nothing encapsulated inside
-     EV << "generateUpdateMessage with AMOUNT: "<< amount <<endl;
+     //EV << "generateUpdateMessage with AMOUNT: "<< amount <<endl;
       rMsg->setAmount(amount);
       rMsg->setTransactionId(transId);
       return rMsg;
@@ -549,7 +566,7 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
                    ttmsg));
           // re-sort queued transUnits for next stop based on lowest priority, then lowest amount
           sort(q->begin(), q->end(), sortFunction);
-          EV << "added to job queue:" <<endl;
+          //EV << "added to job queue:" <<endl;
           print_private_values();
           processTransUnits(nextStop, *q);
           bubble(string_node_to_balance().c_str());
@@ -597,7 +614,7 @@ void routerNode:: processTransUnits(int dest, deque<tuple<int, double , routerMs
       forwardTransactionMessage(get<2>(q[0]));
         print_private_values();
       q.pop_front();
-      EV << "processed something" <<endl;
+     // EV << "processed something" <<endl;
       print_private_values();
 
    }

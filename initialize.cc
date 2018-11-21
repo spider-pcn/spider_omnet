@@ -9,15 +9,21 @@
 vector<int> get_route(int sender, int receiver){
   //do searching without regard for channel capacities, DFS right now
 
-  // printf("sender: %i; receiver: %i \n [", sender, receiver);
+   printf("sender: %i; receiver: %i \n [", sender, receiver);
    //vector<int> route =  breadthFirstSearch(sender, receiver);
    vector<int> route = dijkstra(sender, receiver);
-    /*
+   if (sender == 3 && receiver==0){
+
+         route = {3,1,0};
+     }
+
    for (int i=0; i<(int)route.size(); i++){
         printf("%i, ", route[i]);
     }
     printf("] \n");
-*/
+
+
+
     return route;
 }
 
@@ -179,10 +185,10 @@ vector<int> dijkstra(int src,  int dest)
 
     // print the constructed
     // distance array
-    for (int ka=0; ka<numNodes; ka++){
+    /*for (int ka=0; ka<numNodes; ka++){
         printf("[%i]: %i,  ", ka, parent[ka] );
 
-    }
+    }*/
 
    // printSolution(dist,src,  parent);
 

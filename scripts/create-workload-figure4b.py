@@ -12,8 +12,8 @@ totalTime = 10
 #edge a->b appears in index i as rateListStart[i]=a, and rateListEnd[i]=b
 rateListStart = [0,3,0,1,2,3,2,4]; 
 rateListEnd = [4,0,1,3,1,2,4,2]; 
-rateListAmtTemp = [1,2,1,2,1,2,2,2];
-rateListAmt = [50*x for x in rateListAmtTemp]
+rateListAmtTemp = [1,2,1,2,1,2,2,1];
+rateListAmt = [1*x for x in rateListAmtTemp]
 
 
 for i in range(totalTime):
