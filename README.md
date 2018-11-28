@@ -13,9 +13,8 @@ omnetpp
 
 This should open the Omnet IDE and you can click on the `simpleNet.ned` file and run the OmnetSimulation from there.
 
-Once you have completed installation, simply run 
+Once you have completed installation, navigate to the folder with setenv (should be first level inside the omnet simulation folder) and run 
 ```
-cd samples/spider_omnet/
 . setenv
 omnetpp
 ```
