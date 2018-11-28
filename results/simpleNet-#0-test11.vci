@@ -17,82 +17,81 @@ attr runnumber 0
 attr seedset 0
 
 vector 0 simpleNet.node[0] "numAttemptedPerDest_Total(dest node 2):vector" ETV
+0	3066 16106 1 7892 0 19.98 1000 1 1000 500500 333833500
 vector 1 simpleNet.node[0] "numInQueuePerChannel(node 1):vector" ETV
+1	19172 577 2 7900 0 20.5 42 0 702 10938 5373810
 vector 2 simpleNet.node[0] "balancePerChannel(node 1):vector" ETV
+2	19749 541 2 7900 0 20.5 42 0 186 1374 184974
 vector 3 simpleNet.node[0] "numProcessedPerChannel(node 0):vector" ETV
+3	20290 522 2 7900 0 20.5 42 0 0 0 0
 vector 4 simpleNet.node[0] "numProcessedPerChannel(node 1):vector" ETV
+4	20812 527 2 7900 0 20.5 42 0 75 296 19830
 vector 5 simpleNet.node[0] "numProcessedPerChannel(node 2):vector" ETV
+5	21339 522 2 7900 0 20.5 42 0 0 0 0
 vector 6 simpleNet.node[0] "numSentPerChannel(node 0):vector" ETV
+6	21861 522 2 7900 0 20.5 42 0 0 0 0
 vector 7 simpleNet.node[0] "numSentPerChannel(node 1):vector" ETV
+7	22383 534 2 7900 0 20.5 42 0 25 298 7360
 vector 8 simpleNet.node[0] "numSentPerChannel(node 2):vector" ETV
+8	22917 522 2 7900 0 20.5 42 0 0 0 0
 vector 9 simpleNet.node[1] "numAttemptedPerDest_Total(dest node 2):vector" ETV
+9	23439 33561 3 7895 0 19.99 2000 1 2000 2001000 2668667000
 vector 10 simpleNet.node[1] "numInQueuePerChannel(node 0):vector" ETV
+10	57000 636 4 7901 0 20.5 42 0 200 7103 1394053
 vector 11 simpleNet.node[1] "numInQueuePerChannel(node 2):vector" ETV
+11	57636 660 4 7901 0 20.5 42 0 2000 41858 58952736
 vector 12 simpleNet.node[1] "balancePerChannel(node 0):vector" ETV
+12	58296 569 4 7901 0 20.5 42 0 100 238 17598
 vector 13 simpleNet.node[1] "balancePerChannel(node 2):vector" ETV
+13	58865 568 4 7901 0 20.5 42 0 99 204 14726
 vector 14 simpleNet.node[1] "numProcessedPerChannel(node 0):vector" ETV
+14	59433 569 4 7901 0 20.5 42 0 75 296 19782
 vector 15 simpleNet.node[1] "numProcessedPerChannel(node 1):vector" ETV
+15	60002 564 4 7901 0 20.5 42 0 0 0 0
 vector 16 simpleNet.node[1] "numProcessedPerChannel(node 2):vector" ETV
+16	60566 573 4 7901 0 20.5 42 0 125 496 55150
 vector 17 simpleNet.node[1] "numSentPerChannel(node 0):vector" ETV
+17	61139 568 4 7901 0 20.5 42 0 50 198 9122
 vector 18 simpleNet.node[1] "numSentPerChannel(node 1):vector" ETV
+18	61707 564 4 7901 0 20.5 42 0 0 0 0
 vector 19 simpleNet.node[1] "numSentPerChannel(node 2):vector" ETV
+19	62271 569 4 7901 0 20.5 42 0 75 298 20472
 vector 20 simpleNet.node[2] "numAttemptedPerDest_Total(dest node 0):vector" ETV
+20	62840 35561 5 7896 0 19.99 2000 1 2000 2001000 2668667000
 vector 21 simpleNet.node[2] "numInQueuePerChannel(node 1):vector" ETV
+21	98401 643 6 7902 0 20.5 42 0 1602 28100 31321896
 vector 22 simpleNet.node[2] "balancePerChannel(node 1):vector" ETV
+22	99044 577 6 7902 0 20.5 42 0 175 965 128187
 vector 23 simpleNet.node[2] "numProcessedPerChannel(node 0):vector" ETV
+23	99621 564 6 7902 0 20.5 42 0 0 0 0
 vector 24 simpleNet.node[2] "numProcessedPerChannel(node 1):vector" ETV
+24	100185 572 6 7902 0 20.5 42 0 125 496 54988
 vector 25 simpleNet.node[2] "numProcessedPerChannel(node 2):vector" ETV
+25	100757 564 6 7902 0 20.5 42 0 0 0 0
 vector 26 simpleNet.node[2] "numSentPerChannel(node 0):vector" ETV
+26	101321 564 6 7902 0 20.5 42 0 0 0 0
 vector 27 simpleNet.node[2] "numSentPerChannel(node 1):vector" ETV
+27	101885 572 6 7902 0 20.5 42 0 50 398 19710
 vector 28 simpleNet.node[2] "numSentPerChannel(node 2):vector" ETV
+28	102457 564 6 7902 0 20.5 42 0 0 0 0
 vector 29 simpleNet.node[1] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+29	103021 3118 33 3153 0.06 2.64 200 60 650 15140 1964600
 vector 30 simpleNet.node[1] "numCompletedPerDest_Total(dest node 2):vector" ETV
+30	106139 3190 33 3153 0.06 2.64 200 1 200 20100 2686700
 vector 31 simpleNet.node[0] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
+31	109329 1613 91 3055 0.12 2.43 98 120 490 13090 1992300
 vector 32 simpleNet.node[0] "numCompletedPerDest_Total(dest node 2):vector" ETV
+32	110942 1506 91 3055 0.12 2.43 98 1 98 4851 318549
 vector 33 simpleNet.node[2] completionTime:vector ETV
 attr interpolationmode none
 attr source completionTime
 attr title "completionTime, vector"
-vector 34 simpleNet.node[2] "numCompletedPerDest_Total(dest node 0):vector" ETV
-0	3066 16106 1 7892 0 19.98 1000 1 1000 500500 333833500
-1	19172 577 2 7900 0 20.5 42 0 702 10938 5373810
-2	19749 541 2 7900 0 20.5 42 0 186 1374 184974
-3	20290 522 2 7900 0 20.5 42 0 0 0 0
-4	20812 527 2 7900 0 20.5 42 0 75 296 19830
-5	21339 522 2 7900 0 20.5 42 0 0 0 0
-6	21861 522 2 7900 0 20.5 42 0 0 0 0
-7	22383 534 2 7900 0 20.5 42 0 25 298 7360
-8	22917 522 2 7900 0 20.5 42 0 0 0 0
-9	23439 33561 3 7895 0 19.99 2000 1 2000 2001000 2668667000
-10	57000 636 4 7901 0 20.5 42 0 200 7103 1394053
-11	57636 660 4 7901 0 20.5 42 0 2000 41858 58952736
-12	58296 569 4 7901 0 20.5 42 0 100 238 17598
-13	58865 568 4 7901 0 20.5 42 0 99 204 14726
-14	59433 569 4 7901 0 20.5 42 0 75 296 19782
-15	60002 564 4 7901 0 20.5 42 0 0 0 0
-16	60566 573 4 7901 0 20.5 42 0 125 496 55150
-17	61139 568 4 7901 0 20.5 42 0 50 198 9122
-18	61707 564 4 7901 0 20.5 42 0 0 0 0
-19	62271 569 4 7901 0 20.5 42 0 75 298 20472
-20	62840 35561 5 7896 0 19.99 2000 1 2000 2001000 2668667000
-21	98401 643 6 7902 0 20.5 42 0 1602 28100 31321896
-22	99044 577 6 7902 0 20.5 42 0 175 965 128187
-23	99621 564 6 7902 0 20.5 42 0 0 0 0
-24	100185 572 6 7902 0 20.5 42 0 125 496 54988
-25	100757 564 6 7902 0 20.5 42 0 0 0 0
-26	101321 564 6 7902 0 20.5 42 0 0 0 0
-27	101885 572 6 7902 0 20.5 42 0 50 398 19710
-28	102457 564 6 7902 0 20.5 42 0 0 0 0
-29	103021 3118 33 3153 0.06 2.64 200 60 650 15140 1964600
-30	106139 3190 33 3153 0.06 2.64 200 1 200 20100 2686700
-31	109329 1613 91 3055 0.12 2.43 98 120 490 13090 1992300
-32	110942 1506 91 3055 0.12 2.43 98 1 98 4851 318549
 33	112448 3280 93 3114 0.12 2.55 198 120 580 25500 3722000
-34	115728 3172 93 3114 0.12 2.55 198 1 198 19701 2607099
-
+vector 34 simpleNet.node[2] "numCompletedPerDest_Total(dest node 0):vector" ETV
+34	115728 3173 93 3114 0.12 2.55 198 1 198 19701 2607099
