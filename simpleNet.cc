@@ -190,6 +190,21 @@ void routerNode::initialize()
                     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
                     balancePerChannelSignals.push_back(signal);
                 }
+      //initialize statNumSent vector
+      for (int i=0 ; i<numNodes; i++){
+             statNumSent.push_back(0);
+         }
+
+
+         for (int i = 0; i < numNodes; ++i) {
+                     char signalName[64];
+                     sprintf(signalName, "numSentPerChannel(node %d)", i);
+                     simsignal_t signal = registerSignal(signalName);
+                     cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numSentPerChannelTemplate");
+                     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+                     numSentPerChannelSignals.push_back(signal);
+                 }
+
 
    cout << getIndex() << endl;
    cout << "here, after initialization \n";
@@ -299,7 +314,7 @@ routerMsg *routerNode::generateStatMessage(){
 
 
 void routerNode::handleStatMessage(routerMsg* ttmsg){
-    if (simTime() >10){
+    if (simTime() >30){
         delete ttmsg;
 
     }
@@ -329,12 +344,22 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
           emit(balancePerChannelSignals[it->first], it->second);
 
       }
+
+
+
     //emit num processed signals
     printf("numInQueue %i \n", statNumInQueue);
 
     for (int i=0; i<numNodes; i++){
         emit(numProcessedPerChannelSignals[i], statNumProcessed[i]);
         statNumProcessed[i] = 0;
+    }
+
+
+    //emit num sent per channel signals
+    for (int i=0; i<numNodes; i++){
+          emit(numSentPerChannelSignals[i], statNumSent[i]);
+          statNumSent[i] = 0;
     }
 
     //EV << "node "<< getIndex() << ": numProcessed "<< statNumProcessed;
@@ -642,6 +667,9 @@ void routerNode::forwardTransactionMessage(routerMsg *msg)
              outgoing_trans_units[nextDest][msg->getTransactionId()] = msg->getAmount();
            // found
     }
+
+   //numSentPerChannel incremented every time (key,value) pair added to outgoing_trans_units map
+   statNumSent[nextDest] = statNumSent[nextDest]+1;
 
    int amt = msg->getAmount();
    node_to_balance[nextDest] = node_to_balance[nextDest] - amt;

@@ -10,9 +10,9 @@ outfile = open(sys.argv[1], "w")
 totalTime = 30
 
 #edge a->b appears in index i as rateListStart[i]=a, and rateListEnd[i]=b
-rateListStart = [0,3,0,1,2,3,2,4]; 
-rateListEnd = [4,0,1,3,1,2,4,2]; 
-rateListAmtTemp = [1,2,1,2,1,2,2,1];
+rateListStart = [1,0,2]; 
+rateListEnd = [2,2,0]; 
+rateListAmtTemp = [2,1,2];
 rateListAmt = [50*x for x in rateListAmtTemp]
 
 

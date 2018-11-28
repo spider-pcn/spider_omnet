@@ -61,6 +61,9 @@ outfile.write('\t\t@statisticTemplate[numInQueuePerChannelTemplate](record=vecto
 outfile.write('\t\t@signal[numProcessedPerChannel*](type="long");  \n')
 outfile.write('\t\t@statisticTemplate[numProcessedPerChannelTemplate](record=vector, stats);   \n\n')
 
+outfile.write('\t\t@signal[numSentPerChannel*](type="long");  \n')
+outfile.write('\t\t@statisticTemplate[numSentPerChannelTemplate](record=vector, stats);   \n\n')
+
 outfile.write('\t\t@signal[numCompletedPerDest*](type="long");  \n')
 outfile.write('\t\t@statisticTemplate[numCompletedPerDestTemplate](record=vector, stats);   \n\n')
 
