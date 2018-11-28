@@ -70,6 +70,12 @@ outfile.write('\t\t@statisticTemplate[numCompletedPerDestTemplate](record=vector
 outfile.write('\t\t@signal[numAttemptedPerDest*](type="long"); \n')
 outfile.write('\t\t@statisticTemplate[numAttemptedPerDestTemplate](record=vector, stats);   \n\n')
 
+
+outfile.write('\t\t@signal[balancePerChannel*](type="long"); \n')
+outfile.write('\t\t@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   \n\n')
+
+
+
 outfile.write("\tgates:\n\t\tinput in[];\n\t\toutput out[];\n}\n\n")
 outfile.write("network simpleNet\n")
 outfile.write("{\n")

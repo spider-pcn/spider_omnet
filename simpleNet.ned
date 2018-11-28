@@ -21,6 +21,9 @@ simple routerNode
 		@signal[numAttemptedPerDest*](type="long"); 
 		@statisticTemplate[numAttemptedPerDestTemplate](record=vector, stats);   
 
+		@signal[balancePerChannel*](type="long"); 
+		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
+
 	gates:
 		input in[];
 		output out[];

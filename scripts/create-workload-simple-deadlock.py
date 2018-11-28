@@ -7,7 +7,7 @@ import textwrap
 
 outfile = open(sys.argv[1], "w")
 
-totalTime = 30
+totalTime = 20
 
 #edge a->b appears in index i as rateListStart[i]=a, and rateListEnd[i]=b
 rateListStart = [1,0,2]; 

@@ -98,6 +98,7 @@ void routerNode::print_private_values(){
 void routerNode::initialize()
 {
     cout << "here, before initialization" << endl;
+    cout <<"my index: " << getIndex() << endl;
     //statNumProcessed = 0;
 
     //register signals
@@ -108,7 +109,7 @@ void routerNode::initialize()
 
 
 
-
+    cout <<"here0"<<endl;
 
    if (getIndex() == 0){  //main initialization for global parameters
       // instantiate all the transUnits that need to be sent
@@ -128,7 +129,7 @@ void routerNode::initialize()
       //dijkstra(1,0);
 
    }
-
+   cout <<"here1"<<endl;
 
    for (int i = 0; i < numNodes; ++i) {
         char signalName[64];
@@ -139,6 +140,7 @@ void routerNode::initialize()
         numInQueuePerChannelSignals.push_back(signal);
     }
 
+   cout <<"here2"<<endl;
 
    for (int i = 0; i < numNodes; ++i) {
          char signalName[64];
@@ -181,21 +183,24 @@ void routerNode::initialize()
           statNumAttempted.push_back(0);
       }
 
+      cout <<"here3"<<endl;
 
-      for (int i = 0; i < numNodes; ++i) {
-                    char signalName[64];
-                    sprintf(signalName, "balancePerChannel(node %d)", i);
-                    simsignal_t signal = registerSignal(signalName);
-                    cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "balancePerChannelTemplate");
-                    getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-                    balancePerChannelSignals.push_back(signal);
-                }
+      for (int i = 0; i < numNodes; i++) {
+                 char signalName[64];
+                 sprintf(signalName, "balancePerChannel(node %d)", i);
+                 simsignal_t signal = registerSignal(signalName);
+                  cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "balancePerChannelTemplate");
+                 getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+                 balancePerChannelSignals.push_back(signal);
+              }
+
+
       //initialize statNumSent vector
       for (int i=0 ; i<numNodes; i++){
              statNumSent.push_back(0);
          }
 
-
+      cout <<"here4"<<endl;
          for (int i = 0; i < numNodes; ++i) {
                      char signalName[64];
                      sprintf(signalName, "numSentPerChannel(node %d)", i);
@@ -314,7 +319,7 @@ routerMsg *routerNode::generateStatMessage(){
 
 
 void routerNode::handleStatMessage(routerMsg* ttmsg){
-    if (simTime() >30){
+    if (simTime() >20){
         delete ttmsg;
 
     }
