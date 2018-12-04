@@ -6,7 +6,7 @@ linkfile = open(sys.argv[1]).readlines()
 #each line is of form:
 # [node1] [node2] [1->2 delay] [2->1 delay] [balance @ 1] [balance @ 2]
 outfile = open(sys.argv[2], "w")
-
+networkName = sys.argv[3]
 
 #metadata used for forwarding table
 neighborInterfaces = dict()
@@ -36,48 +36,9 @@ outfile.write("import mlnxnet.nodes.ethernet.MLNX_EtherSwitch;\n")
 outfile.write("import mlnxnet.nodes.ethernet.MLNX_EtherSwitch4FatTree;\n")
 """
 
+outfile.write("import routerNode;\n\n")
 
-outfile.write("simple routerNode\n")
-outfile.write("{\n")
-outfile.write("\tparameters:\n")
-
-#signals
-#outfile.write("\t\t \n")
-"""
-outfile.write('\t\t@signal[numInQueue](type="long"); \n')
-outfile.write('\t\t@statistic[numInQueue](title="total num in queue"; source="numInQueue"; record=vector,stats; interpolationmode=none); \n\n')
-outfile.write('\t\t@signal[numProcessed](type="long"); \n')
-outfile.write('\t\t@statistic[numProcessed](title="num processing events in statRate time"; source="numProcessed"; record=vector,stats; interpolationmode=none); \n\n')
-
-"""
-outfile.write('\t\t@signal[completionTime](type="long"); \n')
-
-outfile.write('\t\t@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); \n\n')
-outfile.write('\t\t@display("i=block/routing"); \n\n')
-
-outfile.write('\t\t@signal[numInQueuePerChannel*](type="long"); // note an asterisk and the type of emitted values  \n')
-outfile.write('\t\t@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   \n\n')
-
-outfile.write('\t\t@signal[numProcessedPerChannel*](type="long");  \n')
-outfile.write('\t\t@statisticTemplate[numProcessedPerChannelTemplate](record=vector, stats);   \n\n')
-
-outfile.write('\t\t@signal[numSentPerChannel*](type="long");  \n')
-outfile.write('\t\t@statisticTemplate[numSentPerChannelTemplate](record=vector, stats);   \n\n')
-
-outfile.write('\t\t@signal[numCompletedPerDest*](type="long");  \n')
-outfile.write('\t\t@statisticTemplate[numCompletedPerDestTemplate](record=vector, stats);   \n\n')
-
-outfile.write('\t\t@signal[numAttemptedPerDest*](type="long"); \n')
-outfile.write('\t\t@statisticTemplate[numAttemptedPerDestTemplate](record=vector, stats);   \n\n')
-
-
-outfile.write('\t\t@signal[balancePerChannel*](type="long"); \n')
-outfile.write('\t\t@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   \n\n')
-
-
-
-outfile.write("\tgates:\n\t\tinput in[];\n\t\toutput out[];\n}\n\n")
-outfile.write("network simpleNet\n")
+outfile.write("network " + networkName + "\n")
 outfile.write("{\n")
 
 
