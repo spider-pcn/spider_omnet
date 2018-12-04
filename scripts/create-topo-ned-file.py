@@ -6,7 +6,10 @@ linkfile = open(sys.argv[1]).readlines()
 #each line is of form:
 # [node1] [node2] [1->2 delay] [2->1 delay] [balance @ 1] [balance @ 2]
 outfile = open(sys.argv[2], "w")
-networkName = sys.argv[3]
+try:
+  networkName = sys.argv[3]
+except:
+  networkName = "simpleNet"
 
 #metadata used for forwarding table
 neighborInterfaces = dict()
