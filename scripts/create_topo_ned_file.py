@@ -95,18 +95,19 @@ parser = argparse.ArgumentParser(description="Create arbitrary topologies to run
 parser.add_argument('--num-nodes', type=int, dest='num_nodes', help='number of nodes in the graph', default=20)
 parser.add_argument('--delay-per-channel', type=int, dest='delay_per_channel', \
         help='delay between nodes (ms)', default=30)
-parser.add_argument('--graph-type', type=str, dest='graph_type', help='type of graph (Small world or scale free)', \
-        default='small_world')
+parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'custom'], 
+        help='type of graph (Small world or scale free or custom topology)', default='small_world')
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
-parser.add_argument('--topo-output-filename', type=str, help='name of intermediate output file', default="topo.txt")
+parser.add_argument('--topo-filename', type=str, help='name of intermediate output file', default="topo.txt")
 parser.add_argument('--network-name', type=str, help='name of the output ned filename', default='simpleNet')
 args = parser.parse_args()
 
 
 # generate graph and print topology and ned file
-G = generate_graph(args.num_nodes, args.graph_type)
-print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_output_filename)
-write_ned_file(args.topo_output_filename, args.network_name + '.ned', args.network_name)
+if args.graph_type != 'custom':
+    G = generate_graph(args.num_nodes, args.graph_type)
+    print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename)
+write_ned_file(args.topo_filename, args.network_name + '.ned', args.network_name)
 
 
 
