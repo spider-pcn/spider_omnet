@@ -1,6 +1,9 @@
 simple routerNode
 {
 	parameters:
+		string topologyFile = default("sample-topology.txt");
+		string workloadFile = default("sample-workload.txt");
+		
 		@signal[completionTime](type="long"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 
 

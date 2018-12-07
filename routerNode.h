@@ -24,6 +24,8 @@ using namespace omnetpp;
 class routerNode : public cSimpleModule
 {
    private:
+      string topologyFile_;
+      string workloadFile_;
       //int statNumProcessed;
       vector<int> statNumProcessed;
       vector<int> statNumCompleted;

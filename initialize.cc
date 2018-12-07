@@ -240,10 +240,10 @@ vector<int> breadthFirstSearch(int sender, int receiver){
 
 /* set_num_nodes -
  */
-void set_num_nodes(){
+void set_num_nodes(string topologyFile){
       int maxNode = -1;
       string line;
-      ifstream myfile ("sample-topology.txt");
+      ifstream myfile (topologyFile);
       if (myfile.is_open())
       {
         while ( getline (myfile,line) )
@@ -273,9 +273,9 @@ void set_num_nodes(){
  *      each line of file is of form
  *      [node1] [node2] [1->2 delay] [2->1 delay] [balance at node1 end] [balance at node2 end]
  */
-void generate_channels_balances_map(map<int, vector<pair<int,int>>> &channels, map<tuple<int,int>,double> &balances){
+void generate_channels_balances_map(string topologyFile, map<int, vector<pair<int,int>>> &channels, map<tuple<int,int>,double> &balances){
       string line;
-      ifstream myfile ("sample-topology.txt");
+      ifstream myfile (topologyFile);
       if (myfile.is_open())
       {
         while ( getline (myfile,line) )
@@ -327,9 +327,9 @@ void generate_channels_balances_map(map<int, vector<pair<int,int>>> &channels, m
  *      each line of file is of form:
  *      [amount] [timeSent] [sender] [receiver] [priorityClass]
  */
-void generate_trans_unit_list(vector<transUnit> &trans_unit_list){
+void generate_trans_unit_list(string workloadFile, vector<transUnit> &trans_unit_list){
           string line;
-          ifstream myfile ("sample-workload.txt");
+          ifstream myfile (workloadFile);
           if (myfile.is_open())
           {
             while ( getline (myfile,line) )

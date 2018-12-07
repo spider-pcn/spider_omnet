@@ -101,6 +101,9 @@ void routerNode::initialize()
     cout <<"my index: " << getIndex() << endl;
     //statNumProcessed = 0;
 
+		
+    string topologyFile_ = par("topologyFile");
+    string workloadFile_ = par("workloadFile");
     //register signals
     //numInQueueSignal = registerSignal("numInQueue");
     //numProcessedSignal = registerSignal("numProcessed");
@@ -116,14 +119,14 @@ void routerNode::initialize()
 
       // add all the transUnits into global list
 
-      set_num_nodes();
+      set_num_nodes(topologyFile_);
       //numNodes= 4;
-      generate_trans_unit_list(trans_unit_list);
+      generate_trans_unit_list(workloadFile_, trans_unit_list);
 
       //create "channels" map - from topology file
       //create "balances" map - from topology file
 
-      generate_channels_balances_map(channels, balances );  //also sets numNodes
+      generate_channels_balances_map(topologyFile_, channels, balances );  //also sets numNodes
       //dijkstra(0,0);
 
       //dijkstra(1,0);
