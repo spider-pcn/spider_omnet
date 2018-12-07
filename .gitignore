@@ -3,3 +3,7 @@
 *.log
 *.blg
 *.out
+spiderNet
+*.vec
+*.sca
+*.vci
