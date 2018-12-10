@@ -52,7 +52,7 @@ def write_ned_file(topo_filename, output_filename, network_name):
     # are read from an additional 'delay' column and 'channel balance' columns in the text file.
     outfile.write('\tparameters:\n\t\tdouble linkDelay @unit("s") = default(100us);\n')
     outfile.write('\t\tdouble linkDataRate @unit("Gbps") = default(1Gbps);\n')
-    outfile.write('\tsubmodules:\n\t\tnode["+str(maxVal)+"]: routerNode {} \n connections: \n')
+    outfile.write('\tsubmodules:\n\t\tnode['+str(max_val)+']: routerNode {} \n connections: \n')
 
     for link in linklist:
         a = link[0]
