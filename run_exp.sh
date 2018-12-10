@@ -7,7 +7,7 @@ workload=$5
 inifile=$6
 
 # generate the graph first to ned file
-python scripts/create_topo_ned_file.py scale_free \
+python scripts/create_topo_ned_file.py custom\
         --network-name $network\
         --topo-filename $topofile\
         --num-nodes $num_nodes\
@@ -15,7 +15,7 @@ python scripts/create_topo_ned_file.py scale_free \
 
 
 # create transactions corresponding to this experiment run
-python scripts/create_workload.py $workload
+#python scripts/create_workload.py $workload
 
 # create the ini file
 python scripts/create_ini_file.py \
