@@ -2,10 +2,12 @@ import sys
 import textwrap
 import argparse
 import numpy as np
+import networkx as nx
+import random
 
 SCALE_AMOUNT = 5
 
-
+# generates the start and end nodes for a fixed set of topologies - hotnets/line/simple graph
 def generate_workload_standard(filename, payment_graph_topo, workload_type, total_time, \
         exp_size, txn_size_mean):
     # define start and end nodes and amounts
@@ -73,7 +75,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
 
 
 
-# TODO: generate workload for arbitrary topology
+# generate workload for arbitrary topology
 def generate_workload_custom(filename, graph, workload_type, total_time, \
         exp_size, txn_size_mean):
     n = graph.number_of_nodes()
@@ -92,9 +94,16 @@ def generate_workload_custom(filename, graph, workload_type, total_time, \
             workload_type, total_time, exp_size, txn_size_mean)
 
 
-# parse topology file to get graph structure
-# TODO: def parse_topo(topo_filename):
 
+# parse topology file to get graph structure
+def parse_topo(topo_filename):
+    g = nx.Graph()
+    with open(topo_filename) as topo_file:
+        for line in topo_file:
+            n1 = int(line.split()[0])
+            n2 = int(line.split()[1])
+            g.add_edge(n1, n2)
+    return g
 
 
 
