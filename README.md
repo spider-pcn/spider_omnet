@@ -23,6 +23,11 @@ to save the time in rebuilding the omnet setup.
 ## Running the Simulation
 Open the simpleNet.ned file and click the green run button to run the simulation.
 
+To run from the command line, either use the `run_exp.sh` script or by running simpleNet using the command
+```
+./spiderNet -u Cmdenv -f omnetpp.ini -c simpleNet -n .
+```
+
 ## Collecting Statistics and Plotting Graphs
 Click the button to run the simulation. For just the purpose of collection statistics, you can use the EXPRESS setting (triple arrow) to run through the simulation. Once the simulation has terminated, close the simulation window. 
 
