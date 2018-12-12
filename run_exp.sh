@@ -5,9 +5,10 @@ num_nodes=$3
 balance=$4
 workload=$5
 inifile=$6
+graph_type=$7
 
 # generate the graph first to ned file
-python scripts/create_topo_ned_file.py custom\
+python scripts/create_topo_ned_file.py $graph_type\
         --network-name $network\
         --topo-filename $topofile\
         --num-nodes $num_nodes\
@@ -15,7 +16,10 @@ python scripts/create_topo_ned_file.py custom\
 
 
 # create transactions corresponding to this experiment run
-#python scripts/create_workload.py $workload
+python scripts/create_workload.py $workload poisson\
+        --payment-graph-type custom\
+        --topo-filename $topofile\
+        --experiment-time 5
 
 # create the ini file
 python scripts/create_ini_file.py \

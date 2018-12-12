@@ -66,6 +66,9 @@ def write_ned_file(topo_filename, output_filename, network_name):
         outfile.write(' <-- node[' + str(b) + '].out++;  \n')
     outfile.write('}\n')
 
+
+
+
 # generate either a small world or scale free graph
 def generate_graph(size, graph_type):
     if graph_type == 'small_world':
@@ -73,10 +76,16 @@ def generate_graph(size, graph_type):
     elif graph_type == 'scale_free':
         G = nx.scale_free_graph(size)
 
+    # remove self loops and parallel edges
+    G.remove_edges_from(G.selfloop_edges())
+    G = nx.Graph(G)
+
     print 'Generated a ', graph_type, ' graph'
     print 'number of nodes: ', G.number_of_nodes()
     print 'Number of Edges: ', G.number_of_edges()
     return G
+
+
 
 
 # print the output in the desired format for write_ned_file to read
@@ -90,12 +99,14 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
     f.close()
 
 
+
+
 # parse arguments
 parser = argparse.ArgumentParser(description="Create arbitrary topologies to run the omnet simulator on")
 parser.add_argument('--num-nodes', type=int, dest='num_nodes', help='number of nodes in the graph', default=20)
 parser.add_argument('--delay-per-channel', type=int, dest='delay_per_channel', \
         help='delay between nodes (ms)', default=30)
-parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'custom'], 
+parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'provided'], 
         help='type of graph (Small world or scale free or custom topology)', default='small_world')
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 parser.add_argument('--topo-filename', dest='topo_filename', type=str, \
@@ -106,7 +117,7 @@ args = parser.parse_args()
 
 
 # generate graph and print topology and ned file
-if args.graph_type != 'custom':
+if args.graph_type != 'provided':
     G = generate_graph(args.num_nodes, args.graph_type)
     print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename)
 write_ned_file(args.topo_filename, args.network_name + '.ned', args.network_name)

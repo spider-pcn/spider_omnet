@@ -75,11 +75,14 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
 
 
 
-# generate workload for arbitrary topology
-def generate_workload_custom(filename, graph, workload_type, total_time, \
+# generate workload for arbitrary topology by uniformly sampling
+# the set of nodes for sender-receiver pairs
+# size of transaction is determined when writing to the file to
+# either be exponentially distributed or constant size
+def generate_workload_for_provided_topology(filename, graph, workload_type, total_time, \
         exp_size, txn_size_mean):
     n = graph.number_of_nodes()
-    num_sender_receiver_pairs = n/4
+    num_sender_receiver_pairs = n
 
     start_nodes, end_nodes, amt_relative = [], [], []
     for i in range(num_sender_receiver_pairs):
@@ -89,6 +92,8 @@ def generate_workload_custom(filename, graph, workload_type, total_time, \
         amt_relative.append(random.choice(range(1, 10, 1)))
 
     amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+
+    print "generated workload" 
 
     write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
             workload_type, total_time, exp_size, txn_size_mean)
@@ -145,7 +150,7 @@ elif topo_filename is None:
     raise Exception("Topology needed for custom file")
 else:
     graph = parse_topo(topo_filename)
-    generate_workload_custom(output_filename, graph, distribution, total_time, exp_size,\
+    generate_workload_for_provided_topology(output_filename, graph, distribution, total_time, exp_size,\
             txn_size_mean)
 
 
