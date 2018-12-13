@@ -3,6 +3,8 @@
 #include "initialize.h"
 #include "routerNode.h"
 
+#define MSGSIZE 100
+
 Define_Module(routerNode);
 
 /* string_node_to_balance - helper function, turns the node_to_balance map into printable string
@@ -310,7 +312,7 @@ void routerNode::handleMessage(cMessage *msg)
 
 
 routerMsg *routerNode::generateStatMessage(){
-    char msgname[30];
+    char msgname[MSGSIZE];
       sprintf(msgname, "node-%d statMsg", getIndex());
 
       routerMsg *rMsg = new routerMsg(msgname);
@@ -441,7 +443,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
  */
 routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg){
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
-    char msgname[30];
+    char msgname[MSGSIZE];
      sprintf(msgname, "receiver-%d-to-sender-%d ackMsg", transMsg->getReceiver(), transMsg->getSender());
      routerMsg *msg = new routerMsg(msgname);
      ackMsg *aMsg = new ackMsg(msgname);
@@ -526,7 +528,7 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
  */
 // virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
 routerMsg *routerNode::generateUpdateMessage(int transId, int receiver, double amount){
-    char msgname[30];
+    char msgname[MSGSIZE];
       sprintf(msgname, "tic-%d-to-%d updateMsg", getIndex(), receiver);
 
       routerMsg *rMsg = new routerMsg(msgname);
@@ -613,7 +615,7 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
  */
 routerMsg *routerNode::generateTransactionMessage(transUnit transUnit)
 {
-   char msgname[30];
+   char msgname[MSGSIZE];
    sprintf(msgname, "tic-%d-to-%d transactionMsg", transUnit.sender, transUnit.receiver);
    transactionMsg *msg = new transactionMsg(msgname);
    msg->setAmount(transUnit.amount);
