@@ -183,9 +183,6 @@ routerMsg::routerMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kin
 {
     this->hopCount = 0;
     this->messageType = 0;
-    this->amount = 0;
-    this->priorityClass = 0;
-    this->transactionId = 0;
 }
 
 routerMsg::routerMsg(const routerMsg& other) : ::omnetpp::cPacket(other)
@@ -210,9 +207,6 @@ void routerMsg::copy(const routerMsg& other)
     this->route = other.route;
     this->hopCount = other.hopCount;
     this->messageType = other.messageType;
-    this->amount = other.amount;
-    this->priorityClass = other.priorityClass;
-    this->transactionId = other.transactionId;
 }
 
 void routerMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -221,9 +215,6 @@ void routerMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->route);
     doParsimPacking(b,this->hopCount);
     doParsimPacking(b,this->messageType);
-    doParsimPacking(b,this->amount);
-    doParsimPacking(b,this->priorityClass);
-    doParsimPacking(b,this->transactionId);
 }
 
 void routerMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -232,9 +223,6 @@ void routerMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->route);
     doParsimUnpacking(b,this->hopCount);
     doParsimUnpacking(b,this->messageType);
-    doParsimUnpacking(b,this->amount);
-    doParsimUnpacking(b,this->priorityClass);
-    doParsimUnpacking(b,this->transactionId);
 }
 
 IntVector& routerMsg::getRoute()
@@ -265,36 +253,6 @@ int routerMsg::getMessageType() const
 void routerMsg::setMessageType(int messageType)
 {
     this->messageType = messageType;
-}
-
-double routerMsg::getAmount() const
-{
-    return this->amount;
-}
-
-void routerMsg::setAmount(double amount)
-{
-    this->amount = amount;
-}
-
-int routerMsg::getPriorityClass() const
-{
-    return this->priorityClass;
-}
-
-void routerMsg::setPriorityClass(int priorityClass)
-{
-    this->priorityClass = priorityClass;
-}
-
-int routerMsg::getTransactionId() const
-{
-    return this->transactionId;
-}
-
-void routerMsg::setTransactionId(int transactionId)
-{
-    this->transactionId = transactionId;
 }
 
 class routerMsgDescriptor : public omnetpp::cClassDescriptor
@@ -362,7 +320,7 @@ const char *routerMsgDescriptor::getProperty(const char *propertyname) const
 int routerMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 6+basedesc->getFieldCount() : 6;
+    return basedesc ? 3+basedesc->getFieldCount() : 3;
 }
 
 unsigned int routerMsgDescriptor::getFieldTypeFlags(int field) const
@@ -377,11 +335,8 @@ unsigned int routerMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISCOMPOUND,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
-        FD_ISEDITABLE,
-        FD_ISEDITABLE,
-        FD_ISEDITABLE,
     };
-    return (field>=0 && field<6) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<3) ? fieldTypeFlags[field] : 0;
 }
 
 const char *routerMsgDescriptor::getFieldName(int field) const
@@ -396,11 +351,8 @@ const char *routerMsgDescriptor::getFieldName(int field) const
         "route",
         "hopCount",
         "messageType",
-        "amount",
-        "priorityClass",
-        "transactionId",
     };
-    return (field>=0 && field<6) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<3) ? fieldNames[field] : nullptr;
 }
 
 int routerMsgDescriptor::findField(const char *fieldName) const
@@ -410,9 +362,6 @@ int routerMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='r' && strcmp(fieldName, "route")==0) return base+0;
     if (fieldName[0]=='h' && strcmp(fieldName, "hopCount")==0) return base+1;
     if (fieldName[0]=='m' && strcmp(fieldName, "messageType")==0) return base+2;
-    if (fieldName[0]=='a' && strcmp(fieldName, "amount")==0) return base+3;
-    if (fieldName[0]=='p' && strcmp(fieldName, "priorityClass")==0) return base+4;
-    if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+5;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -428,11 +377,8 @@ const char *routerMsgDescriptor::getFieldTypeString(int field) const
         "IntVector",
         "int",
         "int",
-        "double",
-        "int",
-        "int",
     };
-    return (field>=0 && field<6) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<3) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **routerMsgDescriptor::getFieldPropertyNames(int field) const
@@ -502,9 +448,6 @@ std::string routerMsgDescriptor::getFieldValueAsString(void *object, int field, 
         case 0: {std::stringstream out; out << pp->getRoute(); return out.str();}
         case 1: return long2string(pp->getHopCount());
         case 2: return long2string(pp->getMessageType());
-        case 3: return double2string(pp->getAmount());
-        case 4: return long2string(pp->getPriorityClass());
-        case 5: return long2string(pp->getTransactionId());
         default: return "";
     }
 }
@@ -521,9 +464,6 @@ bool routerMsgDescriptor::setFieldValueAsString(void *object, int field, int i, 
     switch (field) {
         case 1: pp->setHopCount(string2long(value)); return true;
         case 2: pp->setMessageType(string2long(value)); return true;
-        case 3: pp->setAmount(string2double(value)); return true;
-        case 4: pp->setPriorityClass(string2long(value)); return true;
-        case 5: pp->setTransactionId(string2long(value)); return true;
         default: return false;
     }
 }

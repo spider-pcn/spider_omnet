@@ -7,9 +7,9 @@
 
 Define_Module(routerNode);
 
+
 /* string_node_to_balance - helper function, turns the node_to_balance map into printable string
- *
- */
+
 string routerNode::string_node_to_balance(){
    string result = "";
    for(map<int,double>::iterator iter = node_to_balance.begin(); iter != node_to_balance.end(); ++iter)
@@ -21,62 +21,67 @@ string routerNode::string_node_to_balance(){
    return result;
 }
 
-
+*/
+/*
 void routerNode:: print_message(routerMsg *msg){
-    EV <<  "<message - transId:" << msg->getTransactionId() << ", sender: " << msg->getRoute()[0] << ", receiver: " << msg->getRoute()[msg->getRoute().size()-1];
-    EV << ", amount: " << msg->getAmount() << "> \n";
+   EV <<  "<message - transId:" << msg->getTransactionId() << ", sender: " << msg->getRoute()[0] << ", receiver: " << msg->getRoute()[msg->getRoute().size()-1];
+   EV << ", amount: " << msg->getAmount() << "> \n";
 
 }
-
+*/
+/*
 void routerNode::print_private_values(){
-    EV << getIndex()<< " - node_to_queued_trans_units:";
-    typedef map<int, deque<tuple<int, double , routerMsg *>>>::const_iterator queueMapIter;
-    for (queueMapIter iter = node_to_queued_trans_units.begin(); iter != node_to_queued_trans_units.end(); iter++)
-       {
-           EV << "{"<< iter->first << ": " ;
-           typedef  deque<tuple<int, double , routerMsg *>>::const_iterator queueIter;
-           for (queueIter iter_inner = iter->second.begin(); iter_inner != iter->second.end(); iter_inner++){
-               EV << "(" << get<0>(*iter_inner);
-               EV << "," << get<1>(*iter_inner) << ")   ";
-           }
-           EV << "}   ";
-       }
-       EV << endl;
+   EV << getIndex()<< " - node_to_queued_trans_units:";
+   typedef map<int, deque<tuple<int, double , routerMsg *>>>::const_iterator queueMapIter;
+   for (queueMapIter iter = node_to_queued_trans_units.begin(); iter != node_to_queued_trans_units.end(); iter++)
+   {
+      EV << "{"<< iter->first << ": " ;
+      typedef  deque<tuple<int, double , routerMsg *>>::const_iterator queueIter;
+      for (queueIter iter_inner = iter->second.begin(); iter_inner != iter->second.end(); iter_inner++){
+         EV << "(" << get<0>(*iter_inner);
+         EV << "," << get<1>(*iter_inner) << ")   ";
+      }
+      EV << "}   ";
+   }
+   EV << endl;
 
-    //print map - channel balance
-    EV << getIndex() <<  " - node_to_balance: ";
-    typedef map<int, double>::const_iterator MapIterator2;
-    for (MapIterator2 iter_inner = node_to_balance.begin(); iter_inner != node_to_balance.end(); iter_inner++){
-        EV << "(" << iter_inner->first << "," << iter_inner->second << ")   ";}
+   //print map - channel balance
+   EV << getIndex() <<  " - node_to_balance: ";
+   typedef map<int, double>::const_iterator MapIterator2;
+   for (MapIterator2 iter_inner = node_to_balance.begin(); iter_inner != node_to_balance.end(); iter_inner++){
+      EV << "(" << iter_inner->first << "," << iter_inner->second << ")   ";}
 
-    EV << endl;
+   EV << endl;
 
-    EV << getIndex() << "- incoming_trans_units: ";
+   EV << getIndex() << "- incoming_trans_units: ";
 
-    typedef map<int, map<int, double>>::const_iterator MapIterator;
-    for (MapIterator iter = incoming_trans_units.begin(); iter != incoming_trans_units.end(); iter++)
-    {
-        EV << "{"<< iter->first << ": " ;
-        typedef map<int, double>::const_iterator MapIterator;
-        for (MapIterator iter_inner = iter->second.begin(); iter_inner != iter->second.end(); iter_inner++)
-            EV << "(" << iter_inner->first << "," << iter_inner->second << ")   ";
-        EV << "}   ";
-    }
-    EV << endl;
+   typedef map<int, map<int, double>>::const_iterator MapIterator;
+   for (MapIterator iter = incoming_trans_units.begin(); iter != incoming_trans_units.end(); iter++)
+   {
+      EV << "{"<< iter->first << ": " ;
+      typedef map<int, double>::const_iterator MapIterator;
+      for (MapIterator iter_inner = iter->second.begin(); iter_inner != iter->second.end(); iter_inner++)
+         EV << "(" << iter_inner->first << "," << iter_inner->second << ")   ";
+      EV << "}   ";
+   }
+   EV << endl;
 
-    EV << getIndex() << " - outgoing_trans_units: ";
-    typedef map<int, map<int, double>>::const_iterator MapIterator;
-    for (MapIterator iter = outgoing_trans_units.begin(); iter != outgoing_trans_units.end(); iter++)
-    {
-        EV << "{"<< iter->first << ": " ;
-        typedef map<int, double>::const_iterator MapIterator;
-        for (MapIterator iter_inner = iter->second.begin(); iter_inner != iter->second.end(); iter_inner++)
-            EV << "(" << iter_inner->first << "," << iter_inner->second << ")   ";
-        EV << "}   ";
+   EV << getIndex() << " - outgoing_trans_units: ";
+   typedef map<int, map<int, double>>::const_iterator MapIterator;
+   for (MapIterator iter = outgoing_trans_units.begin(); iter != outgoing_trans_units.end(); iter++)
+   {
+      EV << "{"<< iter->first << ": " ;
+      typedef map<int, double>::const_iterator MapIterator;
+      for (MapIterator iter_inner = iter->second.begin(); iter_inner != iter->second.end(); iter_inner++)
+         EV << "(" << iter_inner->first << "," << iter_inner->second << ")   ";
+      EV << "}   ";
 
-    }
-    EV <<  endl;
+   }
+   EV <<  endl;
 }
+*/
+
+
 
 /* initialize() -
  *  if node index is 0:
@@ -99,134 +104,25 @@ void routerNode::print_private_values(){
 
 void routerNode::initialize()
 {
-    cout << "here, before initialization" << endl;
-    cout <<"my index: " << getIndex() << endl;
-    //statNumProcessed = 0;
+   string topologyFile_ = par("topologyFile");
+   string workloadFile_ = par("workloadFile");
 
-		
-    string topologyFile_ = par("topologyFile");
-    string workloadFile_ = par("workloadFile");
-    //register signals
-    //numInQueueSignal = registerSignal("numInQueue");
-    //numProcessedSignal = registerSignal("numProcessed");
-    completionTimeSignal = registerSignal("completionTime");
+   completionTimeSignal = registerSignal("completionTime");
 
-
-
-
-    cout <<"here0"<<endl;
 
    if (getIndex() == 0){  //main initialization for global parameters
-      // instantiate all the transUnits that need to be sent
 
+      setNumNodes(topologyFile_); //TODO: condense into generate_trans_unit_list
       // add all the transUnits into global list
-
-      set_num_nodes(topologyFile_);
-      //numNodes= 4;
-      generate_trans_unit_list(workloadFile_, trans_unit_list);
+      generateTransUnitList(workloadFile_, transUnitList);
 
       //create "channels" map - from topology file
       //create "balances" map - from topology file
-
-      generate_channels_balances_map(topologyFile_, channels, balances );  //also sets numNodes
-      //dijkstra(0,0);
-
-      //dijkstra(1,0);
-
-   }
-   cout <<"here1"<<endl;
-
-   for (int i = 0; i < numNodes; ++i) {
-        char signalName[64];
-        sprintf(signalName, "numInQueuePerChannel(node %d)", i);
-        simsignal_t signal = registerSignal(signalName);
-        cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numInQueuePerChannelTemplate");
-        getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-        numInQueuePerChannelSignals.push_back(signal);
-    }
-
-   cout <<"here2"<<endl;
-
-   for (int i = 0; i < numNodes; ++i) {
-         char signalName[64];
-         sprintf(signalName, "numProcessedPerChannel(node %d)", i);
-         simsignal_t signal = registerSignal(signalName);
-         cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numProcessedPerChannelTemplate");
-         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-         numProcessedPerChannelSignals.push_back(signal);
-     }
-
-   //initialize statNumProcessed vector
-   for (int i=0 ; i<numNodes; i++){
-       statNumProcessed.push_back(0);
-   }
-
-   for (int i = 0; i < numNodes; ++i) {
-            char signalName[64];
-            sprintf(signalName, "numCompletedPerDest_Total(dest node %d)", i);
-            simsignal_t signal = registerSignal(signalName);
-            cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numCompletedPerDestTemplate");
-            getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-            numCompletedPerDestSignals.push_back(signal);
-        }
-   //initialize statNumCompleted vector
-   for (int i=0 ; i<numNodes; i++){
-       statNumCompleted.push_back(0);
+      generateChannelsBalancesMap(topologyFile_, channels, balances );
    }
 
 
-   for (int i = 0; i < numNodes; ++i) {
-               char signalName[64];
-               sprintf(signalName, "numAttemptedPerDest_Total(dest node %d)", i);
-               simsignal_t signal = registerSignal(signalName);
-               cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numAttemptedPerDestTemplate");
-               getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-               numAttemptedPerDestSignals.push_back(signal);
-           }
-      //initialize statNumAttempted vector
-      for (int i=0 ; i<numNodes; i++){
-          statNumAttempted.push_back(0);
-      }
-
-      cout <<"here3"<<endl;
-
-      for (int i = 0; i < numNodes; i++) {
-                 char signalName[64];
-                 sprintf(signalName, "balancePerChannel(node %d)", i);
-                 simsignal_t signal = registerSignal(signalName);
-                  cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "balancePerChannelTemplate");
-                 getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-                 balancePerChannelSignals.push_back(signal);
-              }
-
-
-      //initialize statNumSent vector
-      for (int i=0 ; i<numNodes; i++){
-             statNumSent.push_back(0);
-         }
-
-      cout <<"here4"<<endl;
-         for (int i = 0; i < numNodes; ++i) {
-                     char signalName[64];
-                     sprintf(signalName, "numSentPerChannel(node %d)", i);
-                     simsignal_t signal = registerSignal(signalName);
-                     cProperty *statisticTemplate = getProperties()->get("statisticTemplate", "numSentPerChannelTemplate");
-                     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-                     numSentPerChannelSignals.push_back(signal);
-                 }
-
-
-   cout << getIndex() << endl;
-   cout << "here, after initialization \n";
-
-   //iterate through the global trans_unit_list and find my transUnits
-   for (int i=0; i<(int)trans_unit_list.size(); i++){
-      if (trans_unit_list[i].sender == getIndex()){
-         my_trans_units.push_back(trans_unit_list[i]);
-      }
-   }
-
-   //create "node_to_gate" map
+   //Create nodeToPaymentChannel map
    const char * gateName = "out";
    cGate *destGate = NULL;
 
@@ -237,154 +133,198 @@ void routerNode::initialize()
       destGate = gate(gateName, i++);
       cGate *nextGate = destGate->getNextGate();
       if (nextGate ) {
-         node_to_gate[nextGate->getOwnerModule()->getIndex()] = destGate;
+         paymentChannel temp =  {};
+         temp.gate = destGate;
+         nodeToPaymentChannel[nextGate->getOwnerModule()->getIndex()] = temp;
       }
    } while (i < gateSize);
 
-   //create "node_to_balance" map
-   for(map<int,cGate *>::iterator iter = node_to_gate.begin(); iter != node_to_gate.end(); ++iter)
+   //initialize everything for adjacent nodes/nodes with payment channel to me
+   for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
    {
-      int key =  iter->first;
-      node_to_balance[key] = balances[make_tuple(getIndex(),key)];
+      int key =  iter->first; //node
+
+      //fill in balance field of nodeToPaymentChannel
+      nodeToPaymentChannel[key].balance = balances[make_tuple(getIndex(),key)];
+
+      //initialize queuedTransUnits
+      vector<tuple<int, double , routerMsg *>> temp;
+      make_heap(temp.begin(), temp.end(), sortPriorityThenAmtFunction);
+      nodeToPaymentChannel[key].queuedTransUnits = temp;
+
+
+      //register signals
+      char signalName[64];
+      simsignal_t signal;
+      cProperty *statisticTemplate;
+
+      //numInQueuePerChannel signal
+      sprintf(signalName, "numInQueuePerChannel(node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "numInQueuePerChannelTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      nodeToPaymentChannel[key].numInQueuePerChannelSignal = signal;
+
+      //numProcessedPerChannel signal
+      sprintf(signalName, "numProcessedPerChannel(node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "numProcessedPerChannelTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      nodeToPaymentChannel[key].numProcessedPerChannelSignal = signal;
+
+      //statNumProcessed int
+      nodeToPaymentChannel[key].statNumProcessed = 0;
+
+
+      //balancePerChannel signal
+      sprintf(signalName, "balancePerChannel(node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "balancePerChannelTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      nodeToPaymentChannel[key].balancePerChannelSignal = signal;
+
+      //numSentPerChannel signal
+      sprintf(signalName, "numSentPerChannel(node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "numSentPerChannelTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      nodeToPaymentChannel[key].numSentPerChannelSignal = signal;
+
+      //statNumSent int
+      nodeToPaymentChannel[key].statNumSent = 0;
+
    }
 
-   WATCH_MAP(node_to_balance);
 
-   //create "node_to_queued_trans_units" map
-   for(map<int,cGate *>::iterator iter = node_to_gate.begin(); iter != node_to_gate.end(); ++iter)
-   {
-      int key =  iter->first;
-      deque<tuple<int, double , routerMsg *>> temp;
-      node_to_queued_trans_units[key] = temp;
+
+   //initialize signals with all other nodes in graph
+
+   for (int i = 0; i < numNodes; ++i) {
+      char signalName[64];
+      simsignal_t signal;
+      cProperty *statisticTemplate;
+
+      //numCompletedPerDest signal
+
+      sprintf(signalName, "numCompletedPerDest_Total(dest node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "numCompletedPerDestTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      numCompletedPerDestSignals.push_back(signal);
+
+      statNumCompleted.push_back(0);
+
+      //numAttemptedPerDest signal
+      sprintf(signalName, "numAttemptedPerDest_Total(dest node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "numAttemptedPerDestTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      numAttemptedPerDestSignals.push_back(signal);
+
+      statNumAttempted.push_back(0);
+
    }
-   //arrivalSignal = registerSignal("arrival");
+
+   //iterate through the global trans_unit_list and find my transUnits
+   for (int i=0; i<(int)transUnitList.size(); i++){
+      if (transUnitList[i].sender == getIndex()){
+         myTransUnits.push_back(transUnitList[i]);
+      }
+   }
+
+
    //implementing timeSent parameter, send all msgs at beginning
-   for (int i=0 ; i<(int)my_trans_units.size(); i++){
-      transUnit j = my_trans_units[i];
+   for (int i=0 ; i<(int)myTransUnits.size(); i++){
+      transUnit j = myTransUnits[i];
       double timeSent = j.timeSent;
       routerMsg *msg = generateTransactionMessage(j);
       scheduleAt(timeSent, msg);
    }
+
    //set statRate
    statRate = 0.5;
    //get stat message
    routerMsg *statMsg = generateStatMessage();
    scheduleAt(0, statMsg);
 
-
-
-   cout << getIndex() << endl;
-    cout << "here, after initialization \n";
 }
 
 void routerNode::handleMessage(cMessage *msg)
 {
    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
-   if (ttmsg->getMessageType()==1){
+   if (ttmsg->getMessageType()==ACK_MSG){ //preprocessor constants defined in routerMsg_m.h
       // EV<< "[NODE "<< getIndex() <<": RECEIVED ACK MSG] \n";
-       //print_message(ttmsg);
-       //print_private_values();
-       handleAckMessage(ttmsg);
+      //print_message(ttmsg);
+      //print_private_values();
+      handleAckMessage(ttmsg);
       // EV<< "[AFTER HANDLING:]\n";
       // print_private_values();
    }
-   else if(ttmsg->getMessageType()==0){
+   else if(ttmsg->getMessageType()==TRANSACTION_MSG){
       // EV<< "[NODE "<< getIndex() <<": RECEIVED TRANSACTION MSG]  \n";
       // print_message(ttmsg);
       // print_private_values();
-       handleTransactionMessage(ttmsg);
+      handleTransactionMessage(ttmsg);
       // EV<< "[AFTER HANDLING:] \n";
       // print_private_values();
    }
-   else if(ttmsg->getMessageType()==2){
-     //  EV<< "[NODE "<< getIndex() <<": RECEIVED UPDATE MSG] \n";
+   else if(ttmsg->getMessageType()==UPDATE_MSG){
+      //  EV<< "[NODE "<< getIndex() <<": RECEIVED UPDATE MSG] \n";
       // print_message(ttmsg);
       // print_private_values();
-       handleUpdateMessage(ttmsg);
+      handleUpdateMessage(ttmsg);
       // EV<< "[AFTER HANDLING:]  \n";
-       //print_private_values();
+      //print_private_values();
 
    }
-   else if (ttmsg->getMessageType() ==3){
-       handleStatMessage(ttmsg);
+   else if (ttmsg->getMessageType() ==STAT_MSG){
+      handleStatMessage(ttmsg);
    }
 }
 
 
 routerMsg *routerNode::generateStatMessage(){
-    char msgname[MSGSIZE];
-      sprintf(msgname, "node-%d statMsg", getIndex());
-
-      routerMsg *rMsg = new routerMsg(msgname);
-
-      rMsg->setMessageType(3); //3 means statMsg
-      return rMsg;
+   char msgname[MSGSIZE];
+   sprintf(msgname, "node-%d statMsg", getIndex());
+   routerMsg *rMsg = new routerMsg(msgname);
+   rMsg->setMessageType(STAT_MSG);
+   return rMsg;
 }
 
 
 
 void routerNode::handleStatMessage(routerMsg* ttmsg){
-    if (simTime() >20){
-        delete ttmsg;
+   if (simTime() >20){
+      delete ttmsg;
 
-    }
-    else{
-    scheduleAt(simTime()+statRate, ttmsg);
-    }
-
-    //
-
-    int statNumInQueue = 0;
-    //  map<int, deque<tuple<int, double , routerMsg *>>> node_to_queued_trans_units;
-    for ( map<int, deque<tuple<int, double , routerMsg *>>>::iterator it = node_to_queued_trans_units.begin();
-           it!= node_to_queued_trans_units.end(); it++){
-        //EV << "node "<< getIndex() << ": queued "<<(it->second).size();
-        statNumInQueue = statNumInQueue + (it->second).size();
-        emit(numInQueuePerChannelSignals[it->first], (it->second).size());
-
-    }
-
-   // map<int, double> node_to_balance;
-
-    //emit balancePerChannelSignals
-    for ( map<int, double>::iterator it = node_to_balance.begin();
-             it!= node_to_balance.end(); it++){
-          //EV << "node "<< getIndex() << ": queued "<<(it->second).size();
-          //statNumInQueue = statNumInQueue + (it->second).size();
-          emit(balancePerChannelSignals[it->first], it->second);
-
-      }
+   }
+   else{
+      scheduleAt(simTime()+statRate, ttmsg);
+   }
 
 
+   //  map<int, deque<tuple<int, double , routerMsg *>>> node_to_queued_trans_units;
+   for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
+      //EV << "node "<< getIndex() << ": queued "<<(it->second).size();
+       int node = it->first; //key
+      emit(nodeToPaymentChannel[node].numInQueuePerChannelSignal, (nodeToPaymentChannel[node].queuedTransUnits).size());
 
-    //emit num processed signals
-    printf("numInQueue %i \n", statNumInQueue);
+      emit(nodeToPaymentChannel[node].balancePerChannelSignal, nodeToPaymentChannel[node].balance);
 
-    for (int i=0; i<numNodes; i++){
-        emit(numProcessedPerChannelSignals[i], statNumProcessed[i]);
-        statNumProcessed[i] = 0;
-    }
+      emit(nodeToPaymentChannel[node].numProcessedPerChannelSignal, nodeToPaymentChannel[node].statNumProcessed);
+      nodeToPaymentChannel[node].statNumProcessed = 0;
 
-
-    //emit num sent per channel signals
-    for (int i=0; i<numNodes; i++){
-          emit(numSentPerChannelSignals[i], statNumSent[i]);
-          statNumSent[i] = 0;
-    }
-
-    //EV << "node "<< getIndex() << ": numProcessed "<< statNumProcessed;
-    //int arrSignal[2] = {statNumInQueue};
-    //int arrSignal[4] = {10,20,30,40};
+      emit(nodeToPaymentChannel[node].numSentPerChannelSignal, nodeToPaymentChannel[node].statNumSent);
+      nodeToPaymentChannel[node].statNumSent = 0;
+   }
 
 
+   for (auto it = 0; it<numNodes; it++){ //iterate through all nodes in graph
+       emit(numAttemptedPerDestSignals[it], statNumAttempted[it]);
 
-    //emit(numInQueueSignal, statNumInQueue);
-    //emit(numProcessedSignal, statNumProcessed);
+       emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
+   }
 
-
-    //statNumProcessed = 0;
-
-    //send out statistics here
 }
 
 
@@ -395,46 +335,48 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
  *          balance update message with their transId (in forwardAckMessage())
  */
 void routerNode::handleAckMessage(routerMsg* ttmsg){
-    //generate updateMsg
-    int sender = ttmsg->getRoute()[ttmsg->getHopCount()-1];
+   //generate updateMsg
+   int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
 
-    //remove transaction from outgoing_trans_unit
-    outgoing_trans_units[sender].erase(ttmsg->getTransactionId());
+   //remove transaction from outgoing_trans_unit
+   map<int, double> *outgoingTransUnits = &(nodeToPaymentChannel[prevNode].outgoingTransUnits);
+   ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
 
-    //increment signal numProcessed
-    statNumProcessed[sender] = statNumProcessed[sender]+1;
+   (*outgoingTransUnits).erase(aMsg->getTransactionId());
 
-    // virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
-     routerMsg* updateMsg =  generateUpdateMessage(ttmsg->getTransactionId(),sender, ttmsg->getAmount() );
-     forwardUpdateMessage(updateMsg);
-     // remove transId from want_ack_trans_units
-     want_ack_trans_units.erase(ttmsg->getTransactionId());
-    if(ttmsg->getHopCount() <  ttmsg->getRoute().size()-1){ // are not at last index of route
-        forwardAckMessage(ttmsg);
-    }
-    else{
+   //increment signal numProcessed
+
+   nodeToPaymentChannel[prevNode].statNumProcessed = nodeToPaymentChannel[prevNode].statNumProcessed+1;
+
+   // virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
+   routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), prevNode, aMsg->getAmount() );
+
+   sendUpdateMessage(uMsg);
+
+   if(ttmsg->getHopCount() <  ttmsg->getRoute().size()-1){ // are not at last index of route
+      forwardAckMessage(ttmsg);
+   }
+   else{
+
+      int destNode = ttmsg->getRoute()[0]; //destination of origin transUnit job
+
+      statNumCompleted[destNode] = statNumCompleted[destNode]+1;
+
+      //broadcast completion time signal
+      ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
+      simtime_t timeTakenInMilli = 1000*(simTime() - aMsg->getTimeSent());
+
+      emit(completionTimeSignal, timeTakenInMilli);
 
 
-        int destNode = ttmsg->getRoute()[0]; //destination of origin transUnit job
-
-        statNumCompleted[destNode] = statNumCompleted[destNode]+1;
-
-        //broadcast completion time signal
-        ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
-        simtime_t timeTakenInMilli = 1000*(simTime() - aMsg->getTimeSent());
-
-        emit(completionTimeSignal, timeTakenInMilli);
 
 
-        emit(numCompletedPerDestSignals[destNode], statNumCompleted[destNode]);
+      //delete ack message
+      ttmsg->decapsulate();
+      delete aMsg;
+      delete ttmsg;
 
-
-        //delete ack message
-
-        ttmsg->decapsulate();
-        delete aMsg;
-        delete ttmsg;
-    }
+   }
 }
 
 /*
@@ -442,26 +384,26 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
  *   and reuses it to send ackMsg in reversed order of route
  */
 routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg){
-    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
-    char msgname[MSGSIZE];
-     sprintf(msgname, "receiver-%d-to-sender-%d ackMsg", transMsg->getReceiver(), transMsg->getSender());
-     routerMsg *msg = new routerMsg(msgname);
-     ackMsg *aMsg = new ackMsg(msgname);
-     aMsg->setTransactionId(transMsg->getTransactionId());
-     aMsg->setIsSuccess(true);
-     aMsg->setTimeSent(transMsg->getTimeSent());
-     //no need to set secret;
-     vector<int> route=ttmsg->getRoute();
-     reverse(route.begin(), route.end());
-     msg->setRoute(route);
-     msg->setHopCount(0);
-     msg->setAmount(ttmsg->getAmount());
-     msg->setMessageType(1); //now an ack message
-     ttmsg->decapsulate(); // remove encapsulated packet
-     delete transMsg;
-     delete ttmsg;
-     msg->encapsulate(aMsg);
-    return msg;
+   transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+   char msgname[MSGSIZE];
+   sprintf(msgname, "receiver-%d-to-sender-%d ackMsg", transMsg->getReceiver(), transMsg->getSender());
+   routerMsg *msg = new routerMsg(msgname);
+   ackMsg *aMsg = new ackMsg(msgname);
+   aMsg->setTransactionId(transMsg->getTransactionId());
+   aMsg->setIsSuccess(true);
+   aMsg->setTimeSent(transMsg->getTimeSent());
+   aMsg->setAmount(transMsg->getAmount());
+   //no need to set secret;
+   vector<int> route=ttmsg->getRoute();
+   reverse(route.begin(), route.end());
+   msg->setRoute(route);
+   msg->setHopCount(0);
+   msg->setMessageType(ACK_MSG); //now an ack message
+   ttmsg->decapsulate(); // remove encapsulated packet
+   delete transMsg;
+   delete ttmsg;
+   msg->encapsulate(aMsg);
+   return msg;
 }
 
 
@@ -470,19 +412,13 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg){
  *      adds transId to sent_ack_trans_units list
  */
 void routerNode::forwardAckMessage(routerMsg *msg){
-    // Increment hop count.
-       msg->setHopCount(msg->getHopCount()+1);
-       //use hopCount to find next destination
-       int nextDest = msg->getRoute()[msg->getHopCount()];
+   // Increment hop count.
+   msg->setHopCount(msg->getHopCount()+1);
+   //use hopCount to find next destination
+   int nextDest = msg->getRoute()[msg->getHopCount()];
+   //ackMsg *aMsg = check_and_cast<ackMsg *>(msg->getEncapsulatedPacket());
 
-       int amt = msg->getAmount();
-
-
-       int transId = msg->getTransactionId();
-       int amount = msg->getAmount();
-       sent_ack_trans_units[transId] = amount;
-
-       send(msg, node_to_gate[nextDest]);
+   send(msg, nodeToPaymentChannel[nextDest].gate);
 
 }
 
@@ -491,32 +427,32 @@ void routerNode::forwardAckMessage(routerMsg *msg){
  *      process more jobs with new funds, delete update message
  */
 void routerNode::handleUpdateMessage(routerMsg* msg){
-    deque<tuple<int, double , routerMsg *>> *q;
-    int sender = msg->getRoute()[msg->getHopCount()-1];
-    //remove value from sent_ack_trans_units  --- note: sent_ack means want_update
-    sent_ack_trans_units.erase(msg->getTransactionId());
-    //increment the in flight funds back
+   vector<tuple<int, double , routerMsg *>> *q;
+   int prevNode = msg->getRoute()[msg->getHopCount()-1];
 
-    print_private_values();
+   //TODO: need to get encapsulated
+   updateMsg *uMsg = check_and_cast<updateMsg *>(msg->getEncapsulatedPacket());
+   //increment the in flight funds back
+   nodeToPaymentChannel[prevNode].balance =  nodeToPaymentChannel[prevNode].balance + uMsg->getAmount();
 
-    node_to_balance[sender] = node_to_balance[sender] + msg->getAmount();
-    EV <<"ADDED FUNDS BACK, sender: " <<sender << ", amount: "<< msg->getAmount() << endl;
-
-    print_private_values();
-    //remove transaction from incoming_trans_units
-
-    incoming_trans_units[sender].erase(msg->getTransactionId());
-    //increment numProcessed signal
-    statNumProcessed[sender] = statNumProcessed[sender]+1;
-    //statNumProcessed++;
+   //remove transaction from incoming_trans_units
+   map<int, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
 
 
-    delete msg; //delete update message
 
-    //see if we can send more jobs out
-    q = &node_to_queued_trans_units[sender];
+   (*incomingTransUnits).erase(uMsg->getTransactionId());
 
-   processTransUnits(sender, *q);
+   nodeToPaymentChannel[prevNode].statNumProcessed = nodeToPaymentChannel[prevNode].statNumProcessed + 1;
+
+
+   msg->decapsulate();
+   delete uMsg;
+   delete msg; //delete update message
+
+   //see if we can send more jobs out
+   q = &(nodeToPaymentChannel[prevNode].queuedTransUnits);
+
+   processTransUnits(prevNode, *q);
 
 }
 
@@ -528,30 +464,34 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
  */
 // virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
 routerMsg *routerNode::generateUpdateMessage(int transId, int receiver, double amount){
-    char msgname[MSGSIZE];
-      sprintf(msgname, "tic-%d-to-%d updateMsg", getIndex(), receiver);
+   char msgname[MSGSIZE];
 
-      routerMsg *rMsg = new routerMsg(msgname);
+   sprintf(msgname, "tic-%d-to-%d updateMsg", getIndex(), receiver);
 
-      vector<int> route={getIndex(),receiver};
-      rMsg->setRoute(route);
-      rMsg->setHopCount(0);
-      rMsg->setMessageType(2); //2 means nothing encapsulated inside
-     //EV << "generateUpdateMessage with AMOUNT: "<< amount <<endl;
-      rMsg->setAmount(amount);
-      rMsg->setTransactionId(transId);
-      return rMsg;
+   routerMsg *rMsg = new routerMsg(msgname);
+
+   vector<int> route={getIndex(),receiver};
+   rMsg->setRoute(route);
+   rMsg->setHopCount(0);
+   rMsg->setMessageType(UPDATE_MSG);
+
+   updateMsg *uMsg = new updateMsg(msgname);
+
+   uMsg->setAmount(amount);
+   uMsg->setTransactionId(transId);
+   rMsg->encapsulate(uMsg);
+   return rMsg;
 }
 
 /*
  * forwardUpdateMessage - sends updateMessage to appropriate destination
  */
-void routerNode::forwardUpdateMessage(routerMsg *msg){
-    // Increment hop count.
-          msg->setHopCount(msg->getHopCount()+1);
-          //use hopCount to find next destination
-          int nextDest = msg->getRoute()[msg->getHopCount()];
-         send(msg, node_to_gate[nextDest]);
+void routerNode::sendUpdateMessage(routerMsg *msg){
+   // Increment hop count.
+   msg->setHopCount(msg->getHopCount()+1);
+   //use hopCount to find next destination
+   int nextDest = msg->getRoute()[msg->getHopCount()];
+   send(msg, nodeToPaymentChannel[nextDest].gate);
 }
 
 
@@ -561,51 +501,43 @@ void routerNode::forwardUpdateMessage(routerMsg *msg){
  *          much as we have funds for
  */
 void routerNode::handleTransactionMessage(routerMsg* ttmsg){
-    int hopcount = ttmsg->getHopCount();
-       deque<tuple<int, double , routerMsg *>> *q;
+   int hopcount = ttmsg->getHopCount();
+   vector<tuple<int, double , routerMsg *>> *q;
+   transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
 
+   if ((ttmsg->getHopCount())>0){ //not a self-message, add to incoming_trans_units
+      int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
+      map<int, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+      (*incomingTransUnits)[transMsg->getTransactionId()] = transMsg->getAmount();
 
-       //add to incoming_trans_units
-       if ((ttmsg->getHopCount())>0){ //not a self-message
-               int sender = ttmsg->getRoute()[ttmsg->getHopCount()-1];
+   }
+   else{
+       //is a self-message
+      int destNode = ttmsg->getRoute()[ttmsg->getRoute().size()-1];
+      statNumAttempted[destNode] = statNumAttempted[destNode]+1;
 
-                     if ( incoming_trans_units.find(sender) == incoming_trans_units.end() ) {
-                         map<int,double> tempMap = {};
-                         tempMap[ttmsg->getTransactionId()]= ttmsg->getAmount();
-                         incoming_trans_units[sender] = tempMap;
-                       // not found
-                     } else {
+   }
 
-                         incoming_trans_units[sender][ttmsg->getTransactionId()] = ttmsg->getAmount();
-                       // found
-                     }
-       }
-       else{ //is a self-message
-           int destNode = ttmsg->getRoute()[ttmsg->getRoute().size()-1];
-           statNumAttempted[destNode] = statNumAttempted[destNode]+1;
-           emit(numAttemptedPerDestSignals[destNode], statNumAttempted[destNode]);
-       }
+   if(ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
 
-       if(ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
+      routerMsg* newMsg =  generateAckMessage(ttmsg);
+      //forward ack message - no need to wait;
+      forwardAckMessage(newMsg);
+   }
+   else{
 
-          routerMsg* newMsg =  generateAckMessage(ttmsg);
-        //forward ack message - no need to wait;
-          forwardAckMessage(newMsg);
-       }
-       else{
-          //displays string of balances remaining on connected channels
-          bubble(string_node_to_balance().c_str());
-          int nextStop = ttmsg->getRoute()[hopcount+1];
-          q = &node_to_queued_trans_units[nextStop];
-          q->push_back(make_tuple(ttmsg->getPriorityClass(), ttmsg->getAmount(),
-                   ttmsg));
-          // re-sort queued transUnits for next stop based on lowest priority, then lowest amount
-          sort(q->begin(), q->end(), sortFunction);
-          //EV << "added to job queue:" <<endl;
-          print_private_values();
-          processTransUnits(nextStop, *q);
-          bubble(string_node_to_balance().c_str());
-       }
+      int nextNode = ttmsg->getRoute()[hopcount+1];
+
+      q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
+
+      //TODO: how to push to heap?
+      (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
+               ttmsg));
+      push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
+
+      processTransUnits(nextNode, *q);
+
+   }
 }
 
 
@@ -627,12 +559,17 @@ routerMsg *routerNode::generateTransactionMessage(transUnit transUnit)
 
    sprintf(msgname, "tic-%d-to-%d routerMsg", transUnit.sender, transUnit.receiver);
    routerMsg *rMsg = new routerMsg(msgname);
-   rMsg->setRoute(get_route(transUnit.sender,transUnit.receiver));
+   if (destNodeToPath.count(transUnit.receiver) == 0){ //compute route and add to memoization table
+       vector<int> route = getRoute(transUnit.sender,transUnit.receiver);
+       destNodeToPath[transUnit.receiver] = route;
+       rMsg->setRoute(route);
+   }
+   else{
+       rMsg->setRoute(destNodeToPath[transUnit.receiver]);
+   }
+
    rMsg->setHopCount(0);
-   rMsg->setMessageType(0);
-   rMsg->setAmount(transUnit.amount);
-   rMsg->setPriorityClass(transUnit.priorityClass);
-   rMsg->setTransactionId(msg->getId());
+   rMsg->setMessageType(TRANSACTION_MSG);
 
    rMsg->encapsulate(msg);
    return rMsg;
@@ -643,14 +580,11 @@ routerMsg *routerNode::generateTransactionMessage(transUnit transUnit)
  * processTransUnits - given an adjacent node, and transUnit queue of things to send to that node, sends
  *  transUnits until channel funds are too low by calling forwardMessage on message representing transUnit
  */
-void routerNode:: processTransUnits(int dest, deque<tuple<int, double , routerMsg *>>& q){
-   while((int)q.size()>0 && get<1>(q[0])<=node_to_balance[dest]){
+void routerNode:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *>>& q){
+   while((int)q.size()>0 && get<1>(q.back())<=nodeToPaymentChannel[dest].balance){
 
-      forwardTransactionMessage(get<2>(q[0]));
-        print_private_values();
-      q.pop_front();
-     // EV << "processed something" <<endl;
-      print_private_values();
+      forwardTransactionMessage(get<2>(q.back()));
+      q.pop_back();
 
    }
 }
@@ -666,26 +600,20 @@ void routerNode::forwardTransactionMessage(routerMsg *msg)
    msg->setHopCount(msg->getHopCount()+1);
    //use hopCount to find next destination
    int nextDest = msg->getRoute()[msg->getHopCount()];
+   transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
    //add amount to outgoing map
 
-   if ( outgoing_trans_units.find(nextDest) == outgoing_trans_units.end() ) {
-             map<int,double> tempMap = {};
-             tempMap[msg->getTransactionId()]= msg->getAmount();
-             outgoing_trans_units[nextDest] = tempMap;
-           // not found
-     } else {
-             outgoing_trans_units[nextDest][msg->getTransactionId()] = msg->getAmount();
-           // found
-    }
+   map<int, double> *outgoingTransUnits = &(nodeToPaymentChannel[nextDest].outgoingTransUnits);
+   (*outgoingTransUnits)[transMsg->getTransactionId()] = transMsg->getAmount();
 
    //numSentPerChannel incremented every time (key,value) pair added to outgoing_trans_units map
-   statNumSent[nextDest] = statNumSent[nextDest]+1;
+   nodeToPaymentChannel[nextDest].statNumSent =  nodeToPaymentChannel[nextDest].statNumSent+1;
 
-   int amt = msg->getAmount();
-   node_to_balance[nextDest] = node_to_balance[nextDest] - amt;
-   int transId = msg->getTransactionId();
-   want_ack_trans_units[transId] = amt;
+   int amt = transMsg->getAmount();
+   nodeToPaymentChannel[nextDest].balance = nodeToPaymentChannel[nextDest].balance - amt;
 
-   send(msg, node_to_gate[nextDest]);
+   int transId = transMsg->getTransactionId();
+
+   send(msg, nodeToPaymentChannel[nextDest].gate);
 
 }

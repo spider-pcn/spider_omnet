@@ -6,12 +6,13 @@
  *  BFS shortest path from sender to receiver in form of node indicies,
  *  includes sender and reciever as first and last entry
  */
-vector<int> get_route(int sender, int receiver){
+vector<int> getRoute(int sender, int receiver){
   //do searching without regard for channel capacities, DFS right now
 
    printf("sender: %i; receiver: %i \n [", sender, receiver);
    //vector<int> route =  breadthFirstSearch(sender, receiver);
    vector<int> route = dijkstra(sender, receiver);
+  /*
    if (sender == 3 && receiver==0){
 
          route = {3,1,0};
@@ -21,7 +22,7 @@ vector<int> get_route(int sender, int receiver){
         printf("%i, ", route[i]);
     }
     printf("] \n");
-
+    */
 
 
     return route;
@@ -240,7 +241,7 @@ vector<int> breadthFirstSearch(int sender, int receiver){
 
 /* set_num_nodes -
  */
-void set_num_nodes(string topologyFile){
+void setNumNodes(string topologyFile){
       int maxNode = -1;
       string line;
       ifstream myfile (topologyFile);
@@ -273,7 +274,7 @@ void set_num_nodes(string topologyFile){
  *      each line of file is of form
  *      [node1] [node2] [1->2 delay] [2->1 delay] [balance at node1 end] [balance at node2 end]
  */
-void generate_channels_balances_map(string topologyFile, map<int, vector<pair<int,int>>> &channels, map<tuple<int,int>,double> &balances){
+void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,int>>> &channels, map<tuple<int,int>,double> &balances){
       string line;
       ifstream myfile (topologyFile);
       if (myfile.is_open())
@@ -327,7 +328,7 @@ void generate_channels_balances_map(string topologyFile, map<int, vector<pair<in
  *      each line of file is of form:
  *      [amount] [timeSent] [sender] [receiver] [priorityClass]
  */
-void generate_trans_unit_list(string workloadFile, vector<transUnit> &trans_unit_list){
+void generateTransUnitList(string workloadFile, vector<transUnit> &trans_unit_list){
           string line;
           ifstream myfile (workloadFile);
           if (myfile.is_open())
@@ -363,17 +364,18 @@ void generate_trans_unit_list(string workloadFile, vector<transUnit> &trans_unit
 /*
  * sortFunction - helper function used to sort queued transUnit list by ascending priorityClass, then by
  *      ascending amount
+ *      note: largest element gets accessed first
  */
-bool sortFunction(const tuple<int,double, routerMsg*> &a,
+bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*> &a,
       const tuple<int,double, routerMsg*> &b)
 {
    if (get<0>(a) < get<0>(b)){
-      return true;
+      return false;
    }
    else if (get<0>(a) == get<0>(b)){
-      return (get<1>(a) < get<1>(b));
+      return (get<1>(a) > get<1>(b));
    }
-   return false;
+   return true;
 }
 
 #endif

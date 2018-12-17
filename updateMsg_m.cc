@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 5.4 from ackMsg.msg.
+// Generated file, do not edit! Created by nedtool 5.4 from updateMsg.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:
@@ -26,7 +26,7 @@
 
 #include <iostream>
 #include <sstream>
-#include "ackMsg_m.h"
+#include "updateMsg_m.h"
 
 namespace omnetpp {
 
@@ -177,27 +177,24 @@ inline std::ostream& operator<<(std::ostream& out, const std::vector<T,A>& vec)
     return out;
 }
 
-Register_Class(ackMsg)
+Register_Class(updateMsg)
 
-ackMsg::ackMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
+updateMsg::updateMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
 {
-    this->transactionId = 0;
-    this->timeSent = 0;
-    this->isSuccess = false;
-    this->secret = "";
     this->amount = 0;
+    this->transactionId = 0;
 }
 
-ackMsg::ackMsg(const ackMsg& other) : ::omnetpp::cPacket(other)
+updateMsg::updateMsg(const updateMsg& other) : ::omnetpp::cPacket(other)
 {
     copy(other);
 }
 
-ackMsg::~ackMsg()
+updateMsg::~updateMsg()
 {
 }
 
-ackMsg& ackMsg::operator=(const ackMsg& other)
+updateMsg& updateMsg::operator=(const updateMsg& other)
 {
     if (this==&other) return *this;
     ::omnetpp::cPacket::operator=(other);
@@ -205,92 +202,53 @@ ackMsg& ackMsg::operator=(const ackMsg& other)
     return *this;
 }
 
-void ackMsg::copy(const ackMsg& other)
+void updateMsg::copy(const updateMsg& other)
 {
-    this->transactionId = other.transactionId;
-    this->timeSent = other.timeSent;
-    this->isSuccess = other.isSuccess;
-    this->secret = other.secret;
     this->amount = other.amount;
+    this->transactionId = other.transactionId;
 }
 
-void ackMsg::parsimPack(omnetpp::cCommBuffer *b) const
+void updateMsg::parsimPack(omnetpp::cCommBuffer *b) const
 {
     ::omnetpp::cPacket::parsimPack(b);
-    doParsimPacking(b,this->transactionId);
-    doParsimPacking(b,this->timeSent);
-    doParsimPacking(b,this->isSuccess);
-    doParsimPacking(b,this->secret);
     doParsimPacking(b,this->amount);
+    doParsimPacking(b,this->transactionId);
 }
 
-void ackMsg::parsimUnpack(omnetpp::cCommBuffer *b)
+void updateMsg::parsimUnpack(omnetpp::cCommBuffer *b)
 {
     ::omnetpp::cPacket::parsimUnpack(b);
-    doParsimUnpacking(b,this->transactionId);
-    doParsimUnpacking(b,this->timeSent);
-    doParsimUnpacking(b,this->isSuccess);
-    doParsimUnpacking(b,this->secret);
     doParsimUnpacking(b,this->amount);
+    doParsimUnpacking(b,this->transactionId);
 }
 
-int ackMsg::getTransactionId() const
-{
-    return this->transactionId;
-}
-
-void ackMsg::setTransactionId(int transactionId)
-{
-    this->transactionId = transactionId;
-}
-
-double ackMsg::getTimeSent() const
-{
-    return this->timeSent;
-}
-
-void ackMsg::setTimeSent(double timeSent)
-{
-    this->timeSent = timeSent;
-}
-
-bool ackMsg::getIsSuccess() const
-{
-    return this->isSuccess;
-}
-
-void ackMsg::setIsSuccess(bool isSuccess)
-{
-    this->isSuccess = isSuccess;
-}
-
-const char * ackMsg::getSecret() const
-{
-    return this->secret.c_str();
-}
-
-void ackMsg::setSecret(const char * secret)
-{
-    this->secret = secret;
-}
-
-double ackMsg::getAmount() const
+double updateMsg::getAmount() const
 {
     return this->amount;
 }
 
-void ackMsg::setAmount(double amount)
+void updateMsg::setAmount(double amount)
 {
     this->amount = amount;
 }
 
-class ackMsgDescriptor : public omnetpp::cClassDescriptor
+int updateMsg::getTransactionId() const
+{
+    return this->transactionId;
+}
+
+void updateMsg::setTransactionId(int transactionId)
+{
+    this->transactionId = transactionId;
+}
+
+class updateMsgDescriptor : public omnetpp::cClassDescriptor
 {
   private:
     mutable const char **propertynames;
   public:
-    ackMsgDescriptor();
-    virtual ~ackMsgDescriptor();
+    updateMsgDescriptor();
+    virtual ~updateMsgDescriptor();
 
     virtual bool doesSupport(omnetpp::cObject *obj) const override;
     virtual const char **getPropertyNames() const override;
@@ -312,24 +270,24 @@ class ackMsgDescriptor : public omnetpp::cClassDescriptor
     virtual void *getFieldStructValuePointer(void *object, int field, int i) const override;
 };
 
-Register_ClassDescriptor(ackMsgDescriptor)
+Register_ClassDescriptor(updateMsgDescriptor)
 
-ackMsgDescriptor::ackMsgDescriptor() : omnetpp::cClassDescriptor("ackMsg", "omnetpp::cPacket")
+updateMsgDescriptor::updateMsgDescriptor() : omnetpp::cClassDescriptor("updateMsg", "omnetpp::cPacket")
 {
     propertynames = nullptr;
 }
 
-ackMsgDescriptor::~ackMsgDescriptor()
+updateMsgDescriptor::~updateMsgDescriptor()
 {
     delete[] propertynames;
 }
 
-bool ackMsgDescriptor::doesSupport(omnetpp::cObject *obj) const
+bool updateMsgDescriptor::doesSupport(omnetpp::cObject *obj) const
 {
-    return dynamic_cast<ackMsg *>(obj)!=nullptr;
+    return dynamic_cast<updateMsg *>(obj)!=nullptr;
 }
 
-const char **ackMsgDescriptor::getPropertyNames() const
+const char **updateMsgDescriptor::getPropertyNames() const
 {
     if (!propertynames) {
         static const char *names[] = {  nullptr };
@@ -340,19 +298,19 @@ const char **ackMsgDescriptor::getPropertyNames() const
     return propertynames;
 }
 
-const char *ackMsgDescriptor::getProperty(const char *propertyname) const
+const char *updateMsgDescriptor::getProperty(const char *propertyname) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     return basedesc ? basedesc->getProperty(propertyname) : nullptr;
 }
 
-int ackMsgDescriptor::getFieldCount() const
+int updateMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 5+basedesc->getFieldCount() : 5;
+    return basedesc ? 2+basedesc->getFieldCount() : 2;
 }
 
-unsigned int ackMsgDescriptor::getFieldTypeFlags(int field) const
+unsigned int updateMsgDescriptor::getFieldTypeFlags(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -363,14 +321,11 @@ unsigned int ackMsgDescriptor::getFieldTypeFlags(int field) const
     static unsigned int fieldTypeFlags[] = {
         FD_ISEDITABLE,
         FD_ISEDITABLE,
-        FD_ISEDITABLE,
-        FD_ISEDITABLE,
-        FD_ISEDITABLE,
     };
-    return (field>=0 && field<5) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<2) ? fieldTypeFlags[field] : 0;
 }
 
-const char *ackMsgDescriptor::getFieldName(int field) const
+const char *updateMsgDescriptor::getFieldName(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -379,28 +334,22 @@ const char *ackMsgDescriptor::getFieldName(int field) const
         field -= basedesc->getFieldCount();
     }
     static const char *fieldNames[] = {
-        "transactionId",
-        "timeSent",
-        "isSuccess",
-        "secret",
         "amount",
+        "transactionId",
     };
-    return (field>=0 && field<5) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<2) ? fieldNames[field] : nullptr;
 }
 
-int ackMsgDescriptor::findField(const char *fieldName) const
+int updateMsgDescriptor::findField(const char *fieldName) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount() : 0;
-    if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+0;
-    if (fieldName[0]=='t' && strcmp(fieldName, "timeSent")==0) return base+1;
-    if (fieldName[0]=='i' && strcmp(fieldName, "isSuccess")==0) return base+2;
-    if (fieldName[0]=='s' && strcmp(fieldName, "secret")==0) return base+3;
-    if (fieldName[0]=='a' && strcmp(fieldName, "amount")==0) return base+4;
+    if (fieldName[0]=='a' && strcmp(fieldName, "amount")==0) return base+0;
+    if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+1;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
-const char *ackMsgDescriptor::getFieldTypeString(int field) const
+const char *updateMsgDescriptor::getFieldTypeString(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -409,16 +358,13 @@ const char *ackMsgDescriptor::getFieldTypeString(int field) const
         field -= basedesc->getFieldCount();
     }
     static const char *fieldTypeStrings[] = {
+        "double",
         "int",
-        "double",
-        "bool",
-        "string",
-        "double",
     };
-    return (field>=0 && field<5) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<2) ? fieldTypeStrings[field] : nullptr;
 }
 
-const char **ackMsgDescriptor::getFieldPropertyNames(int field) const
+const char **updateMsgDescriptor::getFieldPropertyNames(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -431,7 +377,7 @@ const char **ackMsgDescriptor::getFieldPropertyNames(int field) const
     }
 }
 
-const char *ackMsgDescriptor::getFieldProperty(int field, const char *propertyname) const
+const char *updateMsgDescriptor::getFieldProperty(int field, const char *propertyname) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -444,7 +390,7 @@ const char *ackMsgDescriptor::getFieldProperty(int field, const char *propertyna
     }
 }
 
-int ackMsgDescriptor::getFieldArraySize(void *object, int field) const
+int updateMsgDescriptor::getFieldArraySize(void *object, int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -452,13 +398,13 @@ int ackMsgDescriptor::getFieldArraySize(void *object, int field) const
             return basedesc->getFieldArraySize(object, field);
         field -= basedesc->getFieldCount();
     }
-    ackMsg *pp = (ackMsg *)object; (void)pp;
+    updateMsg *pp = (updateMsg *)object; (void)pp;
     switch (field) {
         default: return 0;
     }
 }
 
-const char *ackMsgDescriptor::getFieldDynamicTypeString(void *object, int field, int i) const
+const char *updateMsgDescriptor::getFieldDynamicTypeString(void *object, int field, int i) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -466,13 +412,13 @@ const char *ackMsgDescriptor::getFieldDynamicTypeString(void *object, int field,
             return basedesc->getFieldDynamicTypeString(object,field,i);
         field -= basedesc->getFieldCount();
     }
-    ackMsg *pp = (ackMsg *)object; (void)pp;
+    updateMsg *pp = (updateMsg *)object; (void)pp;
     switch (field) {
         default: return nullptr;
     }
 }
 
-std::string ackMsgDescriptor::getFieldValueAsString(void *object, int field, int i) const
+std::string updateMsgDescriptor::getFieldValueAsString(void *object, int field, int i) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -480,18 +426,15 @@ std::string ackMsgDescriptor::getFieldValueAsString(void *object, int field, int
             return basedesc->getFieldValueAsString(object,field,i);
         field -= basedesc->getFieldCount();
     }
-    ackMsg *pp = (ackMsg *)object; (void)pp;
+    updateMsg *pp = (updateMsg *)object; (void)pp;
     switch (field) {
-        case 0: return long2string(pp->getTransactionId());
-        case 1: return double2string(pp->getTimeSent());
-        case 2: return bool2string(pp->getIsSuccess());
-        case 3: return oppstring2string(pp->getSecret());
-        case 4: return double2string(pp->getAmount());
+        case 0: return double2string(pp->getAmount());
+        case 1: return long2string(pp->getTransactionId());
         default: return "";
     }
 }
 
-bool ackMsgDescriptor::setFieldValueAsString(void *object, int field, int i, const char *value) const
+bool updateMsgDescriptor::setFieldValueAsString(void *object, int field, int i, const char *value) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -499,18 +442,15 @@ bool ackMsgDescriptor::setFieldValueAsString(void *object, int field, int i, con
             return basedesc->setFieldValueAsString(object,field,i,value);
         field -= basedesc->getFieldCount();
     }
-    ackMsg *pp = (ackMsg *)object; (void)pp;
+    updateMsg *pp = (updateMsg *)object; (void)pp;
     switch (field) {
-        case 0: pp->setTransactionId(string2long(value)); return true;
-        case 1: pp->setTimeSent(string2double(value)); return true;
-        case 2: pp->setIsSuccess(string2bool(value)); return true;
-        case 3: pp->setSecret((value)); return true;
-        case 4: pp->setAmount(string2double(value)); return true;
+        case 0: pp->setAmount(string2double(value)); return true;
+        case 1: pp->setTransactionId(string2long(value)); return true;
         default: return false;
     }
 }
 
-const char *ackMsgDescriptor::getFieldStructName(int field) const
+const char *updateMsgDescriptor::getFieldStructName(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -523,7 +463,7 @@ const char *ackMsgDescriptor::getFieldStructName(int field) const
     };
 }
 
-void *ackMsgDescriptor::getFieldStructValuePointer(void *object, int field, int i) const
+void *updateMsgDescriptor::getFieldStructValuePointer(void *object, int field, int i) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -531,7 +471,7 @@ void *ackMsgDescriptor::getFieldStructValuePointer(void *object, int field, int 
             return basedesc->getFieldStructValuePointer(object, field, i);
         field -= basedesc->getFieldCount();
     }
-    ackMsg *pp = (ackMsg *)object; (void)pp;
+    updateMsg *pp = (updateMsg *)object; (void)pp;
     switch (field) {
         default: return nullptr;
     }

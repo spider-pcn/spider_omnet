@@ -13,13 +13,9 @@
 // Same as TictocMsg11
 //
 
-
-packet ackMsg
+packet updateMsg
 {
- 	int transactionId;
- 	double timeSent;
- 	bool isSuccess; //status, true for success, false for failure
-    string secret=""; 
     double amount;
- }
+    int transactionId; //is messageID of transactionMsg
+}
 

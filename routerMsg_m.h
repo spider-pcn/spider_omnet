@@ -20,20 +20,23 @@
 
 // cplusplus {{
 #include <vector>
+#define TRANSACTION_MSG 0
+#define ACK_MSG 1
+#define UPDATE_MSG 2
+#define STAT_MSG 3
+
 typedef std::vector<int> IntVector;
 // }}
 
 /**
- * Class generated from <tt>routerMsg.msg:24</tt> by nedtool.
+ * Class generated from <tt>routerMsg.msg:29</tt> by nedtool.
  * <pre>
  * packet routerMsg
  * {
  *     IntVector route;
  *     int hopCount = 0;
  *     int messageType;  //0 for transaction, 1 for ack, 2 for balance update
- *     double amount;
- *     int priorityClass;
- *     int transactionId;
+ * 
  * }
  * </pre>
  */
@@ -43,9 +46,6 @@ class routerMsg : public ::omnetpp::cPacket
     IntVector route;
     int hopCount;
     int messageType;
-    double amount;
-    int priorityClass;
-    int transactionId;
 
   private:
     void copy(const routerMsg& other);
@@ -71,12 +71,6 @@ class routerMsg : public ::omnetpp::cPacket
     virtual void setHopCount(int hopCount);
     virtual int getMessageType() const;
     virtual void setMessageType(int messageType);
-    virtual double getAmount() const;
-    virtual void setAmount(double amount);
-    virtual int getPriorityClass() const;
-    virtual void setPriorityClass(int priorityClass);
-    virtual int getTransactionId() const;
-    virtual void setTransactionId(int transactionId);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const routerMsg& obj) {obj.parsimPack(b);}

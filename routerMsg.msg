@@ -14,6 +14,11 @@
 //
 cplusplus {{
 #include <vector>
+#define TRANSACTION_MSG 0
+#define ACK_MSG 1
+#define UPDATE_MSG 2
+#define STAT_MSG 3
+
 typedef std::vector<int> IntVector;
 }};
 
@@ -25,8 +30,6 @@ packet routerMsg
     IntVector route;
     int hopCount = 0;
     int messageType;  //0 for transaction, 1 for ack, 2 for balance update
-    double amount;
-    int priorityClass;
-    int transactionId;
+   
 }
 

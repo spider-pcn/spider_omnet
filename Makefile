@@ -36,13 +36,15 @@ OBJS = \
     $O/simpleNet.o \
     $O/ackMsg_m.o \
     $O/routerMsg_m.o \
-    $O/transactionMsg_m.o
+    $O/transactionMsg_m.o \
+    $O/updateMsg_m.o
 
 # Message files
 MSGFILES = \
     ackMsg.msg \
     routerMsg.msg \
-    transactionMsg.msg
+    transactionMsg.msg \
+    updateMsg.msg
 
 # SM files
 SMFILES =

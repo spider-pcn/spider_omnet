@@ -27,6 +27,7 @@
  *     double timeSent;
  *     bool isSuccess; //status, true for success, false for failure
  *     string secret = "";
+ *     double amount;
  * }
  * </pre>
  */
@@ -37,6 +38,7 @@ class ackMsg : public ::omnetpp::cPacket
     double timeSent;
     bool isSuccess;
     ::omnetpp::opp_string secret;
+    double amount;
 
   private:
     void copy(const ackMsg& other);
@@ -63,6 +65,8 @@ class ackMsg : public ::omnetpp::cPacket
     virtual void setIsSuccess(bool isSuccess);
     virtual const char * getSecret() const;
     virtual void setSecret(const char * secret);
+    virtual double getAmount() const;
+    virtual void setAmount(double amount);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const ackMsg& obj) {obj.parsimPack(b);}
