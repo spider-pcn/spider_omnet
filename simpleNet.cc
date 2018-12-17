@@ -8,80 +8,27 @@
 Define_Module(routerNode);
 
 
-/* string_node_to_balance - helper function, turns the node_to_balance map into printable string
 
-string routerNode::string_node_to_balance(){
-   string result = "";
-   for(map<int,double>::iterator iter = node_to_balance.begin(); iter != node_to_balance.end(); ++iter)
-   {
-      int key =  iter->first;
-      int value = iter->second;
-      result = result + "("+to_string(key)+":"+to_string(value)+") ";
-   }
-   return result;
+void routerNode::deleteMessagesInQueues(){
+    for (auto iter = nodeToPaymentChannel.begin(); iter!=nodeToPaymentChannel.end(); iter++){
+        int key = iter->first;
+
+        //vector<tuple<int, double , routerMsg *>> *q;
+        //q = &(nodeToPaymentChannel[prevNode].queuedTransUnits);
+        for (auto temp = (nodeToPaymentChannel[key].queuedTransUnits).begin();
+                        temp!= (nodeToPaymentChannel[key].queuedTransUnits).end(); temp++){
+            routerMsg * rMsg = get<2>(*temp);
+            auto tMsg = rMsg->getEncapsulatedPacket();
+            rMsg->decapsulate();
+            delete tMsg;
+            delete rMsg;
+        }
+
+
+    }
+
+
 }
-
-*/
-/*
-void routerNode:: print_message(routerMsg *msg){
-   EV <<  "<message - transId:" << msg->getTransactionId() << ", sender: " << msg->getRoute()[0] << ", receiver: " << msg->getRoute()[msg->getRoute().size()-1];
-   EV << ", amount: " << msg->getAmount() << "> \n";
-
-}
-*/
-/*
-void routerNode::print_private_values(){
-   EV << getIndex()<< " - node_to_queued_trans_units:";
-   typedef map<int, deque<tuple<int, double , routerMsg *>>>::const_iterator queueMapIter;
-   for (queueMapIter iter = node_to_queued_trans_units.begin(); iter != node_to_queued_trans_units.end(); iter++)
-   {
-      EV << "{"<< iter->first << ": " ;
-      typedef  deque<tuple<int, double , routerMsg *>>::const_iterator queueIter;
-      for (queueIter iter_inner = iter->second.begin(); iter_inner != iter->second.end(); iter_inner++){
-         EV << "(" << get<0>(*iter_inner);
-         EV << "," << get<1>(*iter_inner) << ")   ";
-      }
-      EV << "}   ";
-   }
-   EV << endl;
-
-   //print map - channel balance
-   EV << getIndex() <<  " - node_to_balance: ";
-   typedef map<int, double>::const_iterator MapIterator2;
-   for (MapIterator2 iter_inner = node_to_balance.begin(); iter_inner != node_to_balance.end(); iter_inner++){
-      EV << "(" << iter_inner->first << "," << iter_inner->second << ")   ";}
-
-   EV << endl;
-
-   EV << getIndex() << "- incoming_trans_units: ";
-
-   typedef map<int, map<int, double>>::const_iterator MapIterator;
-   for (MapIterator iter = incoming_trans_units.begin(); iter != incoming_trans_units.end(); iter++)
-   {
-      EV << "{"<< iter->first << ": " ;
-      typedef map<int, double>::const_iterator MapIterator;
-      for (MapIterator iter_inner = iter->second.begin(); iter_inner != iter->second.end(); iter_inner++)
-         EV << "(" << iter_inner->first << "," << iter_inner->second << ")   ";
-      EV << "}   ";
-   }
-   EV << endl;
-
-   EV << getIndex() << " - outgoing_trans_units: ";
-   typedef map<int, map<int, double>>::const_iterator MapIterator;
-   for (MapIterator iter = outgoing_trans_units.begin(); iter != outgoing_trans_units.end(); iter++)
-   {
-      EV << "{"<< iter->first << ": " ;
-      typedef map<int, double>::const_iterator MapIterator;
-      for (MapIterator iter_inner = iter->second.begin(); iter_inner != iter->second.end(); iter_inner++)
-         EV << "(" << iter_inner->first << "," << iter_inner->second << ")   ";
-      EV << "}   ";
-
-   }
-   EV <<  endl;
-}
-*/
-
-
 
 /* initialize() -
  *  if node index is 0:
@@ -296,6 +243,7 @@ routerMsg *routerNode::generateStatMessage(){
 void routerNode::handleStatMessage(routerMsg* ttmsg){
    if (simTime() >20){
       delete ttmsg;
+      deleteMessagesInQueues();
 
    }
    else{

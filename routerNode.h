@@ -91,6 +91,7 @@ class routerNode : public cSimpleModule
       virtual void forwardAckMessage(routerMsg *msg);
       virtual void sendUpdateMessage(routerMsg *msg);
       virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *>>& q);
+      virtual void deleteMessagesInQueues();
       //virtual string string_node_to_balance();
       //virtual void print_private_values();
       //virtual void print_message(routerMsg* msg);
