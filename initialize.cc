@@ -12,18 +12,6 @@ vector<int> getRoute(int sender, int receiver){
    printf("sender: %i; receiver: %i \n [", sender, receiver);
    //vector<int> route =  breadthFirstSearch(sender, receiver);
    vector<int> route = dijkstra(sender, receiver);
-  /*
-   if (sender == 3 && receiver==0){
-
-         route = {3,1,0};
-     }
-
-   for (int i=0; i<(int)route.size(); i++){
-        printf("%i, ", route[i]);
-    }
-    printf("] \n");
-    */
-
 
     return route;
 }
@@ -111,22 +99,6 @@ void printSolution(int dist[], int source,
         }
     }
 }
-
-/*
-struct CompareFirst
-{
-  CompareFirst(int val) : val_(val) {}
-  bool operator()(const std::pair<int,char>& elem) const {
-    return val_ == elem.first;
-  }
-  private:
-    int val_;
-};
-*/
-
-
-
-
 
 // Function that implements Dijkstra's  single source shortest path algorithm for a graph represented
 // using adjacency matrix representation
@@ -282,10 +254,6 @@ void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,i
         while ( getline (myfile,line) )
         {
           vector<string> data = split(line, ' ');
-           for (int i=0; i<data.size(); i++){
-               cout << data[i] << "\n";
-
-           }
 
           //generate channels - adjacency map
           int node1 = stoi(data[0]); //
@@ -336,9 +304,7 @@ void generateTransUnitList(string workloadFile, vector<transUnit> &trans_unit_li
             while ( getline (myfile,line) )
             {
               vector<string> data = split(line, ' ');
-              for (int i=0; i< data.size(); i++){
-                  cout<< data[i]<<endl;
-              }
+
               //data[0] = amount, data[1] = timeSent, data[2] = sender, data[3] = receiver, data[4] = priority class
               double amount = stod(data[0]);
               double timeSent = stod(data[1]);

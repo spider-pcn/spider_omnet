@@ -8,7 +8,6 @@
 Define_Module(routerNode);
 
 
-
 void routerNode::deleteMessagesInQueues(){
     for (auto iter = nodeToPaymentChannel.begin(); iter!=nodeToPaymentChannel.end(); iter++){
         int key = iter->first;
@@ -23,11 +22,7 @@ void routerNode::deleteMessagesInQueues(){
             delete tMsg;
             delete rMsg;
         }
-
-
     }
-
-
 }
 
 /* initialize() -
@@ -386,12 +381,9 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
    //remove transaction from incoming_trans_units
    map<int, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
 
-
-
    (*incomingTransUnits).erase(uMsg->getTransactionId());
 
    nodeToPaymentChannel[prevNode].statNumProcessed = nodeToPaymentChannel[prevNode].statNumProcessed + 1;
-
 
    msg->decapsulate();
    delete uMsg;
