@@ -56,11 +56,14 @@ class routerNode : public cSimpleModule
       vector<simsignal_t> numCompletedPerDestSignals;
       vector<simsignal_t> numAttemptedPerDestSignals;
       vector< transUnit > myTransUnits; //list of transUnits that have me as sender
-      //set<int> failedTransUnits; //search up by transactionId - not necessary
+      set<int> successfulDoNotSendTimeOut; //set of transaction units WITH timeouts, that we already received acks for
+
+
 
    protected:
       virtual routerMsg *generateTransactionMessage(transUnit transUnit);
-      virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true);
+      virtual routerMsg *generateAckMessage(routerMsg *msg, bool isTimeOutMsg = false);
+      //virtual routerMsg *generateAckMessageFromTimeOutMsg(routerMsg *msg);
       virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
           //just generates routerMsg with no encapsulated msg inside
       virtual routerMsg *generateStatMessage();
@@ -70,11 +73,13 @@ class routerNode : public cSimpleModule
       virtual void initialize() override;
       virtual void handleMessage(cMessage *msg) override;
       virtual void handleTransactionMessage(routerMsg *msg);
+      virtual void handleTimeOutMessage(routerMsg *msg);
       virtual void handleAckMessage(routerMsg *msg);
       virtual void handleUpdateMessage(routerMsg *msg);
       virtual void handleStatMessage(routerMsg *msg);
-      virtual void forwardTransactionMessage(routerMsg *msg);
+      virtual bool forwardTransactionMessage(routerMsg *msg);
       virtual void forwardAckMessage(routerMsg *msg);
+      virtual void forwardTimeOutMessage(routerMsg *msg);
       virtual void sendUpdateMessage(routerMsg *msg);
       virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *>>& q);
       virtual void deleteMessagesInQueues();

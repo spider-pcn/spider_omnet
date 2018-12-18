@@ -186,6 +186,7 @@ ackMsg::ackMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
     this->isSuccess = false;
     this->secret = "";
     this->amount = 0;
+    this->hasTimeOut = false;
 }
 
 ackMsg::ackMsg(const ackMsg& other) : ::omnetpp::cPacket(other)
@@ -212,6 +213,7 @@ void ackMsg::copy(const ackMsg& other)
     this->isSuccess = other.isSuccess;
     this->secret = other.secret;
     this->amount = other.amount;
+    this->hasTimeOut = other.hasTimeOut;
 }
 
 void ackMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -222,6 +224,7 @@ void ackMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->isSuccess);
     doParsimPacking(b,this->secret);
     doParsimPacking(b,this->amount);
+    doParsimPacking(b,this->hasTimeOut);
 }
 
 void ackMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -232,6 +235,7 @@ void ackMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->isSuccess);
     doParsimUnpacking(b,this->secret);
     doParsimUnpacking(b,this->amount);
+    doParsimUnpacking(b,this->hasTimeOut);
 }
 
 int ackMsg::getTransactionId() const
@@ -282,6 +286,16 @@ double ackMsg::getAmount() const
 void ackMsg::setAmount(double amount)
 {
     this->amount = amount;
+}
+
+bool ackMsg::getHasTimeOut() const
+{
+    return this->hasTimeOut;
+}
+
+void ackMsg::setHasTimeOut(bool hasTimeOut)
+{
+    this->hasTimeOut = hasTimeOut;
 }
 
 class ackMsgDescriptor : public omnetpp::cClassDescriptor
@@ -349,7 +363,7 @@ const char *ackMsgDescriptor::getProperty(const char *propertyname) const
 int ackMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 5+basedesc->getFieldCount() : 5;
+    return basedesc ? 6+basedesc->getFieldCount() : 6;
 }
 
 unsigned int ackMsgDescriptor::getFieldTypeFlags(int field) const
@@ -366,8 +380,9 @@ unsigned int ackMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<5) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<6) ? fieldTypeFlags[field] : 0;
 }
 
 const char *ackMsgDescriptor::getFieldName(int field) const
@@ -384,8 +399,9 @@ const char *ackMsgDescriptor::getFieldName(int field) const
         "isSuccess",
         "secret",
         "amount",
+        "hasTimeOut",
     };
-    return (field>=0 && field<5) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<6) ? fieldNames[field] : nullptr;
 }
 
 int ackMsgDescriptor::findField(const char *fieldName) const
@@ -397,6 +413,7 @@ int ackMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='i' && strcmp(fieldName, "isSuccess")==0) return base+2;
     if (fieldName[0]=='s' && strcmp(fieldName, "secret")==0) return base+3;
     if (fieldName[0]=='a' && strcmp(fieldName, "amount")==0) return base+4;
+    if (fieldName[0]=='h' && strcmp(fieldName, "hasTimeOut")==0) return base+5;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -414,8 +431,9 @@ const char *ackMsgDescriptor::getFieldTypeString(int field) const
         "bool",
         "string",
         "double",
+        "bool",
     };
-    return (field>=0 && field<5) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<6) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **ackMsgDescriptor::getFieldPropertyNames(int field) const
@@ -487,6 +505,7 @@ std::string ackMsgDescriptor::getFieldValueAsString(void *object, int field, int
         case 2: return bool2string(pp->getIsSuccess());
         case 3: return oppstring2string(pp->getSecret());
         case 4: return double2string(pp->getAmount());
+        case 5: return bool2string(pp->getHasTimeOut());
         default: return "";
     }
 }
@@ -506,6 +525,7 @@ bool ackMsgDescriptor::setFieldValueAsString(void *object, int field, int i, con
         case 2: pp->setIsSuccess(string2bool(value)); return true;
         case 3: pp->setSecret((value)); return true;
         case 4: pp->setAmount(string2double(value)); return true;
+        case 5: pp->setHasTimeOut(string2bool(value)); return true;
         default: return false;
     }
 }
