@@ -63,6 +63,7 @@ class routerNode : public cSimpleModule
    protected:
       virtual routerMsg *generateTransactionMessage(transUnit transUnit);
       virtual routerMsg *generateAckMessage(routerMsg *msg, bool isTimeOutMsg = false);
+          //generates ack message and destroys input parameter msg
       //virtual routerMsg *generateAckMessageFromTimeOutMsg(routerMsg *msg);
       virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
           //just generates routerMsg with no encapsulated msg inside

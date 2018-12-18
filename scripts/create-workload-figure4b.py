@@ -21,6 +21,6 @@ for i in range(totalTime):
       for l in range(rateListAmt[k]):
          rate = rateListAmt[k]
          timeStart = i*1.0 + (l*1.0)/(1.0*rate)
-         outfile.write("1 "+str(timeStart)+" "+str(rateListStart[k])+" "+str(rateListEnd[k])+" 0 " + str(timeOut) + " \n");
+         outfile.write("1 "+str(timeStart)+" "+str(rateListStart[k])+" "+str(rateListEnd[k])+" 0\n"); # " + str(timeOut) + " \n");
 
 
