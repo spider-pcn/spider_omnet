@@ -23,5 +23,6 @@ packet transactionMsg
     int transactionId; //is messageID of transactionMsg
     bool hasTimeOut;
     double timeOut;
+    int parentTransactionId;
 }
 

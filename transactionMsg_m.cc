@@ -189,6 +189,7 @@ transactionMsg::transactionMsg(const char *name, short kind) : ::omnetpp::cPacke
     this->transactionId = 0;
     this->hasTimeOut = false;
     this->timeOut = 0;
+    this->parentTransactionId = 0;
 }
 
 transactionMsg::transactionMsg(const transactionMsg& other) : ::omnetpp::cPacket(other)
@@ -218,6 +219,7 @@ void transactionMsg::copy(const transactionMsg& other)
     this->transactionId = other.transactionId;
     this->hasTimeOut = other.hasTimeOut;
     this->timeOut = other.timeOut;
+    this->parentTransactionId = other.parentTransactionId;
 }
 
 void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -231,6 +233,7 @@ void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->transactionId);
     doParsimPacking(b,this->hasTimeOut);
     doParsimPacking(b,this->timeOut);
+    doParsimPacking(b,this->parentTransactionId);
 }
 
 void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -244,6 +247,7 @@ void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->transactionId);
     doParsimUnpacking(b,this->hasTimeOut);
     doParsimUnpacking(b,this->timeOut);
+    doParsimUnpacking(b,this->parentTransactionId);
 }
 
 double transactionMsg::getAmount() const
@@ -326,6 +330,16 @@ void transactionMsg::setTimeOut(double timeOut)
     this->timeOut = timeOut;
 }
 
+int transactionMsg::getParentTransactionId() const
+{
+    return this->parentTransactionId;
+}
+
+void transactionMsg::setParentTransactionId(int parentTransactionId)
+{
+    this->parentTransactionId = parentTransactionId;
+}
+
 class transactionMsgDescriptor : public omnetpp::cClassDescriptor
 {
   private:
@@ -391,7 +405,7 @@ const char *transactionMsgDescriptor::getProperty(const char *propertyname) cons
 int transactionMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 8+basedesc->getFieldCount() : 8;
+    return basedesc ? 9+basedesc->getFieldCount() : 9;
 }
 
 unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
@@ -411,8 +425,9 @@ unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<8) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<9) ? fieldTypeFlags[field] : 0;
 }
 
 const char *transactionMsgDescriptor::getFieldName(int field) const
@@ -432,8 +447,9 @@ const char *transactionMsgDescriptor::getFieldName(int field) const
         "transactionId",
         "hasTimeOut",
         "timeOut",
+        "parentTransactionId",
     };
-    return (field>=0 && field<8) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<9) ? fieldNames[field] : nullptr;
 }
 
 int transactionMsgDescriptor::findField(const char *fieldName) const
@@ -448,6 +464,7 @@ int transactionMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+5;
     if (fieldName[0]=='h' && strcmp(fieldName, "hasTimeOut")==0) return base+6;
     if (fieldName[0]=='t' && strcmp(fieldName, "timeOut")==0) return base+7;
+    if (fieldName[0]=='p' && strcmp(fieldName, "parentTransactionId")==0) return base+8;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -468,8 +485,9 @@ const char *transactionMsgDescriptor::getFieldTypeString(int field) const
         "int",
         "bool",
         "double",
+        "int",
     };
-    return (field>=0 && field<8) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<9) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **transactionMsgDescriptor::getFieldPropertyNames(int field) const
@@ -544,6 +562,7 @@ std::string transactionMsgDescriptor::getFieldValueAsString(void *object, int fi
         case 5: return long2string(pp->getTransactionId());
         case 6: return bool2string(pp->getHasTimeOut());
         case 7: return double2string(pp->getTimeOut());
+        case 8: return long2string(pp->getParentTransactionId());
         default: return "";
     }
 }
@@ -566,6 +585,7 @@ bool transactionMsgDescriptor::setFieldValueAsString(void *object, int field, in
         case 5: pp->setTransactionId(string2long(value)); return true;
         case 6: pp->setHasTimeOut(string2bool(value)); return true;
         case 7: pp->setTimeOut(string2double(value)); return true;
+        case 8: pp->setParentTransactionId(string2long(value)); return true;
         default: return false;
     }
 }

@@ -1,6 +1,6 @@
 #include "routerNode.h"
 
-
+bool probesRecent(map<int, PathInfo> probes);
 vector<string> split(string str, char delimiter);
 vector<int> breadthFirstSearch(int sender, int receiver);
 void generateChannelsBalancesMap(string, map<int, vector<pair<int,int>>> &channels, map<tuple<int,int>,double> &balances);

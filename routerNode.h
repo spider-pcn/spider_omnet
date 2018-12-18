@@ -74,6 +74,7 @@ class routerNode : public cSimpleModule
 
 
    protected:
+      virtual routerMsg *generateWaterfillingTransactionMessage(double amt, vector<int> path, transactionMsg * transMsg);
       virtual routerMsg *generateTransactionMessage(transUnit transUnit);
       virtual routerMsg *generateAckMessage(routerMsg *msg, bool isTimeOutMsg = false);
           //generates ack message and destroys input parameter msg
@@ -83,7 +84,7 @@ class routerNode : public cSimpleModule
       virtual routerMsg *generateStatMessage();
       virtual routerMsg *generateTimeOutMessage(routerMsg *transMsg);
       virtual routerMsg *generateProbeMessage(int destNode, int pathIdx, vector<int> path);
-
+      virtual void splitTransactionForWaterfilling(routerMsg * ttMsg);
       virtual void initialize() override;
       virtual void handleMessage(cMessage *msg) override;
       virtual void handleTransactionMessage(routerMsg *msg);

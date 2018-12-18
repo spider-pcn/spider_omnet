@@ -2,6 +2,8 @@
 
 #include "initialize.h"
 #include "routerNode.h"
+#include <queue>
+
 
 #define MSGSIZE 100
 
@@ -112,6 +114,11 @@ void routerNode::handleProbeMessage(routerMsg* ttmsg){
             assert(p->path == pMsg->getPath());
 
             p->lastUpdated = simTime();
+            //cout << "number of probes: " << nodeToShortestPathsMap[destNode].size();
+            for (auto idx: nodeToShortestPathsMap[destNode]){
+                //cout << "lastUpdated: " << (idx.second).lastUpdated << endl;
+
+            }
             vector<double> pathBalances = pMsg->getPathBalances();
             int bottleneck = minVectorElemDouble(pathBalances);
 
@@ -145,6 +152,7 @@ void routerNode::handleProbeMessage(routerMsg* ttmsg){
 
 
 void routerNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode){ //maybe less than k routes
+    //cout << "number of probes: " << kShortestPaths.size() << endl;
     for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
         //map<int, map<int, PathInfo>> nodeToShortestPathsMap;
         PathInfo temp = {};
@@ -154,6 +162,7 @@ void routerNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNo
         routerMsg * msg = generateProbeMessage(destNode, pathIdx, kShortestPaths[pathIdx]);
         forwardProbeMessage(msg);
     }
+    //cout << "number of probes2: " << kShortestPaths.size() << endl;
 
 }
 
@@ -314,6 +323,11 @@ void routerNode::initialize()
       transUnit j = myTransUnits[i];
       double timeSent = j.timeSent;
       routerMsg *msg = generateTransactionMessage(j);
+      if (useWaterfilling){
+          vector<int> blankPath = {};
+          msg->setRoute(blankPath);
+      }
+
       scheduleAt(timeSent, msg);
 
       if (useWaterfilling){
@@ -326,7 +340,7 @@ void routerNode::initialize()
           }
       }
 
-      if (j.hasTimeOut){
+      if (j.hasTimeOut && !useWaterfilling){ //TODO : timeOut implementation is not going to work with waterfilling
          routerMsg *toutMsg = generateTimeOutMessage(msg);
          scheduleAt(timeSent+j.timeOut, toutMsg );
       }
@@ -589,7 +603,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
       else{ //at last index of route
          //add transactionId to set of successful transactions that we don't need to send time out messages
          if (aMsg->getHasTimeOut()){
-            cout << "HAS TIME OUT" << endl;
+            //cout << "HAS TIME OUT" << endl;
             successfulDoNotSendTimeOut.insert(aMsg->getTransactionId());
          }
 
@@ -637,7 +651,7 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isTimeOutMsg){ 
 
    }
    else{ //is transaction message
-      cout << "b here" <<endl;
+
       transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
       transactionId = transMsg->getTransactionId();
       timeSent = transMsg->getTimeSent();
@@ -646,7 +660,7 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isTimeOutMsg){ 
       ttmsg->decapsulate();
 
       hasTimeOut = transMsg->getHasTimeOut();
-      cout<<"hasTimeOut value: " << hasTimeOut << endl;
+
       delete transMsg;
 
    }
@@ -671,8 +685,6 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isTimeOutMsg){ 
    delete ttmsg;
    msg->encapsulate(aMsg);
 
-
-   cout << "exit generate ack msg" <<endl;
    return msg;
 }
 
@@ -747,6 +759,10 @@ routerMsg *routerNode::generateUpdateMessage(int transId, int receiver, double a
    return rMsg;
 }
 
+
+
+
+
 /*
  * forwardUpdateMessage - sends updateMessage to appropriate destination
  */
@@ -758,6 +774,99 @@ void routerNode::sendUpdateMessage(routerMsg *msg){
    send(msg, nodeToPaymentChannel[nextDest].gate);
 }
 
+routerMsg* routerNode::generateWaterfillingTransactionMessage(double amt, vector<int> path, transactionMsg* transMsg){
+
+    char msgname[MSGSIZE];
+    sprintf(msgname, "tic-%d-to-%d water-transMsg", getIndex(), transMsg->getReceiver());
+     transactionMsg *msg = new transactionMsg(msgname);
+      msg->setAmount(amt);
+      msg->setTimeSent(transMsg->getTimeSent());
+       msg->setSender(transMsg->getSender());
+       msg->setReceiver(transMsg->getReceiver());
+       msg->setPriorityClass(transMsg->getPriorityClass());
+       msg->setTransactionId(msg->getId());
+       msg->setHasTimeOut(false); //TODO: all waterfilling transactions do not have time out rn , transMsg->hasTimeOut);
+
+       msg->setTimeOut(-1);
+       msg->setParentTransactionId(transMsg->getTransactionId());
+
+
+       sprintf(msgname, "tic-%d-to-%d water-routerMsg", getIndex(), transMsg->getReceiver());
+       routerMsg *rMsg = new routerMsg(msgname);
+       rMsg->setRoute(path);
+
+
+       rMsg->setHopCount(0);
+       rMsg->setMessageType(TRANSACTION_MSG);
+       rMsg->encapsulate(msg);
+       return rMsg;
+
+}
+
+void routerNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+    int destNode = transMsg->getReceiver();
+    double remainingAmt = transMsg->getAmount();
+
+                map<int, double> pathMap = {}; //key is pathIdx, double is amt
+                priority_queue<pair<double,int>> pq;
+                for (auto iter: nodeToShortestPathsMap[destNode] ){
+                    int key = iter.first;
+                    double bottleneck = (iter.second).bottleneck;
+                    pq.push(make_pair(bottleneck, key)); //automatically sorts with biggest first index-element
+                    //cout << "pathLength: " << (iter.second).path.size() << endl;
+                }
+
+                double highestBal;
+                double secHighestBal;
+                double diffToSend;
+                double amtToSend;
+                int highestBalIdx;
+                while(pq.size()>0 && remainingAmt > 0){
+                    highestBal = get<0>(pq.top());
+                    highestBalIdx = get<1>(pq.top());
+                    pq.pop();
+                    if (pq.size()==0){
+                        secHighestBal=0;
+                    }
+                    else{
+                        secHighestBal = get<0>(pq.top());
+                    }
+                    diffToSend = highestBal - secHighestBal;
+                    amtToSend = min(remainingAmt/(pq.size()+1),diffToSend);
+
+                    for (auto p: pathMap){
+                        pathMap[p.first] = p.second + amtToSend;
+                        remainingAmt = remainingAmt - amtToSend;
+                    }
+                    pathMap[highestBalIdx] = amtToSend;
+                    remainingAmt = remainingAmt - amtToSend;
+
+                }
+
+                if (remainingAmt > 0){
+                    //TODO: update the amt in the transactionMsg (keep transactionId?)
+
+                }
+                else{
+
+                    for (auto p: pathMap){
+                        //cout <<"("<<p.first<<","<<p.second<<") ";
+                        vector<int> path = nodeToShortestPathsMap[destNode][p.first].path;
+                        double amt = p.second;
+                        routerMsg* waterMsg = generateWaterfillingTransactionMessage(amt, path, transMsg); //TODO:
+                        //cout << "waterMsg generated "<<endl;
+                        handleTransactionMessage(waterMsg);
+                    }
+                    //cout<<endl;
+                    //cout << "number of probes after water gen: " <<  nodeToShortestPathsMap[destNode].size();
+
+                }
+         transMsg->setAmount(remainingAmt);
+
+
+}
+
 /* handleTransactionMessage - checks if message has arrived
  *      1. has arrived - turn transactionMsg into ackMsg, forward ackMsg
  *      2. has not arrived - add to appropriate job queue q, process q as
@@ -767,6 +876,8 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
    int hopcount = ttmsg->getHopCount();
    vector<tuple<int, double , routerMsg *>> *q;
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+
+   int destination = transMsg->getReceiver();
 
    //check if message is already failed: (1) past time()>timeSent+timeOut (2) on failedTransUnit list
    if ( transMsg->getHasTimeOut() && (simTime() > (transMsg->getTimeSent() + transMsg->getTimeOut()))  ){
@@ -784,15 +895,47 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
       }
       else{
          //is a self-message
-         int destNode = ttmsg->getRoute()[ttmsg->getRoute().size()-1];
+         int destNode = transMsg->getReceiver();
          statNumAttempted[destNode] = statNumAttempted[destNode]+1;
+
+         //cout << "WATERFILLING 1" <<endl;
+         if(useWaterfilling && (ttmsg->getRoute().size() == 0)){ //no route is specified -
+                 //means we need to break up into chunks and assign route
+             //cout << "WATERFILLING 2" <<endl;
+
+             bool recent = probesRecent(nodeToShortestPathsMap[destNode]);
+
+             //cout << "recent " << recent;
+             if (recent){ // we made sure all the probes are back
+
+                 splitTransactionForWaterfilling(ttmsg);
+
+
+
+                 ttmsg->decapsulate();
+                 delete transMsg;
+                 delete ttmsg;
+                 //delete transMsg?
+                 return;
+
+             }
+             else{
+                 //cout << "WATERFILLING 3" << endl;
+                 scheduleAt(simTime() + 1, ttmsg);
+                 return;
+             }
+
+         }
+         //cout << "WATERFILLING 3" <<endl;
+
+
 
       }
 
       if(ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
 
-         cout << "1 HERE" << endl;
-         cout <<"transMsg hasTimeOUt: " << transMsg->getHasTimeOut() <<endl;
+         //cout << "1 HERE" << endl;
+         //cout <<"transMsg hasTimeOUt: " << transMsg->getHasTimeOut() <<endl;
          routerMsg* newMsg =  generateAckMessage(ttmsg);
          //forward ack message - no need to wait;
          forwardAckMessage(newMsg);
@@ -849,7 +992,7 @@ routerMsg *routerNode::generateTransactionMessage(transUnit transUnit)
    msg->setPriorityClass(transUnit.priorityClass);
    msg->setTransactionId(msg->getId());
    msg->setHasTimeOut(transUnit.hasTimeOut);
-   cout<<"in generate Trans msg: "<< msg->getHasTimeOut() << endl;
+
    msg->setTimeOut(transUnit.timeOut);
 
    sprintf(msgname, "tic-%d-to-%d routerMsg", transUnit.sender, transUnit.receiver);
@@ -895,7 +1038,7 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg)
 {
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
 
-   cout <<"forwardTransactionMesg: " << transMsg->getHasTimeOut() << endl;
+   //cout <<"forwardTransactionMesg: " << transMsg->getHasTimeOut() << endl;
 
    if (transMsg->getHasTimeOut() && (simTime() > (transMsg->getTimeSent() + transMsg->getTimeOut()))){
       msg->decapsulate();

@@ -2,6 +2,18 @@
 #define INITIALIZE_H
 #include "initialize.h"
 
+
+bool probesRecent(map<int, PathInfo> probes){
+    for (auto iter : probes){
+        int key = iter.first;
+        if ((iter.second).lastUpdated == -1){
+            return false;
+        }
+
+    }
+    return true;
+}
+
 /*get_route- take in sender and receiver graph indicies, and returns
  *  BFS shortest path from sender to receiver in form of node indicies,
  *  includes sender and reciever as first and last entry
@@ -10,17 +22,17 @@ vector<int> getRoute(int sender, int receiver){
   //do searching without regard for channel capacities, DFS right now
 
 
-   printf("sender: %i; receiver: %i \n [", sender, receiver);
+  // printf("sender: %i; receiver: %i \n [", sender, receiver);
    //vector<int> route =  breadthFirstSearch(sender, receiver);
    vector<int> route = dijkstraInputGraph(sender, receiver, channels);
 
-
+/*
    for (int i=0; i<(int)route.size(); i++){
         printf("%i, ", route[i]);
     }
     printf("] \n");
 
-
+*/
 
     return route;
 
@@ -64,7 +76,9 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
     vector<vector<int>> shortestRoutes = {};
     vector<int> route;
     auto tempChannels = channels;
+
     for (int it = 0; it<k; it++){
+        /*
         printf("%d print of channels\n", it );
           for (auto i : tempChannels){
               printf("key: %d [",i.first);
@@ -74,14 +88,20 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
 
               printf("] \n");
           }
+          */
         route = dijkstraInputGraph(sender, receiver, tempChannels);
+        /*
         printf("%d-th route: ", it);
 
         for (int i=0; i<(int)route.size(); i++){
              printf("%i, ", route[i]);
          }
 
+
         printf("\n");
+
+        */
+
         if (route.size() == 1){
             return shortestRoutes;
         }
@@ -572,7 +592,7 @@ void generateTransUnitList(string workloadFile, vector<transUnit> &trans_unit_li
          if (data.size()>5){
             hasTimeOut = true;
             timeOut = stoi(data[5]);
-            cout << "timeOut: " << timeOut << endl;
+            //cout << "timeOut: " << timeOut << endl;
          }
 
          // instantiate all the transUnits that need to be sent
