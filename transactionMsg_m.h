@@ -29,6 +29,8 @@
  *     int receiver;
  *     int priorityClass;
  *     int transactionId; //is messageID of transactionMsg
+ *     bool hasTimeOut;
+ *     double timeOut;
  * }
  * </pre>
  */
@@ -41,6 +43,8 @@ class transactionMsg : public ::omnetpp::cPacket
     int receiver;
     int priorityClass;
     int transactionId;
+    bool hasTimeOut;
+    double timeOut;
 
   private:
     void copy(const transactionMsg& other);
@@ -71,6 +75,10 @@ class transactionMsg : public ::omnetpp::cPacket
     virtual void setPriorityClass(int priorityClass);
     virtual int getTransactionId() const;
     virtual void setTransactionId(int transactionId);
+    virtual bool getHasTimeOut() const;
+    virtual void setHasTimeOut(bool hasTimeOut);
+    virtual double getTimeOut() const;
+    virtual void setTimeOut(double timeOut);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const transactionMsg& obj) {obj.parsimPack(b);}

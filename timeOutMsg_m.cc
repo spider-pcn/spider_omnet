@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 5.4 from transactionMsg.msg.
+// Generated file, do not edit! Created by nedtool 5.4 from timeOutMsg.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:
@@ -26,7 +26,7 @@
 
 #include <iostream>
 #include <sstream>
-#include "transactionMsg_m.h"
+#include "timeOutMsg_m.h"
 
 namespace omnetpp {
 
@@ -177,30 +177,24 @@ inline std::ostream& operator<<(std::ostream& out, const std::vector<T,A>& vec)
     return out;
 }
 
-Register_Class(transactionMsg)
+Register_Class(timeOutMsg)
 
-transactionMsg::transactionMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
+timeOutMsg::timeOutMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
 {
     this->amount = 0;
-    this->timeSent = 0;
-    this->sender = 0;
-    this->receiver = 0;
-    this->priorityClass = 0;
     this->transactionId = 0;
-    this->hasTimeOut = false;
-    this->timeOut = 0;
 }
 
-transactionMsg::transactionMsg(const transactionMsg& other) : ::omnetpp::cPacket(other)
+timeOutMsg::timeOutMsg(const timeOutMsg& other) : ::omnetpp::cPacket(other)
 {
     copy(other);
 }
 
-transactionMsg::~transactionMsg()
+timeOutMsg::~timeOutMsg()
 {
 }
 
-transactionMsg& transactionMsg::operator=(const transactionMsg& other)
+timeOutMsg& timeOutMsg::operator=(const timeOutMsg& other)
 {
     if (this==&other) return *this;
     ::omnetpp::cPacket::operator=(other);
@@ -208,131 +202,53 @@ transactionMsg& transactionMsg::operator=(const transactionMsg& other)
     return *this;
 }
 
-void transactionMsg::copy(const transactionMsg& other)
+void timeOutMsg::copy(const timeOutMsg& other)
 {
     this->amount = other.amount;
-    this->timeSent = other.timeSent;
-    this->sender = other.sender;
-    this->receiver = other.receiver;
-    this->priorityClass = other.priorityClass;
     this->transactionId = other.transactionId;
-    this->hasTimeOut = other.hasTimeOut;
-    this->timeOut = other.timeOut;
 }
 
-void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
+void timeOutMsg::parsimPack(omnetpp::cCommBuffer *b) const
 {
     ::omnetpp::cPacket::parsimPack(b);
     doParsimPacking(b,this->amount);
-    doParsimPacking(b,this->timeSent);
-    doParsimPacking(b,this->sender);
-    doParsimPacking(b,this->receiver);
-    doParsimPacking(b,this->priorityClass);
     doParsimPacking(b,this->transactionId);
-    doParsimPacking(b,this->hasTimeOut);
-    doParsimPacking(b,this->timeOut);
 }
 
-void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
+void timeOutMsg::parsimUnpack(omnetpp::cCommBuffer *b)
 {
     ::omnetpp::cPacket::parsimUnpack(b);
     doParsimUnpacking(b,this->amount);
-    doParsimUnpacking(b,this->timeSent);
-    doParsimUnpacking(b,this->sender);
-    doParsimUnpacking(b,this->receiver);
-    doParsimUnpacking(b,this->priorityClass);
     doParsimUnpacking(b,this->transactionId);
-    doParsimUnpacking(b,this->hasTimeOut);
-    doParsimUnpacking(b,this->timeOut);
 }
 
-double transactionMsg::getAmount() const
+double timeOutMsg::getAmount() const
 {
     return this->amount;
 }
 
-void transactionMsg::setAmount(double amount)
+void timeOutMsg::setAmount(double amount)
 {
     this->amount = amount;
 }
 
-double transactionMsg::getTimeSent() const
-{
-    return this->timeSent;
-}
-
-void transactionMsg::setTimeSent(double timeSent)
-{
-    this->timeSent = timeSent;
-}
-
-int transactionMsg::getSender() const
-{
-    return this->sender;
-}
-
-void transactionMsg::setSender(int sender)
-{
-    this->sender = sender;
-}
-
-int transactionMsg::getReceiver() const
-{
-    return this->receiver;
-}
-
-void transactionMsg::setReceiver(int receiver)
-{
-    this->receiver = receiver;
-}
-
-int transactionMsg::getPriorityClass() const
-{
-    return this->priorityClass;
-}
-
-void transactionMsg::setPriorityClass(int priorityClass)
-{
-    this->priorityClass = priorityClass;
-}
-
-int transactionMsg::getTransactionId() const
+int timeOutMsg::getTransactionId() const
 {
     return this->transactionId;
 }
 
-void transactionMsg::setTransactionId(int transactionId)
+void timeOutMsg::setTransactionId(int transactionId)
 {
     this->transactionId = transactionId;
 }
 
-bool transactionMsg::getHasTimeOut() const
-{
-    return this->hasTimeOut;
-}
-
-void transactionMsg::setHasTimeOut(bool hasTimeOut)
-{
-    this->hasTimeOut = hasTimeOut;
-}
-
-double transactionMsg::getTimeOut() const
-{
-    return this->timeOut;
-}
-
-void transactionMsg::setTimeOut(double timeOut)
-{
-    this->timeOut = timeOut;
-}
-
-class transactionMsgDescriptor : public omnetpp::cClassDescriptor
+class timeOutMsgDescriptor : public omnetpp::cClassDescriptor
 {
   private:
     mutable const char **propertynames;
   public:
-    transactionMsgDescriptor();
-    virtual ~transactionMsgDescriptor();
+    timeOutMsgDescriptor();
+    virtual ~timeOutMsgDescriptor();
 
     virtual bool doesSupport(omnetpp::cObject *obj) const override;
     virtual const char **getPropertyNames() const override;
@@ -354,24 +270,24 @@ class transactionMsgDescriptor : public omnetpp::cClassDescriptor
     virtual void *getFieldStructValuePointer(void *object, int field, int i) const override;
 };
 
-Register_ClassDescriptor(transactionMsgDescriptor)
+Register_ClassDescriptor(timeOutMsgDescriptor)
 
-transactionMsgDescriptor::transactionMsgDescriptor() : omnetpp::cClassDescriptor("transactionMsg", "omnetpp::cPacket")
+timeOutMsgDescriptor::timeOutMsgDescriptor() : omnetpp::cClassDescriptor("timeOutMsg", "omnetpp::cPacket")
 {
     propertynames = nullptr;
 }
 
-transactionMsgDescriptor::~transactionMsgDescriptor()
+timeOutMsgDescriptor::~timeOutMsgDescriptor()
 {
     delete[] propertynames;
 }
 
-bool transactionMsgDescriptor::doesSupport(omnetpp::cObject *obj) const
+bool timeOutMsgDescriptor::doesSupport(omnetpp::cObject *obj) const
 {
-    return dynamic_cast<transactionMsg *>(obj)!=nullptr;
+    return dynamic_cast<timeOutMsg *>(obj)!=nullptr;
 }
 
-const char **transactionMsgDescriptor::getPropertyNames() const
+const char **timeOutMsgDescriptor::getPropertyNames() const
 {
     if (!propertynames) {
         static const char *names[] = {  nullptr };
@@ -382,19 +298,19 @@ const char **transactionMsgDescriptor::getPropertyNames() const
     return propertynames;
 }
 
-const char *transactionMsgDescriptor::getProperty(const char *propertyname) const
+const char *timeOutMsgDescriptor::getProperty(const char *propertyname) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     return basedesc ? basedesc->getProperty(propertyname) : nullptr;
 }
 
-int transactionMsgDescriptor::getFieldCount() const
+int timeOutMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 8+basedesc->getFieldCount() : 8;
+    return basedesc ? 2+basedesc->getFieldCount() : 2;
 }
 
-unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
+unsigned int timeOutMsgDescriptor::getFieldTypeFlags(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -405,17 +321,11 @@ unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
     static unsigned int fieldTypeFlags[] = {
         FD_ISEDITABLE,
         FD_ISEDITABLE,
-        FD_ISEDITABLE,
-        FD_ISEDITABLE,
-        FD_ISEDITABLE,
-        FD_ISEDITABLE,
-        FD_ISEDITABLE,
-        FD_ISEDITABLE,
     };
-    return (field>=0 && field<8) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<2) ? fieldTypeFlags[field] : 0;
 }
 
-const char *transactionMsgDescriptor::getFieldName(int field) const
+const char *timeOutMsgDescriptor::getFieldName(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -425,33 +335,21 @@ const char *transactionMsgDescriptor::getFieldName(int field) const
     }
     static const char *fieldNames[] = {
         "amount",
-        "timeSent",
-        "sender",
-        "receiver",
-        "priorityClass",
         "transactionId",
-        "hasTimeOut",
-        "timeOut",
     };
-    return (field>=0 && field<8) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<2) ? fieldNames[field] : nullptr;
 }
 
-int transactionMsgDescriptor::findField(const char *fieldName) const
+int timeOutMsgDescriptor::findField(const char *fieldName) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount() : 0;
     if (fieldName[0]=='a' && strcmp(fieldName, "amount")==0) return base+0;
-    if (fieldName[0]=='t' && strcmp(fieldName, "timeSent")==0) return base+1;
-    if (fieldName[0]=='s' && strcmp(fieldName, "sender")==0) return base+2;
-    if (fieldName[0]=='r' && strcmp(fieldName, "receiver")==0) return base+3;
-    if (fieldName[0]=='p' && strcmp(fieldName, "priorityClass")==0) return base+4;
-    if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+5;
-    if (fieldName[0]=='h' && strcmp(fieldName, "hasTimeOut")==0) return base+6;
-    if (fieldName[0]=='t' && strcmp(fieldName, "timeOut")==0) return base+7;
+    if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+1;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
-const char *transactionMsgDescriptor::getFieldTypeString(int field) const
+const char *timeOutMsgDescriptor::getFieldTypeString(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -461,18 +359,12 @@ const char *transactionMsgDescriptor::getFieldTypeString(int field) const
     }
     static const char *fieldTypeStrings[] = {
         "double",
-        "double",
         "int",
-        "int",
-        "int",
-        "int",
-        "bool",
-        "double",
     };
-    return (field>=0 && field<8) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<2) ? fieldTypeStrings[field] : nullptr;
 }
 
-const char **transactionMsgDescriptor::getFieldPropertyNames(int field) const
+const char **timeOutMsgDescriptor::getFieldPropertyNames(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -485,7 +377,7 @@ const char **transactionMsgDescriptor::getFieldPropertyNames(int field) const
     }
 }
 
-const char *transactionMsgDescriptor::getFieldProperty(int field, const char *propertyname) const
+const char *timeOutMsgDescriptor::getFieldProperty(int field, const char *propertyname) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -498,7 +390,7 @@ const char *transactionMsgDescriptor::getFieldProperty(int field, const char *pr
     }
 }
 
-int transactionMsgDescriptor::getFieldArraySize(void *object, int field) const
+int timeOutMsgDescriptor::getFieldArraySize(void *object, int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -506,13 +398,13 @@ int transactionMsgDescriptor::getFieldArraySize(void *object, int field) const
             return basedesc->getFieldArraySize(object, field);
         field -= basedesc->getFieldCount();
     }
-    transactionMsg *pp = (transactionMsg *)object; (void)pp;
+    timeOutMsg *pp = (timeOutMsg *)object; (void)pp;
     switch (field) {
         default: return 0;
     }
 }
 
-const char *transactionMsgDescriptor::getFieldDynamicTypeString(void *object, int field, int i) const
+const char *timeOutMsgDescriptor::getFieldDynamicTypeString(void *object, int field, int i) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -520,13 +412,13 @@ const char *transactionMsgDescriptor::getFieldDynamicTypeString(void *object, in
             return basedesc->getFieldDynamicTypeString(object,field,i);
         field -= basedesc->getFieldCount();
     }
-    transactionMsg *pp = (transactionMsg *)object; (void)pp;
+    timeOutMsg *pp = (timeOutMsg *)object; (void)pp;
     switch (field) {
         default: return nullptr;
     }
 }
 
-std::string transactionMsgDescriptor::getFieldValueAsString(void *object, int field, int i) const
+std::string timeOutMsgDescriptor::getFieldValueAsString(void *object, int field, int i) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -534,21 +426,15 @@ std::string transactionMsgDescriptor::getFieldValueAsString(void *object, int fi
             return basedesc->getFieldValueAsString(object,field,i);
         field -= basedesc->getFieldCount();
     }
-    transactionMsg *pp = (transactionMsg *)object; (void)pp;
+    timeOutMsg *pp = (timeOutMsg *)object; (void)pp;
     switch (field) {
         case 0: return double2string(pp->getAmount());
-        case 1: return double2string(pp->getTimeSent());
-        case 2: return long2string(pp->getSender());
-        case 3: return long2string(pp->getReceiver());
-        case 4: return long2string(pp->getPriorityClass());
-        case 5: return long2string(pp->getTransactionId());
-        case 6: return bool2string(pp->getHasTimeOut());
-        case 7: return double2string(pp->getTimeOut());
+        case 1: return long2string(pp->getTransactionId());
         default: return "";
     }
 }
 
-bool transactionMsgDescriptor::setFieldValueAsString(void *object, int field, int i, const char *value) const
+bool timeOutMsgDescriptor::setFieldValueAsString(void *object, int field, int i, const char *value) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -556,21 +442,15 @@ bool transactionMsgDescriptor::setFieldValueAsString(void *object, int field, in
             return basedesc->setFieldValueAsString(object,field,i,value);
         field -= basedesc->getFieldCount();
     }
-    transactionMsg *pp = (transactionMsg *)object; (void)pp;
+    timeOutMsg *pp = (timeOutMsg *)object; (void)pp;
     switch (field) {
         case 0: pp->setAmount(string2double(value)); return true;
-        case 1: pp->setTimeSent(string2double(value)); return true;
-        case 2: pp->setSender(string2long(value)); return true;
-        case 3: pp->setReceiver(string2long(value)); return true;
-        case 4: pp->setPriorityClass(string2long(value)); return true;
-        case 5: pp->setTransactionId(string2long(value)); return true;
-        case 6: pp->setHasTimeOut(string2bool(value)); return true;
-        case 7: pp->setTimeOut(string2double(value)); return true;
+        case 1: pp->setTransactionId(string2long(value)); return true;
         default: return false;
     }
 }
 
-const char *transactionMsgDescriptor::getFieldStructName(int field) const
+const char *timeOutMsgDescriptor::getFieldStructName(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -583,7 +463,7 @@ const char *transactionMsgDescriptor::getFieldStructName(int field) const
     };
 }
 
-void *transactionMsgDescriptor::getFieldStructValuePointer(void *object, int field, int i) const
+void *timeOutMsgDescriptor::getFieldStructValuePointer(void *object, int field, int i) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -591,7 +471,7 @@ void *transactionMsgDescriptor::getFieldStructValuePointer(void *object, int fie
             return basedesc->getFieldStructValuePointer(object, field, i);
         field -= basedesc->getFieldCount();
     }
-    transactionMsg *pp = (transactionMsg *)object; (void)pp;
+    timeOutMsg *pp = (timeOutMsg *)object; (void)pp;
     switch (field) {
         default: return nullptr;
     }

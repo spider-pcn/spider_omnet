@@ -9,6 +9,7 @@
 #include "transactionMsg_m.h"
 #include "ackMsg_m.h"
 #include "updateMsg_m.h"
+#include "timeOutMsg_m.h"
 #include <iostream>
 #include <algorithm>
 #include <string>
@@ -17,6 +18,7 @@
 #include <map>
 #include <fstream>
 #include "transUnit.h"
+
 
 using namespace std;
 using namespace omnetpp;
@@ -54,13 +56,16 @@ class routerNode : public cSimpleModule
       vector<simsignal_t> numCompletedPerDestSignals;
       vector<simsignal_t> numAttemptedPerDestSignals;
       vector< transUnit > myTransUnits; //list of transUnits that have me as sender
+      //set<int> failedTransUnits; //search up by transactionId - not necessary
 
    protected:
       virtual routerMsg *generateTransactionMessage(transUnit transUnit);
-      virtual routerMsg *generateAckMessage(routerMsg *msg);
+      virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true);
       virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
           //just generates routerMsg with no encapsulated msg inside
       virtual routerMsg *generateStatMessage();
+      virtual routerMsg *generateTimeOutMessage(routerMsg *transMsg);
+
 
       virtual void initialize() override;
       virtual void handleMessage(cMessage *msg) override;
@@ -74,6 +79,7 @@ class routerNode : public cSimpleModule
       virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *>>& q);
       virtual void deleteMessagesInQueues();
 
+
 };
 
 
@@ -85,5 +91,6 @@ extern map<int, vector<pair<int,int>>> channels; //adjacency list format of grap
 extern map<tuple<int,int>,double> balances;
 extern double statRate;
 //map of balances for each edge; key = <int,int> is <source, destination>
+//extern bool withFailures;
 
 #endif

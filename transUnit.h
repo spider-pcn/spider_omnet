@@ -6,12 +6,19 @@ class transUnit{
       int receiver;
       //vector<int> route; //includes sender and reciever as first and last entries
       int priorityClass;
+      bool hasTimeOut;
+      double timeOut;
 
-      transUnit(double amount1, double timeSent1, int sender1, int receiver1, int priorityClass1){
+
+
+      transUnit(double amount1, double timeSent1, int sender1, int receiver1, int priorityClass1, bool hasTimeOut1, double timeOut1 = -1){
+         assert((hasTimeOut1 && timeOut1>0) || (!(hasTimeOut1) && timeOut1==-1));
          amount = amount1;
          timeSent = timeSent1;
          sender = sender1;
          receiver = receiver1;
          priorityClass=  priorityClass1;
+         hasTimeOut = hasTimeOut1;
+         timeOut = timeOut1;
       }
 };

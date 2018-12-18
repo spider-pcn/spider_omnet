@@ -53,6 +53,7 @@ void routerNode::initialize()
 
 
    if (getIndex() == 0){  //main initialization for global parameters
+       //withFailures = true;
 
       setNumNodes(topologyFile_); //TODO: condense into generate_trans_unit_list
       // add all the transUnits into global list
@@ -181,6 +182,16 @@ void routerNode::initialize()
       double timeSent = j.timeSent;
       routerMsg *msg = generateTransactionMessage(j);
       scheduleAt(timeSent, msg);
+
+
+      if (j.hasTimeOut){
+          routerMsg *toutMsg = generateTimeOutMessage(msg);
+          scheduleAt(timeSent+j.timeOut, toutMsg );
+          //TODO: write how to handle TIME_OUT_MSGs
+
+      }
+
+
    }
 
    //set statRate
@@ -285,11 +296,72 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
    map<int, double> *outgoingTransUnits = &(nodeToPaymentChannel[prevNode].outgoingTransUnits);
    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
 
+
    (*outgoingTransUnits).erase(aMsg->getTransactionId());
+
+
 
    //increment signal numProcessed
 
    nodeToPaymentChannel[prevNode].statNumProcessed = nodeToPaymentChannel[prevNode].statNumProcessed+1;
+
+
+
+   if (aMsg->getIsSuccess() == false){ //not successful
+
+           cout << "not successful ack message processed " << endl;
+
+           nodeToPaymentChannel[prevNode].balance = nodeToPaymentChannel[prevNode].balance + aMsg->getAmount();
+           //increment back my outgoing balance towards prevNode
+
+           //no need to generate update message
+
+
+       if(ttmsg->getHopCount() <  ttmsg->getRoute().size()-1){ // are not at last index of route
+           int nextNode = (ttmsg->getRoute())[ttmsg->getHopCount()+1];
+           //remove transaction from incoming transunits
+           map<int, double> *incomingTransUnits = &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
+           (*incomingTransUnits).erase(aMsg->getTransactionId());
+
+
+            forwardAckMessage(ttmsg);
+         }
+         else{
+
+
+            //int destNode = ttmsg->getRoute()[0]; //destination of origin transUnit job
+
+            //TODO: introduce some statNumFailed
+            //statNumCompleted[destNode] = statNumCompleted[destNode]+1;
+
+
+            //broadcast completion time signal
+             //simtime_t timeTakenInMilli = 1000*(simTime() - aMsg->getTimeSent());
+
+            //emit(completionTimeSignal, timeTakenInMilli);
+
+
+
+
+            //delete ack message
+            ttmsg->decapsulate();
+            delete aMsg;
+            delete ttmsg;
+
+         }
+
+
+
+
+
+
+   }
+   else{ //successful
+
+
+
+
+
 
    // virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
    routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), prevNode, aMsg->getAmount() );
@@ -306,7 +378,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
       statNumCompleted[destNode] = statNumCompleted[destNode]+1;
 
       //broadcast completion time signal
-      ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
+      //ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
       simtime_t timeTakenInMilli = 1000*(simTime() - aMsg->getTimeSent());
 
       emit(completionTimeSignal, timeTakenInMilli);
@@ -320,27 +392,32 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
       delete ttmsg;
 
    }
+   }
 }
 
 /*
  * generateAckMessage - called only when a transactionMsg reaches end of its path, keeps routerMsg casing of msg
  *   and reuses it to send ackMsg in reversed order of route
  */
-routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg){
+routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess){
+
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
    char msgname[MSGSIZE];
+
+
    sprintf(msgname, "receiver-%d-to-sender-%d ackMsg", transMsg->getReceiver(), transMsg->getSender());
    routerMsg *msg = new routerMsg(msgname);
    ackMsg *aMsg = new ackMsg(msgname);
    aMsg->setTransactionId(transMsg->getTransactionId());
-   aMsg->setIsSuccess(true);
+   aMsg->setIsSuccess(isSuccess);
    aMsg->setTimeSent(transMsg->getTimeSent());
    aMsg->setAmount(transMsg->getAmount());
    //no need to set secret;
    vector<int> route=ttmsg->getRoute();
    reverse(route.begin(), route.end());
    msg->setRoute(route);
-   msg->setHopCount(0);
+   msg->setHopCount((route.size()-1) - ttmsg->getHopCount());
+       //need to reverse path from current hop number in case of partial failure
    msg->setMessageType(ACK_MSG); //now an ack message
    ttmsg->decapsulate(); // remove encapsulated packet
    delete transMsg;
@@ -373,7 +450,7 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
    vector<tuple<int, double , routerMsg *>> *q;
    int prevNode = msg->getRoute()[msg->getHopCount()-1];
 
-   //TODO: need to get encapsulated
+
    updateMsg *uMsg = check_and_cast<updateMsg *>(msg->getEncapsulatedPacket());
    //increment the in flight funds back
    nodeToPaymentChannel[prevNode].balance =  nodeToPaymentChannel[prevNode].balance + uMsg->getAmount();
@@ -445,6 +522,17 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
    vector<tuple<int, double , routerMsg *>> *q;
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
 
+   //check if message is already failed: (1) past time()>timeSent+timeOut (2) on failedTransUnit list
+   if ( transMsg->getHasTimeOut() && (simTime() > (transMsg->getTimeSent() + transMsg->getTimeOut()))  ){
+       routerMsg* newMsg = generateAckMessage(ttmsg, false);
+
+        forwardAckMessage(newMsg);
+       //TODO:
+   }
+   else{
+
+
+
    if ((ttmsg->getHopCount())>0){ //not a self-message, add to incoming_trans_units
       int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
       map<int, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
@@ -470,7 +558,6 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
 
       q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
 
-      //TODO: how to push to heap?
       (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
                ttmsg));
       push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
@@ -478,6 +565,32 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
       processTransUnits(nextNode, *q);
 
    }
+
+   }
+}
+
+
+
+routerMsg *routerNode::generateTimeOutMessage(routerMsg* msg)
+{
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
+
+    char msgname[MSGSIZE];
+
+   sprintf(msgname, "tic-%d-to-%d timeOutMsg", transMsg->getSender(), transMsg->getReceiver());
+   timeOutMsg *toutMsg = new timeOutMsg(msgname);
+   toutMsg->setAmount(transMsg->getAmount());
+   toutMsg->setTransactionId(transMsg->getTransactionId());
+
+
+
+   sprintf(msgname, "tic-%d-to-%d routerTimeOutMsg", transMsg->getSender(), transMsg->getReceiver());
+   routerMsg *rMsg = new routerMsg(msgname);
+   rMsg->setRoute(msg->getRoute());
+   rMsg->setHopCount(0);
+   rMsg->setMessageType(TIME_OUT_MSG);
+   rMsg->encapsulate(toutMsg);
+   return rMsg;
 }
 
 
@@ -496,6 +609,9 @@ routerMsg *routerNode::generateTransactionMessage(transUnit transUnit)
    msg->setReceiver(transUnit.receiver);
    msg->setPriorityClass(transUnit.priorityClass);
    msg->setTransactionId(msg->getId());
+   msg->setHasTimeOut(transUnit.hasTimeOut);
+   msg->setTimeOut(transUnit.timeOut);
+
 
    sprintf(msgname, "tic-%d-to-%d routerMsg", transUnit.sender, transUnit.receiver);
    routerMsg *rMsg = new routerMsg(msgname);

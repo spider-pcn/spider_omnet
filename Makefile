@@ -36,6 +36,7 @@ OBJS = \
     $O/simpleNet.o \
     $O/ackMsg_m.o \
     $O/routerMsg_m.o \
+    $O/timeOutMsg_m.o \
     $O/transactionMsg_m.o \
     $O/updateMsg_m.o
 
@@ -43,6 +44,7 @@ OBJS = \
 MSGFILES = \
     ackMsg.msg \
     routerMsg.msg \
+    timeOutMsg.msg \
     transactionMsg.msg \
     updateMsg.msg
 

@@ -9,7 +9,7 @@ SCALE_AMOUNT = 5
 
 # generates the start and end nodes for a fixed set of topologies - hotnets/line/simple graph
 def generate_workload_standard(filename, payment_graph_topo, workload_type, total_time, \
-        exp_size, txn_size_mean):
+        exp_size, txn_size_mean, time_out):
     # define start and end nodes and amounts
     # edge a->b in payment graph appears in index i as start_nodes[i]=a, and end_nodes[i]=b
     if payment_graph_topo == 'hotnets_topo':
@@ -31,7 +31,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
     write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
-            workload_type, total_time, exp_size, txn_size_mean)
+            workload_type, total_time, exp_size, txn_size_mean, time_out)
 
 
 # write the given set of txns denotes by start_node -> end_node with absolute_amts as passed in
@@ -41,7 +41,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
 # write to file - assume no priority for now
 # transaction sizes are either constant or exponentially distributed around their mean
 def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
-        workload_type, total_time, exp_size, txn_size_mean):
+        workload_type, total_time, exp_size, txn_size_mean, time_out):
     outfile = open(filename, "w")
 
     if distribution == 'uniform':
@@ -53,7 +53,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
                     time_start = i*1.0 + (l*1.0) / (1.0*rate)
                     txn_size = np.random_exponential(txn_size_mean) if exp_size else txn_size_mean
                     outfile.write(str(txn_size) + " " + str(time_start) + " " + str(start_nodes[k]) + \
-                            " " + str(end_nodes[k]) + " 0\n")
+                            " " + str(end_nodes[k]) + " 0 " + str(time_out) + " \n")
 
     elif distribution == 'poisson':
         # constant transaction size to be sent in a poisson fashion
@@ -67,7 +67,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
                     time_start = i*1.0 + current_time
                     txn_size = np.random_exponential(txn_size_mean) if exp_size else txn_size_mean
                     outfile.write(str(txn_size) + " " + str(time_start) + " " + str(start_nodes[k]) + \
-                            " " + str(end_nodes[k]) + " 0\n")
+                            " " + str(end_nodes[k]) + " 0 " + str(time_out) + " \n")
                     time_incr = np.random.exponential(beta)
                     current_time = current_time + time_incr 
 
@@ -117,18 +117,19 @@ def parse_topo(topo_filename):
 parser = argparse.ArgumentParser(description="Create arbitrary txn workloads to run the omnet simulator on")
 parser.add_argument('--payment-graph-type', \
         choices=['hotnets_topo', 'simple_line', 'simple_deadlock', 'custom'],\
-        help='type of graph (Small world or scale free or custom topology)', default='simple_line')
+        help='type of graph (Small world or scale free or custom topology)',nargs='?', default='simple_line')
 parser.add_argument('--topo-filename', dest='topo_filename', type=str, \
         help='name of topology file to generate worklooad for')
 parser.add_argument('output_filename', type=str, help='name of the output workload file', \
         default='simple_workload.txt')
 parser.add_argument('distribution', choices=['uniform', 'poisson'],\
-        help='time between transactions is determine by this', default='poisson')
+        help='time between transactions is determine by this',nargs='?', default='poisson')
 parser.add_argument('--experiment-time', dest='total_time', type=int, \
-        help='time to generate txns for', default=30)
+        help='time to generate txns for',nargs='?', default=30)
 parser.add_argument('--txn-size-mean', dest='txn_size_mean', type=int, \
-        help='mean_txn_size', default=1)
+        help='mean_txn_size',nargs='?', default=1)
 parser.add_argument('--exp_size', action='store_true', help='should txns be exponential in size')
+parser.add_argument('--time-out', dest='time_out', type=float, help='time out for all jobs',nargs='?', default = 5.0)
 
 
 args = parser.parse_args()
@@ -140,13 +141,13 @@ total_time = args.total_time
 txn_size_mean = args.txn_size_mean
 exp_size = args.exp_size
 topo_filename = args.topo_filename
-
+time_out = args.time_out
 
 
 # generate workloads
 if payment_graph_type != 'custom':
     generate_workload_standard(output_filename, payment_graph_type, distribution, \
-            total_time, exp_size, txn_size_mean)
+            total_time, exp_size, txn_size_mean, time_out)
 elif topo_filename is None:
     raise Exception("Topology needed for custom file")
 else:

@@ -13,15 +13,8 @@
 // Same as TictocMsg11
 //
 
-packet transactionMsg
+packet timeOutMsg
 {
     double amount;
-    double timeSent;  //time after start time that job is active
-    int sender;
-    int receiver;
-    int priorityClass;
     int transactionId; //is messageID of transactionMsg
-    bool hasTimeOut;
-    double timeOut;
 }
-

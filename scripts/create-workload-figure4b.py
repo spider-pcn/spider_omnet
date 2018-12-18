@@ -14,13 +14,13 @@ rateListStart = [0,3,0,1,2,3,2,4];
 rateListEnd = [4,0,1,3,1,2,4,2]; 
 rateListAmtTemp = [1,2,1,2,1,2,2,1];
 rateListAmt = [50*x for x in rateListAmtTemp]
-
+timeOut = 5.0
 
 for i in range(totalTime):
    for k in range(len(rateListStart)):
       for l in range(rateListAmt[k]):
          rate = rateListAmt[k]
          timeStart = i*1.0 + (l*1.0)/(1.0*rate)
-         outfile.write("1 "+str(timeStart)+" "+str(rateListStart[k])+" "+str(rateListEnd[k])+" 0\n");
+         outfile.write("1 "+str(timeStart)+" "+str(rateListStart[k])+" "+str(rateListEnd[k])+" 0 " + str(timeOut) + " \n");
 
 

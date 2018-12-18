@@ -156,17 +156,6 @@ vector<int> dijkstra(int src,  int dest)
         }
     }
 
-    // print the constructed
-    // distance array
-    /*for (int ka=0; ka<numNodes; ka++){
-        printf("[%i]: %i,  ", ka, parent[ka] );
-
-    }*/
-
-   // printSolution(dist,src,  parent);
-
-    //printf("\n");
-
     return getPath(parent, dest);
 
 }
@@ -305,15 +294,22 @@ void generateTransUnitList(string workloadFile, vector<transUnit> &trans_unit_li
             {
               vector<string> data = split(line, ' ');
 
-              //data[0] = amount, data[1] = timeSent, data[2] = sender, data[3] = receiver, data[4] = priority class
+              //data[0] = amount, data[1] = timeSent, data[2] = sender, data[3] = receiver, data[4] = priority class; (data[5] = time out)
               double amount = stod(data[0]);
               double timeSent = stod(data[1]);
               int sender = stoi(data[2]);
               int receiver = stoi(data[3]);
               int priorityClass = stoi(data[4]);
+              double timeOut=-1;
+              double hasTimeOut = false;
+              if (data.size()>5){
+                  hasTimeOut = true;
+                  timeOut = stoi(data[5]);
+                  cout << "timeOut: " << timeOut << endl;
+              }
 
               // instantiate all the transUnits that need to be sent
-              transUnit tempTU = transUnit(amount, timeSent, sender, receiver, priorityClass);
+              transUnit tempTU = transUnit(amount, timeSent, sender, receiver, priorityClass, hasTimeOut, timeOut);
 
                  // add all the transUnits into global list
               trans_unit_list.push_back(tempTU);

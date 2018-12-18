@@ -24,12 +24,13 @@
 #define ACK_MSG 1
 #define UPDATE_MSG 2
 #define STAT_MSG 3
+#define TIME_OUT_MSG 4
 
 typedef std::vector<int> IntVector;
 // }}
 
 /**
- * Class generated from <tt>routerMsg.msg:29</tt> by nedtool.
+ * Class generated from <tt>routerMsg.msg:30</tt> by nedtool.
  * <pre>
  * packet routerMsg
  * {
