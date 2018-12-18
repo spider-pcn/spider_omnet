@@ -9,3 +9,5 @@ map<tuple<int,int>,double> balances;
 //map of balances for each edge; key = <int,int> is <source, destination>
 double statRate;
 //bool withFailures;
+bool useWaterfilling;
+int kValue;

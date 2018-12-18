@@ -52,6 +52,11 @@ void routerNode::initialize()
    successfulDoNotSendTimeOut = {};
 
    if (getIndex() == 0){  //main initialization for global parameters
+       useWaterfilling = true;
+
+      if (useWaterfilling){
+          kValue = 3;
+      }
 
 
       setNumNodes(topologyFile_); //TODO: condense into generate_trans_unit_list
@@ -174,6 +179,11 @@ void routerNode::initialize()
       double timeSent = j.timeSent;
       routerMsg *msg = generateTransactionMessage(j);
       scheduleAt(timeSent, msg);
+
+      if (useWaterfilling){
+
+          getKShortestRoutes(j.sender, j.receiver, kValue);
+      }
 
       if (j.hasTimeOut){
          routerMsg *toutMsg = generateTimeOutMessage(msg);

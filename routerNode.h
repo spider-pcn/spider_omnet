@@ -10,6 +10,7 @@
 #include "ackMsg_m.h"
 #include "updateMsg_m.h"
 #include "timeOutMsg_m.h"
+#include "probeMsg_m.h"
 #include <iostream>
 #include <algorithm>
 #include <string>
@@ -42,6 +43,14 @@ struct paymentChannel{
 
 };
 
+struct PathInfo{
+    vector<int> path;
+    simtime_t lastUpdated;
+    double bottleneck;
+    vector<double> pathBalances;
+};
+
+
 
 class routerNode : public cSimpleModule
 {
@@ -52,6 +61,10 @@ class routerNode : public cSimpleModule
       vector<int> statNumCompleted;
       vector<int> statNumAttempted;
       map<int, vector<int>> destNodeToPath;
+
+      map<int, map<int, PathInfo>> nodeToShortestPathsMap;
+
+
       simsignal_t completionTimeSignal;
       vector<simsignal_t> numCompletedPerDestSignals;
       vector<simsignal_t> numAttemptedPerDestSignals;
@@ -98,5 +111,7 @@ extern map<tuple<int,int>,double> balances;
 extern double statRate;
 //map of balances for each edge; key = <int,int> is <source, destination>
 //extern bool withFailures;
+extern bool useWaterfilling;
+extern int kValue; //for k shortest paths
 
 #endif

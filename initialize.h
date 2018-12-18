@@ -10,4 +10,6 @@ void generateTransUnitList(string, vector<transUnit> &trans_unit_list);
 vector<int> getRoute(int sender, int receiver);
 bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*> &a,
       const tuple<int,double, routerMsg*> &b);
-
+map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> channels, vector<int> route);
+vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k);
+vector<int> dijkstraInputGraph(int src,  int dest, map<int, vector<pair<int,int>>> channels);
