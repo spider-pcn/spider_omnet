@@ -27,7 +27,7 @@ typedef std::map<int, double> IntMap;
 // }}
 
 /**
- * Class generated from <tt>probeMsg.msg:28</tt> by nedtool.
+ * Class generated from <tt>probeMsg.msg:29</tt> by nedtool.
  * <pre>
  * packet probeMsg
  * {
@@ -35,7 +35,8 @@ typedef std::map<int, double> IntMap;
  *     int sender;
  *     int receiver;
  *     bool isReversed = false;
- *     IntVector pathBalances;
+ *     DoubleVector pathBalances;
+ *     IntVector path;
  * }
  * </pre>
  */
@@ -46,7 +47,8 @@ class probeMsg : public ::omnetpp::cPacket
     int sender;
     int receiver;
     bool isReversed;
-    IntVector pathBalances;
+    DoubleVector pathBalances;
+    IntVector path;
 
   private:
     void copy(const probeMsg& other);
@@ -73,9 +75,12 @@ class probeMsg : public ::omnetpp::cPacket
     virtual void setReceiver(int receiver);
     virtual bool getIsReversed() const;
     virtual void setIsReversed(bool isReversed);
-    virtual IntVector& getPathBalances();
-    virtual const IntVector& getPathBalances() const {return const_cast<probeMsg*>(this)->getPathBalances();}
-    virtual void setPathBalances(const IntVector& pathBalances);
+    virtual DoubleVector& getPathBalances();
+    virtual const DoubleVector& getPathBalances() const {return const_cast<probeMsg*>(this)->getPathBalances();}
+    virtual void setPathBalances(const DoubleVector& pathBalances);
+    virtual IntVector& getPath();
+    virtual const IntVector& getPath() const {return const_cast<probeMsg*>(this)->getPath();}
+    virtual void setPath(const IntVector& path);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const probeMsg& obj) {obj.parsimPack(b);}

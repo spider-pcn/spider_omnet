@@ -25,7 +25,7 @@ using namespace std;
 using namespace omnetpp;
 
 
-struct paymentChannel{
+struct PaymentChannel{
     //channel information
     cGate* gate;
     double balance;
@@ -45,8 +45,8 @@ struct paymentChannel{
 
 struct PathInfo{
     vector<int> path;
-    simtime_t lastUpdated;
-    double bottleneck;
+    simtime_t lastUpdated = -1;
+    double bottleneck = -1;
     vector<double> pathBalances;
 };
 
@@ -57,7 +57,7 @@ class routerNode : public cSimpleModule
    private:
       string topologyFile_;
       string workloadFile_;
-      map<int, paymentChannel> nodeToPaymentChannel;
+      map<int, PaymentChannel> nodeToPaymentChannel;
       vector<int> statNumCompleted;
       vector<int> statNumAttempted;
       map<int, vector<int>> destNodeToPath;
@@ -82,7 +82,7 @@ class routerNode : public cSimpleModule
           //just generates routerMsg with no encapsulated msg inside
       virtual routerMsg *generateStatMessage();
       virtual routerMsg *generateTimeOutMessage(routerMsg *transMsg);
-
+      virtual routerMsg *generateProbeMessage(int destNode, int pathIdx, vector<int> path);
 
       virtual void initialize() override;
       virtual void handleMessage(cMessage *msg) override;
@@ -91,11 +91,14 @@ class routerNode : public cSimpleModule
       virtual void handleAckMessage(routerMsg *msg);
       virtual void handleUpdateMessage(routerMsg *msg);
       virtual void handleStatMessage(routerMsg *msg);
+      virtual void handleProbeMessage(routerMsg *msg);
       virtual bool forwardTransactionMessage(routerMsg *msg);
       virtual void forwardAckMessage(routerMsg *msg);
       virtual void forwardTimeOutMessage(routerMsg *msg);
+      virtual void forwardProbeMessage(routerMsg *msg);
       virtual void sendUpdateMessage(routerMsg *msg);
       virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *>>& q);
+      virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode);
       virtual void deleteMessagesInQueues();
 
 

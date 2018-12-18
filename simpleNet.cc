@@ -23,6 +23,142 @@ void routerNode::deleteMessagesInQueues(){
    }
 }
 
+routerMsg * routerNode::generateProbeMessage(int destNode, int pathIdx, vector<int> path){
+
+    char msgname[MSGSIZE];
+    sprintf(msgname, "tic-%d-to-%d probeMsg [idx %d]", getIndex(), destNode, pathIdx);
+    //int pathIndex;
+     //   int sender;
+      //  int receiver;
+       // bool isReversed = false;
+       // IntVector pathBalances;
+    probeMsg *pMsg = new probeMsg(msgname);
+    pMsg->setSender(getIndex());
+    pMsg->setPathIndex(pathIdx);
+    pMsg->setReceiver(destNode);
+    pMsg->setIsReversed(false);
+    vector<double> pathBalances;
+    pMsg->setPathBalances(pathBalances);
+    pMsg->setPath(path);
+
+    sprintf(msgname, "tic-%d-to-%d router-probeMsg [idx %d]", getIndex(), destNode, pathIdx);
+    routerMsg *rMsg = new routerMsg(msgname);
+    rMsg->setRoute(path);
+
+    rMsg->setHopCount(0);
+    rMsg->setMessageType(PROBE_MSG);
+
+    rMsg->encapsulate(pMsg);
+    return rMsg;
+
+
+}
+
+
+void routerNode::forwardProbeMessage(routerMsg *msg){
+   // Increment hop count.
+   msg->setHopCount(msg->getHopCount()+1);
+   //use hopCount to find next destination
+   int nextDest = msg->getRoute()[msg->getHopCount()];
+
+   probeMsg *pMsg = check_and_cast<probeMsg *>(msg->getEncapsulatedPacket());
+
+   if (pMsg->getIsReversed() == false){
+       vector<double> *pathBalances = & ( pMsg->getPathBalances());
+       (*pathBalances).push_back(nodeToPaymentChannel[nextDest].balance);
+   }
+
+   send(msg, nodeToPaymentChannel[nextDest].gate);
+}
+
+double minVectorElemDouble(vector<double> v){
+    double min = v[0];
+    for (double d: v){
+        if (d<min){
+            min=d;
+        }
+    }
+    return min;
+}
+
+void routerNode::handleProbeMessage(routerMsg* ttmsg){
+    probeMsg *pMsg = check_and_cast<probeMsg *>(ttmsg->getEncapsulatedPacket());
+    if (simTime()>10){
+       ttmsg->decapsulate();
+       delete pMsg;
+       delete ttmsg;
+       return;
+    }
+
+
+
+    bool isReversed = pMsg->getIsReversed();
+    int nextDest = ttmsg->getRoute()[ttmsg->getHopCount()+1];
+
+    if(ttmsg->getHopCount() <  ttmsg->getRoute().size()-1){ // are not at last index of route
+        forwardProbeMessage(ttmsg);
+
+    }
+    else{ // are at last index of route check if is reversed == false
+
+        if (isReversed == true){ //store times into private map, delete message
+
+            //TODO
+            int pathIdx = pMsg->getPathIndex();
+
+            int destNode = pMsg->getReceiver();
+
+            PathInfo * p = &(nodeToShortestPathsMap[destNode][pathIdx]);
+            assert(p->path == pMsg->getPath());
+
+            p->lastUpdated = simTime();
+            vector<double> pathBalances = pMsg->getPathBalances();
+            int bottleneck = minVectorElemDouble(pathBalances);
+
+            p->bottleneck = bottleneck ;
+            p->pathBalances = pathBalances;
+
+
+            //reset the probe message
+            vector<int> route = ttmsg->getRoute();
+            reverse(route.begin(), route.end());
+            ttmsg->setRoute(route);
+            ttmsg->setHopCount(0);
+            pMsg->setIsReversed(false);
+            vector<double> tempPathBal = {};
+            pMsg->setPathBalances(tempPathBal);
+            forwardProbeMessage(ttmsg);
+        }
+        else{ //reverse and send message again
+            pMsg->setIsReversed(true);
+            ttmsg->setHopCount(0);
+            vector<int> route = ttmsg->getRoute();
+            reverse(route.begin(), route.end());
+            ttmsg->setRoute(route);
+            forwardProbeMessage(ttmsg);
+
+        }
+
+    }
+}
+
+
+
+void routerNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode){ //maybe less than k routes
+    for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
+        //map<int, map<int, PathInfo>> nodeToShortestPathsMap;
+        PathInfo temp = {};
+        nodeToShortestPathsMap[destNode][pathIdx] = temp;
+        nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
+
+        routerMsg * msg = generateProbeMessage(destNode, pathIdx, kShortestPaths[pathIdx]);
+        forwardProbeMessage(msg);
+    }
+
+}
+
+
+
 /* initialize() -
  *  if node index is 0:
  *      - initialize global parameters: instantiate all transUnits, and add to global list "trans_unit_list"
@@ -79,7 +215,7 @@ void routerNode::initialize()
       destGate = gate(gateName, i++);
       cGate *nextGate = destGate->getNextGate();
       if (nextGate ) {
-         paymentChannel temp =  {};
+         PaymentChannel temp =  {};
          temp.gate = destGate;
          nodeToPaymentChannel[nextGate->getOwnerModule()->getIndex()] = temp;
       }
@@ -181,8 +317,13 @@ void routerNode::initialize()
       scheduleAt(timeSent, msg);
 
       if (useWaterfilling){
+          if (nodeToShortestPathsMap.count(j.receiver) == 0 ){
 
-          getKShortestRoutes(j.sender, j.receiver, kValue);
+             vector<vector<int>> kShortestRoutes = getKShortestRoutes(j.sender, j.receiver, kValue);
+
+             initializeProbes(kShortestRoutes, j.receiver);
+
+          }
       }
 
       if (j.hasTimeOut){
@@ -237,6 +378,10 @@ void routerNode::handleMessage(cMessage *msg)
       handleTimeOutMessage(ttmsg);
       //cout<< "[AFTER HANDLING:]  \n"<<endl;
    }
+   else if (ttmsg->getMessageType() == PROBE_MSG){
+       handleProbeMessage(ttmsg);
+       //TODO:
+   }
 
 }
 
@@ -252,7 +397,7 @@ routerMsg *routerNode::generateStatMessage(){
 
 
 void routerNode::handleStatMessage(routerMsg* ttmsg){
-   if (simTime() >20){
+   if (simTime() >10){
       delete ttmsg;
       deleteMessagesInQueues();
    }

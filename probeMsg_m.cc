@@ -211,6 +211,7 @@ void probeMsg::copy(const probeMsg& other)
     this->receiver = other.receiver;
     this->isReversed = other.isReversed;
     this->pathBalances = other.pathBalances;
+    this->path = other.path;
 }
 
 void probeMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -221,6 +222,7 @@ void probeMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->receiver);
     doParsimPacking(b,this->isReversed);
     doParsimPacking(b,this->pathBalances);
+    doParsimPacking(b,this->path);
 }
 
 void probeMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -231,6 +233,7 @@ void probeMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->receiver);
     doParsimUnpacking(b,this->isReversed);
     doParsimUnpacking(b,this->pathBalances);
+    doParsimUnpacking(b,this->path);
 }
 
 int probeMsg::getPathIndex() const
@@ -273,14 +276,24 @@ void probeMsg::setIsReversed(bool isReversed)
     this->isReversed = isReversed;
 }
 
-IntVector& probeMsg::getPathBalances()
+DoubleVector& probeMsg::getPathBalances()
 {
     return this->pathBalances;
 }
 
-void probeMsg::setPathBalances(const IntVector& pathBalances)
+void probeMsg::setPathBalances(const DoubleVector& pathBalances)
 {
     this->pathBalances = pathBalances;
+}
+
+IntVector& probeMsg::getPath()
+{
+    return this->path;
+}
+
+void probeMsg::setPath(const IntVector& path)
+{
+    this->path = path;
 }
 
 class probeMsgDescriptor : public omnetpp::cClassDescriptor
@@ -348,7 +361,7 @@ const char *probeMsgDescriptor::getProperty(const char *propertyname) const
 int probeMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 5+basedesc->getFieldCount() : 5;
+    return basedesc ? 6+basedesc->getFieldCount() : 6;
 }
 
 unsigned int probeMsgDescriptor::getFieldTypeFlags(int field) const
@@ -365,8 +378,9 @@ unsigned int probeMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISCOMPOUND,
+        FD_ISCOMPOUND,
     };
-    return (field>=0 && field<5) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<6) ? fieldTypeFlags[field] : 0;
 }
 
 const char *probeMsgDescriptor::getFieldName(int field) const
@@ -383,8 +397,9 @@ const char *probeMsgDescriptor::getFieldName(int field) const
         "receiver",
         "isReversed",
         "pathBalances",
+        "path",
     };
-    return (field>=0 && field<5) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<6) ? fieldNames[field] : nullptr;
 }
 
 int probeMsgDescriptor::findField(const char *fieldName) const
@@ -396,6 +411,7 @@ int probeMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='r' && strcmp(fieldName, "receiver")==0) return base+2;
     if (fieldName[0]=='i' && strcmp(fieldName, "isReversed")==0) return base+3;
     if (fieldName[0]=='p' && strcmp(fieldName, "pathBalances")==0) return base+4;
+    if (fieldName[0]=='p' && strcmp(fieldName, "path")==0) return base+5;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -412,9 +428,10 @@ const char *probeMsgDescriptor::getFieldTypeString(int field) const
         "int",
         "int",
         "bool",
+        "DoubleVector",
         "IntVector",
     };
-    return (field>=0 && field<5) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<6) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **probeMsgDescriptor::getFieldPropertyNames(int field) const
@@ -486,6 +503,7 @@ std::string probeMsgDescriptor::getFieldValueAsString(void *object, int field, i
         case 2: return long2string(pp->getReceiver());
         case 3: return bool2string(pp->getIsReversed());
         case 4: {std::stringstream out; out << pp->getPathBalances(); return out.str();}
+        case 5: {std::stringstream out; out << pp->getPath(); return out.str();}
         default: return "";
     }
 }
@@ -517,7 +535,8 @@ const char *probeMsgDescriptor::getFieldStructName(int field) const
         field -= basedesc->getFieldCount();
     }
     switch (field) {
-        case 4: return omnetpp::opp_typename(typeid(IntVector));
+        case 4: return omnetpp::opp_typename(typeid(DoubleVector));
+        case 5: return omnetpp::opp_typename(typeid(IntVector));
         default: return nullptr;
     };
 }
@@ -533,6 +552,7 @@ void *probeMsgDescriptor::getFieldStructValuePointer(void *object, int field, in
     probeMsg *pp = (probeMsg *)object; (void)pp;
     switch (field) {
         case 4: return (void *)(&pp->getPathBalances()); break;
+        case 5: return (void *)(&pp->getPath()); break;
         default: return nullptr;
     }
 }

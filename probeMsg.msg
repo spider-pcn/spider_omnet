@@ -22,6 +22,7 @@ typedef std::map<int, double> IntMap;
 
 class noncobject IntVector;
 class noncobject IntMap;
+class noncobject DoubleVector;
 
 packet probeMsg
 //if encapIsAck == false needs to look in encapsulated transactionMsg for priority class and amount
@@ -30,5 +31,6 @@ packet probeMsg
     int sender;
     int receiver;
     bool isReversed = false;
-    IntVector pathBalances;
+    DoubleVector pathBalances;
+    IntVector path;
 }
