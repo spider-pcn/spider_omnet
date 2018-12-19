@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 import networkx as nx
 import random
+import json
 
 SCALE_AMOUNT = 5
 
@@ -74,13 +75,46 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
     outfile.close()
 
 
+# generates the json file necessary for the distributed testbed to be used to test
+# the lnd implementation
+def generate_json_files(filename, graph, start_nodes, end_nodes, amt_absolute):
+    #TODO: add btcd connection part and the miner node
+    json_string = {}
+
+    # create nodes and assign them distinct ips
+    nodes = {}
+    for n in graph.nodes():
+        nodes["spider" + str(n)] = "10.0.1." + str(100 + n)
+    json_string["nodes"] = nodes
+
+    # creates all the lnd channels
+    edges = []
+    for (u,v) in graph.edges():
+        if u < v: 
+            edge = {"src": "spider" + str(u), "dst": "spider" + str(v)}
+            edges.append(edge)
+
+    json_string["lnd_channels"] = edges
+
+    # creates the string for the demands
+    demands = []
+    for s, e, a in zip(start_nodes, end_nodes, amt_absolute):
+        demand_entry = {"src": "spider" + str(s), "dst": "spider" + str(e),\
+                        "rate": a}
+        demands.append(demand_entry)
+
+    json_string["demands"] = demands
+
+    with open(filename, 'w') as outfile:
+            json.dump(json_string, outfile, indent=8)
+
 
 # generate workload for arbitrary topology by uniformly sampling
 # the set of nodes for sender-receiver pairs
 # size of transaction is determined when writing to the file to
 # either be exponentially distributed or constant size
 def generate_workload_for_provided_topology(filename, graph, workload_type, total_time, \
-        exp_size, txn_size_mean):
+        exp_size, txn_size_mean, generate_json_also):
     n = graph.number_of_nodes()
     num_sender_receiver_pairs = n
 
@@ -94,6 +128,9 @@ def generate_workload_for_provided_topology(filename, graph, workload_type, tota
     amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
     print "generated workload" 
+
+    if generate_json_also:
+        generate_json_files(filename + '.json', graph, start_nodes, end_nodes, amt_absolute)
 
     write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
             workload_type, total_time, exp_size, txn_size_mean)
@@ -129,6 +166,8 @@ parser.add_argument('--experiment-time', dest='total_time', type=int, \
 parser.add_argument('--txn-size-mean', dest='txn_size_mean', type=int, \
         help='mean_txn_size', default=1)
 parser.add_argument('--exp_size', action='store_true', help='should txns be exponential in size')
+parser.add_argument('--generate-json-also', action="store_true", help="do you need to generate json file also \
+        for the custom topology")
 
 args = parser.parse_args()
 
@@ -139,19 +178,20 @@ total_time = args.total_time
 txn_size_mean = args.txn_size_mean
 exp_size = args.exp_size
 topo_filename = args.topo_filename
+generate_json_also = args.generate_json_also
 
 
 
 # generate workloads
 if payment_graph_type != 'custom':
     generate_workload_standard(output_filename, payment_graph_type, distribution, \
-            total_time, exp_size, txn_size_mean)
+            total_time, exp_size, txn_size_mean, generate_json_also)
 elif topo_filename is None:
     raise Exception("Topology needed for custom file")
 else:
     graph = parse_topo(topo_filename)
     generate_workload_for_provided_topology(output_filename, graph, distribution, total_time, exp_size,\
-            txn_size_mean)
+            txn_size_mean, generate_json_also)
 
 
 
