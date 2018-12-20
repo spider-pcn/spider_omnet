@@ -1,4 +1,4 @@
-class transUnit{
+class TransUnit{
    public:
       double amount;
       double timeSent;  //time delay after start time of simulation that trans-unit is active
@@ -11,7 +11,7 @@ class transUnit{
 
 
 
-      transUnit(double amount1, double timeSent1, int sender1, int receiver1, int priorityClass1, bool hasTimeOut1, double timeOut1 = -1){
+      TransUnit(double amount1, double timeSent1, int sender1, int receiver1, int priorityClass1, bool hasTimeOut1, double timeOut1 = -1){
          assert((hasTimeOut1 && timeOut1>0) || (!(hasTimeOut1) && timeOut1==-1));
          amount = amount1;
          timeSent = timeSent1;
