@@ -18,6 +18,7 @@
 
 \newcommand{\TU}{transaction unit\xspace}
 \newcommand{\vls}[1]{{\color{blue} \textbf{Vibhaa:} {#1}}}
+\newcommand{\radhika}[1]{{\color{red} \textbf{Radhika:} {#1}}}
 \newcommand{\TUs}{transaction units\xspace}
 \newcommand{\NewPara}[1]{\noindent{\bf #1}}
 
@@ -427,7 +428,9 @@ The purpose of handling timeouts is a way for the sender to cancel a previously 
         \item if the timeOutMsg is at hop count 0 or the sender (first time we are seeing it), check if the transaction Id is in the set of successful transactions (successfulDoNotSendTimeOut), if so, then delete the timeOutMsg, and the transactionId from the set of successful transactions
         \item If not, when processing the timeout message at other routers, 
         \begin{itemize}
+						\item \radhika{Delete transaction from the out-of-balance queue.}
             \item add the transaction id and current time to the set of canceled transactions (canceledTransactions)
+							\radhika{You need to maintain this list at the sender as well, right? I think it is required to conclude whether or not a timed-out transaction has failed or succeeded. Please checkout the comment below.} 
             \item if the time out message is at the destination node, delete it
         \end{itemize}
     \end{itemize}
@@ -447,12 +450,13 @@ The purpose of handling timeouts is a way for the sender to cancel a previously 
     \begin{itemize}
         \item (Generation) a message is generated at initialization for every node (router/sender) scheduled to arrive at time  currentTime+clearRate
         \item For all transactions in the set canceled transactions whose cancellation time  was more than $delta$ time ago, remove the transaction from the incoming and outgoing maps. If removed from outgoing map, increment my end of the balance on the payment channel to the next node. If removed from the incoming queue, we do $not$ need to decrement the balance to the previous node. Search for the transaction in the queue of transactions waiting to be sent to the next node, and delete it if found.
+				\item \radhika{At the sender, if a transaction in cancelled set, having cancellation time more than $delta$ time ago, has received acks for the entire transaction amount, count it as a successful transaction. Otherwise, count it as a failed transaction.} 
         \item Delete the transaction mentioned from the set of canceled transactions. 
     \end{itemize}
 
 \section{Handling Time Outs with split transaction (Waterfilling)}
 \subsection{Overview}
-We add the "acked amount" to the ack messages and keep track of the total amount sent on each path, and total amount acked on each path, for every transaction. A transaction is successful only if total amount acked (across all paths) is same as transation amount. Otherwise, we send a timeout message on paths where the difference between total amount sent and total amount acked is non-zero.
+We add the "acked amount" to the ack messages and keep track of the total amount sent on each path, and total amount acked on each path, for every transaction. A transaction is successful only if the entire transaction amount has been acked (i.e. the sum of the acked amount across all paths is the same as the total transaction amount). Otherwise, (i) if there are paths for which the amount sent is greater than the amount acked, a timeoutMsg is sent on those paths and the transaction is added to the list of canceled transactions, (ii) if no such path exists, the transaction is simply added to the cancelled list without sending any timeOutMsg.   
 
 \subsection{Additional data structures}
 \begin{itemize}
