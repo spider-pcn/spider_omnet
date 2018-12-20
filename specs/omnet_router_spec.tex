@@ -11,10 +11,8 @@
 \usepackage{xspace}
 \usepackage[normalem]{ulem}
 \usepackage{wrapfig}
-<<<<<<< HEAD
 \usepackage{program}
-=======
->>>>>>> added figure 4b workload and topology
+
 
 \title{Omnet Router Specification}
 
@@ -259,15 +257,9 @@ until the deadline on the sender for the payment expires.
 
 \subsection{Simulation Overview}
 Inferring the bottleneck balances is not a trivial task since nodes don't have a global view of every other node/payment channel balance. Thus, this algorithm
-breaks down into two phases: querying for channel balances and processing of the probes to compute the waterfilling splits. These two phases will run at slightly
-<<<<<<< HEAD
-different time scales. The querying/probing will happen on every RTT; we send out a probe immediately after receiving the response from the previous one. 
+breaks down into two phases: querying for channel balances and processing of the probes to compute the waterfilling splits. These two phases will run at slightly different time scales. The querying/probing will happen on every RTT; we send out a probe immediately after receiving the response from the previous one. 
 We start these probes the only once we receive a payment that is to be sent out to that recipient and stop once there is no more demand/transaction to be sent
 to avoid unnecessary probing overhead. The computation of the splits happens as necessary when the next \TU to send arrives or a current set of splits complete/fail.
-=======
-different time scales. The querying/probing will happen on every RTT; we send out a probe immediately after receiving the response from the previous one. The 
-computation of the splits happens as necessary when the next \TU to send is computed.
->>>>>>> added figure 4b workload and topology
 
 \subsection{Message Types}
 \begin{itemize}
@@ -280,38 +272,30 @@ computation of the splits happens as necessary when the next \TU to send is comp
             \item Current Hop Number (starts at 0 when the sender creates this message)
             \item Empty Map of node to channel balance on the outgoing channel from that node along the path
         \end{itemize}
-<<<<<<< HEAD
+
 
     \item Modification to HTLC Initiate/ACK/Balance update:
         \begin{itemize}
             \item Additional sequence number to identify what chunk of the original transaction this is
         \end{itemize}
-=======
->>>>>>> added figure 4b workload and topology
+
 \end{itemize}
 
 \subsection{Processing Channel Balance Query at every node}
 \begin{itemize}
     \item The sender is reponsible for creating this probe message for every path that it wants to probe and initialize the fields including the empty map
-<<<<<<< HEAD
+
     \item Every intermediate node on the forward path (check by checking is the flag for reverse path is set to {\em{false}}) 
         is responsible for (a) ensuring that it is on the path (at index denoted by hop number), (b) finding
         the balance on the (me - nextHop) channel and adding it to the map and (c) forwarding the probe to the next hop. 
     \item When the probe is received at the receiver, it changes the direction of the probe by changing the path field to the reverse of the original. 
         The hop number needs to be reset to $0$ and the reverse path flag to {\em{true}}.
-=======
-    \item Every intermediate node on the forward path (check by checking is the flag for reverse path is set to true) 
-        is responsible for (a) ensuring that it is on the path (at index denoted by hop number), (b) finding
-        the balance on the (me - nextHop) channel and adding it to the map and (c) forwarding the probe to the next hop. 
-    \item When the probe is received at the receiver, it changes the direction of the probe by reversing the path and resetting the hop number to $0$. It also
-        needs to set the reverse path flag to $0$.
->>>>>>> added figure 4b workload and topology
+
     \item Every intermediate node (along the path) on the reverse direction merely forwards the probe and doesn't need to do anything else. An added check is to
         verify that the current node is on the path (at the index denoted by hop number) and then forward it to the next hop (denoted by the item at the next index
         on the path)
 \end{itemize}
 
-<<<<<<< HEAD
 \subsection{New State}
 \begin{itemize}
     \item State Per Sender
@@ -334,20 +318,6 @@ computation of the splits happens as necessary when the next \TU to send is comp
 
 \end{itemize}
 
-
-=======
-\subsection{State per Sender}
-\begin{itemize}
-    \item Per destination state
-        \begin{itemize}
-            \item Destination
-            \item Set of paths (let's start with $2$ shortest edge disjoint paths)
-            \item Bottleneck balance on each of those paths
-        \end{itemize}
-    \item Set of pending transactions (some of these might have been partially completed relative to the initial amount they started with)
-\end{itemize}
-
->>>>>>> added figure 4b workload and topology
 \subsection{Event Handlers for a Sender}
 \begin{itemize}
     \item Receipt of completed probe
@@ -358,7 +328,7 @@ computation of the splits happens as necessary when the next \TU to send is comp
 
     \item New Transaction To Send
         \begin{itemize}
-<<<<<<< HEAD
+
             \item If this is a brand new transaction (Sequence number - $0$), first send out a probe and wait for the response.
             \item Look up the corresponding set of paths for that destination and the associated bottleneck balances. 
             \item Compute the splits for that transaction according to the balances on each of those paths. This means, send as much as you can on the path with highest bottleneck balance 
@@ -397,12 +367,7 @@ computation of the splits happens as necessary when the next \TU to send is comp
 
             \item Create separate transactions with those splits that are then sent on each of the paths. Give each of them a unique sequence number incrementing from the last one used or starting
                 from 1.
-=======
-            \item Look up the corresponding set of paths for that destination and the associated bottleneck balances
-            \item Compute the splits for that transaction according to the balances on each of those paths. This means, send as much as you can on the path with highest bottleneck balance 
-                until its balance falls to the second highest one. Then send equal amounts on the two highest bottleneck balance paths until their balances fall to the third and so on. 
-            \item Create separate transactions with those splits that are then sent on each of the paths. Add some identifier to recognize what parent transaction they were part of.
->>>>>>> added figure 4b workload and topology
+
             \item If the payment is not completed in the process, queue the remaining at the sender for trying later into the set or queue that is tracking pending payments.
         \end{itemize}
 
@@ -410,13 +375,108 @@ computation of the splits happens as necessary when the next \TU to send is comp
         \begin{itemize}
             \item Successful Ack: Do nothing. When splitting the payment, we already assumed it would go through and only queued up the remaining amount.
             \item Failure Ack: Add the failed amount to the pending transaction set. If there was already something associated with this transaction, coalesce the two by just adding the failed amount to it.
-<<<<<<< HEAD
             \item Treat any remaining part of the parent transaction that this Ack was a part of as a new transaction and follow the above procedure.
-=======
-            \item Treat any remaining part of the parent transaction that this Ack was a part of as a new transaction and follow the above procedure. ?
->>>>>>> added figure 4b workload and topology
+
         \end{itemize}
 \end{itemize}
+\section{Time Outs with no Splitting of Transactions}
+\subsection{Overview}
+The purpose of handling timeouts is a way for the sender to cancel a previously sent transactions at time $t$ and be guaranteed that the transaction has been successfully canceled or receive a successful ack by time $t+delta$. A new message type $timeOutMsg$ is introduced that is generated at initialization by the sender of the transaction and is sent out at the $timeSent + timeOutLimit$  for each transaction. A message type $clearStateMsg$ is introduced at every router node that periodically implements the effects of the $timeOutMsg$.
+
+\subsection{New Message Types}
+\begin{itemize}
+    \item timeOutMsg
+    \begin{itemize}
+        \item Amount
+        \item Transaction Id
+    \end{itemize}
+    \item clearStateMsg
+    \begin{itemize}
+        \item (possibly $delta$, else no fields)
+    \end{itemize}
+\end{itemize}
+\subsection{New State per Node}
+\begin{itemize}
+    \item set of tuples containing transaction id for time out messages and time stamp for when time out message was received at the router node as well as the previous and next nodes if applicable 
+\begin{itemize}
+    \item \begin{verbatim} set<canceledTrans> canceledTransactions \end{verbatim}
+    \item \begin{verbatim} canceledTrans \end{verbatim}
+    \begin{itemize}
+        \item \begin{verbatim}transactionId \end{verbatim}
+        \item  \begin{verbatim}simTime_t\end{verbatim} of time we received timeOutMsg 
+        \item \begin{verbatim}prevNode  \end{verbatim} (if not sender)
+        \item \begin{verbatim}nextNode \end{verbatim} (if not destination)
+    \end{itemize}
+\end{itemize} 
+\item (Host only)  set of transaction ids for transactions that we have received acks for and also have a time out limit (so we already generated a timeOutMsg and scheduled it for that transaction)
+\begin{itemize}
+    \item \begin{verbatim} set<int> successfulDoNotSendTimeOut; \end{verbatim}
+\end{itemize}
+
+
+\end{itemize}
+\subsection{Implementation}
+\subsubsection{ Changes to initialization}
+    \begin{itemize}
+        \item Calculate the longest path between two nodes in the graph, store as a global constant $delta$
+    \end{itemize}
+
+\subsubsection{ Handling the timeOutMsg}
+    \begin{itemize}
+        \item (Generation) a timeOutMsg is generated at initialization by the sender of the transaction and is scheduled to arrive at the same sender node at time $timeSent + timeOutLimit$  for each transaction
+        \item if the timeOutMsg is at hop count 0 or the sender (first time we are seeing it), check if the transaction Id is in the set of successful transactions (successfulDoNotSendTimeOut), if so, then delete the timeOutMsg, and the transactionId from the set of successful transactions
+        \item If not, when processing the timeout message at other routers, 
+        \begin{itemize}
+            \item add the transaction id and current time to the set of canceled transactions (canceledTransactions)
+            \item if the time out message is at the destination node, delete it
+        \end{itemize}
+    \end{itemize}
+\subsubsection{ Changes to Handling Ack Message}
+    \begin{itemize}
+        \item check if the transaction id in the ack message is in the set of canceled transactions. If so, delete it from the set of canceled transactions.
+        \item (Host) if the ack message is back at the original sender of the transaction, add the transaction to the set of successful transaction ids (successfulDoNotSendTimeOut)
+
+    \end{itemize}
+\subsubsection{ Changes to Handling Transaction Messages}
+    \begin{itemize}
+        \item when receiving a transaction message, check to see if the transaction Id is in the set of canceled transactions, if so, delete the transaction message.
+        \item \sout{ when processing transactions (these include transactions in the queue, sending the transactionMsg out and decrementing the balance), check if the transaction we are trying to send out is in the set of canceled transactions, if so, delete it and don’t change any balances}
+
+    \end{itemize}
+\subsubsection{ Handling clearStateMsg}
+    \begin{itemize}
+        \item (Generation) a message is generated at initialization for every node (router/sender) scheduled to arrive at time  currentTime+clearRate
+        \item For all transactions in the set canceled transactions whose cancellation time  was more than $delta$ time ago, remove the transaction from the incoming and outgoing maps. If removed from outgoing map, increment my end of the balance on the payment channel to the next node. If removed from the incoming queue, we do $not$ need to decrement the balance to the previous node. Search for the transaction in the queue of transactions waiting to be sent to the next node, and delete it if found.
+        \item Delete the transaction mentioned from the set of canceled transactions. 
+    \end{itemize}
+
+\section{Handling Time Outs with split transaction (Waterfilling)}
+\subsection{Overview}
+We add the "acked amount" to the ack messages and keep track of the total amount sent on each path, and total amount acked on each path, for every transaction. A transaction is successful only if total amount acked (across all paths) is same as transation amount. Otherwise, we send a timeout message on paths where the difference between total amount sent and total amount acked is non-zero.
+
+\subsection{Additional data structures}
+\begin{itemize}
+    \item maintain a map with the key as transaction id and index of one of k paths and the value as a two numbers, the total amount sent down that path, and the total amount we have received acknowledgements for from that path
+    \begin{itemize}
+        \item \begin{verbatim}map<tuple<int, int>, AmtState> transPathToAmtState \end{verbatim}
+        \item struct AmtState
+            \begin{itemize}
+                \item double amtSent
+                \item double amtReceived
+            \end{itemize}
+    \end{itemize}
+\end{itemize}
+\subsection{Changes to handling timeOutMessages}
+\begin{itemize}
+    \item Generate a timeOutMsg for each of the k paths. When the timeOutMsg arrives at time timeSent + timeOutLimit, check if the map value corresponding the transaction id and path index has the same value for amount sent and amount acknowledged. If not, forward the timeOutMsg.
+\end{itemize}
+\subsection{Changes to handling acks}
+\begin{itemize}
+    \item When an ack is received at the sender, get the transaction id and path index from the ack, and update the map transPathToAmtState
+\end{itemize}
+
+
 \end{document}
+
 
 
