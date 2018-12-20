@@ -428,9 +428,9 @@ The purpose of handling timeouts is a way for the sender to cancel a previously 
         \item if the timeOutMsg is at hop count 0 or the sender (first time we are seeing it), check if the transaction Id is in the set of successful transactions (successfulDoNotSendTimeOut), if so, then delete the timeOutMsg, and the transactionId from the set of successful transactions
         \item If not, when processing the timeout message at other routers, 
         \begin{itemize}
-						\item \radhika{Delete transaction from the out-of-balance queue.}
+            \item \radhika{Delete transaction from the out-of-balance queue.}
             \item add the transaction id and current time to the set of canceled transactions (canceledTransactions)
-							\radhika{You need to maintain this list at the sender as well, right? I think it is required to conclude whether or not a timed-out transaction has failed or succeeded. Please checkout the comment below.} 
+            \radhika{You need to maintain this list at the sender as well, right? I think it is required to conclude whether or not a timed-out transaction has failed or succeeded. Please checkout the comment below.} 
             \item if the time out message is at the destination node, delete it
         \end{itemize}
     \end{itemize}
@@ -450,7 +450,7 @@ The purpose of handling timeouts is a way for the sender to cancel a previously 
     \begin{itemize}
         \item (Generation) a message is generated at initialization for every node (router/sender) scheduled to arrive at time  currentTime+clearRate
         \item For all transactions in the set canceled transactions whose cancellation time  was more than $delta$ time ago, remove the transaction from the incoming and outgoing maps. If removed from outgoing map, increment my end of the balance on the payment channel to the next node. If removed from the incoming queue, we do $not$ need to decrement the balance to the previous node. Search for the transaction in the queue of transactions waiting to be sent to the next node, and delete it if found.
-				\item \radhika{At the sender, if a transaction in cancelled set, having cancellation time more than $delta$ time ago, has received acks for the entire transaction amount, count it as a successful transaction. Otherwise, count it as a failed transaction.} 
+        \item \radhika{At the sender, if a transaction in cancelled set, having cancellation time more than $delta$ time ago, has received acks for the entire transaction amount, count it as a successful transaction. Otherwise, count it as a failed transaction.} 
         \item Delete the transaction mentioned from the set of canceled transactions. 
     \end{itemize}
 
