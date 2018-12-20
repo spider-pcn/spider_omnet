@@ -1,13 +1,25 @@
-
-
-#include "initialize.h"
-#include "routerNode.h"
+#include "hostNode.h"
 #include <queue>
+#include "hostInitialize.h"
 
+//global parameters
+vector<transUnit> _transUnitList; //list of all transUnits
+int _numNodes;
+int _numRouterNodes;
+int _numHostNodes;
+//number of nodes in network
+map<int, vector<pair<int,int>>> _channels; //adjacency list format of graph edges of network
+map<tuple<int,int>,double> _balances;
+//map of balances for each edge; key = <int,int> is <source, destination>
+double _statRate;
+//bool withFailures;
+bool _useWaterfilling;
+int _kValue;
+double _simulationLength; //TODO: need to set this in hostInitialize
 
 #define MSGSIZE 100
 
-Define_Module(routerNode);
+Define_Module(hostNode);
 
 
 void routerNode::deleteMessagesInQueues(){
@@ -73,37 +85,17 @@ void routerNode::forwardProbeMessage(routerMsg *msg){
    send(msg, nodeToPaymentChannel[nextDest].gate);
 }
 
-double minVectorElemDouble(vector<double> v){
-    double min = v[0];
-    for (double d: v){
-        if (d<min){
-            min=d;
-        }
-    }
-    return min;
-}
 
 void routerNode::handleProbeMessage(routerMsg* ttmsg){
     probeMsg *pMsg = check_and_cast<probeMsg *>(ttmsg->getEncapsulatedPacket());
-    if (simTime()>10){
+    if (simTime()> _simulationLength ){
        ttmsg->decapsulate();
        delete pMsg;
        delete ttmsg;
        return;
     }
 
-
-
-    bool isReversed = pMsg->getIsReversed();
-    int nextDest = ttmsg->getRoute()[ttmsg->getHopCount()+1];
-
-    if(ttmsg->getHopCount() <  ttmsg->getRoute().size()-1){ // are not at last index of route
-        forwardProbeMessage(ttmsg);
-
-    }
-    else{ // are at last index of route check if is reversed == false
-
-        if (isReversed == true){ //store times into private map, delete message
+     if (isReversed == true){ //store times into private map, delete message
 
             //TODO
             int pathIdx = pMsg->getPathIndex();
@@ -146,7 +138,7 @@ void routerNode::handleProbeMessage(routerMsg* ttmsg){
 
         }
 
-    }
+
 }
 
 
@@ -170,23 +162,21 @@ void routerNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNo
 
 /* initialize() -
  *  if node index is 0:
- *      - initialize global parameters: instantiate all transUnits, and add to global list "trans_unit_list"
+ *      - initialize global parameters: instantiate all TransUnits, and add to global list "trans_unit_list"
  *      - create "channels" map - adjacency list representation of network
  *      - create "balances" map - map representing initial balances; each key is directed edge (source, dest)
  *          and value is balance
  *  all nodes:
- *      - find my transUnits from "trans_unit_list" and store them into my private list "my_trans_units"
+ *      - find my TransUnits from "trans_unit_list" and store them into my private list "my_trans_units"
  *      - create "node_to_gate" map - map to identify channels, each key is node index adjacent to this node
  *          value is gate connecting to that adjacent node
  *      - create "node_to_balances" map - map to identify remaining outgoing balance for gates/channels connected
  *          to this node (key is adjacent node index; value is remaining outgoing balance)
- *      - create "node_to_queued_trans_units" map - map to get transUnit queue for outgoing transUnits,
+ *      - create "node_to_queued_trans_units" map - map to get TransUnit queue for outgoing TransUnits,
  *          one queue corresponding to each adjacent node/each connected channel
- *      - send all transUnits in my_trans_units as a message (using generateTransactionMessage), sent to myself (node index),
- *          scheduled to arrive at timeSent parameter field in transUnit
+ *      - send all TransUnits in my_trans_units as a message (using generateTransactionMessage), sent to myself (node index),
+ *          scheduled to arrive at timeSent parameter field in TransUnit
  */
-
-
 void routerNode::initialize()
 {
    string topologyFile_ = par("topologyFile");
@@ -205,7 +195,7 @@ void routerNode::initialize()
 
 
       setNumNodes(topologyFile_); //TODO: condense into generate_trans_unit_list
-      // add all the transUnits into global list
+      // add all the TransUnits into global list
       generateTransUnitList(workloadFile_, transUnitList);
 
       //create "channels" map - from topology file
@@ -226,7 +216,7 @@ void routerNode::initialize()
       if (nextGate ) {
          PaymentChannel temp =  {};
          temp.gate = destGate;
-         nodeToPaymentChannel[nextGate->getOwnerModule()->getIndex()] = temp;
+         nodeToPaymentChannel[nextGate->getOwnerModule()->getIndex()] = temp; //TODO: change to myIndex
       }
    } while (i < gateSize);
 
@@ -284,7 +274,7 @@ void routerNode::initialize()
    }
 
    //initialize signals with all other nodes in graph
-   for (int i = 0; i < numNodes; ++i) {
+   for (int i = 0; i < _numHostNodes; ++i) {
       char signalName[64];
       simsignal_t signal;
       cProperty *statisticTemplate;
@@ -310,17 +300,17 @@ void routerNode::initialize()
 
    }
 
-   //iterate through the global trans_unit_list and find my transUnits
-   for (int i=0; i<(int)transUnitList.size(); i++){
-      if (transUnitList[i].sender == getIndex()){
-         myTransUnits.push_back(transUnitList[i]);
+   //iterate through the global trans_unit_list and find my TransUnits
+   for (int i=0; i<(int)_transUnitList.size(); i++){
+      if (_transUnitList[i].sender == getIndex()){
+         myTransUnits.push_back(_transUnitList[i]);
       }
    }
 
 
    //implementing timeSent parameter, send all msgs at beginning
    for (int i=0 ; i<(int)myTransUnits.size(); i++){
-      transUnit j = myTransUnits[i];
+      TransUnit j = myTransUnits[i];
       double timeSent = j.timeSent;
       routerMsg *msg = generateTransactionMessage(j);
       if (useWaterfilling){
@@ -347,7 +337,7 @@ void routerNode::initialize()
    }
 
    //set statRate
-   statRate = 0.5;
+   _statRate = 0.5;
    //get stat message
    routerMsg *statMsg = generateStatMessage();
    scheduleAt(0, statMsg);
@@ -411,12 +401,12 @@ routerMsg *routerNode::generateStatMessage(){
 
 
 void routerNode::handleStatMessage(routerMsg* ttmsg){
-   if (simTime() >10){
+   if (simTime() > _simulationLength){
       delete ttmsg;
       deleteMessagesInQueues();
    }
    else{
-      scheduleAt(simTime()+statRate, ttmsg);
+      scheduleAt(simTime()+_statRate, ttmsg);
    }
 
    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
@@ -434,7 +424,7 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
    }
 
 
-   for (auto it = 0; it<numNodes; it++){ //iterate through all nodes in graph
+   for (auto it = 0; it<_numHostNodes; it++){ //iterate through all nodes in graph
       emit(numAttemptedPerDestSignals[it], statNumAttempted[it]);
 
       emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
@@ -456,14 +446,9 @@ void routerNode::forwardTimeOutMessage(routerMsg* msg){
 
 /*
  *  handleTimeOutMessage -
- *  - if no incoming transaction, (transMsg will be deleted when arriving to next dest, or when existing current queue)
- *  - if has incoming transaction, check outgoing transaction.
- *  - if has outgoing transaction, increment back funds delete outgoing transaction and forward ttmsg
- *  - if no outgoing transaction, (generate ack back) delete ttmsg (stuck in queue and will be)
- *  - Note: has outgoing transaction means you need to increment back funds
  */
 
-void routerNode::handleTimeOutMessage(routerMsg* ttmsg){
+void routerNode::handleTimeOutMessage(routerMsg* ttmsg){ //TODO: fix handleTimeOutMessage
 
    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
 
@@ -544,13 +529,9 @@ void routerNode::handleTimeOutMessage(routerMsg* ttmsg){
 }
 
 
-/* handleAckMessage - passes on ack message if not at end of root else deletes it
- *      - generates and sends corresponding update message
- *      - erases transId on received ack msg from "want_ack_trans_units"
- *      - adds transId to "sent_ack_trans_units", list of transUnits waiting for
- *          balance update message with their transId (in forwardAckMessage())
+/* handleAckMessage
  */
-void routerNode::handleAckMessage(routerMsg* ttmsg){
+void routerNode::handleAckMessage(routerMsg* ttmsg){ //TODO: fix handleAckMessage
    //generate updateMsg
    int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
 
@@ -567,7 +548,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
 
       if(ttmsg->getHopCount() <  ttmsg->getRoute().size()-1){ // are not at last index of route
          // int nextNode = (ttmsg->getRoute())[ttmsg->getHopCount()+1];
-         //remove transaction from incoming transunits
+         //remove transaction from incoming TransUnits
          //map<int, double> *incomingTransUnits = &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
          // (*incomingTransUnits).erase(aMsg->getTransactionId());
 
@@ -575,7 +556,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
       }
       else{ //at last index of route and not successful
 
-         //int destNode = ttmsg->getRoute()[0]; //destination of origin transUnit job
+         //int destNode = ttmsg->getRoute()[0]; //destination of origin TransUnit job
 
          //TODO: introduce some statNumFailed
          //statNumCompleted[destNode] = statNumCompleted[destNode]+1;
@@ -607,7 +588,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
             successfulDoNotSendTimeOut.insert(aMsg->getTransactionId());
          }
 
-         int destNode = ttmsg->getRoute()[0]; //destination of origin transUnit job
+         int destNode = ttmsg->getRoute()[0]; //destination of origin TransUnit job
 
          statNumCompleted[destNode] = statNumCompleted[destNode]+1;
 
@@ -629,7 +610,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
  * generateAckMessage - called only when a transactionMsg reaches end of its path, keeps routerMsg casing of msg
  *   and reuses it to send ackMsg in reversed order of route
  */
-routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isTimeOutMsg){ //default is false
+routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg){ //default is false
    bool isSuccess;
    int transactionId;
    double timeSent;
@@ -637,20 +618,6 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isTimeOutMsg){ 
    int sender = (ttmsg->getRoute())[0];
    int receiver = (ttmsg->getRoute())[(ttmsg->getRoute()).size() -1];
    bool hasTimeOut;
-
-   if (isTimeOutMsg){
-      cout<<"a here" << endl;
-      timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
-      transactionId = toutMsg->getTransactionId();
-      timeSent = toutMsg->getTimeSentTransUnit();
-      amount = toutMsg->getAmount();
-      isSuccess = false;
-      ttmsg->decapsulate();
-      delete toutMsg;
-      hasTimeOut = true;
-
-   }
-   else{ //is transaction message
 
       transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
       transactionId = transMsg->getTransactionId();
@@ -663,7 +630,7 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isTimeOutMsg){ 
 
       delete transMsg;
 
-   }
+
    char msgname[MSGSIZE];
 
    sprintf(msgname, "receiver-%d-to-sender-%d ackMsg", receiver, sender);
@@ -691,6 +658,7 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isTimeOutMsg){ 
 
 /*
  * forwardAckMessage - called inside handleAckMsg, sends ackMsg to next destination, and
+
  *      adds transId to sent_ack_trans_units list
  */
 void routerNode::forwardAckMessage(routerMsg *msg){
@@ -758,9 +726,6 @@ routerMsg *routerNode::generateUpdateMessage(int transId, int receiver, double a
    rMsg->encapsulate(uMsg);
    return rMsg;
 }
-
-
-
 
 
 /*
@@ -881,6 +846,7 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
 
    //check if message is already failed: (1) past time()>timeSent+timeOut (2) on failedTransUnit list
    if ( transMsg->getHasTimeOut() && (simTime() > (transMsg->getTimeSent() + transMsg->getTimeOut()))  ){
+       //TODO: check to see if transactionId is in canceledTransactions set
 
       //delete yourself
       ttmsg->decapsulate();
@@ -888,13 +854,22 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
       delete ttmsg;
    }
    else{
-      if ((ttmsg->getHopCount())>0){ //not a self-message, add to incoming_trans_units
+
+
+       if(ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
          int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
          map<int, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
          (*incomingTransUnits)[transMsg->getTransactionId()] = transMsg->getAmount();
+               //cout << "1 HERE" << endl;
+                //cout <<"transMsg hasTimeOUt: " << transMsg->getHasTimeOut() <<endl;
+                routerMsg* newMsg =  generateAckMessage(ttmsg);
+                //forward ack message - no need to wait;
+                forwardAckMessage(newMsg);
+
+
       }
       else{
-         //is a self-message
+         //is a self-message/at hop count = 0
          int destNode = transMsg->getReceiver();
          statNumAttempted[destNode] = statNumAttempted[destNode]+1;
 
@@ -927,29 +902,22 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
 
          }
          //cout << "WATERFILLING 3" <<endl;
-
-
-
-      }
-
-      if(ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
-
-         //cout << "1 HERE" << endl;
-         //cout <<"transMsg hasTimeOUt: " << transMsg->getHasTimeOut() <<endl;
-         routerMsg* newMsg =  generateAckMessage(ttmsg);
-         //forward ack message - no need to wait;
-         forwardAckMessage(newMsg);
-      }
-      else{
          int nextNode = ttmsg->getRoute()[hopcount+1];
-         q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
+                 q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
 
-         (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
-                  ttmsg));
-         push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
+                 (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
+                          ttmsg));
+                 push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
 
-         processTransUnits(nextNode, *q);
+                 processTransUnits(nextNode, *q);
+
+
       }
+
+
+
+
+
    }
 }
 
@@ -976,34 +944,34 @@ routerMsg *routerNode::generateTimeOutMessage(routerMsg* msg)
 }
 
 
-/* generateTransactionMessage - takes in a transUnit object and returns corresponding routerMsg message
+/* generateTransactionMessage - takes in a TransUnit object and returns corresponding routerMsg message
  *      with encapsulated transactionMsg inside.
  *      note: calls get_route function to get route from sender to receiver
  */
-routerMsg *routerNode::generateTransactionMessage(transUnit transUnit)
+routerMsg *routerNode::generateTransactionMessage(TransUnit TransUnit)
 {
    char msgname[MSGSIZE];
-   sprintf(msgname, "tic-%d-to-%d transactionMsg", transUnit.sender, transUnit.receiver);
+   sprintf(msgname, "tic-%d-to-%d transactionMsg", TransUnit.sender, TransUnit.receiver);
    transactionMsg *msg = new transactionMsg(msgname);
-   msg->setAmount(transUnit.amount);
-   msg->setTimeSent(transUnit.timeSent);
-   msg->setSender(transUnit.sender);
-   msg->setReceiver(transUnit.receiver);
-   msg->setPriorityClass(transUnit.priorityClass);
+   msg->setAmount(TransUnit.amount);
+   msg->setTimeSent(TransUnit.timeSent);
+   msg->setSender(TransUnit.sender);
+   msg->setReceiver(TransUnit.receiver);
+   msg->setPriorityClass(TransUnit.priorityClass);
    msg->setTransactionId(msg->getId());
-   msg->setHasTimeOut(transUnit.hasTimeOut);
+   msg->setHasTimeOut(TransUnit.hasTimeOut);
 
-   msg->setTimeOut(transUnit.timeOut);
+   msg->setTimeOut(TransUnit.timeOut);
 
-   sprintf(msgname, "tic-%d-to-%d routerMsg", transUnit.sender, transUnit.receiver);
+   sprintf(msgname, "tic-%d-to-%d routerMsg", TransUnit.sender, TransUnit.receiver);
    routerMsg *rMsg = new routerMsg(msgname);
-   if (destNodeToPath.count(transUnit.receiver) == 0){ //compute route and add to memoization table
-      vector<int> route = getRoute(transUnit.sender,transUnit.receiver);
-      destNodeToPath[transUnit.receiver] = route;
+   if (destNodeToPath.count(TransUnit.receiver) == 0){ //compute route and add to memoization table
+      vector<int> route = getRoute(TransUnit.sender,TransUnit.receiver);
+      destNodeToPath[TransUnit.receiver] = route;
       rMsg->setRoute(route);
    }
    else{
-      rMsg->setRoute(destNodeToPath[transUnit.receiver]);
+      rMsg->setRoute(destNodeToPath[TransUnit.receiver]);
    }
 
    rMsg->setHopCount(0);
@@ -1015,8 +983,8 @@ routerMsg *routerNode::generateTransactionMessage(transUnit transUnit)
 
 
 /*
- * processTransUnits - given an adjacent node, and transUnit queue of things to send to that node, sends
- *  transUnits until channel funds are too low by calling forwardMessage on message representing transUnit
+ * processTransUnits - given an adjacent node, and TransUnit queue of things to send to that node, sends
+ *  TransUnits until channel funds are too low by calling forwardMessage on message representing TransUnit
  */
 void routerNode:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *>>& q){
    bool successful = true;
@@ -1031,7 +999,7 @@ void routerNode:: processTransUnits(int dest, vector<tuple<int, double , routerM
 
 
 /*
- *  forwardTransactionMessage - given a message representing a transUnit, increments hopCount, finds next destination,
+ *  forwardTransactionMessage - given a message representing a TransUnit, increments hopCount, finds next destination,
  *      adjusts (decrements) channel balance, sends message to next node on route
  */
 bool routerNode::forwardTransactionMessage(routerMsg *msg)
@@ -1041,6 +1009,7 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg)
    //cout <<"forwardTransactionMesg: " << transMsg->getHasTimeOut() << endl;
 
    if (transMsg->getHasTimeOut() && (simTime() > (transMsg->getTimeSent() + transMsg->getTimeOut()))){
+       //TODO: change to check if transactionId is in canceledTransactions set
       msg->decapsulate();
       delete transMsg;
       delete msg;
@@ -1077,3 +1046,4 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg)
    }// end else (transMsg->getHasTimeOut() && (simTime() > (transMsg->getTimeSent() + transMsg->getTimeOut())
 
 }
+

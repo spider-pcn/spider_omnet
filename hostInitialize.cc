@@ -1,6 +1,16 @@
 #ifndef INITIALIZE_H
 #define INITIALIZE_H
-#include "initialize.h"
+#include "hostInitialize.h"
+
+double minVectorElemDouble(vector<double> v){
+    double min = v[0];
+    for (double d: v){
+        if (d<min){
+            min=d;
+        }
+    }
+    return min;
+}
 
 
 bool probesRecent(map<int, PathInfo> probes){
