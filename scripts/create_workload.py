@@ -8,9 +8,32 @@ import json
 
 SCALE_AMOUNT = 5
 
+
+# create simple line graph
+simple_line_graph = nx.Graph()
+simple_line_graph.add_edge(0, 1)
+simple_line_graph.add_edge(1, 2)
+simple_line_graph.add_edge(3, 2)
+
+# create hotnets topo
+hotnets_topo_graph = nx.Graph()
+hotnets_topo_graph.add_edge(3, 4)
+hotnets_topo_graph.add_edge(2, 3)
+hotnets_topo_graph.add_edge(2, 1)
+hotnets_topo_graph.add_edge(3, 1)
+hotnets_topo_graph.add_edge(0, 4)
+hotnets_topo_graph.add_edge(0, 1)
+
+# create simple deadlock
+simple_deadlock_graph = nx.Graph()
+simple_deadlock_graph.add_edge(0, 1)
+simple_deadlock_graph.add_edge(1, 2)
+
+
+
 # generates the start and end nodes for a fixed set of topologies - hotnets/line/simple graph
 def generate_workload_standard(filename, payment_graph_topo, workload_type, total_time, \
-        exp_size, txn_size_mean):
+        exp_size, txn_size_mean, generate_json_also):
     # define start and end nodes and amounts
     # edge a->b in payment graph appears in index i as start_nodes[i]=a, and end_nodes[i]=b
     if payment_graph_topo == 'hotnets_topo':
@@ -18,18 +41,25 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         end_nodes = [4,0,1,3,1,2,4,2]
         amt_relative = [1,2,1,2,1,2,2,1]
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+        graph = hotnets_topo_graph
 
     elif payment_graph_topo == 'simple_deadlock':
         start_nodes = [1,0,2]
         end_nodes = [2,2,0]
         amt_relative = [2,1,2]
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+        graph = simple_deadlock_graph
 
     elif payment_graph_topo == 'simple_line':
         start_nodes = [0,3]
         end_nodes = [3,0]
         amt_relative = [1,1]
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+        graph = simple_line_graph
+
+
+    if generate_json_also:
+        generate_json_files(filename + '.json', graph, start_nodes, end_nodes, amt_absolute)
 
     write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
             workload_type, total_time, exp_size, txn_size_mean)
