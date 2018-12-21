@@ -181,8 +181,8 @@ Register_Class(timeOutMsg)
 
 timeOutMsg::timeOutMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
 {
-    this->amount = 0;
     this->transactionId = 0;
+    this->receiver = 0;
 }
 
 timeOutMsg::timeOutMsg(const timeOutMsg& other) : ::omnetpp::cPacket(other)
@@ -204,32 +204,22 @@ timeOutMsg& timeOutMsg::operator=(const timeOutMsg& other)
 
 void timeOutMsg::copy(const timeOutMsg& other)
 {
-    this->amount = other.amount;
     this->transactionId = other.transactionId;
+    this->receiver = other.receiver;
 }
 
 void timeOutMsg::parsimPack(omnetpp::cCommBuffer *b) const
 {
     ::omnetpp::cPacket::parsimPack(b);
-    doParsimPacking(b,this->amount);
     doParsimPacking(b,this->transactionId);
+    doParsimPacking(b,this->receiver);
 }
 
 void timeOutMsg::parsimUnpack(omnetpp::cCommBuffer *b)
 {
     ::omnetpp::cPacket::parsimUnpack(b);
-    doParsimUnpacking(b,this->amount);
     doParsimUnpacking(b,this->transactionId);
-}
-
-double timeOutMsg::getAmount() const
-{
-    return this->amount;
-}
-
-void timeOutMsg::setAmount(double amount)
-{
-    this->amount = amount;
+    doParsimUnpacking(b,this->receiver);
 }
 
 int timeOutMsg::getTransactionId() const
@@ -240,6 +230,16 @@ int timeOutMsg::getTransactionId() const
 void timeOutMsg::setTransactionId(int transactionId)
 {
     this->transactionId = transactionId;
+}
+
+int timeOutMsg::getReceiver() const
+{
+    return this->receiver;
+}
+
+void timeOutMsg::setReceiver(int receiver)
+{
+    this->receiver = receiver;
 }
 
 class timeOutMsgDescriptor : public omnetpp::cClassDescriptor
@@ -334,8 +334,8 @@ const char *timeOutMsgDescriptor::getFieldName(int field) const
         field -= basedesc->getFieldCount();
     }
     static const char *fieldNames[] = {
-        "amount",
         "transactionId",
+        "receiver",
     };
     return (field>=0 && field<2) ? fieldNames[field] : nullptr;
 }
@@ -344,8 +344,8 @@ int timeOutMsgDescriptor::findField(const char *fieldName) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount() : 0;
-    if (fieldName[0]=='a' && strcmp(fieldName, "amount")==0) return base+0;
-    if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+1;
+    if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+0;
+    if (fieldName[0]=='r' && strcmp(fieldName, "receiver")==0) return base+1;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -358,7 +358,7 @@ const char *timeOutMsgDescriptor::getFieldTypeString(int field) const
         field -= basedesc->getFieldCount();
     }
     static const char *fieldTypeStrings[] = {
-        "double",
+        "int",
         "int",
     };
     return (field>=0 && field<2) ? fieldTypeStrings[field] : nullptr;
@@ -428,8 +428,8 @@ std::string timeOutMsgDescriptor::getFieldValueAsString(void *object, int field,
     }
     timeOutMsg *pp = (timeOutMsg *)object; (void)pp;
     switch (field) {
-        case 0: return double2string(pp->getAmount());
-        case 1: return long2string(pp->getTransactionId());
+        case 0: return long2string(pp->getTransactionId());
+        case 1: return long2string(pp->getReceiver());
         default: return "";
     }
 }
@@ -444,8 +444,8 @@ bool timeOutMsgDescriptor::setFieldValueAsString(void *object, int field, int i,
     }
     timeOutMsg *pp = (timeOutMsg *)object; (void)pp;
     switch (field) {
-        case 0: pp->setAmount(string2double(value)); return true;
-        case 1: pp->setTransactionId(string2long(value)); return true;
+        case 0: pp->setTransactionId(string2long(value)); return true;
+        case 1: pp->setReceiver(string2long(value)); return true;
         default: return false;
     }
 }

@@ -25,6 +25,7 @@
  * {
  *     int transactionId;
  *     int htlcIndex;
+ *     int pathIndex;
  *     double timeSent;
  *     bool isSuccess; //status, true for success, false for failure
  *     string secret = "";
@@ -38,6 +39,7 @@ class ackMsg : public ::omnetpp::cPacket
   protected:
     int transactionId;
     int htlcIndex;
+    int pathIndex;
     double timeSent;
     bool isSuccess;
     ::omnetpp::opp_string secret;
@@ -65,6 +67,8 @@ class ackMsg : public ::omnetpp::cPacket
     virtual void setTransactionId(int transactionId);
     virtual int getHtlcIndex() const;
     virtual void setHtlcIndex(int htlcIndex);
+    virtual int getPathIndex() const;
+    virtual void setPathIndex(int pathIndex);
     virtual double getTimeSent() const;
     virtual void setTimeSent(double timeSent);
     virtual bool getIsSuccess() const;

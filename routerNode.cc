@@ -277,8 +277,9 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                          // start queue searching
 
 
-                         vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
 
+                         vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
+                         sort_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end());
 
                          auto iterQueue = find_if((*queuedTransUnits).begin(),
                                (*queuedTransUnits).end(),
@@ -290,13 +291,14 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
 
 
                          if (iterQueue != (*queuedTransUnits).end()){
+
                             (*queuedTransUnits).erase(iterQueue);
-                            make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
+
                          }
 
 
 
-
+                         make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
                           //end queue searching
 
 

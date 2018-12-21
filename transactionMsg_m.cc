@@ -190,7 +190,7 @@ transactionMsg::transactionMsg(const char *name, short kind) : ::omnetpp::cPacke
     this->hasTimeOut = false;
     this->timeOut = 0;
     this->htlcIndex = 0;
-    this->routeIndex = 0;
+    this->pathIndex = 0;
 }
 
 transactionMsg::transactionMsg(const transactionMsg& other) : ::omnetpp::cPacket(other)
@@ -221,7 +221,7 @@ void transactionMsg::copy(const transactionMsg& other)
     this->hasTimeOut = other.hasTimeOut;
     this->timeOut = other.timeOut;
     this->htlcIndex = other.htlcIndex;
-    this->routeIndex = other.routeIndex;
+    this->pathIndex = other.pathIndex;
 }
 
 void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -236,7 +236,7 @@ void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->hasTimeOut);
     doParsimPacking(b,this->timeOut);
     doParsimPacking(b,this->htlcIndex);
-    doParsimPacking(b,this->routeIndex);
+    doParsimPacking(b,this->pathIndex);
 }
 
 void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -251,7 +251,7 @@ void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->hasTimeOut);
     doParsimUnpacking(b,this->timeOut);
     doParsimUnpacking(b,this->htlcIndex);
-    doParsimUnpacking(b,this->routeIndex);
+    doParsimUnpacking(b,this->pathIndex);
 }
 
 double transactionMsg::getAmount() const
@@ -344,14 +344,14 @@ void transactionMsg::setHtlcIndex(int htlcIndex)
     this->htlcIndex = htlcIndex;
 }
 
-int transactionMsg::getRouteIndex() const
+int transactionMsg::getPathIndex() const
 {
-    return this->routeIndex;
+    return this->pathIndex;
 }
 
-void transactionMsg::setRouteIndex(int routeIndex)
+void transactionMsg::setPathIndex(int pathIndex)
 {
-    this->routeIndex = routeIndex;
+    this->pathIndex = pathIndex;
 }
 
 class transactionMsgDescriptor : public omnetpp::cClassDescriptor
@@ -463,7 +463,7 @@ const char *transactionMsgDescriptor::getFieldName(int field) const
         "hasTimeOut",
         "timeOut",
         "htlcIndex",
-        "routeIndex",
+        "pathIndex",
     };
     return (field>=0 && field<10) ? fieldNames[field] : nullptr;
 }
@@ -481,7 +481,7 @@ int transactionMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='h' && strcmp(fieldName, "hasTimeOut")==0) return base+6;
     if (fieldName[0]=='t' && strcmp(fieldName, "timeOut")==0) return base+7;
     if (fieldName[0]=='h' && strcmp(fieldName, "htlcIndex")==0) return base+8;
-    if (fieldName[0]=='r' && strcmp(fieldName, "routeIndex")==0) return base+9;
+    if (fieldName[0]=='p' && strcmp(fieldName, "pathIndex")==0) return base+9;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -581,7 +581,7 @@ std::string transactionMsgDescriptor::getFieldValueAsString(void *object, int fi
         case 6: return bool2string(pp->getHasTimeOut());
         case 7: return double2string(pp->getTimeOut());
         case 8: return long2string(pp->getHtlcIndex());
-        case 9: return long2string(pp->getRouteIndex());
+        case 9: return long2string(pp->getPathIndex());
         default: return "";
     }
 }
@@ -605,7 +605,7 @@ bool transactionMsgDescriptor::setFieldValueAsString(void *object, int field, in
         case 6: pp->setHasTimeOut(string2bool(value)); return true;
         case 7: pp->setTimeOut(string2double(value)); return true;
         case 8: pp->setHtlcIndex(string2long(value)); return true;
-        case 9: pp->setRouteIndex(string2long(value)); return true;
+        case 9: pp->setPathIndex(string2long(value)); return true;
         default: return false;
     }
 }

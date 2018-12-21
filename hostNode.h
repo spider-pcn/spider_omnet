@@ -47,7 +47,8 @@ class hostNode : public cSimpleModule
 
    protected:
       virtual int myIndex(); //if host node, return getIndex(), if routerNode, return getIndex()+numHostNodes
-      virtual routerMsg *generateWaterfillingTransactionMessage(double amt, vector<int> path, transactionMsg * transMsg);
+      virtual routerMsg *generateWaterfillingTransactionMessage(double amt, vector<int> path, int pathIndex, transactionMsg * transMsg);
+      virtual routerMsg *generateWaterfillingTimeOutMessage( vector<int> path, int transactionId, int receiver);
       virtual routerMsg *generateTransactionMessage(TransUnit TransUnit);
       virtual routerMsg *generateAckMessage(routerMsg *msg);
           //generates ack message and destroys input parameter msg

@@ -24,6 +24,6 @@ packet transactionMsg
     bool hasTimeOut;
     double timeOut;
     int htlcIndex;
-    int routeIndex;
+    int pathIndex;
 }
 

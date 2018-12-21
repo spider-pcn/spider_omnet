@@ -23,17 +23,17 @@
  * <pre>
  * packet timeOutMsg
  * {
- *     double amount;
+ *     //double amount;
  *     int transactionId; //is messageID of transactionMsg
- * 
+ *     int receiver;
  * }
  * </pre>
  */
 class timeOutMsg : public ::omnetpp::cPacket
 {
   protected:
-    double amount;
     int transactionId;
+    int receiver;
 
   private:
     void copy(const timeOutMsg& other);
@@ -52,10 +52,10 @@ class timeOutMsg : public ::omnetpp::cPacket
     virtual void parsimUnpack(omnetpp::cCommBuffer *b) override;
 
     // field getter/setter methods
-    virtual double getAmount() const;
-    virtual void setAmount(double amount);
     virtual int getTransactionId() const;
     virtual void setTransactionId(int transactionId);
+    virtual int getReceiver() const;
+    virtual void setReceiver(int receiver);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const timeOutMsg& obj) {obj.parsimPack(b);}
