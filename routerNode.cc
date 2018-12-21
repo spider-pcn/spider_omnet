@@ -168,8 +168,8 @@ void routerNode::initialize()
 
 void routerNode::handleMessage(cMessage *msg)
 {
-    //cout << "Router Time: " << simTime() << endl;
-    //cout << "msg: " << msg->getName() << endl;
+   //cout << "Router Time: " << simTime() << endl;
+   //cout << "msg: " << msg->getName() << endl;
    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
    if (ttmsg->getMessageType()==ACK_MSG){ //preprocessor constants defined in routerMsg_m.h
       //cout << "[ROUTER "<< myIndex() <<": RECEIVED ACK MSG]"<< msg->getName() << endl;
@@ -248,59 +248,59 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
       int nextNode = get<3>(*it);
 
       if (simTime() > (msgArrivalTime + _maxTravelTime)){ //we can process it
-              map<tuple<int,int>, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-              auto iterIncoming = find_if((*incomingTransUnits).begin(),
-                                    (*incomingTransUnits).end(),
-                                    [&transactionId](const pair<tuple<int, int >, double> & p)
-                                    { return get<0>(p.first) == transactionId; });
-                      while (iterIncoming != (*incomingTransUnits).end()){
-                      if (iterIncoming != (*incomingTransUnits).end()){
-                         iterIncoming = (*incomingTransUnits).erase(iterIncoming);
+         map<tuple<int,int>, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+         auto iterIncoming = find_if((*incomingTransUnits).begin(),
+               (*incomingTransUnits).end(),
+               [&transactionId](const pair<tuple<int, int >, double> & p)
+               { return get<0>(p.first) == transactionId; });
+         while (iterIncoming != (*incomingTransUnits).end()){
+            if (iterIncoming != (*incomingTransUnits).end()){
+               iterIncoming = (*incomingTransUnits).erase(iterIncoming);
 
-                         tuple<int, int> tempId = make_tuple(transactionId, get<1>(iterIncoming -> first));
-                         // start queue searching
-                         vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
-                         sort_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end());
+               tuple<int, int> tempId = make_tuple(transactionId, get<1>(iterIncoming -> first));
+               // start queue searching
+               vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
+               sort_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end());
 
-                         auto iterQueue = find_if((*queuedTransUnits).begin(),
-                               (*queuedTransUnits).end(),
-                               [&tempId](const tuple<int, double, routerMsg*, Id>& p)
-                               { return (get<3>(p) == tempId); });
-                         if (iterQueue != (*queuedTransUnits).end()){
-                          iterQueue =   (*queuedTransUnits).erase(iterQueue);
+               auto iterQueue = find_if((*queuedTransUnits).begin(),
+                     (*queuedTransUnits).end(),
+                     [&tempId](const tuple<int, double, routerMsg*, Id>& p)
+                     { return (get<3>(p) == tempId); });
+               if (iterQueue != (*queuedTransUnits).end()){
+                  iterQueue =   (*queuedTransUnits).erase(iterQueue);
 
-                         }
+               }
 
-                         make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
-                      }
-                      auto iterIncoming = find_if((*incomingTransUnits).begin(),
-                                            (*incomingTransUnits).end(),
-                                            [&transactionId](const pair<tuple<int, int >, double> & p)
-                                            { return get<0>(p.first) == transactionId; });
-                      }
-              map<tuple<int,int>, double> *outgoingTransUnits = &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
+               make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
+            }
+            auto iterIncoming = find_if((*incomingTransUnits).begin(),
+                  (*incomingTransUnits).end(),
+                  [&transactionId](const pair<tuple<int, int >, double> & p)
+                  { return get<0>(p.first) == transactionId; });
+         }
+         map<tuple<int,int>, double> *outgoingTransUnits = &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
 
-              auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
-                                                 (*outgoingTransUnits).end(),
-                                                 [&transactionId](const pair<tuple<int, int >, double> & p)
-                                                 { return get<0>(p.first) == transactionId; });
+         auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
+               (*outgoingTransUnits).end(),
+               [&transactionId](const pair<tuple<int, int >, double> & p)
+               { return get<0>(p.first) == transactionId; });
 
-                      while (iterOutgoing != (*outgoingTransUnits).end()){
+         while (iterOutgoing != (*outgoingTransUnits).end()){
 
-                      if (iterOutgoing != (*outgoingTransUnits).end()){
-                         double amount = iterOutgoing -> second;
-                         nodeToPaymentChannel[nextNode].balance = nodeToPaymentChannel[nextNode].balance + amount;
-                        iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
+            if (iterOutgoing != (*outgoingTransUnits).end()){
+               double amount = iterOutgoing -> second;
+               nodeToPaymentChannel[nextNode].balance = nodeToPaymentChannel[nextNode].balance + amount;
+               iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
 
-                      }
+            }
 
-                      auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
-                                                         (*outgoingTransUnits).end(),
-                                                         [&transactionId](const pair<tuple<int, int >, double> & p)
-                                                         { return get<0>(p.first) == transactionId; });
-                      }
+            auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
+                  (*outgoingTransUnits).end(),
+                  [&transactionId](const pair<tuple<int, int >, double> & p)
+                  { return get<0>(p.first) == transactionId; });
+         }
 
-          it = canceledTransactions.erase(it);
+         it = canceledTransactions.erase(it);
       }
       else{
          it++;
@@ -349,7 +349,7 @@ void routerNode::forwardTimeOutMessage(routerMsg* msg){
    int nextDest = msg->getRoute()[msg->getHopCount()];
    //ackMsg *aMsg = check_and_cast<ackMsg *>(msg->getEncapsulatedPacket());
 
-  send(msg, nodeToPaymentChannel[nextDest].gate);
+   send(msg, nodeToPaymentChannel[nextDest].gate);
 
 }
 

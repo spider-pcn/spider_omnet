@@ -113,7 +113,7 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
       assert(p->path == pMsg->getPath());
 
       p->lastUpdated = simTime();
-     vector<double> pathBalances = pMsg->getPathBalances();
+      vector<double> pathBalances = pMsg->getPathBalances();
       int bottleneck = minVectorElemDouble(pathBalances);
 
       p->bottleneck = bottleneck ;
@@ -363,22 +363,22 @@ void hostNode::handleMessage(cMessage *msg)
 {
 
 
-    //cout << "Host Time:" << simTime() << endl;
-    //cout << "msg: " << msg->getName() << endl;
+   //cout << "Host Time:" << simTime() << endl;
+   //cout << "msg: " << msg->getName() << endl;
 
 
 
    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
 
    if (simTime() > _simulationLength){
-       if (ttmsg->getMessageType() == TRANSACTION_MSG){
+      if (ttmsg->getMessageType() == TRANSACTION_MSG){
          auto tempMsg = ttmsg->getEncapsulatedPacket();
          ttmsg->decapsulate();
          delete tempMsg;
          delete ttmsg;
          return;
-       }
-     }
+      }
+   }
 
 
    if (ttmsg->getMessageType()==ACK_MSG){ //preprocessor constants defined in routerMsg_m.h
@@ -424,7 +424,7 @@ void hostNode::handleMessage(cMessage *msg)
       //cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == CLEAR_STATE_MSG){
-     // cout<< "[HOST "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] " << msg->getName() << endl;
+      // cout<< "[HOST "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] " << msg->getName() << endl;
       handleClearStateMessage(ttmsg);
       //cout<< "[AFTER HANDLING:]  "<<endl;
    }
@@ -455,59 +455,59 @@ void hostNode::handleClearStateMessage(routerMsg* ttmsg){
       if (simTime() > (msgArrivalTime + _maxTravelTime)){ //we can process it
          if (prevNode != -1){
 
-             map<tuple<int,int>, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-             auto iterIncoming = find_if((*incomingTransUnits).begin(),
-                                   (*incomingTransUnits).end(),
-                                   [&transactionId](const pair<tuple<int, int >, double> & p)
-                                   { return get<0>(p.first) == transactionId; });
-                     while (iterIncoming != (*incomingTransUnits).end()){
-                     if (iterIncoming != (*incomingTransUnits).end()){
-                        iterIncoming = (*incomingTransUnits).erase(iterIncoming);
-                        tuple<int, int> tempId = make_tuple(transactionId, get<1>(iterIncoming->first));
-                        // start queue searching
-                        vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
-                        sort_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end());
+            map<tuple<int,int>, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+            auto iterIncoming = find_if((*incomingTransUnits).begin(),
+                  (*incomingTransUnits).end(),
+                  [&transactionId](const pair<tuple<int, int >, double> & p)
+                  { return get<0>(p.first) == transactionId; });
+            while (iterIncoming != (*incomingTransUnits).end()){
+               if (iterIncoming != (*incomingTransUnits).end()){
+                  iterIncoming = (*incomingTransUnits).erase(iterIncoming);
+                  tuple<int, int> tempId = make_tuple(transactionId, get<1>(iterIncoming->first));
+                  // start queue searching
+                  vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
+                  sort_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end());
 
-                        auto iterQueue = find_if((*queuedTransUnits).begin(),
-                              (*queuedTransUnits).end(),
-                              [&tempId](const tuple<int, double, routerMsg*, Id>& p)
-                              { return (get<3>(p) == tempId); });
-                        if (iterQueue != (*queuedTransUnits).end()){
-                          iterQueue= (*queuedTransUnits).erase(iterQueue);
-                        }
+                  auto iterQueue = find_if((*queuedTransUnits).begin(),
+                        (*queuedTransUnits).end(),
+                        [&tempId](const tuple<int, double, routerMsg*, Id>& p)
+                        { return (get<3>(p) == tempId); });
+                  if (iterQueue != (*queuedTransUnits).end()){
+                     iterQueue= (*queuedTransUnits).erase(iterQueue);
+                  }
 
-                        make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
-                         //end queue searching
-                     }
+                  make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
+                  //end queue searching
+               }
 
-                     auto iterIncoming = find_if((*incomingTransUnits).begin(),
-                                           (*incomingTransUnits).end(),
-                                           [&transactionId](const pair<tuple<int, int >, double> & p)
-                                           { return get<0>(p.first) == transactionId; });
-                     }
+               auto iterIncoming = find_if((*incomingTransUnits).begin(),
+                     (*incomingTransUnits).end(),
+                     [&transactionId](const pair<tuple<int, int >, double> & p)
+                     { return get<0>(p.first) == transactionId; });
+            }
 
          }
 
          if (nextNode != -1){
 
-             map<tuple<int,int>, double> *outgoingTransUnits = &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
-             auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
-                                                (*outgoingTransUnits).end(),
-                                                [&transactionId](const pair<tuple<int, int >, double> & p)
-                                                { return get<0>(p.first) == transactionId; });
+            map<tuple<int,int>, double> *outgoingTransUnits = &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
+            auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
+                  (*outgoingTransUnits).end(),
+                  [&transactionId](const pair<tuple<int, int >, double> & p)
+                  { return get<0>(p.first) == transactionId; });
 
-                     while (iterOutgoing != (*outgoingTransUnits).end()){
-                     if (iterOutgoing != (*outgoingTransUnits).end()){
-                        double amount = iterOutgoing -> second;
-                        nodeToPaymentChannel[nextNode].balance = nodeToPaymentChannel[nextNode].balance + amount;
-                       iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
-                     }
-                     auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
-                                                        (*outgoingTransUnits).end(),
-                                                        [&transactionId](const pair<tuple<int, int >, double> & p)
-                                                        { return get<0>(p.first) == transactionId; });
+            while (iterOutgoing != (*outgoingTransUnits).end()){
+               if (iterOutgoing != (*outgoingTransUnits).end()){
+                  double amount = iterOutgoing -> second;
+                  nodeToPaymentChannel[nextNode].balance = nodeToPaymentChannel[nextNode].balance + amount;
+                  iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
+               }
+               auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
+                     (*outgoingTransUnits).end(),
+                     [&transactionId](const pair<tuple<int, int >, double> & p)
+                     { return get<0>(p.first) == transactionId; });
 
-                     }
+            }
          }
 
          it = canceledTransactions.erase(it);
@@ -587,27 +587,27 @@ void hostNode::handleTimeOutMessage(routerMsg* ttmsg){ //TODO: fix handleTimeOut
    if ((ttmsg->getHopCount())==0){ //is at the sender
 
       if (_useWaterfilling){
-          int transactionId = toutMsg->getTransactionId();
-          int destination = toutMsg->getReceiver();
-          // map<int, map<int, PathInfo>> nodeToShortestPathsMap = {};
-          for (auto p : (nodeToShortestPathsMap[destination])){
-              int pathIndex = p.first;
-              tuple<int,int> key = make_tuple(transactionId, pathIndex);
-              if (transPathToAckState.count(key)==0){
-                  //do not generate time out msg for path
-              }
-              else if(transPathToAckState[key].amtSent == transPathToAckState[key].amtReceived){
-                  //do not generate time out msg for path
-              }
-              else{
-                 // cout << "sent time out msg" << endl;
-                  routerMsg* waterTimeOutMsg = generateWaterfillingTimeOutMessage(
-                          nodeToShortestPathsMap[destination][p.first].path, transactionId, destination);
-                  //TODO: forwardTimeOutMsg
-                  forwardTimeOutMessage(waterTimeOutMsg);
-              }
-          }
-          delete ttmsg;
+         int transactionId = toutMsg->getTransactionId();
+         int destination = toutMsg->getReceiver();
+         // map<int, map<int, PathInfo>> nodeToShortestPathsMap = {};
+         for (auto p : (nodeToShortestPathsMap[destination])){
+            int pathIndex = p.first;
+            tuple<int,int> key = make_tuple(transactionId, pathIndex);
+            if (transPathToAckState.count(key)==0){
+               //do not generate time out msg for path
+            }
+            else if(transPathToAckState[key].amtSent == transPathToAckState[key].amtReceived){
+               //do not generate time out msg for path
+            }
+            else{
+               // cout << "sent time out msg" << endl;
+               routerMsg* waterTimeOutMsg = generateWaterfillingTimeOutMessage(
+                     nodeToShortestPathsMap[destination][p.first].path, transactionId, destination);
+               //TODO: forwardTimeOutMsg
+               forwardTimeOutMessage(waterTimeOutMsg);
+            }
+         }
+         delete ttmsg;
 
       }
       else{
@@ -684,13 +684,13 @@ void hostNode::handleAckMessage(routerMsg* ttmsg){ //TODO: fix handleAckMessage
 
    }
    else if(aMsg->getHasTimeOut()  && _useWaterfilling){
-       tuple<int,int> key = make_tuple(aMsg->getTransactionId(), aMsg->getPathIndex());
+      tuple<int,int> key = make_tuple(aMsg->getTransactionId(), aMsg->getPathIndex());
 
-       transPathToAckState[key].amtReceived = transPathToAckState[key].amtReceived + aMsg->getAmount();
+      transPathToAckState[key].amtReceived = transPathToAckState[key].amtReceived + aMsg->getAmount();
 
-        if (transPathToAckState[key].amtReceived == transPathToAckState[key].amtSent){
-           transPathToAckState.erase(key);
-       }
+      if (transPathToAckState[key].amtReceived == transPathToAckState[key].amtSent){
+         transPathToAckState.erase(key);
+      }
 
    }
 
@@ -743,7 +743,7 @@ routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg){ //default is false
    aMsg->setHasTimeOut(hasTimeOut);
    aMsg->setHtlcIndex(transMsg->getHtlcIndex());
    if (_useWaterfilling){
-       aMsg->setPathIndex(transMsg->getPathIndex());
+      aMsg->setPathIndex(transMsg->getPathIndex());
    }
    //no need to set secret;
    vector<int> route=ttmsg->getRoute();
@@ -866,11 +866,11 @@ routerMsg* hostNode::generateWaterfillingTransactionMessage(double amt, vector<i
    int htlcIndex = 0;
    msg->setTransactionId(transactionId);
    if (transactionIdToNumHtlc.count(transactionId) == 0){
-       transactionIdToNumHtlc[transactionId] = 1;
+      transactionIdToNumHtlc[transactionId] = 1;
    }
    else{
-       htlcIndex =  transactionIdToNumHtlc[transactionId];
-       transactionIdToNumHtlc[transactionId] = transactionIdToNumHtlc[transactionId] + 1;
+      htlcIndex =  transactionIdToNumHtlc[transactionId];
+      transactionIdToNumHtlc[transactionId] = transactionIdToNumHtlc[transactionId] + 1;
    }
 
    msg->setHtlcIndex(htlcIndex);
@@ -894,21 +894,21 @@ routerMsg* hostNode::generateWaterfillingTransactionMessage(double amt, vector<i
 
 routerMsg* hostNode::generateWaterfillingTimeOutMessage( vector<int> path, int transactionId, int receiver){
 
-       char msgname[MSGSIZE];
-       sprintf(msgname, "tic-%d-to-%d water-timeOutMsg", myIndex(), receiver);
-       timeOutMsg *msg = new timeOutMsg(msgname);
+   char msgname[MSGSIZE];
+   sprintf(msgname, "tic-%d-to-%d water-timeOutMsg", myIndex(), receiver);
+   timeOutMsg *msg = new timeOutMsg(msgname);
 
-       msg->setReceiver(receiver);
-       msg->setTransactionId(transactionId);
+   msg->setReceiver(receiver);
+   msg->setTransactionId(transactionId);
 
-       sprintf(msgname, "tic-%d-to-%d water-router-timeOutMsg", myIndex(), receiver);
-       routerMsg *rMsg = new routerMsg(msgname);
-       rMsg->setRoute(path);
+   sprintf(msgname, "tic-%d-to-%d water-router-timeOutMsg", myIndex(), receiver);
+   routerMsg *rMsg = new routerMsg(msgname);
+   rMsg->setRoute(path);
 
-       rMsg->setHopCount(0);
-       rMsg->setMessageType(TIME_OUT_MSG);
-       rMsg->encapsulate(msg);
-       return rMsg;
+   rMsg->setHopCount(0);
+   rMsg->setMessageType(TIME_OUT_MSG);
+   rMsg->encapsulate(msg);
+   return rMsg;
 }
 
 
@@ -956,25 +956,25 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
    transMsg->setAmount(remainingAmt);
 
    for (auto p: pathMap){
-       tuple<int,int> key = make_tuple(transMsg->getTransactionId(),p.first); //key is (transactionId, pathIndex)
+      tuple<int,int> key = make_tuple(transMsg->getTransactionId(),p.first); //key is (transactionId, pathIndex)
 
-       //update the data structure keeping track of how much sent and received on each path
-       if (transPathToAckState.count(key) == 0){
-           AckState temp = {};
-           temp.amtSent = p.second;
-           temp.amtReceived = 0;
-           transPathToAckState[key] = temp;
-       }
-       else{
-           transPathToAckState[key].amtSent =  transPathToAckState[key].amtSent + p.second;
-       }
+      //update the data structure keeping track of how much sent and received on each path
+      if (transPathToAckState.count(key) == 0){
+         AckState temp = {};
+         temp.amtSent = p.second;
+         temp.amtReceived = 0;
+         transPathToAckState[key] = temp;
+      }
+      else{
+         transPathToAckState[key].amtSent =  transPathToAckState[key].amtSent + p.second;
+      }
 
-        vector<int> path = nodeToShortestPathsMap[destNode][p.first].path;
-        double amt = p.second;
-        routerMsg* waterMsg = generateWaterfillingTransactionMessage(amt, path, p.first, transMsg); //TODO:
-        handleTransactionMessage(waterMsg);
-     }
-     //cout << "number of probes after water gen: " <<  nodeToShortestPathsMap[destNode].size();
+      vector<int> path = nodeToShortestPathsMap[destNode][p.first].path;
+      double amt = p.second;
+      routerMsg* waterMsg = generateWaterfillingTransactionMessage(amt, path, p.first, transMsg); //TODO:
+      handleTransactionMessage(waterMsg);
+   }
+   //cout << "number of probes after water gen: " <<  nodeToShortestPathsMap[destNode].size();
 
 
 }
@@ -986,7 +986,7 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
  */
 void hostNode::handleTransactionMessage(routerMsg* ttmsg){
 
-    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+   transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
 
 
 
@@ -1052,19 +1052,19 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
             bool recent = probesRecent(nodeToShortestPathsMap[destNode]);
 
             if (recent){ // we made sure all the probes are back
-              splitTransactionForWaterfilling(ttmsg);
+               splitTransactionForWaterfilling(ttmsg);
                if (transMsg->getAmount()>0){
-                                scheduleAt(simTime() + 1, ttmsg);
-                            }
-                            else{
-                            ttmsg->decapsulate();
-                            delete transMsg;
-                            delete ttmsg;
-                            //delete transMsg?
-                            return;
-                            }
+                  scheduleAt(simTime() + 1, ttmsg);
+               }
+               else{
+                  ttmsg->decapsulate();
+                  delete transMsg;
+                  delete ttmsg;
+                  //delete transMsg?
+                  return;
+               }
 
-                return;
+               return;
             }
             else{
                scheduleAt(simTime() + 1, ttmsg);
@@ -1073,7 +1073,7 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
          }
          int nextNode = ttmsg->getRoute()[hopcount+1];
          q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
-                  tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
+         tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
          (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
                   ttmsg, key));
          push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
