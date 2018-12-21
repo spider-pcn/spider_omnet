@@ -19,9 +19,7 @@
 #include <map>
 #include <fstream>
 #include "global.h"
-#include "TransUnit.h"
-#include "PaymentChannel.h"
-#include "PathInfo.h"
+
 
 using namespace std;
 using namespace omnetpp;

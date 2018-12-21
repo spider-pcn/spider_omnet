@@ -1,4 +1,5 @@
 import routerNode;
+import hostNode;
 
 network simpleNet
 {
@@ -6,11 +7,21 @@ network simpleNet
 		double linkDelay @unit("s") = default(100us);
 		double linkDataRate @unit("Gbps") = default(1Gbps);
 	submodules:
-		node[3]: routerNode {}
-      connections: 
-                  
-		node[0].out++ --> {delay = 30.0ms; } --> node[1].in++;  
-		node[0].in++ <-- {delay = 30.0ms; } <-- node[1].out++;  
-		node[1].out++ --> {delay = 30.0ms; } --> node[2].in++;  
-		node[1].in++ <-- {delay = 30.0ms; } <-- node[2].out++;  
+	    host[2]: hostNode {}
+		router[3]: routerNode {} 
+		
+ connections: 
+     	router[0].out++ --> {delay = 30.0ms; } --> host[0].in++;  
+		router[0].in++ <-- {delay = 30.0ms; } <-- host[0].out++; 
+     	
+		router[0].out++ --> {delay = 30.0ms; } --> router[1].in++;  
+		router[0].in++ <-- {delay = 30.0ms; } <-- router[1].out++; 
+		 
+		router[1].out++ --> {delay = 30.0ms; } --> router[2].in++;  
+		router[1].in++ <-- {delay = 30.0ms; } <-- router[2].out++;  
+		
+		
+		router[2].out++ --> {delay = 30.0ms; } --> host[1].in++;  
+		router[2].in++ <-- {delay = 30.0ms; } <-- host[1].out++; 
+		
 }

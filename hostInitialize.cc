@@ -34,7 +34,7 @@ vector<int> getRoute(int sender, int receiver){
 
   // printf("sender: %i; receiver: %i \n [", sender, receiver);
    //vector<int> route =  breadthFirstSearch(sender, receiver);
-   vector<int> route = dijkstraInputGraph(sender, receiver, channels);
+   vector<int> route = dijkstraInputGraph(sender, receiver, _channels);
 
 /*
    for (int i=0; i<(int)route.size(); i++){
@@ -61,17 +61,18 @@ template <class T,class S> struct pair_equal_to : binary_function <T,pair<T,S>,b
   }
 };
 
-map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> channels, vector<int> route){
-    for (int i=0; i<route.size()-1; i++){
-         int start = route[i];
+map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> _channels, vector<int> route){
+    for (int i=0; i< (route.size() -1); i++){
+        cout << i << "-th iteration out of "<< (route.size() - 1) << endl;
+        int start = route[i];
          int end = route[i+1];
 
 
-         vector< pair <int, int> >::iterator it = find_if(channels[start].begin(),channels[start].end(),bind1st(pair_equal_to<int,int>(),end));
-         channels[start].erase(it);
+         vector< pair <int, int> >::iterator it = find_if(_channels[start].begin(),_channels[start].end(),bind1st(pair_equal_to<int,int>(),end));
+         _channels[start].erase(it);
     }
 
-    return channels;
+    return _channels;
 }
 
 
@@ -81,14 +82,15 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
   //do searching without regard for channel capacities, DFS right now
 
     printf("sender: %i; receiver: %i \n ", sender, receiver);
+    cout<<endl;
        //vector<int> route =  breadthFirstSearch(sender, receiver);
        // print channels
     vector<vector<int>> shortestRoutes = {};
     vector<int> route;
-    auto tempChannels = channels;
+    auto tempChannels = _channels;
 
     for (int it = 0; it<k; it++){
-        /*
+
         printf("%d print of channels\n", it );
           for (auto i : tempChannels){
               printf("key: %d [",i.first);
@@ -98,9 +100,9 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
 
               printf("] \n");
           }
-          */
+          cout<<endl;
         route = dijkstraInputGraph(sender, receiver, tempChannels);
-        /*
+
         printf("%d-th route: ", it);
 
         for (int i=0; i<(int)route.size(); i++){
@@ -109,16 +111,19 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
 
 
         printf("\n");
+        cout << "route size: " << route.size() << endl;
 
-        */
 
-        if (route.size() == 1){
+        if (route.size() <= 1){
             return shortestRoutes;
         }
         else{
             shortestRoutes.push_back(route);
         }
+        cout << "getKShortestRoutes 1" <<endl;
+        cout << "route size: " << route.size() << endl;
         tempChannels = removeRoute(tempChannels,route);
+        cout << "getKShortestRoutes 2" <<endl;
     }
 
     return shortestRoutes;
@@ -150,7 +155,7 @@ int minDistance(int dist[],
     int min = INT_MAX;
     int min_index = -1;
 
-    for (int v = 0; v < numNodes; v++)
+    for (int v = 0; v < _numNodes; v++)
         if (sptSet[v] == false &&
                    dist[v] <= min)
             min = dist[v], min_index = v;
@@ -206,7 +211,7 @@ void printSolution(int dist[], int source,
 {
     int src = source;
     printf("Vertex\t Distance\tPath");
-    for (int i = 0; i < numNodes; i++)
+    for (int i = 0; i < _numNodes; i++)
     {
         printf("\n%d -> %d \t\t %d\t\t%d ",
                       src, i, dist[i], src);
@@ -234,16 +239,16 @@ struct CompareFirst
 
 vector<int> dijkstraInputGraph(int src,  int dest, map<int, vector<pair<int,int>>> channels){
     // The output array. dist[i] will hold the shortest distance from src to i
-      int dist[numNodes];
+      int dist[_numNodes];
 
       // sptSet[i] will true if vertex i is included / in shortest path tree or shortest distance from src to i is finalized
-      bool sptSet[numNodes];
+      bool sptSet[_numNodes];
 
       // Parent array to store shortest path tree
-      int parent[numNodes];
+      int parent[_numNodes];
 
       // Initialize all distances as INFINITE and stpSet[] as false
-      for (int i = 0; i < numNodes; i++)
+      for (int i = 0; i < _numNodes; i++)
       {
           parent[src] = -1;
           dist[i] = INT_MAX;
@@ -255,7 +260,7 @@ vector<int> dijkstraInputGraph(int src,  int dest, map<int, vector<pair<int,int>
       dist[src] = 0;
 
       // Find shortest path for all vertices
-      for (int count = 0; count < numNodes - 1; count++)
+      for (int count = 0; count < _numNodes - 1; count++)
       {
           // Pick the minimum distance vertex from the set of vertices not yet processed.
           // u is always equal to src in first iteration.
@@ -307,16 +312,16 @@ vector<int> dijkstraInputGraph(int src,  int dest, map<int, vector<pair<int,int>
 
 void dijkstraInputGraphTemp(int src,  int dest, map<int, vector<pair<int,int>>> channels){
    // The output array. dist[i] will hold the shortest distance from src to i
-     int dist[numNodes];
+     int dist[_numNodes];
 
      // sptSet[i] will true if vertex i is included / in shortest path tree or shortest distance from src to i is finalized
-     bool sptSet[numNodes];
+     bool sptSet[_numNodes];
 
      // Parent array to store shortest path tree
-     int parent[numNodes];
+     int parent[_numNodes];
 
      // Initialize all distances as INFINITE and stpSet[] as false
-     for (int i = 0; i < numNodes; i++)
+     for (int i = 0; i < _numNodes; i++)
      {
          parent[src] = -1;
          parent[i] = -2;
@@ -328,7 +333,7 @@ void dijkstraInputGraphTemp(int src,  int dest, map<int, vector<pair<int,int>>> 
      dist[src] = 0;
 
      // Find shortest path for all vertices
-     for (int count = 0; count < numNodes - 1; count++)
+     for (int count = 0; count < _numNodes - 1; count++)
      {
          // Pick the minimum distance vertex from the set of vertices not yet processed.
          // u is always equal to src in first iteration.
@@ -347,7 +352,7 @@ void dijkstraInputGraphTemp(int src,  int dest, map<int, vector<pair<int,int>>> 
          for (vectIter = channels[u].begin(); vectIter != channels[u].end(); vectIter++){
 
 
-             for (int ka=0; ka<numNodes; ka++){
+             for (int ka=0; ka<_numNodes; ka++){
                      printf("[%i]: %i,  ", ka, parent[ka] );
 
                  }
@@ -370,7 +375,7 @@ void dijkstraInputGraphTemp(int src,  int dest, map<int, vector<pair<int,int>>> 
 
      // print the constructed
      // distance array
-     for (int ka=0; ka<numNodes; ka++){
+     for (int ka=0; ka<_numNodes; ka++){
          printf("[%i]: %i,  ", ka, parent[ka] );
 
      }
@@ -395,16 +400,16 @@ vector<int> dijkstra(int src,  int dest)
 {
 
     // The output array. dist[i] will hold the shortest distance from src to i
-    int dist[numNodes];
+    int dist[_numNodes];
 
     // sptSet[i] will true if vertex i is included / in shortest path tree or shortest distance from src to i is finalized
-    bool sptSet[numNodes];
+    bool sptSet[_numNodes];
 
     // Parent array to store shortest path tree
-    int parent[numNodes];
+    int parent[_numNodes];
 
     // Initialize all distances as INFINITE and stpSet[] as false
-    for (int i = 0; i < numNodes; i++)
+    for (int i = 0; i < _numNodes; i++)
     {
         parent[src] = -1;
         dist[i] = INT_MAX;
@@ -415,7 +420,7 @@ vector<int> dijkstra(int src,  int dest)
     dist[src] = 0;
 
     // Find shortest path for all vertices
-    for (int count = 0; count < numNodes - 1; count++)
+    for (int count = 0; count < _numNodes - 1; count++)
     {
         // Pick the minimum distance vertex from the set of vertices not yet processed.
         // u is always equal to src in first iteration.
@@ -426,7 +431,7 @@ vector<int> dijkstra(int src,  int dest)
 
         vector<pair<int,int>>::iterator vectIter;
         // Update dist value of the adjacent vertices of the picked vertex.
-        for (vectIter = channels[u].begin(); vectIter != channels[u].end(); vectIter++){
+        for (vectIter = _channels[u].begin(); vectIter != _channels[u].end(); vectIter++){
 
             // Update dist[v] only if is not in sptSet, there is an edge from u to v, and
             // total weight of path from src to v through u is smaller than current value of dist[v]
@@ -462,8 +467,8 @@ vector<int> dijkstra(int src,  int dest)
 
 vector<int> breadthFirstSearch(int sender, int receiver){
    deque<vector<int>> nodesToVisit;
-   bool visitedNodes[numNodes];
-   for (int i=0; i<numNodes; i++){
+   bool visitedNodes[_numNodes];
+   for (int i=0; i<_numNodes; i++){
       visitedNodes[i] =false;
    }
    visitedNodes[sender] = true;
@@ -477,19 +482,19 @@ vector<int> breadthFirstSearch(int sender, int receiver){
       vector<int> current = nodesToVisit[0];
       nodesToVisit.pop_front();
       int lastNode = current.back();
-      for (int i=0; i<(int)channels[lastNode].size();i++){
+      for (int i=0; i<(int)_channels[lastNode].size();i++){
 
-         if (!visitedNodes[channels[lastNode][i].first]){
+         if (!visitedNodes[_channels[lastNode][i].first]){
             temp = current; // assignment copies in case of vector
-            temp.push_back(channels[lastNode][i].first);
+            temp.push_back(_channels[lastNode][i].first);
             nodesToVisit.push_back(temp);
-            visitedNodes[channels[lastNode][i].first] = true;
+            visitedNodes[_channels[lastNode][i].first] = true;
 
-            if (channels[lastNode][i].first==receiver){
+            if (_channels[lastNode][i].first==receiver){
 
                return temp;
-            } //end if (channels[lastNode][i]==receiver)
-         } //end if (!visitedNodes[channels[lastNode][i]])
+            } //end if (_channels[lastNode][i]==receiver)
+         } //end if (!visitedNodes[_channels[lastNode][i]])
       }//end for (i)
    }//end while
    vector<int> empty;
@@ -500,6 +505,14 @@ vector<int> breadthFirstSearch(int sender, int receiver){
 /* set_num_nodes -
  */
 void setNumNodes(string topologyFile){
+    //TEMPORARILY hardcode
+
+     _numNodes = 5;
+          _numHostNodes = 2;
+          _numRouterNodes = 3;
+          return;
+
+
    int maxNode = -1;
    string line;
    ifstream myfile (topologyFile);
@@ -522,7 +535,7 @@ void setNumNodes(string topologyFile){
    }
 
    else cout << "Unable to open file";
-   numNodes = maxNode + 1;
+   _numNodes = maxNode + 1;
    return;
 }
 
@@ -532,8 +545,46 @@ void setNumNodes(string topologyFile){
  *      each line of file is of form
  *      [node1] [node2] [1->2 delay] [2->1 delay] [balance at node1 end] [balance at node2 end]
  */
-void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,int>>> &channels, map<tuple<int,int>,double> &balances){
-   string line;
+void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,int>>> &_channels, map<tuple<int,int>,double> &_balances){
+    //TEMPORARILY - hardcode _channels map
+          vector<pair<int,int>> tempVector0 = {};
+          tempVector0.push_back(make_pair(2,30));
+          _channels[0] = tempVector0;
+
+          vector<pair<int,int>> tempVector1 = {};
+          tempVector1.push_back(make_pair(4,30));
+          _channels[1] = tempVector1;
+
+
+          vector<pair<int,int>> tempVector2 = {};
+                tempVector2.push_back(make_pair(0,30));
+                tempVector2.push_back(make_pair(3,30));
+                _channels[2] = tempVector2;
+
+
+                vector<pair<int,int>> tempVector3 = {};
+                      tempVector3.push_back(make_pair(2,30));
+                      tempVector3.push_back(make_pair(4,30));
+                      _channels[3] = tempVector3;
+
+
+                      vector<pair<int,int>> tempVector4 = {};
+                            tempVector4.push_back(make_pair(3,30));
+                            tempVector4.push_back(make_pair(1,30));
+                            _channels[4] = tempVector4;
+
+          //TEMPORARILY - hardcode balances map
+          for (auto start: _channels){
+              for (auto end: _channels[start.first]){
+
+                  _balances[make_tuple(start.first , get<0>(end))] = 100 ;
+              }
+          }
+          return;
+
+
+
+    string line;
    ifstream myfile (topologyFile);
    if (myfile.is_open())
    {
@@ -541,34 +592,34 @@ void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,i
       {
          vector<string> data = split(line, ' ');
 
-         //generate channels - adjacency map
+         //generate _channels - adjacency map
          int node1 = stoi(data[0]); //
          int node2 = stoi(data[1]); //
          int delay1to2 = stoi(data[2]);
          int delay2to1 = stoi(data[3]);
-         if (channels.count(node1)==0){ //node 1 is not in map
+         if (_channels.count(node1)==0){ //node 1 is not in map
             vector<pair<int,int>> tempVector = {};
             tempVector.push_back(make_pair(node2,delay1to2));
-            channels[node1] = tempVector;
+            _channels[node1] = tempVector;
          }
          else{ //(node1 is in map)
-            channels[node1].push_back(make_pair(node2,delay1to2));
+            _channels[node1].push_back(make_pair(node2,delay1to2));
          }
 
-         if (channels.count(node2)==0){ //node 1 is not in map
+         if (_channels.count(node2)==0){ //node 1 is not in map
             vector<pair<int,int>> tempVector = {make_pair(node1,delay2to1)};
-            channels[node2] = tempVector;
+            _channels[node2] = tempVector;
          }
          else{ //(node1 is in map)
-            channels[node2].push_back(make_pair(node1, delay2to1));
+            _channels[node2].push_back(make_pair(node1, delay2to1));
          }
 
 
-         //generate balances map
+         //generate _balances map
          double balance1 = stod( data[4]);
          double balance2 = stod( data[5]);
-         balances[make_tuple(node1,node2)] = balance1;
-         balances[make_tuple(node2,node1)] = balance2;
+         _balances[make_tuple(node1,node2)] = balance1;
+         _balances[make_tuple(node2,node1)] = balance2;
       }
       myfile.close();
    }
@@ -582,7 +633,7 @@ void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,i
  *      each line of file is of form:
  *      [amount] [timeSent] [sender] [receiver] [priorityClass]
  */
-void generateTransUnitList(string workloadFile, vector<transUnit> &trans_unit_list){
+void generateTransUnitList(string workloadFile, vector<TransUnit> &_transUnitList){
    string line;
    ifstream myfile (workloadFile);
    if (myfile.is_open())
@@ -606,10 +657,10 @@ void generateTransUnitList(string workloadFile, vector<transUnit> &trans_unit_li
          }
 
          // instantiate all the transUnits that need to be sent
-         transUnit tempTU = transUnit(amount, timeSent, sender, receiver, priorityClass, hasTimeOut, timeOut);
+         TransUnit tempTU = TransUnit(amount, timeSent, sender, receiver, priorityClass, hasTimeOut, timeOut);
 
          // add all the transUnits into global list
-         trans_unit_list.push_back(tempTU);
+         _transUnitList.push_back(tempTU);
 
       }
       myfile.close();

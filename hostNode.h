@@ -19,9 +19,7 @@
 #include <map>
 #include <fstream>
 #include "global.h"
-#include "TransUnit.h"
-#include "PaymentChannel.h"
-#include "PathInfo.h"
+
 
 using namespace std;
 using namespace omnetpp;
@@ -29,13 +27,14 @@ using namespace omnetpp;
 class hostNode : public cSimpleModule
 {
    private:
+
       string topologyFile_;
       string workloadFile_;
       map<int, PaymentChannel> nodeToPaymentChannel;
       vector<int> statNumCompleted;
       vector<int> statNumAttempted;
       map<int, vector<int>> destNodeToPath; //store shortest paths
-      map<int, map<int, PathInfo>> nodeToShortestPathsMap; //store k shortest paths in waterfilling
+      map<int, map<int, PathInfo>> nodeToShortestPathsMap = {}; //store k shortest paths in waterfilling
       simsignal_t completionTimeSignal;
       vector<simsignal_t> numCompletedPerDestSignals;
       vector<simsignal_t> numAttemptedPerDestSignals;

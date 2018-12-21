@@ -1,7 +1,8 @@
-simple routerNode
+simple hostNode
 {
 	parameters:
-	    bool isHost = false;
+	    bool isHost = true;
+	    
 		string topologyFile = default("sample-topology.txt");
 		string workloadFile = default("sample-workload.txt");
 		
@@ -18,7 +19,13 @@ simple routerNode
 
 		@signal[numSentPerChannel*](type="long");  
 		@statisticTemplate[numSentPerChannelTemplate](record=vector, stats);   
-		
+
+		@signal[numCompletedPerDest*](type="long");  
+		@statisticTemplate[numCompletedPerDestTemplate](record=vector, stats);   
+
+		@signal[numAttemptedPerDest*](type="long"); 
+		@statisticTemplate[numAttemptedPerDestTemplate](record=vector, stats);   
+
 		@signal[balancePerChannel*](type="long"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
 

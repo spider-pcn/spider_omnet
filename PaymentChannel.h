@@ -1,3 +1,7 @@
+
+using namespace std;
+using namespace omnetpp;
+
 class PaymentChannel{
 public:
     //channel information

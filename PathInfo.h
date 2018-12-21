@@ -1,3 +1,7 @@
+
+using namespace std;
+using namespace omnetpp;
+
 class PathInfo{
 public:
     vector<int> path;
