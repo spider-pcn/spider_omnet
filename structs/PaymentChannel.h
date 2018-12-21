@@ -2,14 +2,16 @@
 using namespace std;
 using namespace omnetpp;
 
+typedef tuple<int,int> Id;
+
 class PaymentChannel{
 public:
     //channel information
     cGate* gate;
     double balance;
-    vector<tuple<int, double, routerMsg*, int>> queuedTransUnits; //make_heap in initialization
-    map<int, double> incomingTransUnits; //(key,value) := (transactionId, amount)
-    map<int, double> outgoingTransUnits;
+    vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits; //make_heap in initialization
+    map<Id, double> incomingTransUnits; //(key,value) := ((transactionId, htlcIndex), amount)
+    map<Id, double> outgoingTransUnits;
 
     //statistics - ones for per payment channel
     int statNumProcessed;

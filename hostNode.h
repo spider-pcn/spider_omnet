@@ -40,7 +40,8 @@ class hostNode : public cSimpleModule
       vector< TransUnit > myTransUnits; //list of TransUnits that have me as sender
       set<int> successfulDoNotSendTimeOut; //set of transaction units WITH timeouts, that we already received acks for
       set<CanceledTrans> canceledTransactions = {};
-      map<tuple<int,int>,AckState> transPathToAckState;
+      map<tuple<int,int>,AckState> transPathToAckState = {}; //key is (transactionId, routeIndex)
+      map<int, int> transactionIdToNumHtlc = {}; //allows us to calculate the htlcIndex number
 
 
 
@@ -72,7 +73,7 @@ class hostNode : public cSimpleModule
       virtual void forwardTimeOutMessage(routerMsg *msg);
       virtual void forwardProbeMessage(routerMsg *msg);
       virtual void sendUpdateMessage(routerMsg *msg);
-      virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, int>>& q);
+      virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q);
       virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode);
       virtual void deleteMessagesInQueues();
 };

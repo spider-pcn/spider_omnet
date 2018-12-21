@@ -55,7 +55,7 @@ class routerNode : public cSimpleModule
       virtual void forwardTimeOutMessage(routerMsg *msg);
       virtual void forwardProbeMessage(routerMsg *msg);
       virtual void sendUpdateMessage(routerMsg *msg);
-      virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, int>>& q);
+      virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q);
       //virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode);
       virtual void deleteMessagesInQueues();
 

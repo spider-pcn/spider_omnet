@@ -17,5 +17,6 @@ packet updateMsg
 {
     double amount;
     int transactionId; //is messageID of transactionMsg
+    int htlcIndex;
 }
 

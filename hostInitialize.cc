@@ -3,25 +3,25 @@
 #include "hostInitialize.h"
 
 double minVectorElemDouble(vector<double> v){
-    double min = v[0];
-    for (double d: v){
-        if (d<min){
-            min=d;
-        }
-    }
-    return min;
+   double min = v[0];
+   for (double d: v){
+      if (d<min){
+         min=d;
+      }
+   }
+   return min;
 }
 
 
 bool probesRecent(map<int, PathInfo> probes){
-    for (auto iter : probes){
-        int key = iter.first;
-        if ((iter.second).lastUpdated == -1){
-            return false;
-        }
+   for (auto iter : probes){
+      int key = iter.first;
+      if ((iter.second).lastUpdated == -1){
+         return false;
+      }
 
-    }
-    return true;
+   }
+   return true;
 }
 
 /*get_route- take in sender and receiver graph indicies, and returns
@@ -29,116 +29,116 @@ bool probesRecent(map<int, PathInfo> probes){
  *  includes sender and reciever as first and last entry
  */
 vector<int> getRoute(int sender, int receiver){
-  //do searching without regard for channel capacities, DFS right now
+   //do searching without regard for channel capacities, DFS right now
 
 
-  // printf("sender: %i; receiver: %i \n [", sender, receiver);
+   // printf("sender: %i; receiver: %i \n [", sender, receiver);
    //vector<int> route =  breadthFirstSearch(sender, receiver);
    vector<int> route = dijkstraInputGraph(sender, receiver, _channels);
 
-/*
-   for (int i=0; i<(int)route.size(); i++){
-        printf("%i, ", route[i]);
-    }
-    printf("] \n");
+   /*
+      for (int i=0; i<(int)route.size(); i++){
+      printf("%i, ", route[i]);
+      }
+      printf("] \n");
 
-*/
+    */
 
-    return route;
-
-
+   return route;
 
 
-    //return get_k_shortest_routes(sender, receiver, 2);
+
+
+   //return get_k_shortest_routes(sender, receiver, 2);
 }
 
 
 
 template <class T,class S> struct pair_equal_to : binary_function <T,pair<T,S>,bool> {
-  bool operator() (const T& y, const pair<T,S>& x) const
-    {
-        return x.first==y;
-  }
+   bool operator() (const T& y, const pair<T,S>& x) const
+   {
+      return x.first==y;
+   }
 };
 
 map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> _channels, vector<int> route){
-    for (int i=0; i< (route.size() -1); i++){
-        cout << i << "-th iteration out of "<< (route.size() - 1) << endl;
-        int start = route[i];
-         int end = route[i+1];
+   for (int i=0; i< (route.size() -1); i++){
+      cout << i << "-th iteration out of "<< (route.size() - 1) << endl;
+      int start = route[i];
+      int end = route[i+1];
 
 
-         vector< pair <int, int> >::iterator it = find_if(_channels[start].begin(),_channels[start].end(),bind1st(pair_equal_to<int,int>(),end));
-         _channels[start].erase(it);
-    }
+      vector< pair <int, int> >::iterator it = find_if(_channels[start].begin(),_channels[start].end(),bind1st(pair_equal_to<int,int>(),end));
+      _channels[start].erase(it);
+   }
 
-    return _channels;
+   return _channels;
 }
 
 
 
 
 vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
-  //do searching without regard for channel capacities, DFS right now
+   //do searching without regard for channel capacities, DFS right now
 
-    printf("sender: %i; receiver: %i \n ", sender, receiver);
-    cout<<endl;
-       //vector<int> route =  breadthFirstSearch(sender, receiver);
-       // print channels
-    vector<vector<int>> shortestRoutes = {};
-    vector<int> route;
-    auto tempChannels = _channels;
+   printf("sender: %i; receiver: %i \n ", sender, receiver);
+   cout<<endl;
+   //vector<int> route =  breadthFirstSearch(sender, receiver);
+   // print channels
+   vector<vector<int>> shortestRoutes = {};
+   vector<int> route;
+   auto tempChannels = _channels;
 
-    for (int it = 0; it<k; it++){
+   for (int it = 0; it<k; it++){
 
-        printf("%d print of channels\n", it );
-          for (auto i : tempChannels){
-              printf("key: %d [",i.first);
-              for (auto k: i.second){
-                  printf("(%d, %d) ",get<0>(k), get<1>(k));
-              }
-
-              printf("] \n");
-          }
-          cout<<endl;
-        route = dijkstraInputGraph(sender, receiver, tempChannels);
-
-        printf("%d-th route: ", it);
-
-        for (int i=0; i<(int)route.size(); i++){
-             printf("%i, ", route[i]);
+      printf("%d print of channels\n", it );
+      for (auto i : tempChannels){
+         printf("key: %d [",i.first);
+         for (auto k: i.second){
+            printf("(%d, %d) ",get<0>(k), get<1>(k));
          }
 
+         printf("] \n");
+      }
+      cout<<endl;
+      route = dijkstraInputGraph(sender, receiver, tempChannels);
 
-        printf("\n");
-        cout << "route size: " << route.size() << endl;
+      printf("%d-th route: ", it);
+
+      for (int i=0; i<(int)route.size(); i++){
+         printf("%i, ", route[i]);
+      }
 
 
-        if (route.size() <= 1){
-            return shortestRoutes;
-        }
-        else{
-            shortestRoutes.push_back(route);
-        }
-        cout << "getKShortestRoutes 1" <<endl;
-        cout << "route size: " << route.size() << endl;
-        tempChannels = removeRoute(tempChannels,route);
-        cout << "getKShortestRoutes 2" <<endl;
-    }
+      printf("\n");
+      cout << "route size: " << route.size() << endl;
 
-    return shortestRoutes;
+
+      if (route.size() <= 1){
+         return shortestRoutes;
+      }
+      else{
+         shortestRoutes.push_back(route);
+      }
+      cout << "getKShortestRoutes 1" <<endl;
+      cout << "route size: " << route.size() << endl;
+      tempChannels = removeRoute(tempChannels,route);
+      cout << "getKShortestRoutes 2" <<endl;
+   }
+
+   return shortestRoutes;
 }
 
 
 vector<string> split(string str, char delimiter){
-  vector<string> internal;
-  stringstream ss(str); // Turn the string into a stream.
-  string tok;
+   vector<string> internal;
+   stringstream ss(str); // Turn the string into a stream.
+   string tok;
 
-  while(getline(ss, tok, delimiter)) {
-    internal.push_back(tok);
-  }
-  return internal;
+   while(getline(ss, tok, delimiter)) {
+      internal.push_back(tok);
+   }
+   return internal;
 }
 
 
@@ -148,24 +148,24 @@ vector<string> split(string str, char delimiter){
 // not yet included in shortest
 // path tree
 int minDistance(int dist[],
-                bool sptSet[])
+      bool sptSet[])
 {
 
-    // Initialize min value
-    int min = INT_MAX;
-    int min_index = -1;
+   // Initialize min value
+   int min = INT_MAX;
+   int min_index = -1;
 
-    for (int v = 0; v < _numNodes; v++)
-        if (sptSet[v] == false &&
-                   dist[v] <= min)
-            min = dist[v], min_index = v;
+   for (int v = 0; v < _numNodes; v++)
+      if (sptSet[v] == false &&
+            dist[v] <= min)
+         min = dist[v], min_index = v;
 
-    if (min == INT_MAX){
-        return -1;
-    }
-    else{
-    return min_index;
-    }
+   if (min == INT_MAX){
+      return -1;
+   }
+   else{
+      return min_index;
+   }
 }
 
 // Function to print shortest
@@ -174,217 +174,217 @@ int minDistance(int dist[],
 void printPath(int parent[], int j)
 {
 
-    // Base Case : If j is source
-    if (parent[j] == - 1)
-        return;
+   // Base Case : If j is source
+   if (parent[j] == - 1)
+      return;
 
-    printPath(parent, parent[j]);
+   printPath(parent, parent[j]);
 
-    printf("%d ", j);
+   printf("%d ", j);
 }
 
 
 vector<int> getPath(int parent[], int j)
 {
-    vector<int> result = {};
-    // Base Case : If j is source
-    if (parent[j] == - 1){
-        result.push_back(j);
-        return result;
-    }
-    else if (j == -2){
-        vector<int> empty = {};
-        return empty;
+   vector<int> result = {};
+   // Base Case : If j is source
+   if (parent[j] == - 1){
+      result.push_back(j);
+      return result;
+   }
+   else if (j == -2){
+      vector<int> empty = {};
+      return empty;
 
-    }
+   }
 
-    result = getPath(parent, parent[j]);
-    result.push_back(j);
-    return result;
+   result = getPath(parent, parent[j]);
+   result.push_back(j);
+   return result;
 }
 
 // A utility function to print
 // the constructed distance
 // array
 void printSolution(int dist[], int source,
-                      int parent[])
+      int parent[])
 {
-    int src = source;
-    printf("Vertex\t Distance\tPath");
-    for (int i = 0; i < _numNodes; i++)
-    {
-        printf("\n%d -> %d \t\t %d\t\t%d ",
-                      src, i, dist[i], src);
-        printPath(parent, i);
+   int src = source;
+   printf("Vertex\t Distance\tPath");
+   for (int i = 0; i < _numNodes; i++)
+   {
+      printf("\n%d -> %d \t\t %d\t\t%d ",
+            src, i, dist[i], src);
+      printPath(parent, i);
 
-        printf("\n getResultSolution: \n");
-        vector<int> resultVect = getPath(parent, i);
-        for (int i =0; i<resultVect.size(); i++){
-            printf("%i, ", resultVect[i]);
-        }
-    }
+      printf("\n getResultSolution: \n");
+      vector<int> resultVect = getPath(parent, i);
+      for (int i =0; i<resultVect.size(); i++){
+         printf("%i, ", resultVect[i]);
+      }
+   }
 }
 
 /*
-struct CompareFirst
-{
-  CompareFirst(int val) : val_(val) {}
-  bool operator()(const std::pair<int,char>& elem) const {
-    return val_ == elem.first;
-  }
-  private:
-    int val_;
-};
-*/
+   struct CompareFirst
+   {
+   CompareFirst(int val) : val_(val) {}
+   bool operator()(const std::pair<int,char>& elem) const {
+   return val_ == elem.first;
+   }
+   private:
+   int val_;
+   };
+ */
 
 vector<int> dijkstraInputGraph(int src,  int dest, map<int, vector<pair<int,int>>> channels){
-    // The output array. dist[i] will hold the shortest distance from src to i
-      int dist[_numNodes];
+   // The output array. dist[i] will hold the shortest distance from src to i
+   int dist[_numNodes];
 
-      // sptSet[i] will true if vertex i is included / in shortest path tree or shortest distance from src to i is finalized
-      bool sptSet[_numNodes];
+   // sptSet[i] will true if vertex i is included / in shortest path tree or shortest distance from src to i is finalized
+   bool sptSet[_numNodes];
 
-      // Parent array to store shortest path tree
-      int parent[_numNodes];
+   // Parent array to store shortest path tree
+   int parent[_numNodes];
 
-      // Initialize all distances as INFINITE and stpSet[] as false
-      for (int i = 0; i < _numNodes; i++)
-      {
-          parent[src] = -1;
-          dist[i] = INT_MAX;
-          parent[i] = -2;
-          sptSet[i] = false;
+   // Initialize all distances as INFINITE and stpSet[] as false
+   for (int i = 0; i < _numNodes; i++)
+   {
+      parent[src] = -1;
+      dist[i] = INT_MAX;
+      parent[i] = -2;
+      sptSet[i] = false;
+   }
+
+   // Distance of source vertex from itself is always 0
+   dist[src] = 0;
+
+   // Find shortest path for all vertices
+   for (int count = 0; count < _numNodes - 1; count++)
+   {
+      // Pick the minimum distance vertex from the set of vertices not yet processed.
+      // u is always equal to src in first iteration.
+      int u = minDistance(dist, sptSet);
+      if (u==-1){
+         vector<int> empty = {};
+         return empty;
+
       }
 
-      // Distance of source vertex from itself is always 0
-      dist[src] = 0;
+      // Mark the picked vertex as processed
+      sptSet[u] = true;
 
-      // Find shortest path for all vertices
-      for (int count = 0; count < _numNodes - 1; count++)
-      {
-          // Pick the minimum distance vertex from the set of vertices not yet processed.
-          // u is always equal to src in first iteration.
-          int u = minDistance(dist, sptSet);
-          if (u==-1){
-              vector<int> empty = {};
-              return empty;
+      vector<pair<int,int>>::iterator vectIter;
+      // Update dist value of the adjacent vertices of the picked vertex.
+      for (vectIter = channels[u].begin(); vectIter != channels[u].end(); vectIter++){
 
-          }
+         // Update dist[v] only if is not in sptSet, there is an edge from u to v, and
+         // total weight of path from src to v through u is smaller than current value of dist[v]
 
-          // Mark the picked vertex as processed
-          sptSet[u] = true;
+         // find first element with first == 42
+         //= find_if(channels[u].begin(),channels[u].end(), CompareFirst(v));
+         if (!sptSet[vectIter->first]){
+            //if (vectIter != channels[u].end() ){
+            if(dist[u] + (vectIter->second) < dist[vectIter->first]){
+               parent[vectIter->first] = u;
+               dist[vectIter->first] = dist[u] + vectIter->second;
+               //  }
 
-          vector<pair<int,int>>::iterator vectIter;
-          // Update dist value of the adjacent vertices of the picked vertex.
-          for (vectIter = channels[u].begin(); vectIter != channels[u].end(); vectIter++){
-
-              // Update dist[v] only if is not in sptSet, there is an edge from u to v, and
-              // total weight of path from src to v through u is smaller than current value of dist[v]
-
-              // find first element with first == 42
-               //= find_if(channels[u].begin(),channels[u].end(), CompareFirst(v));
-              if (!sptSet[vectIter->first]){
-                 //if (vectIter != channels[u].end() ){
-                     if(dist[u] + (vectIter->second) < dist[vectIter->first]){
-                  parent[vectIter->first] = u;
-                  dist[vectIter->first] = dist[u] + vectIter->second;
-            //  }
-
-                 }
-              }
-          }
+         }
+         }
       }
+   }
 
-      // print the constructed
-      // distance array
-      /*for (int ka=0; ka<numNodes; ka++){
-          printf("[%i]: %i,  ", ka, parent[ka] );
-      }*/
+   // print the constructed
+   // distance array
+   /*for (int ka=0; ka<numNodes; ka++){
+     printf("[%i]: %i,  ", ka, parent[ka] );
+     }*/
 
-     // printSolution(dist,src,  parent);
+   // printSolution(dist,src,  parent);
 
-      //printf("\n");
+   //printf("\n");
 
-      return getPath(parent, dest);
+   return getPath(parent, dest);
 
 
 }
 
 void dijkstraInputGraphTemp(int src,  int dest, map<int, vector<pair<int,int>>> channels){
    // The output array. dist[i] will hold the shortest distance from src to i
-     int dist[_numNodes];
+   int dist[_numNodes];
 
-     // sptSet[i] will true if vertex i is included / in shortest path tree or shortest distance from src to i is finalized
-     bool sptSet[_numNodes];
+   // sptSet[i] will true if vertex i is included / in shortest path tree or shortest distance from src to i is finalized
+   bool sptSet[_numNodes];
 
-     // Parent array to store shortest path tree
-     int parent[_numNodes];
+   // Parent array to store shortest path tree
+   int parent[_numNodes];
 
-     // Initialize all distances as INFINITE and stpSet[] as false
-     for (int i = 0; i < _numNodes; i++)
-     {
-         parent[src] = -1;
-         parent[i] = -2;
-         dist[i] = INT_MAX;
-         sptSet[i] = false;
-     }
+   // Initialize all distances as INFINITE and stpSet[] as false
+   for (int i = 0; i < _numNodes; i++)
+   {
+      parent[src] = -1;
+      parent[i] = -2;
+      dist[i] = INT_MAX;
+      sptSet[i] = false;
+   }
 
-     // Distance of source vertex from itself is always 0
-     dist[src] = 0;
+   // Distance of source vertex from itself is always 0
+   dist[src] = 0;
 
-     // Find shortest path for all vertices
-     for (int count = 0; count < _numNodes - 1; count++)
-     {
-         // Pick the minimum distance vertex from the set of vertices not yet processed.
-         // u is always equal to src in first iteration.
-         int u = minDistance(dist, sptSet);
-         if (u==-1){
-             vector<int> empty = {};
-             return ;
+   // Find shortest path for all vertices
+   for (int count = 0; count < _numNodes - 1; count++)
+   {
+      // Pick the minimum distance vertex from the set of vertices not yet processed.
+      // u is always equal to src in first iteration.
+      int u = minDistance(dist, sptSet);
+      if (u==-1){
+         vector<int> empty = {};
+         return ;
+
+      }
+
+      // Mark the picked vertex as processed
+      sptSet[u] = true;
+
+      vector<pair<int,int>>::iterator vectIter;
+      // Update dist value of the adjacent vertices of the picked vertex.
+      for (vectIter = channels[u].begin(); vectIter != channels[u].end(); vectIter++){
+
+
+         for (int ka=0; ka<_numNodes; ka++){
+            printf("[%i]: %i,  ", ka, parent[ka] );
 
          }
+         // Update dist[v] only if is not in sptSet, there is an edge from u to v, and
+         // total weight of path from src to v through u is smaller than current value of dist[v]
 
-         // Mark the picked vertex as processed
-         sptSet[u] = true;
+         // find first element with first == 42
+         //= find_if(channels[u].begin(),channels[u].end(), CompareFirst(v));
+         if (!sptSet[vectIter->first]){
+            //if (vectIter != channels[u].end() ){
+            if(dist[u] + (vectIter->second) < dist[vectIter->first]){
+               parent[vectIter->first] = u;
+               dist[vectIter->first] = dist[u] + vectIter->second;
+               //  }
 
-         vector<pair<int,int>>::iterator vectIter;
-         // Update dist value of the adjacent vertices of the picked vertex.
-         for (vectIter = channels[u].begin(); vectIter != channels[u].end(); vectIter++){
-
-
-             for (int ka=0; ka<_numNodes; ka++){
-                     printf("[%i]: %i,  ", ka, parent[ka] );
-
-                 }
-             // Update dist[v] only if is not in sptSet, there is an edge from u to v, and
-             // total weight of path from src to v through u is smaller than current value of dist[v]
-
-             // find first element with first == 42
-              //= find_if(channels[u].begin(),channels[u].end(), CompareFirst(v));
-             if (!sptSet[vectIter->first]){
-                //if (vectIter != channels[u].end() ){
-                    if(dist[u] + (vectIter->second) < dist[vectIter->first]){
-                 parent[vectIter->first] = u;
-                 dist[vectIter->first] = dist[u] + vectIter->second;
-           //  }
-
-                }
-             }
          }
-     }
+         }
+      }
+   }
 
-     // print the constructed
-     // distance array
-     for (int ka=0; ka<_numNodes; ka++){
-         printf("[%i]: %i,  ", ka, parent[ka] );
+   // print the constructed
+   // distance array
+   for (int ka=0; ka<_numNodes; ka++){
+      printf("[%i]: %i,  ", ka, parent[ka] );
 
-     }
+   }
 
-    // printSolution(dist,src,  parent);
+   // printSolution(dist,src,  parent);
 
-     //printf("\n");
+   //printf("\n");
 
-     return;// getPath(parent, dest);
+   return;// getPath(parent, dest);
 
 
 }
@@ -399,68 +399,68 @@ void dijkstraInputGraphTemp(int src,  int dest, map<int, vector<pair<int,int>>> 
 vector<int> dijkstra(int src,  int dest)
 {
 
-    // The output array. dist[i] will hold the shortest distance from src to i
-    int dist[_numNodes];
+   // The output array. dist[i] will hold the shortest distance from src to i
+   int dist[_numNodes];
 
-    // sptSet[i] will true if vertex i is included / in shortest path tree or shortest distance from src to i is finalized
-    bool sptSet[_numNodes];
+   // sptSet[i] will true if vertex i is included / in shortest path tree or shortest distance from src to i is finalized
+   bool sptSet[_numNodes];
 
-    // Parent array to store shortest path tree
-    int parent[_numNodes];
+   // Parent array to store shortest path tree
+   int parent[_numNodes];
 
-    // Initialize all distances as INFINITE and stpSet[] as false
-    for (int i = 0; i < _numNodes; i++)
-    {
-        parent[src] = -1;
-        dist[i] = INT_MAX;
-        sptSet[i] = false;
-    }
+   // Initialize all distances as INFINITE and stpSet[] as false
+   for (int i = 0; i < _numNodes; i++)
+   {
+      parent[src] = -1;
+      dist[i] = INT_MAX;
+      sptSet[i] = false;
+   }
 
-    // Distance of source vertex from itself is always 0
-    dist[src] = 0;
+   // Distance of source vertex from itself is always 0
+   dist[src] = 0;
 
-    // Find shortest path for all vertices
-    for (int count = 0; count < _numNodes - 1; count++)
-    {
-        // Pick the minimum distance vertex from the set of vertices not yet processed.
-        // u is always equal to src in first iteration.
-        int u = minDistance(dist, sptSet);
+   // Find shortest path for all vertices
+   for (int count = 0; count < _numNodes - 1; count++)
+   {
+      // Pick the minimum distance vertex from the set of vertices not yet processed.
+      // u is always equal to src in first iteration.
+      int u = minDistance(dist, sptSet);
 
-        // Mark the picked vertex as processed
-        sptSet[u] = true;
+      // Mark the picked vertex as processed
+      sptSet[u] = true;
 
-        vector<pair<int,int>>::iterator vectIter;
-        // Update dist value of the adjacent vertices of the picked vertex.
-        for (vectIter = _channels[u].begin(); vectIter != _channels[u].end(); vectIter++){
+      vector<pair<int,int>>::iterator vectIter;
+      // Update dist value of the adjacent vertices of the picked vertex.
+      for (vectIter = _channels[u].begin(); vectIter != _channels[u].end(); vectIter++){
 
-            // Update dist[v] only if is not in sptSet, there is an edge from u to v, and
-            // total weight of path from src to v through u is smaller than current value of dist[v]
+         // Update dist[v] only if is not in sptSet, there is an edge from u to v, and
+         // total weight of path from src to v through u is smaller than current value of dist[v]
 
-            // find first element with first == 42
-             //= find_if(channels[u].begin(),channels[u].end(), CompareFirst(v));
-            if (!sptSet[vectIter->first]){
-               //if (vectIter != channels[u].end() ){
-                   if(dist[u] + (vectIter->second) < dist[vectIter->first]){
-                parent[vectIter->first] = u;
-                dist[vectIter->first] = dist[u] + vectIter->second;
-          //  }
+         // find first element with first == 42
+         //= find_if(channels[u].begin(),channels[u].end(), CompareFirst(v));
+         if (!sptSet[vectIter->first]){
+            //if (vectIter != channels[u].end() ){
+            if(dist[u] + (vectIter->second) < dist[vectIter->first]){
+               parent[vectIter->first] = u;
+               dist[vectIter->first] = dist[u] + vectIter->second;
+               //  }
 
-               }
-            }
-        }
-    }
+         }
+         }
+      }
+   }
 
-    // print the constructed
-    // distance array
-    /*for (int ka=0; ka<numNodes; ka++){
-        printf("[%i]: %i,  ", ka, parent[ka] );
-    }*/
+   // print the constructed
+   // distance array
+   /*for (int ka=0; ka<numNodes; ka++){
+     printf("[%i]: %i,  ", ka, parent[ka] );
+     }*/
 
    // printSolution(dist,src,  parent);
 
-    //printf("\n");
+   //printf("\n");
 
-    return getPath(parent, dest);
+   return getPath(parent, dest);
 
 }
 
@@ -505,12 +505,12 @@ vector<int> breadthFirstSearch(int sender, int receiver){
 /* set_num_nodes -
  */
 void setNumNodes(string topologyFile){
-    //TEMPORARILY hardcode
+   //TEMPORARILY hardcode
 
-     _numNodes = 5;
-          _numHostNodes = 2;
-          _numRouterNodes = 3;
-          return;
+   _numNodes = 5;
+   _numHostNodes = 2;
+   _numRouterNodes = 3;
+   return;
 
 
    int maxNode = -1;
@@ -546,45 +546,45 @@ void setNumNodes(string topologyFile){
  *      [node1] [node2] [1->2 delay] [2->1 delay] [balance at node1 end] [balance at node2 end]
  */
 void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,int>>> &_channels, map<tuple<int,int>,double> &_balances){
-    //TEMPORARILY - hardcode _channels map
-          vector<pair<int,int>> tempVector0 = {};
-          tempVector0.push_back(make_pair(2,30));
-          _channels[0] = tempVector0;
+   //TEMPORARILY - hardcode _channels map
+   vector<pair<int,int>> tempVector0 = {};
+   tempVector0.push_back(make_pair(2,30));
+   _channels[0] = tempVector0;
 
-          vector<pair<int,int>> tempVector1 = {};
-          tempVector1.push_back(make_pair(4,30));
-          _channels[1] = tempVector1;
-
-
-          vector<pair<int,int>> tempVector2 = {};
-                tempVector2.push_back(make_pair(0,30));
-                tempVector2.push_back(make_pair(3,30));
-                _channels[2] = tempVector2;
+   vector<pair<int,int>> tempVector1 = {};
+   tempVector1.push_back(make_pair(4,30));
+   _channels[1] = tempVector1;
 
 
-                vector<pair<int,int>> tempVector3 = {};
-                      tempVector3.push_back(make_pair(2,30));
-                      tempVector3.push_back(make_pair(4,30));
-                      _channels[3] = tempVector3;
+   vector<pair<int,int>> tempVector2 = {};
+   tempVector2.push_back(make_pair(0,30));
+   tempVector2.push_back(make_pair(3,30));
+   _channels[2] = tempVector2;
 
 
-                      vector<pair<int,int>> tempVector4 = {};
-                            tempVector4.push_back(make_pair(3,30));
-                            tempVector4.push_back(make_pair(1,30));
-                            _channels[4] = tempVector4;
-
-          //TEMPORARILY - hardcode balances map
-          for (auto start: _channels){
-              for (auto end: _channels[start.first]){
-
-                  _balances[make_tuple(start.first , get<0>(end))] = 100 ;
-              }
-          }
-          return;
+   vector<pair<int,int>> tempVector3 = {};
+   tempVector3.push_back(make_pair(2,30));
+   tempVector3.push_back(make_pair(4,30));
+   _channels[3] = tempVector3;
 
 
+   vector<pair<int,int>> tempVector4 = {};
+   tempVector4.push_back(make_pair(3,30));
+   tempVector4.push_back(make_pair(1,30));
+   _channels[4] = tempVector4;
 
-    string line;
+   //TEMPORARILY - hardcode balances map
+   for (auto start: _channels){
+      for (auto end: _channels[start.first]){
+
+         _balances[make_tuple(start.first , get<0>(end))] = 100 ;
+      }
+   }
+   return;
+
+
+
+   string line;
    ifstream myfile (topologyFile);
    if (myfile.is_open())
    {
@@ -676,8 +676,8 @@ void generateTransUnitList(string workloadFile, vector<TransUnit> &_transUnitLis
  *      ascending amount
  *      note: largest element gets accessed first
  */
-bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, int> &a,
-      const tuple<int,double, routerMsg*, int> &b)
+bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, Id> &a,
+      const tuple<int,double, routerMsg*, Id> &b)
 {
    if (get<0>(a) < get<0>(b)){
       return false;

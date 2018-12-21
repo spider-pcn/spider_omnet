@@ -16,3 +16,4 @@ public:
 
 typedef tuple<int, simtime_t, int, int > CanceledTrans ;
     // (transactionId, msgArrivalTime, prevNode, nextNode)
+
