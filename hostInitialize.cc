@@ -676,8 +676,8 @@ void generateTransUnitList(string workloadFile, vector<TransUnit> &_transUnitLis
  *      ascending amount
  *      note: largest element gets accessed first
  */
-bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*> &a,
-      const tuple<int,double, routerMsg*> &b)
+bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, int> &a,
+      const tuple<int,double, routerMsg*, int> &b)
 {
    if (get<0>(a) < get<0>(b)){
       return false;

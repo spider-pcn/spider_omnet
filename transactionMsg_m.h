@@ -31,7 +31,8 @@
  *     int transactionId; //is messageID of transactionMsg
  *     bool hasTimeOut;
  *     double timeOut;
- *     int parentTransactionId;
+ *     int htlcIndex;
+ *     int routeIndex;
  * }
  * </pre>
  */
@@ -46,7 +47,8 @@ class transactionMsg : public ::omnetpp::cPacket
     int transactionId;
     bool hasTimeOut;
     double timeOut;
-    int parentTransactionId;
+    int htlcIndex;
+    int routeIndex;
 
   private:
     void copy(const transactionMsg& other);
@@ -81,8 +83,10 @@ class transactionMsg : public ::omnetpp::cPacket
     virtual void setHasTimeOut(bool hasTimeOut);
     virtual double getTimeOut() const;
     virtual void setTimeOut(double timeOut);
-    virtual int getParentTransactionId() const;
-    virtual void setParentTransactionId(int parentTransactionId);
+    virtual int getHtlcIndex() const;
+    virtual void setHtlcIndex(int htlcIndex);
+    virtual int getRouteIndex() const;
+    virtual void setRouteIndex(int routeIndex);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const transactionMsg& obj) {obj.parsimPack(b);}

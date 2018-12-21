@@ -39,7 +39,7 @@ class hostNode : public cSimpleModule
       vector<simsignal_t> numAttemptedPerDestSignals;
       vector< TransUnit > myTransUnits; //list of TransUnits that have me as sender
       set<int> successfulDoNotSendTimeOut; //set of transaction units WITH timeouts, that we already received acks for
-      set<CanceledTrans> canceledTransactions;
+      set<CanceledTrans> canceledTransactions = {};
       map<tuple<int,int>,AckState> transPathToAckState;
 
 
@@ -66,12 +66,13 @@ class hostNode : public cSimpleModule
       virtual void handleUpdateMessage(routerMsg *msg);
       virtual void handleStatMessage(routerMsg *msg);
       virtual void handleProbeMessage(routerMsg *msg);
+      virtual void handleClearStateMessage(routerMsg *msg);
       virtual bool forwardTransactionMessage(routerMsg *msg);
       virtual void forwardAckMessage(routerMsg *msg);
       virtual void forwardTimeOutMessage(routerMsg *msg);
       virtual void forwardProbeMessage(routerMsg *msg);
       virtual void sendUpdateMessage(routerMsg *msg);
-      virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *>>& q);
+      virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, int>>& q);
       virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode);
       virtual void deleteMessagesInQueues();
 };
