@@ -17,9 +17,11 @@
 #include <deque>
 #include <map>
 #include <fstream>
-#include "PaymentChannel.h"
-#include "PathInfo.h"
-#include "TransUnit.h"
+#include "structs/PaymentChannel.h"
+#include "structs/PathInfo.h"
+#include "structs/TransUnit.h"
+#include "structs/CanceledTrans.h"
+#include "structs/AckState.h"
 
 #define MSGSIZE 100
 using namespace std;
@@ -34,6 +36,7 @@ extern map<int, vector<pair<int,int>>> _channels; //adjacency list format of gra
 extern map<tuple<int,int>,double> _balances;
 extern double _statRate;
 extern double _clearRate;
+extern double _maxTravelTime;
 //map of balances for each edge; key = <int,int> is <source, destination>
 //extern bool withFailures;
 extern bool _useWaterfilling;

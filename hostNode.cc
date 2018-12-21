@@ -7,6 +7,7 @@ vector<TransUnit> _transUnitList; //list of all transUnits
 int _numNodes;
 int _numRouterNodes;
 int _numHostNodes;
+double _maxTravelTime;
 //number of nodes in network
 map<int, vector<pair<int,int>>> _channels; //adjacency list format of graph edges of network
 map<tuple<int,int>,double> _balances;
@@ -193,6 +194,13 @@ void hostNode::initialize()
    successfulDoNotSendTimeOut = {};
 
    if (getIndex() == 0){  //main initialization for global parameters
+
+       _maxTravelTime = 0.2;
+       //set statRate
+       _statRate = 0.5;
+       _clearRate = 0.5;
+
+
        _useWaterfilling = true;
 
       if (_useWaterfilling){
@@ -335,6 +343,7 @@ void hostNode::initialize()
           msg->setRoute(blankPath);
       }
       cout << "hostNode3.1: "<<myIndex() << endl;
+      cout <<"timeSent: "<< timeSent << endl;
       scheduleAt(timeSent, msg);
 
       if (_useWaterfilling){
@@ -347,22 +356,29 @@ void hostNode::initialize()
              cout << "hostNode3.14: "<<myIndex() << endl;
           }
       }
+
       cout << "hostNode3.2: "<<myIndex() << endl;
-      if (j.hasTimeOut && !_useWaterfilling){ //TODO : timeOut implementation is not going to work with waterfilling
+      if (j.hasTimeOut){ //TODO : timeOut implementation is not going to work with waterfilling
          routerMsg *toutMsg = generateTimeOutMessage(msg);
+         cout <<"here start" <<endl;
+         cout <<"timeSent+j.timeOut: "<< timeSent+j.timeOut << endl;
          scheduleAt(timeSent+j.timeOut, toutMsg );
+         cout <<"here end" << endl;
       }
 
       cout << "hostNode3.3: "<<myIndex() << endl;
    }
    cout << "hostNode4: "<<myIndex() << endl;
 
-   //set statRate
-   _statRate = 0.5;
-   _clearRate = 0.5;
+
    //get stat message
    routerMsg *statMsg = generateStatMessage();
-   scheduleAt(0, statMsg);
+   cout << " simTime() + 0 : "<< simTime() + 0 << endl;
+   scheduleAt(simTime()+0, statMsg);
+   cout << "end schedule stat" << endl;
+
+   routerMsg *clearStateMsg = generateClearStateMessage();
+     scheduleAt(simTime()+_clearRate, clearStateMsg);
 
    cout << "end hostNode " << myIndex() << " initialization" << endl;
 
@@ -430,7 +446,10 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
       deleteMessagesInQueues();
    }
    else{
+       cout << "handleStatMsg start" << endl;
       scheduleAt(simTime()+_statRate, ttmsg);
+      cout << "handleStatMsg end" << endl;
+
    }
 
    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
@@ -964,7 +983,7 @@ routerMsg *hostNode::generateTimeOutMessage(routerMsg* msg)
    timeOutMsg *toutMsg = new timeOutMsg(msgname);
    toutMsg->setAmount(transMsg->getAmount());
    toutMsg->setTransactionId(transMsg->getTransactionId());
-   toutMsg->setTimeSentTransUnit(transMsg->getTimeSent());
+
 
    sprintf(msgname, "tic-%d-to-%d routerTimeOutMsg", transMsg->getSender(), transMsg->getReceiver());
    routerMsg *rMsg = new routerMsg(msgname);

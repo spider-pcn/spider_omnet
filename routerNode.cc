@@ -164,6 +164,14 @@ void routerNode::initialize()
       //statNumSent int
       nodeToPaymentChannel[key].statNumSent = 0;
    }
+
+   routerMsg *statMsg = generateStatMessage();
+     scheduleAt(simTime() + 0, statMsg);
+
+     routerMsg *clearStateMsg = generateClearStateMessage();
+       scheduleAt(simTime() + _clearRate, clearStateMsg);
+
+
    cout << "end routerNode " << myIndex() << " initialization" << endl;
 
 }
@@ -210,6 +218,8 @@ void routerNode::handleMessage(cMessage *msg)
        //TODO:
    }
 
+
+
 }
 
 
@@ -237,6 +247,7 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
       deleteMessagesInQueues();
    }
    else{
+       cout << "newTime: " << simTime()+_statRate << endl;
       scheduleAt(simTime()+_statRate, ttmsg);
    }
 

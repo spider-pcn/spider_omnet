@@ -31,29 +31,15 @@ class routerNode : public cSimpleModule
       string topologyFile_;
       string workloadFile_;
       map<int, PaymentChannel> nodeToPaymentChannel;
-      //vector<int> statNumCompleted;
-      //vector<int> statNumAttempted;
-      //map<int, vector<int>> destNodeToPath; //store shortest paths
-      //map<int, map<int, PathInfo>> nodeToShortestPathsMap;
-      //simsignal_t completionTimeSignal;
-      //vector<simsignal_t> numCompletedPerDestSignals;
-      //vector<simsignal_t> numAttemptedPerDestSignals;
-      //vector< TransUnit > myTransUnits; //list of TransUnits that have me as sender
-      //set<int> successfulDoNotSendTimeOut; //set of transaction units WITH timeouts, that we already received acks for
+      set<CanceledTrans> canceledTransactions;
 
    protected:
-      //virtual routerMsg *generateWaterfillingTransactionMessage(double amt, vector<int> path, transactionMsg * transMsg);
-      //virtual routerMsg *generateTransactionMessage(TransUnit TransUnit);
-      //virtual routerMsg *generateAckMessage(routerMsg *msg, bool isTimeOutMsg = false);
-          //generates ack message and destroys input parameter msg
-      //virtual routerMsg *generateAckMessageFromTimeOutMsg(routerMsg *msg);
+
       virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
           //just generates routerMsg with no encapsulated msg inside
       virtual routerMsg *generateStatMessage();
       virtual routerMsg *generateClearStateMessage();
-      //virtual routerMsg *generateTimeOutMessage(routerMsg *transMsg);
-      //virtual routerMsg *generateProbeMessage(int destNode, int pathIdx, vector<int> path);
-      //virtual void splitTransactionForWaterfilling(routerMsg * ttMsg);
+
       virtual int myIndex();
       virtual void initialize() override;
       virtual void handleMessage(cMessage *msg) override;

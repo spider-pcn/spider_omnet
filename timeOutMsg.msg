@@ -17,6 +17,5 @@ packet timeOutMsg
 {
     double amount;
     int transactionId; //is messageID of transactionMsg
-    double timeSentTransUnit;
     
 }

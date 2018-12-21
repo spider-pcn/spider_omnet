@@ -20,7 +20,6 @@
 #include <fstream>
 #include "global.h"
 
-
 using namespace std;
 using namespace omnetpp;
 
@@ -40,6 +39,10 @@ class hostNode : public cSimpleModule
       vector<simsignal_t> numAttemptedPerDestSignals;
       vector< TransUnit > myTransUnits; //list of TransUnits that have me as sender
       set<int> successfulDoNotSendTimeOut; //set of transaction units WITH timeouts, that we already received acks for
+      set<CanceledTrans> canceledTransactions;
+      map<tuple<int,int>,AckState> transPathToAckState;
+
+
 
    protected:
       virtual int myIndex(); //if host node, return getIndex(), if routerNode, return getIndex()+numHostNodes
