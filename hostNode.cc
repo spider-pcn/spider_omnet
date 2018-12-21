@@ -113,12 +113,7 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
       assert(p->path == pMsg->getPath());
 
       p->lastUpdated = simTime();
-      //cout << "number of probes: " << nodeToShortestPathsMap[destNode].size();
-      for (auto idx: nodeToShortestPathsMap[destNode]){
-         //cout << "lastUpdated: " << (idx.second).lastUpdated << endl;
-
-      }
-      vector<double> pathBalances = pMsg->getPathBalances();
+     vector<double> pathBalances = pMsg->getPathBalances();
       int bottleneck = minVectorElemDouble(pathBalances);
 
       p->bottleneck = bottleneck ;
@@ -151,7 +146,6 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
 
 
 void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode){ //maybe less than k routes
-   //cout << "number of probes: " << kShortestPaths.size() << endl;
    for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
       //map<int, map<int, PathInfo>> nodeToShortestPathsMap;
       PathInfo temp = {};
@@ -161,7 +155,6 @@ void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode
       routerMsg * msg = generateProbeMessage(destNode, pathIdx, kShortestPaths[pathIdx]);
       forwardProbeMessage(msg);
    }
-   //cout << "number of probes2: " << kShortestPaths.size() << endl;
 
 }
 
@@ -194,7 +187,7 @@ void hostNode::initialize()
    successfulDoNotSendTimeOut = {};
 
    if (getIndex() == 0){  //main initialization for global parameters
-      _simulationLength = 15;
+      _simulationLength = 25;
       _maxTravelTime = 0.2;
       //set statRate
       _statRate = 0.5;
@@ -294,7 +287,6 @@ void hostNode::initialize()
       nodeToPaymentChannel[key].statNumSent = 0;
    }
 
-   cout << "hostNode1: "<<myIndex() << endl;
 
    //initialize signals with all other nodes in graph
    for (int i = 0; i < _numHostNodes; ++i) {
@@ -322,7 +314,6 @@ void hostNode::initialize()
       statNumAttempted.push_back(0);
 
    }
-   cout << "hostNode2: "<<myIndex() << endl;
 
    //iterate through the global trans_unit_list and find my TransUnits
    for (int i=0; i<(int)_transUnitList.size(); i++){
@@ -331,7 +322,6 @@ void hostNode::initialize()
       }
    }
 
-   cout << "hostNode3: "<<myIndex() << endl;
 
    //implementing timeSent parameter, send all msgs at beginning
    for (int i=0 ; i<(int)myTransUnits.size(); i++){
@@ -342,45 +332,30 @@ void hostNode::initialize()
          vector<int> blankPath = {};
          msg->setRoute(blankPath);
       }
-      cout << "hostNode3.1: "<<myIndex() << endl;
-      cout <<"timeSent: "<< timeSent << endl;
       scheduleAt(timeSent, msg);
 
       if (_useWaterfilling){
-         cout << "hostNode3.11: "<<myIndex() << endl;
          if (nodeToShortestPathsMap.count(j.receiver) == 0 ){
-            cout << "hostNode3.12: "<<myIndex() << endl;
             vector<vector<int>> kShortestRoutes = getKShortestRoutes(j.sender, j.receiver, _kValue);
-            cout << "hostNode3.13: "<<myIndex() << endl;
             initializeProbes(kShortestRoutes, j.receiver);
-            cout << "hostNode3.14: "<<myIndex() << endl;
          }
       }
 
-      cout << "hostNode3.2: "<<myIndex() << endl;
       if (j.hasTimeOut){ //TODO : timeOut implementation is not going to work with waterfilling
          routerMsg *toutMsg = generateTimeOutMessage(msg);
-         cout <<"here start" <<endl;
-         cout <<"timeSent+j.timeOut: "<< timeSent+j.timeOut << endl;
          scheduleAt(timeSent+j.timeOut, toutMsg );
-         cout <<"here end" << endl;
       }
 
-      cout << "hostNode3.3: "<<myIndex() << endl;
    }
-   cout << "hostNode4: "<<myIndex() << endl;
 
 
    //get stat message
    routerMsg *statMsg = generateStatMessage();
-   cout << " simTime() + 0 : "<< simTime() + 0 << endl;
    scheduleAt(simTime()+0, statMsg);
-   cout << "end schedule stat" << endl;
 
    routerMsg *clearStateMsg = generateClearStateMessage();
    scheduleAt(simTime()+_clearRate, clearStateMsg);
 
-   cout << "end hostNode " << myIndex() << " initialization" << endl;
 
 }
 
@@ -388,8 +363,8 @@ void hostNode::handleMessage(cMessage *msg)
 {
 
 
-    cout << "Host Time:" << simTime() << endl;
-    cout << "msg: " << msg->getName() << endl;
+    //cout << "Host Time:" << simTime() << endl;
+    //cout << "msg: " << msg->getName() << endl;
 
 
 
@@ -409,49 +384,49 @@ void hostNode::handleMessage(cMessage *msg)
    if (ttmsg->getMessageType()==ACK_MSG){ //preprocessor constants defined in routerMsg_m.h
 
 
-      cout << "[HOST "<< myIndex() <<": RECEIVED ACK MSG] " << msg->getName() << endl;
+      //cout << "[HOST "<< myIndex() <<": RECEIVED ACK MSG] " << msg->getName() << endl;
       //print_message(ttmsg);
       //print_private_values();
       handleAckMessage(ttmsg);
-      cout << "[AFTER HANDLING:]" <<endl;
+      //cout << "[AFTER HANDLING:]" <<endl;
       // print_private_values();
    }
    else if(ttmsg->getMessageType()==TRANSACTION_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED TRANSACTION MSG]  "<< msg->getName() <<endl;
+      //cout<< "[HOST "<< myIndex() <<": RECEIVED TRANSACTION MSG]  "<< msg->getName() <<endl;
       // print_message(ttmsg);
       // print_private_values();
       handleTransactionMessage(ttmsg);
-      cout<< "[AFTER HANDLING:] "<<endl;
+      //cout<< "[AFTER HANDLING:] "<<endl;
       // print_private_values();
    }
    else if(ttmsg->getMessageType()==UPDATE_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED UPDATE MSG] "<< msg->getName() << endl;
+      //cout<< "[HOST "<< myIndex() <<": RECEIVED UPDATE MSG] "<< msg->getName() << endl;
       // print_message(ttmsg);
       // print_private_values();
       handleUpdateMessage(ttmsg);
-      cout<< "[AFTER HANDLING:]  "<<endl;
+      //cout<< "[AFTER HANDLING:]  "<<endl;
       //print_private_values();
 
    }
    else if (ttmsg->getMessageType() ==STAT_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED STAT MSG] "<< msg->getName() << endl;
+      //cout<< "[HOST "<< myIndex() <<": RECEIVED STAT MSG] "<< msg->getName() << endl;
       handleStatMessage(ttmsg);
-      cout<< "[AFTER HANDLING:]  "<<endl;
+      //cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == TIME_OUT_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED TIME_OUT_MSG] "<<msg->getName() << endl;
+      //cout<< "[HOST "<< myIndex() <<": RECEIVED TIME_OUT_MSG] "<<msg->getName() << endl;
       handleTimeOutMessage(ttmsg);
-      cout<< "[AFTER HANDLING:]  "<<endl;
+      //cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == PROBE_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED PROBE_MSG] "<< msg->getName() << endl;
+      //cout<< "[HOST "<< myIndex() <<": RECEIVED PROBE_MSG] "<< msg->getName() << endl;
       handleProbeMessage(ttmsg);
-      cout<< "[AFTER HANDLING:]  "<<endl;
+      //cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == CLEAR_STATE_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] " << msg->getName() << endl;
+     // cout<< "[HOST "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] " << msg->getName() << endl;
       handleClearStateMessage(ttmsg);
-      cout<< "[AFTER HANDLING:]  "<<endl;
+      //cout<< "[AFTER HANDLING:]  "<<endl;
    }
 
 }
@@ -469,35 +444,27 @@ void hostNode::handleClearStateMessage(routerMsg* ttmsg){
       scheduleAt(simTime()+_clearRate, ttmsg);
    }
 
+
    for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); ){ //iterate through all canceledTransactions
       int transactionId = get<0>(*it);
       simtime_t msgArrivalTime = get<1>(*it);
       int prevNode = get<2>(*it);
       int nextNode = get<3>(*it);
 
-      if (simTime() > (msgArrivalTime + _maxTravelTime)){ //we can process it
 
+      if (simTime() > (msgArrivalTime + _maxTravelTime)){ //we can process it
          if (prevNode != -1){
 
              map<tuple<int,int>, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-
              auto iterIncoming = find_if((*incomingTransUnits).begin(),
                                    (*incomingTransUnits).end(),
                                    [&transactionId](const pair<tuple<int, int >, double> & p)
                                    { return get<0>(p.first) == transactionId; });
-
-
                      while (iterIncoming != (*incomingTransUnits).end()){
-
-
-
                      if (iterIncoming != (*incomingTransUnits).end()){
-                        (*incomingTransUnits).erase(iterIncoming);
-
+                        iterIncoming = (*incomingTransUnits).erase(iterIncoming);
                         tuple<int, int> tempId = make_tuple(transactionId, get<1>(iterIncoming->first));
                         // start queue searching
-
-
                         vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
                         sort_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end());
 
@@ -505,85 +472,53 @@ void hostNode::handleClearStateMessage(routerMsg* ttmsg){
                               (*queuedTransUnits).end(),
                               [&tempId](const tuple<int, double, routerMsg*, Id>& p)
                               { return (get<3>(p) == tempId); });
-
-
                         if (iterQueue != (*queuedTransUnits).end()){
-
-
-                           (*queuedTransUnits).erase(iterQueue);
-
-
-
+                          iterQueue= (*queuedTransUnits).erase(iterQueue);
                         }
 
-
                         make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
-
-
                          //end queue searching
-
-
-
-
-
                      }
 
                      auto iterIncoming = find_if((*incomingTransUnits).begin(),
                                            (*incomingTransUnits).end(),
                                            [&transactionId](const pair<tuple<int, int >, double> & p)
                                            { return get<0>(p.first) == transactionId; });
-
                      }
-
 
          }
 
          if (nextNode != -1){
+
              map<tuple<int,int>, double> *outgoingTransUnits = &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
-
-
              auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
                                                 (*outgoingTransUnits).end(),
                                                 [&transactionId](const pair<tuple<int, int >, double> & p)
                                                 { return get<0>(p.first) == transactionId; });
 
                      while (iterOutgoing != (*outgoingTransUnits).end()){
-
                      if (iterOutgoing != (*outgoingTransUnits).end()){
                         double amount = iterOutgoing -> second;
                         nodeToPaymentChannel[nextNode].balance = nodeToPaymentChannel[nextNode].balance + amount;
-                        (*outgoingTransUnits).erase(iterOutgoing);
-
+                       iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
                      }
-
                      auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
                                                         (*outgoingTransUnits).end(),
                                                         [&transactionId](const pair<tuple<int, int >, double> & p)
                                                         { return get<0>(p.first) == transactionId; });
 
-
-
                      }
-
-
-
-
-
-
-
-
 
          }
 
-         canceledTransactions.erase(it);
+         it = canceledTransactions.erase(it);
+
       }
       else{
+
          it++;
       }
-
    }
-
-
 }
 
 
@@ -603,9 +538,7 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
       deleteMessagesInQueues();
    }
    else{
-      cout << "handleStatMsg start" << endl;
       scheduleAt(simTime()+_statRate, ttmsg);
-      cout << "handleStatMsg end" << endl;
 
    }
 
@@ -651,7 +584,7 @@ void hostNode::forwardTimeOutMessage(routerMsg* msg){
 void hostNode::handleTimeOutMessage(routerMsg* ttmsg){ //TODO: fix handleTimeOutMessage
 
    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
-
+   //cout << "hopCount: " << ttmsg->getHopCount() << endl;
    if ((ttmsg->getHopCount())==0){ //is at the sender
 
       if (_useWaterfilling){
@@ -662,29 +595,34 @@ void hostNode::handleTimeOutMessage(routerMsg* ttmsg){ //TODO: fix handleTimeOut
               int pathIndex = p.first;
               tuple<int,int> key = make_tuple(transactionId, pathIndex);
               if (transPathToAckState.count(key)==0){
-                  ttmsg->decapsulate();
-                  delete toutMsg;
-                  delete ttmsg;
+                  //do not generate time out msg for path
+
+
+
               }
               else if(transPathToAckState[key].amtSent == transPathToAckState[key].amtReceived){
-                  ttmsg->decapsulate();
-                  delete toutMsg;
-                  delete ttmsg;
+                  //do not generate time out msg for path
+
               }
               else{
+                 // cout << "sent time out msg" << endl;
                   routerMsg* waterTimeOutMsg = generateWaterfillingTimeOutMessage(
                           nodeToShortestPathsMap[destination][p.first].path, transactionId, destination);
+                  //TODO: forwardTimeOutMsg
+                  forwardTimeOutMessage(waterTimeOutMsg);
+
               }
           }
 
+          delete ttmsg;
 
-         //TODO: fill in useWaterfilling case
+
+
 
       }
       else{
 
          if (successfulDoNotSendTimeOut.count(toutMsg->getTransactionId())>0){ //already received ack for it, do not send out
-            cout<<"here2" <<endl;
             successfulDoNotSendTimeOut.erase(toutMsg->getTransactionId());
             ttmsg->decapsulate();
             delete toutMsg;
@@ -707,6 +645,8 @@ void hostNode::handleTimeOutMessage(routerMsg* ttmsg){ //TODO: fix handleTimeOut
 
    }
    else{ //is at the destination
+
+      //cout << "at timeOutMsg destination" << endl;
       CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),(ttmsg->getRoute())[ttmsg->getHopCount()-1],-1);
 
       canceledTransactions.insert(ct);
@@ -776,9 +716,14 @@ void hostNode::handleAckMessage(routerMsg* ttmsg){ //TODO: fix handleAckMessage
        transPathToAckState[key].amtReceived = transPathToAckState[key].amtReceived + aMsg->getAmount();
 
       //TODO: waterfilling case
-       if (transPathToAckState[key].amtReceived == transPathToAckState[key].amtSent){
+
+
+
+        if (transPathToAckState[key].amtReceived == transPathToAckState[key].amtSent){
            transPathToAckState.erase(key);
        }
+
+
 
    }
 
@@ -819,13 +764,7 @@ routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg){ //default is false
    timeSent = transMsg->getTimeSent();
    amount = transMsg->getAmount();
    isSuccess = true;
-
-
    hasTimeOut = transMsg->getHasTimeOut();
-
-
-
-
    char msgname[MSGSIZE];
 
    sprintf(msgname, "receiver-%d-to-sender-%d ackMsg", receiver, sender);
@@ -1062,9 +1001,10 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
 
        //update the data structure keeping track of how much sent and received on each path
        if (transPathToAckState.count(key) == 0){
-           AckState temp = AckState();
+           AckState temp = {};
            temp.amtSent = p.second;
            temp.amtReceived = 0;
+           transPathToAckState[key] = temp;
        }
        else{
            transPathToAckState[key].amtSent =  transPathToAckState[key].amtSent + p.second;
@@ -1073,10 +1013,8 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
         vector<int> path = nodeToShortestPathsMap[destNode][p.first].path;
         double amt = p.second;
         routerMsg* waterMsg = generateWaterfillingTransactionMessage(amt, path, p.first, transMsg); //TODO:
-        //cout << "waterMsg generated "<<endl;
         handleTransactionMessage(waterMsg);
      }
-     //cout<<endl;
      //cout << "number of probes after water gen: " <<  nodeToShortestPathsMap[destNode].size();
 
 
@@ -1110,7 +1048,6 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
 
    if ( iter!=canceledTransactions.end() ){
       //TODO: check to see if transactionId is in canceledTransactions set
-       cout <<"delete transaction because in canceled set" << endl;
 
       //delete yourself
       ttmsg->decapsulate();
@@ -1121,13 +1058,10 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
 
 
       if(ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
-          cout << "at last index of route" << endl;
          int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
          map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
          (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = transMsg->getAmount();
          int transactionId = transMsg->getTransactionId();
-         //cout << "1 HERE" << endl;
-         //cout <<"transMsg hasTimeOUt: " << transMsg->getHasTimeOut() <<endl;
          routerMsg* newMsg =  generateAckMessage(ttmsg);
          //forward ack message - no need to wait;
 
@@ -1149,29 +1083,18 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
 
       }
       else{
-          cout << "at first index of route" << endl;
          //is a self-message/at hop count = 0
          int destNode = transMsg->getReceiver();
          statNumAttempted[destNode] = statNumAttempted[destNode]+1;
 
-         //cout << "WATERFILLING 1" <<endl;
          if(_useWaterfilling && (ttmsg->getRoute().size() == 0)){ //no route is specified -
             //means we need to break up into chunks and assign route
-            cout << "using waterfilling" <<endl;
 
 
             bool recent = probesRecent(nodeToShortestPathsMap[destNode]);
 
-            cout << "probes recent " << recent <<endl;
             if (recent){ // we made sure all the probes are back
-                cout << "before splitTransForWaterfilling" << endl;
-                cout <<"nodeToPaymentChannel.count(4): " << nodeToPaymentChannel.count(4)<< endl;
-                q = &(nodeToPaymentChannel[4].queuedTransUnits);
-                      for (auto tempQ : (*q)){
-                          cout << (get<2>(tempQ))->getName() << endl;
-                      }
-               splitTransactionForWaterfilling(ttmsg);
-               cout << "after splitTransForWaterFilling" << endl;
+              splitTransactionForWaterfilling(ttmsg);
                if (transMsg->getAmount()>0){
                                 scheduleAt(simTime() + 1, ttmsg);
                             }
@@ -1188,7 +1111,6 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
 
             }
             else{
-               //cout << "WATERFILLING 3" << endl;
                scheduleAt(simTime() + 1, ttmsg);
                return;
             }
@@ -1196,26 +1118,14 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
          }
 
 
-         cout << "not using waterfilling1" <<endl;
 
          int nextNode = ttmsg->getRoute()[hopcount+1];
-         cout <<"nextNode: " << nextNode << endl;
          q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
-         for (auto tempQ : (*q)){
-             cout << (get<2>(tempQ))->getName() << endl;
-         }
-
-         cout << "not using waterfilling2" <<endl;
-
-         cout << "msg name: " << ttmsg->getName() << endl;
-
-         tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
+                  tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
          (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
                   ttmsg, key));
          push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
-         cout << "not using waterfilling3" <<endl;
          processTransUnits(nextNode, *q);
-         cout << "not using waterfilling4" <<endl;
 
       }
 
@@ -1239,7 +1149,7 @@ routerMsg *hostNode::generateTimeOutMessage(routerMsg* msg)
    toutMsg->setReceiver(transMsg->getReceiver());
 
 
-   sprintf(msgname, "tic-%d-to-%d routerTimeOutMsg", transMsg->getSender(), transMsg->getReceiver());
+   sprintf(msgname, "tic-%d-to-%d routerTimeOutMsg(%f)", transMsg->getSender(), transMsg->getReceiver(), transMsg->getTimeSent());
    routerMsg *rMsg = new routerMsg(msgname);
    rMsg->setRoute(msg->getRoute());
    rMsg->setHopCount(0);
@@ -1294,9 +1204,7 @@ routerMsg *hostNode::generateTransactionMessage(TransUnit TransUnit)
  */
 void hostNode:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q){
    bool successful = true;
-   cout <<"in processTransUnits" << endl;
    while((int)q.size()>0 && successful){
-       cout <<"in processTransUnits" << endl;
       successful = forwardTransactionMessage(get<2>(q.back()));
       if (successful){
          q.pop_back();
@@ -1311,33 +1219,17 @@ void hostNode:: processTransUnits(int dest, vector<tuple<int, double , routerMsg
  */
 bool hostNode::forwardTransactionMessage(routerMsg *msg)
 {
-    cout << "msg name: " << msg->getName() << endl;
 
 
-    if (msg == 0){
-        cout << msg << endl;
-        cout << "null pointer" << endl;
-        return true;
-    }
-
-    cout<<"in forwardTransactionMessage0" << endl;
-    cout << "msg" << &msg;
-    cout <<"routerMsg -> getHOpCount" << msg->getHopCount();
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
 
-   //cout <<"forwardTransactionMesg: " << transMsg->getHasTimeOut() << endl;
-
-   cout<<"in forwardTransactionMessage0.1" << endl;
 
    int nextDest = msg->getRoute()[msg->getHopCount()+1];
-   cout<<"in forwardTransactionMessage0.2" << endl;
 
    if (transMsg->getAmount() >nodeToPaymentChannel[nextDest].balance){
-       cout<<"in forwardTransactionMessage1" << endl;
       return false;
    }
    else{
-       cout<<"in forwardTransactionMessage2" << endl;
       // Increment hop count.
       msg->setHopCount(msg->getHopCount()+1);
       //use hopCount to find next destination
@@ -1347,15 +1239,12 @@ bool hostNode::forwardTransactionMessage(routerMsg *msg)
       map<Id, double> *outgoingTransUnits = &(nodeToPaymentChannel[nextDest].outgoingTransUnits);
       (*outgoingTransUnits)[make_tuple(transMsg->getTransactionId(),transMsg->getHtlcIndex())] = transMsg->getAmount();
 
-      cout<<"in forwardTransactionMessage3" << endl;
       //numSentPerChannel incremented every time (key,value) pair added to outgoing_trans_units map
       nodeToPaymentChannel[nextDest].statNumSent =  nodeToPaymentChannel[nextDest].statNumSent+1;
-      cout<<"in forwardTransactionMessage4" << endl;
       int amt = transMsg->getAmount();
       nodeToPaymentChannel[nextDest].balance = nodeToPaymentChannel[nextDest].balance - amt;
 
       //int transId = transMsg->getTransactionId();
-      cout<<"in forwardTransactionMessage5" << endl;
       send(msg, nodeToPaymentChannel[nextDest].gate);
       return true;
    } //end else (transMsg->getAmount() >nodeToPaymentChannel[dest].balance)
