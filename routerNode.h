@@ -50,6 +50,7 @@ class routerNode : public cSimpleModule
       virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
           //just generates routerMsg with no encapsulated msg inside
       virtual routerMsg *generateStatMessage();
+      virtual routerMsg *generateClearStateMessage();
       //virtual routerMsg *generateTimeOutMessage(routerMsg *transMsg);
       //virtual routerMsg *generateProbeMessage(int destNode, int pathIdx, vector<int> path);
       //virtual void splitTransactionForWaterfilling(routerMsg * ttMsg);

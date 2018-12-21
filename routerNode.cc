@@ -2,7 +2,7 @@
 #include "hostInitialize.h"
 #include <queue>
 
-#define MSGSIZE 100
+
 
 Define_Module(routerNode);
 
@@ -222,6 +222,14 @@ routerMsg *routerNode::generateStatMessage(){
 }
 
 
+
+routerMsg *routerNode::generateClearStateMessage(){
+   char msgname[MSGSIZE];
+   sprintf(msgname, "node-%d clearStateMsg", myIndex());
+   routerMsg *rMsg = new routerMsg(msgname);
+   rMsg->setMessageType(CLEAR_STATE_MSG);
+   return rMsg;
+}
 
 void routerNode::handleStatMessage(routerMsg* ttmsg){
    if (simTime() >10){

@@ -26,12 +26,13 @@
 #define STAT_MSG 3
 #define TIME_OUT_MSG 4
 #define PROBE_MSG 5
+#define CLEAR_STATE_MSG 6
 
 typedef std::vector<int> IntVector;
 // }}
 
 /**
- * Class generated from <tt>routerMsg.msg:31</tt> by nedtool.
+ * Class generated from <tt>routerMsg.msg:32</tt> by nedtool.
  * <pre>
  * packet routerMsg
  * {

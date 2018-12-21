@@ -726,6 +726,14 @@ void hostNode::handleUpdateMessage(routerMsg* msg){
 }
 
 
+routerMsg *hostNode::generateClearStateMessage(){
+   char msgname[MSGSIZE];
+   sprintf(msgname, "node-%d clearStateMsg", myIndex());
+   routerMsg *rMsg = new routerMsg(msgname);
+   rMsg->setMessageType(CLEAR_STATE_MSG);
+   return rMsg;
+}
+
 /*
  *  generateUpdateMessage - creates new message to send as updateMessage
  *      - note: all update messages have route length of exactly 2

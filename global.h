@@ -1,5 +1,5 @@
-using namespace std;
-using namespace omnetpp;
+
+
 #include <stdio.h>
 #include <string.h>
 #include <omnetpp.h>
@@ -21,6 +21,8 @@ using namespace omnetpp;
 #include "PathInfo.h"
 #include "TransUnit.h"
 
+#define MSGSIZE 100
+using namespace std;
 
 //global parameters
 extern vector<TransUnit> _transUnitList;
