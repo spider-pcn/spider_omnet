@@ -2,8 +2,6 @@
 #include "hostInitialize.h"
 #include <queue>
 
-
-
 Define_Module(routerNode);
 
 int routerNode::myIndex(){
@@ -63,7 +61,6 @@ void routerNode::initialize()
    string topologyFile_ = par("topologyFile");
    string workloadFile_ = par("workloadFile");
 
-
    //TODO: may be redudant if hostNode is initialized first
 
    if (myIndex() == 0){  //main initialization for global parameters
@@ -75,7 +72,6 @@ void routerNode::initialize()
          _kValue = 3;
       }
 
-
       setNumNodes(topologyFile_); //TODO: condense into generate_trans_unit_list
       // add all the TransUnits into global list
       generateTransUnitList(workloadFile_, _transUnitList);
@@ -85,8 +81,6 @@ void routerNode::initialize()
       //create "balances" map - from topology file
       generateChannelsBalancesMap(topologyFile_, _channels, _balances );
    }
-
-
 
    //Create nodeToPaymentChannel map
    const char * gateName = "out";
@@ -168,7 +162,6 @@ void routerNode::initialize()
 
    routerMsg *clearStateMsg = generateClearStateMessage();
    scheduleAt(simTime() + _clearRate, clearStateMsg);
-
 
 
 }
@@ -255,69 +248,37 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
       int nextNode = get<3>(*it);
 
       if (simTime() > (msgArrivalTime + _maxTravelTime)){ //we can process it
-
-
               map<tuple<int,int>, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-
               auto iterIncoming = find_if((*incomingTransUnits).begin(),
                                     (*incomingTransUnits).end(),
                                     [&transactionId](const pair<tuple<int, int >, double> & p)
                                     { return get<0>(p.first) == transactionId; });
-
-
                       while (iterIncoming != (*incomingTransUnits).end()){
-
-
-
                       if (iterIncoming != (*incomingTransUnits).end()){
                          iterIncoming = (*incomingTransUnits).erase(iterIncoming);
 
                          tuple<int, int> tempId = make_tuple(transactionId, get<1>(iterIncoming -> first));
                          // start queue searching
-
-
-
                          vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
                          sort_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end());
 
                          auto iterQueue = find_if((*queuedTransUnits).begin(),
                                (*queuedTransUnits).end(),
                                [&tempId](const tuple<int, double, routerMsg*, Id>& p)
-                               { return
-                                      (get<3>(p) == tempId);
-
-                               });
-
-
+                               { return (get<3>(p) == tempId); });
                          if (iterQueue != (*queuedTransUnits).end()){
-
                           iterQueue =   (*queuedTransUnits).erase(iterQueue);
 
                          }
 
-
-
-
                          make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
-                          //end queue searching
-
-
-
-
-
                       }
-
                       auto iterIncoming = find_if((*incomingTransUnits).begin(),
                                             (*incomingTransUnits).end(),
                                             [&transactionId](const pair<tuple<int, int >, double> & p)
                                             { return get<0>(p.first) == transactionId; });
-
                       }
-
-
-
               map<tuple<int,int>, double> *outgoingTransUnits = &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
-
 
               auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
                                                  (*outgoingTransUnits).end(),
@@ -337,33 +298,15 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                                                          (*outgoingTransUnits).end(),
                                                          [&transactionId](const pair<tuple<int, int >, double> & p)
                                                          { return get<0>(p.first) == transactionId; });
-
-
-
                       }
-
-
-
-
-
-
-
-
-
-
 
           it = canceledTransactions.erase(it);
       }
       else{
          it++;
       }
-
    }
-
-
 }
-
-
 
 routerMsg *routerNode::generateClearStateMessage(){
    char msgname[MSGSIZE];

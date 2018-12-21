@@ -508,7 +508,6 @@ void hostNode::handleClearStateMessage(routerMsg* ttmsg){
                                                         { return get<0>(p.first) == transactionId; });
 
                      }
-
          }
 
          it = canceledTransactions.erase(it);
@@ -596,13 +595,9 @@ void hostNode::handleTimeOutMessage(routerMsg* ttmsg){ //TODO: fix handleTimeOut
               tuple<int,int> key = make_tuple(transactionId, pathIndex);
               if (transPathToAckState.count(key)==0){
                   //do not generate time out msg for path
-
-
-
               }
               else if(transPathToAckState[key].amtSent == transPathToAckState[key].amtReceived){
                   //do not generate time out msg for path
-
               }
               else{
                  // cout << "sent time out msg" << endl;
@@ -610,14 +605,9 @@ void hostNode::handleTimeOutMessage(routerMsg* ttmsg){ //TODO: fix handleTimeOut
                           nodeToShortestPathsMap[destination][p.first].path, transactionId, destination);
                   //TODO: forwardTimeOutMsg
                   forwardTimeOutMessage(waterTimeOutMsg);
-
               }
           }
-
           delete ttmsg;
-
-
-
 
       }
       else{
@@ -637,27 +627,17 @@ void hostNode::handleTimeOutMessage(routerMsg* ttmsg){ //TODO: fix handleTimeOut
             canceledTransactions.insert(ct);
             forwardTimeOutMessage(ttmsg);
          }
-
-
-
       }
-
-
    }
    else{ //is at the destination
-
       //cout << "at timeOutMsg destination" << endl;
       CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),(ttmsg->getRoute())[ttmsg->getHopCount()-1],-1);
-
       canceledTransactions.insert(ct);
-
 
       ttmsg->decapsulate();
       delete toutMsg;
       delete ttmsg;
    }//end else ((ttmsg->getHopCount())==0)
-
-
 }
 
 
@@ -700,33 +680,19 @@ void hostNode::handleAckMessage(routerMsg* ttmsg){ //TODO: fix handleAckMessage
    //at last index of route
    //add transactionId to set of successful transactions that we don't need to send time out messages
    if (aMsg->getHasTimeOut()  && !_useWaterfilling){
-
-
-
-      //cout << "HAS TIME OUT" << endl;
       successfulDoNotSendTimeOut.insert(aMsg->getTransactionId());
-
-
 
    }
    else if(aMsg->getHasTimeOut()  && _useWaterfilling){
        tuple<int,int> key = make_tuple(aMsg->getTransactionId(), aMsg->getPathIndex());
 
-
        transPathToAckState[key].amtReceived = transPathToAckState[key].amtReceived + aMsg->getAmount();
-
-      //TODO: waterfilling case
-
-
 
         if (transPathToAckState[key].amtReceived == transPathToAckState[key].amtSent){
            transPathToAckState.erase(key);
        }
 
-
-
    }
-
 
    int destNode = ttmsg->getRoute()[0]; //destination of origin TransUnit job
 
@@ -839,9 +805,7 @@ void hostNode::handleUpdateMessage(routerMsg* msg){
    q = &(nodeToPaymentChannel[prevNode].queuedTransUnits);
 
    processTransUnits(prevNode, *q);
-
 }
-
 
 routerMsg *hostNode::generateClearStateMessage(){
    char msgname[MSGSIZE];
@@ -937,20 +901,15 @@ routerMsg* hostNode::generateWaterfillingTimeOutMessage( vector<int> path, int t
        msg->setReceiver(receiver);
        msg->setTransactionId(transactionId);
 
-
        sprintf(msgname, "tic-%d-to-%d water-router-timeOutMsg", myIndex(), receiver);
        routerMsg *rMsg = new routerMsg(msgname);
        rMsg->setRoute(path);
-
 
        rMsg->setHopCount(0);
        rMsg->setMessageType(TIME_OUT_MSG);
        rMsg->encapsulate(msg);
        return rMsg;
 }
-
-
-
 
 
 void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
@@ -1090,7 +1049,6 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
          if(_useWaterfilling && (ttmsg->getRoute().size() == 0)){ //no route is specified -
             //means we need to break up into chunks and assign route
 
-
             bool recent = probesRecent(nodeToShortestPathsMap[destNode]);
 
             if (recent){ // we made sure all the probes are back
@@ -1106,19 +1064,13 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
                             return;
                             }
 
-
                 return;
-
             }
             else{
                scheduleAt(simTime() + 1, ttmsg);
                return;
             }
-
          }
-
-
-
          int nextNode = ttmsg->getRoute()[hopcount+1];
          q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
                   tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
@@ -1128,11 +1080,6 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
          processTransUnits(nextNode, *q);
 
       }
-
-
-
-
-
    }
 }
 
@@ -1219,13 +1166,8 @@ void hostNode:: processTransUnits(int dest, vector<tuple<int, double , routerMsg
  */
 bool hostNode::forwardTransactionMessage(routerMsg *msg)
 {
-
-
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
-
-
    int nextDest = msg->getRoute()[msg->getHopCount()+1];
-
    if (transMsg->getAmount() >nodeToPaymentChannel[nextDest].balance){
       return false;
    }
@@ -1248,7 +1190,5 @@ bool hostNode::forwardTransactionMessage(routerMsg *msg)
       send(msg, nodeToPaymentChannel[nextDest].gate);
       return true;
    } //end else (transMsg->getAmount() >nodeToPaymentChannel[dest].balance)
-
-
 }
 
