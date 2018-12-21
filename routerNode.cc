@@ -60,12 +60,14 @@ void routerNode::handleProbeMessage(routerMsg* ttmsg){
 
 void routerNode::initialize()
 {
+    cout << "routerNode " << myIndex() << " checkpoint 1" << endl;
    string topologyFile_ = par("topologyFile");
    string workloadFile_ = par("workloadFile");
 
 
    //TODO: may be redudant if hostNode is initialized first
-   if (getIndex() == 0){  //main initialization for global parameters
+
+   if (myIndex() == 0){  //main initialization for global parameters
        //TODO: initialize numRouterNodes
        //TODO: initiialize numHostNodes
        _useWaterfilling = true;
@@ -86,6 +88,7 @@ void routerNode::initialize()
    }
 
 
+
    //Create nodeToPaymentChannel map
    const char * gateName = "out";
    cGate *destGate = NULL;
@@ -104,7 +107,7 @@ void routerNode::initialize()
          if (!isHost){
              key = key + _numHostNodes;
          }
-         nodeToPaymentChannel[key] = temp; //TODO: change getIndex() to myIndex()
+         nodeToPaymentChannel[key] = temp; //TODO: change myIndex() to myIndex()
       }
    } while (i < gateSize);
 
@@ -115,7 +118,7 @@ void routerNode::initialize()
       int key =  iter->first; //node
 
       //fill in balance field of nodeToPaymentChannel
-      nodeToPaymentChannel[key].balance = _balances[make_tuple(getIndex(),key)];
+      nodeToPaymentChannel[key].balance = _balances[make_tuple(myIndex(),key)];
 
       //initialize queuedTransUnits
       vector<tuple<int, double , routerMsg *>> temp;
@@ -161,7 +164,7 @@ void routerNode::initialize()
       //statNumSent int
       nodeToPaymentChannel[key].statNumSent = 0;
    }
-   cout << "end routerNode initialization" << endl;
+   cout << "end routerNode " << myIndex() << " initialization" << endl;
 
 }
 
@@ -169,7 +172,7 @@ void routerNode::handleMessage(cMessage *msg)
 {
    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
    if (ttmsg->getMessageType()==ACK_MSG){ //preprocessor constants defined in routerMsg_m.h
-      //cout << "[NODE "<< getIndex() <<": RECEIVED ACK MSG] \n" <<endl;
+      //cout << "[NODE "<< myIndex() <<": RECEIVED ACK MSG] \n" <<endl;
       //print_message(ttmsg);
       //print_private_values();
       handleAckMessage(ttmsg);
@@ -177,7 +180,7 @@ void routerNode::handleMessage(cMessage *msg)
       // print_private_values();
    }
    else if(ttmsg->getMessageType()==TRANSACTION_MSG){
-      //cout<< "[NODE "<< getIndex() <<": RECEIVED TRANSACTION MSG]  \n"<<endl;
+      //cout<< "[NODE "<< myIndex() <<": RECEIVED TRANSACTION MSG]  \n"<<endl;
       // print_message(ttmsg);
       // print_private_values();
       handleTransactionMessage(ttmsg);
@@ -185,7 +188,7 @@ void routerNode::handleMessage(cMessage *msg)
       // print_private_values();
    }
    else if(ttmsg->getMessageType()==UPDATE_MSG){
-      //cout<< "[NODE "<< getIndex() <<": RECEIVED UPDATE MSG] \n"<<endl;
+      //cout<< "[NODE "<< myIndex() <<": RECEIVED UPDATE MSG] \n"<<endl;
       // print_message(ttmsg);
       // print_private_values();
       handleUpdateMessage(ttmsg);
@@ -193,12 +196,12 @@ void routerNode::handleMessage(cMessage *msg)
       //print_private_values();
    }
    else if (ttmsg->getMessageType() ==STAT_MSG){
-      //cout<< "[NODE "<< getIndex() <<": RECEIVED STAT MSG] \n"<<endl;
+      //cout<< "[NODE "<< myIndex() <<": RECEIVED STAT MSG] \n"<<endl;
       handleStatMessage(ttmsg);
       //cout<< "[AFTER HANDLING:]  \n"<<endl;
    }
    else if (ttmsg->getMessageType() == TIME_OUT_MSG){
-      //cout<< "[NODE "<< getIndex() <<": RECEIVED TIME_OUT_MSG] \n"<<endl;
+      //cout<< "[NODE "<< myIndex() <<": RECEIVED TIME_OUT_MSG] \n"<<endl;
       handleTimeOutMessage(ttmsg);
       //cout<< "[AFTER HANDLING:]  \n"<<endl;
    }
@@ -212,7 +215,7 @@ void routerNode::handleMessage(cMessage *msg)
 
 routerMsg *routerNode::generateStatMessage(){
    char msgname[MSGSIZE];
-   sprintf(msgname, "node-%d statMsg", getIndex());
+   sprintf(msgname, "node-%d statMsg", myIndex());
    routerMsg *rMsg = new routerMsg(msgname);
    rMsg->setMessageType(STAT_MSG);
    return rMsg;
@@ -409,11 +412,11 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
 routerMsg *routerNode::generateUpdateMessage(int transId, int receiver, double amount){
    char msgname[MSGSIZE];
 
-   sprintf(msgname, "tic-%d-to-%d updateMsg", getIndex(), receiver);
+   sprintf(msgname, "tic-%d-to-%d updateMsg", myIndex(), receiver);
 
    routerMsg *rMsg = new routerMsg(msgname);
 
-   vector<int> route={getIndex(),receiver};
+   vector<int> route={myIndex(),receiver};
    rMsg->setRoute(route);
    rMsg->setHopCount(0);
    rMsg->setMessageType(UPDATE_MSG);

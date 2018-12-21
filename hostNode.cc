@@ -364,7 +364,7 @@ void hostNode::initialize()
    routerMsg *statMsg = generateStatMessage();
    scheduleAt(0, statMsg);
 
-   cout << "end hostNode initialization" << endl;
+   cout << "end hostNode " << myIndex() << " initialization" << endl;
 
 }
 
