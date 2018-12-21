@@ -454,9 +454,18 @@ The purpose of handling timeouts is a way for the sender to cancel a previously 
         \item Delete the transaction mentioned from the set of canceled transactions. 
     \end{itemize}
 
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
 \section{Handling Time Outs with split transaction (Waterfilling)}
 \subsection{Overview}
-We add the "acked amount" to the ack messages and keep track of the total amount sent on each path, and total amount acked on each path, for every transaction. A transaction is successful only if the entire transaction amount has been acked (i.e. the sum of the acked amount across all paths is the same as the total transaction amount). Otherwise, (i) if there are paths for which the amount sent is greater than the amount acked, a timeoutMsg is sent on those paths and the transaction is added to the list of canceled transactions, (ii) if no such path exists, the transaction is simply added to the cancelled list without sending any timeOutMsg.   
+We add the "acked amount" to the ack messages and keep track of the total amount sent on each path, and total amount acked on each path, for every transaction. A transaction is successful only if the entire transaction amount has been acked (i.e. the sum of the acked amount across all paths is the same as the total transaction amount). Otherwise, (i) if there are paths for which the amount sent is greater than the amount acked, a timeoutMsg is sent on those paths and the transaction is added to the list of canceled transactions, (ii) if no such path exists, the transaction is simply added to the cancelled list without sending any timeOutMsg. 
+
+\vls{In both cases, we need to make sure that no further ``portion'' of the transaction is sent out. In the sense that any logic that sends out a fresh set of HTLCs based on probes or the action of sending probes themselves needs to stop - in particular, the payments per destination counter needs to be decremented since this transaction is over now}
 
 \subsection{Additional data structures}
 \begin{itemize}
