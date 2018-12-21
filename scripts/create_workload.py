@@ -5,37 +5,14 @@ import numpy as np
 import networkx as nx
 import random
 import json
-
-SCALE_AMOUNT = 5
-MEAN_RATE = 10
-CIRCULATION_STD_DEV = 2
-
-
-# create simple line graph
-simple_line_graph = nx.Graph()
-simple_line_graph.add_edge(0, 1)
-simple_line_graph.add_edge(1, 2)
-simple_line_graph.add_edge(3, 2)
-
-# create hotnets topo
-hotnets_topo_graph = nx.Graph()
-hotnets_topo_graph.add_edge(3, 4)
-hotnets_topo_graph.add_edge(2, 3)
-hotnets_topo_graph.add_edge(2, 1)
-hotnets_topo_graph.add_edge(3, 1)
-hotnets_topo_graph.add_edge(0, 4)
-hotnets_topo_graph.add_edge(0, 1)
-
-# create simple deadlock
-simple_deadlock_graph = nx.Graph()
-simple_deadlock_graph.add_edge(0, 1)
-simple_deadlock_graph.add_edge(1, 2)
-
+from config import *
 
 
 # generates the start and end nodes for a fixed set of topologies - hotnets/line/simple graph
 def generate_workload_standard(filename, payment_graph_topo, workload_type, total_time, \
         exp_size, txn_size_mean, generate_json_also, is_circulation):
+    # by default ASSUMES NO END HOSTS
+
     # define start and end nodes and amounts
     # edge a->b in payment graph appears in index i as start_nodes[i]=a, and end_nodes[i]=b
     if payment_graph_topo == 'hotnets_topo':
@@ -69,12 +46,14 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
     	for i, j in demand_dict.keys():
             start_nodes.append(i)
     	    end_nodes.append(j)
-    	    amt_relative.append(demand_dict[i, j])	
+    	    amt_relative.append(demand_dict[i, j])
+        amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+
 
     if generate_json_also:
         generate_json_files(filename + '.json', graph, start_nodes, end_nodes, amt_absolute)
 
-    write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
+    write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
             workload_type, total_time, exp_size, txn_size_mean)
 
 
@@ -121,20 +100,31 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
 # generates the json file necessary for the distributed testbed to be used to test
 # the lnd implementation
 def generate_json_files(filename, graph, start_nodes, end_nodes, amt_absolute):
-    #TODO: add btcd connection part and the miner node
     json_string = {}
 
+    # create btcd connections
+    btcd_connections = []
+    for i in range(graph.number_of_nodes() - 1):
+        connection = {"src": str(i), "dst" : str(i + 1)}
+        btcd_connections.append(connection)
+    json_string["btcd_connections"] = btcd_connections
+
+    # miner node
+    json_string["miner"] = "0"
+
+
     # create nodes and assign them distinct ips
-    nodes = {}
+    nodes = []
     for n in graph.nodes():
-        nodes["spider" + str(n)] = "10.0.1." + str(100 + n)
+        node = {"name": str(n), "ip" : "10.0.1." + str(100 + n)}
+        nodes.append(node)
     json_string["nodes"] = nodes
 
     # creates all the lnd channels
     edges = []
     for (u,v) in graph.edges():
         if u < v: 
-            edge = {"src": "spider" + str(u), "dst": "spider" + str(v)}
+            edge = {"src": str(u), "dst": str(v)}
             edges.append(edge)
 
     json_string["lnd_channels"] = edges
@@ -142,7 +132,7 @@ def generate_json_files(filename, graph, start_nodes, end_nodes, amt_absolute):
     # creates the string for the demands
     demands = []
     for s, e, a in zip(start_nodes, end_nodes, amt_absolute):
-        demand_entry = {"src": "spider" + str(s), "dst": "spider" + str(e),\
+        demand_entry = {"src": str(s), "dst": str(e),\
                         "rate": a}
         demands.append(demand_entry)
 
@@ -156,9 +146,10 @@ def generate_json_files(filename, graph, start_nodes, end_nodes, amt_absolute):
 # the set of nodes for sender-receiver pairs
 # size of transaction is determined when writing to the file to
 # either be exponentially distributed or constant size
-def generate_workload_for_provided_topology(filename, graph, workload_type, total_time, \
+def generate_workload_for_provided_topology(filename, inside_graph, whole_graph, end_host_map, \
+        workload_type, total_time, \
         exp_size, txn_size_mean, generate_json_also, is_circulation):
-    num_nodes = graph.number_of_nodes()
+    num_nodes = inside_graph.number_of_nodes()
     start_nodes, end_nodes, amt_relative = [], [], []
     
     if is_circulation:
@@ -166,16 +157,16 @@ def generate_workload_for_provided_topology(filename, graph, workload_type, tota
     	demand_dict = circ_demand(num_nodes, mean=MEAN_RATE, std_dev=CIRCULATION_STD_DEV)
 
     	for i, j in demand_dict.keys():
-    	    start_nodes.append(i)
-    	    end_nodes.append(j)
+    	    start_nodes.append(end_host_map[i])
+    	    end_nodes.append(end_host_map[j])
     	    amt_relative.append(demand_dict[i, j])	
 
     else:
         num_sender_receiver_pairs = num_nodes
         for i in range(num_sender_receiver_pairs):
             sender_receiver_pair = random.sample(xrange(0, n - 1, 1), 2)
-            start_nodes.append(sender_receiver_pair[0])
-            end_nodes.append(sender_receiver_pair[1])
+            start_nodes.append(end_host_map[sender_receiver_pair[0]])
+            end_nodes.append(end_host_map[sender_receiver_pair[1]])
             amt_relative.append(random.choice(range(1, MEAN_RATE * 2, 1)))
 
     amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
@@ -183,9 +174,9 @@ def generate_workload_for_provided_topology(filename, graph, workload_type, tota
     print "generated workload" 
 
     if generate_json_also:
-        generate_json_files(filename + '.json', graph, start_nodes, end_nodes, amt_absolute)
+        generate_json_files(filename + '.json', whole_graph, start_nodes, end_nodes, amt_absolute)
 
-    write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
+    write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
             workload_type, total_time, exp_size, txn_size_mean)
 
 
@@ -193,12 +184,32 @@ def generate_workload_for_provided_topology(filename, graph, workload_type, tota
 # parse topology file to get graph structure
 def parse_topo(topo_filename):
     g = nx.Graph()
+    inside_graph = nx.Graph()
+    end_host_map = {}
+    edge_connections = False
+
     with open(topo_filename) as topo_file:
         for line in topo_file:
+            if line == '\n':
+                inside_graph = g.copy()
+                edge_connections = True
+                continue
             n1 = int(line.split()[0])
             n2 = int(line.split()[1])
             g.add_edge(n1, n2)
-    return g
+
+            if edge_connections:
+                if inside_graph.has_node(n1):
+                    end_host_map[n1] = n2
+                else:
+                    end_host_map[n2] = n1
+
+    # if there are no separate end_hosts, return the inside graph itself
+    if not edge_connections:
+        inside_graph = g.copy()
+        end_host_map = {x : x for x in g.nodes()}
+        
+    return g, inside_graph, end_host_map
 
 
 
@@ -252,7 +263,7 @@ parser.add_argument('--payment-graph-type', choices=['dag', 'circulation'], \
 	help='type of payment graph (dag or circulation)', default='circulation')
 parser.add_argument('--topo-filename', dest='topo_filename', type=str, \
         help='name of topology file to generate worklooad for')
-parser.add_argument('output_filename', type=str, help='name of the output workload file', \
+parser.add_argument('output_file_prefix', type=str, help='name of the output workload file', \
         default='simple_workload.txt')
 parser.add_argument('interval_distribution', choices=['uniform', 'poisson'],\
         help='time between transactions is determine by this', default='poisson')
@@ -266,7 +277,7 @@ parser.add_argument('--generate-json-also', action="store_true", help="do you ne
 
 args = parser.parse_args()
 
-output_filename = args.output_filename
+output_prefix = args.output_file_prefix
 is_circulation = True if args.payment_graph_type == 'circulation' else False
 distribution = args.interval_distribution
 total_time = args.total_time
@@ -281,19 +292,12 @@ graph_topo = args.graph_topo
 # generate workloads
 np.random.seed(11)
 if graph_topo != 'custom':
-    generate_workload_standard(output_filename, graph_topo, distribution, \
+    generate_workload_standard(output_prefix, graph_topo, distribution, \
             total_time, exp_size, txn_size_mean, generate_json_also, is_circulation)
 elif topo_filename is None:
     raise Exception("Topology needed for custom file")
 else:
-    graph = parse_topo(topo_filename)
-    generate_workload_for_provided_topology(output_filename, graph, distribution, total_time, exp_size,\
+    whole_graph, inside_graph, end_host_map = parse_topo(topo_filename)
+    generate_workload_for_provided_topology(output_prefix, inside_graph, whole_graph, end_host_map,\
+            distribution, total_time, exp_size,\
             txn_size_mean, generate_json_also, is_circulation)
-
-
-
-
-
-
-
-    

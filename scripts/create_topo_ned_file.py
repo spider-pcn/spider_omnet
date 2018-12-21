@@ -2,6 +2,7 @@ import sys
 import textwrap
 import argparse
 import networkx as nx
+from config import *
 
 # take the topology file in a specific format and write it to a ned file
 def write_ned_file(topo_filename, output_filename, network_name):
@@ -21,6 +22,8 @@ def write_ned_file(topo_filename, output_filename, network_name):
     linklist = list()
     max_val = -1 #used to find number of nodes, assume nodes start at 0 and number consecutively
     for line in topo_file:
+        if line == "\n":
+            continue
         n1 = int(line.split()[0])
         n2 = int(line.split()[1])
         if (n1 > max_val):
@@ -89,13 +92,25 @@ def generate_graph(size, graph_type):
 
 
 # print the output in the desired format for write_ned_file to read
-def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename):
+# generate extra end host nodes if need be
+def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts):
     f = open(output_filename, "w+")
 
     for e in G.edges():
         f.write(str(e[0]) + " " + str(e[1]) +  " ")
         f.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
         f.write(str(balance_per_channel/2) + " " + str(balance_per_channel/2) + "\n")
+
+
+    # generate extra end host nodes
+    if separate_end_hosts: 
+        f.write("\n")
+        index = G.number_of_nodes()
+        for n in G.nodes():
+            f.write(str(n) + " " + str(index) + " ")
+            f.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
+            f.write(str(0) + " " + str(LARGE_BALANCE) + "\n")
+            index += 1
     f.close()
 
 
@@ -106,20 +121,35 @@ parser = argparse.ArgumentParser(description="Create arbitrary topologies to run
 parser.add_argument('--num-nodes', type=int, dest='num_nodes', help='number of nodes in the graph', default=20)
 parser.add_argument('--delay-per-channel', type=int, dest='delay_per_channel', \
         help='delay between nodes (ms)', default=30)
-parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'provided'], 
-        help='type of graph (Small world or scale free or custom topology)', default='small_world')
+parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'hotnets_topo', 'simple_line', \
+        'simple_deadlock'], \
+        help='type of graph (Small world or scale free or custom topology list)', default='small_world')
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 parser.add_argument('--topo-filename', dest='topo_filename', type=str, \
         help='name of intermediate output file', default="topo.txt")
 parser.add_argument('--network-name', type=str, dest='network_name', \
         help='name of the output ned filename', default='simpleNet')
+parser.add_argument('--separate-end-hosts', action='store_true', \
+        help='do you need separate end hosts that only send transactions')
+
 args = parser.parse_args()
 
 
 # generate graph and print topology and ned file
-if args.graph_type != 'provided':
+if args.graph_type in ['small_world', 'scale_free']:
     G = generate_graph(args.num_nodes, args.graph_type)
-    print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename)
+elif args.graph_type == 'hotnets_topo':
+    G = hotnets_topo_graph
+elif args.graph_type == 'simple_deadlock':
+    G = simple_deadlock_graph
+    args.separate_end_hosts = False
+else:
+    G = simple_line_graph
+    args.separate_end_hosts = False
+
+
+print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename, \
+        args.separate_end_hosts)
 write_ned_file(args.topo_filename, args.network_name + '.ned', args.network_name)
 
 
