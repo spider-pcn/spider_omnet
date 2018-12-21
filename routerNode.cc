@@ -178,9 +178,10 @@ void routerNode::initialize()
 
 void routerNode::handleMessage(cMessage *msg)
 {
+    cout << "Time: " << simTime() << endl;
    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
    if (ttmsg->getMessageType()==ACK_MSG){ //preprocessor constants defined in routerMsg_m.h
-      cout << "[ROUTER "<< myIndex() <<": RECEIVED ACK MSG]" <<endl;
+      cout << "[ROUTER "<< myIndex() <<": RECEIVED ACK MSG]"<< msg->getName() << endl;
       //print_message(ttmsg);
       //print_private_values();
       handleAckMessage(ttmsg);
@@ -188,7 +189,7 @@ void routerNode::handleMessage(cMessage *msg)
       // print_private_values();
    }
    else if(ttmsg->getMessageType()==TRANSACTION_MSG){
-      cout<< "[ROUTER "<< myIndex() <<": RECEIVED TRANSACTION MSG] "<<endl;
+      cout<< "[ROUTER "<< myIndex() <<": RECEIVED TRANSACTION MSG] "<< msg->getName()<<endl;
       // print_message(ttmsg);
       // print_private_values();
       handleTransactionMessage(ttmsg);
@@ -196,7 +197,7 @@ void routerNode::handleMessage(cMessage *msg)
       // print_private_values();
    }
    else if(ttmsg->getMessageType()==UPDATE_MSG){
-      cout<< "[ROUTER "<< myIndex() <<": RECEIVED UPDATE MSG]"<<endl;
+      cout<< "[ROUTER "<< myIndex() <<": RECEIVED UPDATE MSG]"<< msg->getName()<<endl;
       // print_message(ttmsg);
       // print_private_values();
       handleUpdateMessage(ttmsg);
@@ -204,22 +205,22 @@ void routerNode::handleMessage(cMessage *msg)
       //print_private_values();
    }
    else if (ttmsg->getMessageType() ==STAT_MSG){
-      cout<< "[ROUTER "<< myIndex() <<": RECEIVED STAT MSG]"<<endl;
+      cout<< "[ROUTER "<< myIndex() <<": RECEIVED STAT MSG]"<< msg->getName()<<endl;
       handleStatMessage(ttmsg);
       cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == TIME_OUT_MSG){
-      cout<< "[ROUTER "<< myIndex() <<": RECEIVED TIME_OUT_MSG] "<<endl;
+      cout<< "[ROUTER "<< myIndex() <<": RECEIVED TIME_OUT_MSG] "<< msg->getName()<<endl;
       handleTimeOutMessage(ttmsg);
       cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == PROBE_MSG){
-      cout<< "[ROUTER "<< myIndex() <<": RECEIVED PROBE_MSG] "<<endl;
+      cout<< "[ROUTER "<< myIndex() <<": RECEIVED PROBE_MSG] "<< msg->getName()<<endl;
       handleProbeMessage(ttmsg);
       cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == CLEAR_STATE_MSG){
-      cout<< "[ROUTER "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] "<<endl;
+      cout<< "[ROUTER "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] "<< msg->getName()<<endl;
       handleClearStateMessage(ttmsg);
       cout<< "[AFTER HANDLING:]  "<<endl;
    }
@@ -295,6 +296,7 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                             (*queuedTransUnits).erase(iterQueue);
 
                          }
+
 
 
 

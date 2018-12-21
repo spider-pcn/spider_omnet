@@ -194,7 +194,7 @@ void hostNode::initialize()
    successfulDoNotSendTimeOut = {};
 
    if (getIndex() == 0){  //main initialization for global parameters
-      _simulationLength = 10;
+      _simulationLength = 15;
       _maxTravelTime = 0.2;
       //set statRate
       _statRate = 0.5;
@@ -386,9 +386,30 @@ void hostNode::initialize()
 
 void hostNode::handleMessage(cMessage *msg)
 {
+
+
+    cout << "Host Time:" << simTime() << endl;
+    cout << "msg: " << msg->getName() << endl;
+
+
+
    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
+
+   if (simTime() > _simulationLength){
+       if (ttmsg->getMessageType() == TRANSACTION_MSG){
+         auto tempMsg = ttmsg->getEncapsulatedPacket();
+         ttmsg->decapsulate();
+         delete tempMsg;
+         delete ttmsg;
+         return;
+       }
+     }
+
+
    if (ttmsg->getMessageType()==ACK_MSG){ //preprocessor constants defined in routerMsg_m.h
-      cout << "[HOST "<< myIndex() <<": RECEIVED ACK MSG] " <<endl;
+
+
+      cout << "[HOST "<< myIndex() <<": RECEIVED ACK MSG] " << msg->getName() << endl;
       //print_message(ttmsg);
       //print_private_values();
       handleAckMessage(ttmsg);
@@ -396,7 +417,7 @@ void hostNode::handleMessage(cMessage *msg)
       // print_private_values();
    }
    else if(ttmsg->getMessageType()==TRANSACTION_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED TRANSACTION MSG]  "<<endl;
+      cout<< "[HOST "<< myIndex() <<": RECEIVED TRANSACTION MSG]  "<< msg->getName() <<endl;
       // print_message(ttmsg);
       // print_private_values();
       handleTransactionMessage(ttmsg);
@@ -404,7 +425,7 @@ void hostNode::handleMessage(cMessage *msg)
       // print_private_values();
    }
    else if(ttmsg->getMessageType()==UPDATE_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED UPDATE MSG] "<<endl;
+      cout<< "[HOST "<< myIndex() <<": RECEIVED UPDATE MSG] "<< msg->getName() << endl;
       // print_message(ttmsg);
       // print_private_values();
       handleUpdateMessage(ttmsg);
@@ -413,22 +434,22 @@ void hostNode::handleMessage(cMessage *msg)
 
    }
    else if (ttmsg->getMessageType() ==STAT_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED STAT MSG] "<<endl;
+      cout<< "[HOST "<< myIndex() <<": RECEIVED STAT MSG] "<< msg->getName() << endl;
       handleStatMessage(ttmsg);
       cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == TIME_OUT_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED TIME_OUT_MSG] "<<endl;
+      cout<< "[HOST "<< myIndex() <<": RECEIVED TIME_OUT_MSG] "<<msg->getName() << endl;
       handleTimeOutMessage(ttmsg);
       cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == PROBE_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED PROBE_MSG] "<<endl;
+      cout<< "[HOST "<< myIndex() <<": RECEIVED PROBE_MSG] "<< msg->getName() << endl;
       handleProbeMessage(ttmsg);
       cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == CLEAR_STATE_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] " <<endl;
+      cout<< "[HOST "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] " << msg->getName() << endl;
       handleClearStateMessage(ttmsg);
       cout<< "[AFTER HANDLING:]  "<<endl;
    }
@@ -494,6 +515,7 @@ void hostNode::handleClearStateMessage(routerMsg* ttmsg){
 
 
                         }
+
 
                         make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
 
@@ -1066,9 +1088,14 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
  *          much as we have funds for
  */
 void hostNode::handleTransactionMessage(routerMsg* ttmsg){
+
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+
+
+
    int hopcount = ttmsg->getHopCount();
    vector<tuple<int, double , routerMsg *, Id>> *q;
-   transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+
 
    int destination = transMsg->getReceiver();
 
@@ -1135,9 +1162,14 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
 
             bool recent = probesRecent(nodeToShortestPathsMap[destNode]);
 
-            cout << "probes recent " << recent;
+            cout << "probes recent " << recent <<endl;
             if (recent){ // we made sure all the probes are back
                 cout << "before splitTransForWaterfilling" << endl;
+                cout <<"nodeToPaymentChannel.count(4): " << nodeToPaymentChannel.count(4)<< endl;
+                q = &(nodeToPaymentChannel[4].queuedTransUnits);
+                      for (auto tempQ : (*q)){
+                          cout << (get<2>(tempQ))->getName() << endl;
+                      }
                splitTransactionForWaterfilling(ttmsg);
                cout << "after splitTransForWaterFilling" << endl;
                if (transMsg->getAmount()>0){
@@ -1165,12 +1197,21 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
 
 
          cout << "not using waterfilling1" <<endl;
+
          int nextNode = ttmsg->getRoute()[hopcount+1];
+         cout <<"nextNode: " << nextNode << endl;
          q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
+         for (auto tempQ : (*q)){
+             cout << (get<2>(tempQ))->getName() << endl;
+         }
+
          cout << "not using waterfilling2" <<endl;
 
+         cout << "msg name: " << ttmsg->getName() << endl;
+
+         tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
          (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
-                  ttmsg, make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())));
+                  ttmsg, key));
          push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
          cout << "not using waterfilling3" <<endl;
          processTransUnits(nextNode, *q);
@@ -1270,7 +1311,7 @@ void hostNode:: processTransUnits(int dest, vector<tuple<int, double , routerMsg
  */
 bool hostNode::forwardTransactionMessage(routerMsg *msg)
 {
-    cout << msg << endl;
+    cout << "msg name: " << msg->getName() << endl;
 
 
     if (msg == 0){
