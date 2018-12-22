@@ -22,12 +22,13 @@ simple_deadlock_graph.add_edge(0, 1)
 simple_deadlock_graph.add_edge(1, 2)
 
 
+SEED = 17
 SCALE_AMOUNT = 5
 MEAN_RATE = 10
 CIRCULATION_STD_DEV = 2
 LARGE_BALANCE = 1000000000
 
 # json parameters for lnd testbed
-ROUTER_LND_ONE_WAY_CAPACITY = 1000000
-ENDHOST_LND_ONE_WAY_CAPACITY = 10000000000
+ENDHOST_LND_ONE_WAY_CAPACITY = 1000000000
+
  
