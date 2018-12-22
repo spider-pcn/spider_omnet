@@ -134,7 +134,7 @@ def generate_json_files(filename, graph, inside_graph, start_nodes, end_nodes, a
     edges = []
     for (u,v) in graph.edges():
         if inside_graph.has_node(u) and inside_graph.has_node(v):
-            cap = ROUTER_LND_ONE_WAY_CAPACITY
+            cap = balance/2
         else:
             cap = ENDHOST_LND_ONE_WAY_CAPACITY
 
@@ -298,6 +298,7 @@ parser.add_argument('--txn-size-mean', dest='txn_size_mean', type=int, \
 parser.add_argument('--exp_size', action='store_true', help='should txns be exponential in size')
 parser.add_argument('--generate-json-also', action="store_true", help="do you need to generate json file also \
         for the custom topology")
+parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 
 args = parser.parse_args()
 
@@ -310,11 +311,13 @@ exp_size = args.exp_size
 topo_filename = args.topo_filename
 generate_json_also = args.generate_json_also
 graph_topo = args.graph_topo
+balance = args.balance_per_channel
 
 
 
 # generate workloads
-np.random.seed(11)
+np.random.seed(SEED)
+random.seed(SEED)
 if graph_topo != 'custom':
     generate_workload_standard(output_prefix, graph_topo, distribution, \
             total_time, exp_size, txn_size_mean, generate_json_also, is_circulation)

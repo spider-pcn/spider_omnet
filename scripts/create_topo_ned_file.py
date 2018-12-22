@@ -102,9 +102,9 @@ def write_ned_file(topo_filename, output_filename, network_name):
 # generate either a small world or scale free graph
 def generate_graph(size, graph_type):
     if graph_type == 'small_world':
-        G = nx.watts_strogatz_graph(size, size/8, 0.25)
+        G = nx.watts_strogatz_graph(size, size/8, 0.25, seed=SEED)
     elif graph_type == 'scale_free':
-        G = nx.scale_free_graph(size)
+        G = nx.scale_free_graph(size,seed=SEED)
 
     # remove self loops and parallel edges
     G.remove_edges_from(G.selfloop_edges())

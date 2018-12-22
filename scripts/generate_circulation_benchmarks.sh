@@ -36,6 +36,7 @@ do
             --payment-graph-type circulation\
             --topo-filename $topofile\
             --experiment-time 30\
+            --balance-per-channel $balance\
             --generate-json-also\
 
     # create the ini file
