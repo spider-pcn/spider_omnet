@@ -3,6 +3,25 @@ import textwrap
 import argparse
 import networkx as nx
 from config import *
+import re
+
+
+def parseNodeName(nodeName, max_router, max_host):
+    try:
+        val = int(nodeName[:-1])
+        if(nodeName[-1] == 'r'):
+            if(val > max_router):
+                max_router = val
+            return ("router[" + str(val) + "]", max_router, max_host)
+        if(nodeName[-1] == 'e'):
+            if(val > max_host):
+                max_host = val
+            return ("host[" + str(val) + "]", max_router, max_host)
+        return -1
+    except:
+        return -1
+
+
 
 # take the topology file in a specific format and write it to a ned file
 def write_ned_file(topo_filename, output_filename, network_name):
@@ -14,38 +33,43 @@ def write_ned_file(topo_filename, output_filename, network_name):
     topo_file = open(topo_filename).readlines() 
     outfile = open(output_filename, "w")
 
-
     # metadata used for forwarding table
     neighbor_interfaces = dict()
     node_interface_count = dict()
     node_used_interface = dict()
     linklist = list()
     max_val = -1 #used to find number of nodes, assume nodes start at 0 and number consecutively
+    max_router = -1
+    max_host = -1
     for line in topo_file:
         if line == "\n":
             continue
-        n1 = int(line.split()[0][:-1])
-        n2 = int(line.split()[1][:-1])
-        if (n1 > max_val):
-            max_val = n1
-        if (n2 > max_val):
-            max_val = n2
+
+        n1 = parseNodeName(line.split()[0], max_router, max_host)
+        if(n1 == -1):
+            print "Bad line " + line
+            continue
+        max_router = n1[1]
+        max_host = n1[2]
+
+        n2 = parseNodeName(line.split()[1], max_router, max_host)
+        if(n2 == -1):
+            print "Bad line " + line
+            continue
+        max_router = n2[1]
+        max_host = n2[2]
+
         n3 = float(line.split()[2]) # delay going from n1 to n2
         n4 = float(line.split()[3]) # delay going from n2 to n1
-        linklist.append((n1, n2, n3, n4))
-    max_val = max_val + 1
 
-    # replace with any packages (if any) you need to import for your ned file.
-    """
-    outfile.write("package mlnxnet.simulations.GenericFatTree;\n")
-    outfile.write("import inet.networklayer.autorouting.ipv4.IPv4NetworkConfigurator;\n")
-    outfile.write("import mlnxnet.nodes.inet.MLNX_StandardHost;\n")
-    outfile.write("import mlnxnet.nodes.ethernet.MLNX_EtherSwitch;\n")
-    outfile.write("import mlnxnet.nodes.ethernet.MLNX_EtherSwitch4FatTree;\n")
-    """
+        linklist.append((n1[0], n2[0], n3, n4))
 
-    # generic routerNode definition that every network will have
-    outfile.write("import routerNode;\n\n")
+    max_router = max_router + 1
+    max_host = max_host + 1
+
+    # generic routerNode and hostNode definition that every network will have
+    outfile.write("import routerNode;\n")
+    outfile.write("import hostNode;\n\n")
 
     outfile.write("network " + network_name + "\n")
     outfile.write("{\n")
@@ -55,7 +79,10 @@ def write_ned_file(topo_filename, output_filename, network_name):
     # are read from an additional 'delay' column and 'channel balance' columns in the text file.
     outfile.write('\tparameters:\n\t\tdouble linkDelay @unit("s") = default(100us);\n')
     outfile.write('\t\tdouble linkDataRate @unit("Gbps") = default(1Gbps);\n')
-    outfile.write('\tsubmodules:\n\t\tnode['+str(max_val)+']: routerNode {} \n connections: \n')
+    outfile.write('\tsubmodules:\n')
+    outfile.write('\t\thost['+str(max_host)+']: hostNode {} \n')
+    outfile.write('\t\trouter['+str(max_router)+']: routerNode {} \n')
+    outfile.write('connections: \n')
 
     for link in linklist:
         a = link[0]
@@ -63,10 +90,10 @@ def write_ned_file(topo_filename, output_filename, network_name):
         abDelay = link[2]
         baDelay = link[3]
 
-        outfile.write('\t\tnode[' + str(a) + '].out++ --> {delay = ' + str(abDelay) +'ms; }')
-        outfile.write(' --> node[' + str(b) + '].in++;  \n')
-        outfile.write('\t\tnode[' + str(a) + '].in++ <-- {delay = ' + str(baDelay) +'ms; }')
-        outfile.write(' <-- node[' + str(b) + '].out++;  \n')
+        outfile.write('\t\t' + a + '.out++ --> {delay = ' + str(abDelay) +'ms; }')
+        outfile.write(' --> ' + b + '.in++;  \n')
+        outfile.write('\t\t' + a + '.in++ <-- {delay = ' + str(baDelay) +'ms; }')
+        outfile.write(' <-- ' + b + '.out++;  \n')
     outfile.write('}\n')
 
 
@@ -94,24 +121,35 @@ def generate_graph(size, graph_type):
 # print the output in the desired format for write_ned_file to read
 # generate extra end host nodes if need be
 def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts):
-    f = open(output_filename, "w+")
+    f1 = open(output_filename, "w+")
+    f2 = open("for_workload_" + output_filename, "w+")
 
     offset = G.number_of_nodes()
+    if (separate_end_hosts == False):
+        offset = 0
 
     for e in G.edges():
-        f.write(str(e[0] + offset) + "r " + str(e[1] + offset) +  "r ")
-        f.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
-        f.write(str(balance_per_channel/2) + " " + str(balance_per_channel/2) + "\n")
+
+        f1.write(str(e[0]) + "r " + str(e[1]) +  "r ")
+        f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
+        f1.write(str(balance_per_channel/2) + " " + str(balance_per_channel/2) + "\n")
+        f2.write(str(e[0] + offset) + "r " + str(e[1] + offset) +  "r ")
+        f2.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
+        f2.write(str(balance_per_channel/2) + " " + str(balance_per_channel/2) + "\n")
 
 
     # generate extra end host nodes
     if separate_end_hosts: 
-        f.write("\n")
+        f2.write("\n")
         for n in G.nodes():
-            f.write(str(n) + "e " + str(n + offset) + "r ")
-            f.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
-            f.write(str(0) + " " + str(LARGE_BALANCE) + "\n")
-    f.close()
+            f1.write(str(n) + "e " + str(n) + "r ")
+            f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
+            f1.write(str(0) + " " + str(LARGE_BALANCE) + "\n")
+            f2.write(str(n) + "e " + str(n + offset) + "r ")
+            f2.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
+            f2.write(str(0) + " " + str(LARGE_BALANCE) + "\n")
+    f1.close()
+    f2.close()
 
 
 

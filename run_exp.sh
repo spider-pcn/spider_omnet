@@ -20,7 +20,7 @@ python scripts/create_topo_ned_file.py $graph_type\
 python scripts/create_workload.py $workload uniform\
         --graph-topo custom\
         --payment-graph-type circulation\
-        --topo-filename $topofile\
+        --topo-filename for_workload_$topofile\
         --experiment-time 30\
         --generate-json-also\
 
