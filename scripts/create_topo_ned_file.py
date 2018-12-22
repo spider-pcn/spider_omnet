@@ -24,8 +24,8 @@ def write_ned_file(topo_filename, output_filename, network_name):
     for line in topo_file:
         if line == "\n":
             continue
-        n1 = int(line.split()[0])
-        n2 = int(line.split()[1])
+        n1 = int(line.split()[0][:-1])
+        n2 = int(line.split()[1][:-1])
         if (n1 > max_val):
             max_val = n1
         if (n2 > max_val):
@@ -96,8 +96,10 @@ def generate_graph(size, graph_type):
 def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts):
     f = open(output_filename, "w+")
 
+    offset = G.number_of_nodes()
+
     for e in G.edges():
-        f.write(str(e[0]) + " " + str(e[1]) +  " ")
+        f.write(str(e[0] + offset) + "r " + str(e[1] + offset) +  "r ")
         f.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
         f.write(str(balance_per_channel/2) + " " + str(balance_per_channel/2) + "\n")
 
@@ -105,12 +107,10 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
     # generate extra end host nodes
     if separate_end_hosts: 
         f.write("\n")
-        index = G.number_of_nodes()
         for n in G.nodes():
-            f.write(str(n) + " " + str(index) + " ")
+            f.write(str(n) + "e " + str(n + offset) + "r ")
             f.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
             f.write(str(0) + " " + str(LARGE_BALANCE) + "\n")
-            index += 1
     f.close()
 
 

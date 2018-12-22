@@ -51,10 +51,12 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
 
 
     if generate_json_also:
-        generate_json_files(filename + '.json', graph, start_nodes, end_nodes, amt_absolute)
+        generate_json_files(filename + '.json', graph, graph, start_nodes, end_nodes, amt_absolute)
 
     write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
             workload_type, total_time, exp_size, txn_size_mean)
+
+
 
 
 # write the given set of txns denotes by start_node -> end_node with absolute_amts as passed in
@@ -97,9 +99,11 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
     outfile.close()
 
 
+
+
 # generates the json file necessary for the distributed testbed to be used to test
 # the lnd implementation
-def generate_json_files(filename, graph, start_nodes, end_nodes, amt_absolute):
+def generate_json_files(filename, graph, inside_graph, start_nodes, end_nodes, amt_absolute):
     json_string = {}
 
     # create btcd connections
@@ -116,15 +120,26 @@ def generate_json_files(filename, graph, start_nodes, end_nodes, amt_absolute):
     # create nodes and assign them distinct ips
     nodes = []
     for n in graph.nodes():
-        node = {"name": str(n), "ip" : "10.0.1." + str(100 + n)}
+        if inside_graph.has_node(n):
+            node_type = "r"
+        else:
+            node_type = "e"
+
+        node = {"name": str(n) + node_type, "ip" : "10.0.1." + str(100 + n)}
         nodes.append(node)
+
     json_string["nodes"] = nodes
 
     # creates all the lnd channels
     edges = []
     for (u,v) in graph.edges():
+        if inside_graph.has_node(u) and inside_graph.has_node(v):
+            cap = ROUTER_LND_ONE_WAY_CAPACITY
+        else:
+            cap = ENDHOST_LND_ONE_WAY_CAPACITY
+
         if u < v: 
-            edge = {"src": str(u), "dst": str(v)}
+            edge = {"src": str(u), "dst": str(v), "capacity" : cap}
             edges.append(edge)
 
     json_string["lnd_channels"] = edges
@@ -142,6 +157,8 @@ def generate_json_files(filename, graph, start_nodes, end_nodes, amt_absolute):
             json.dump(json_string, outfile, indent=8)
 
 
+
+
 # generate workload for arbitrary topology by uniformly sampling
 # the set of nodes for sender-receiver pairs
 # size of transaction is determined when writing to the file to
@@ -154,7 +171,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     
     if is_circulation:
     	""" generate circution demand """
-    	demand_dict = circ_demand(num_nodes, mean=MEAN_RATE, std_dev=CIRCULATION_STD_DEV)
+    	demand_dict = circ_demand(inside_graph.nodes, mean=MEAN_RATE, std_dev=CIRCULATION_STD_DEV)
 
     	for i, j in demand_dict.keys():
     	    start_nodes.append(end_host_map[i])
@@ -164,7 +181,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     else:
         num_sender_receiver_pairs = num_nodes
         for i in range(num_sender_receiver_pairs):
-            sender_receiver_pair = random.sample(xrange(0, n - 1, 1), 2)
+            sender_receiver_pair = random.sample(inside_graph.nodes, 2)
             start_nodes.append(end_host_map[sender_receiver_pair[0]])
             end_nodes.append(end_host_map[sender_receiver_pair[1]])
             amt_relative.append(random.choice(range(1, MEAN_RATE * 2, 1)))
@@ -174,7 +191,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     print "generated workload" 
 
     if generate_json_also:
-        generate_json_files(filename + '.json', whole_graph, start_nodes, end_nodes, amt_absolute)
+        generate_json_files(filename + '.json', whole_graph, inside_graph, start_nodes, end_nodes, amt_absolute)
 
     write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
             workload_type, total_time, exp_size, txn_size_mean)
@@ -194,8 +211,8 @@ def parse_topo(topo_filename):
                 inside_graph = g.copy()
                 edge_connections = True
                 continue
-            n1 = int(line.split()[0])
-            n2 = int(line.split()[1])
+            n1 = int(line.split()[0][:-1])
+            n2 = int(line.split()[1][:-1])
             g.add_edge(n1, n2)
 
             if edge_connections:
@@ -213,30 +230,37 @@ def parse_topo(topo_filename):
 
 
 
-# generate circulation demand for 'num_nodes' number of nodes,
+# generate circulation demand for node ids mentioned in node_list,
 # with average total demand at a node equal to 'mean', and a 
 # perturbation of 'std_dev' 
-def circ_demand(num_nodes, mean, std_dev):
+def circ_demand(node_list, mean, std_dev):
 
 	assert type(mean) is int
 	assert type(std_dev) is int
 
 	demand_dict = {}
+        
+        
+        node_list = list(node_list)
+        num_nodes = len(node_list)
+        offset = num_nodes
 
 	""" sum of 'mean' number of random permutation matrices """
 	""" note any permutation matrix is a circulation demand """
+        """ matrix indices are shifted by number of nodes to account """
+        """ for the fact that router nodes all start after the first n nodes """
 	for i in range(mean):
-		perm = np.random.permutation(num_nodes)
+		perm = np.random.permutation(node_list)
 		for j, k in enumerate(perm):
-			if (j, k) in demand_dict.keys():
-				demand_dict[j, k] += 1
+			if (j + offset, k) in demand_dict.keys():
+				demand_dict[j + offset, k] += 1
 			else:
-				demand_dict[j, k] = 1
+				demand_dict[j + offset, k] = 1
 
 	""" add 'std_dev' number of additional cycles to the demand """
 	for i in range(std_dev):
 		cycle_len = np.random.choice(range(1, num_nodes+1))
-		cycle = np.random.choice(num_nodes, cycle_len)
+		cycle = np.random.choice(node_list, cycle_len)
 		cycle = set(cycle)
 		cycle = list(cycle)
 		cycle.append(cycle[0])
