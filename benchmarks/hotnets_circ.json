@@ -43,84 +43,94 @@
         ], 
         "demands": [
                 {
+                        "src": "0", 
+                        "dst": "4", 
+                        "rate": 5
+                }, 
+                {
                         "src": "1", 
                         "dst": "4", 
-                        "rate": 10
-                }, 
-                {
-                        "src": "4", 
-                        "dst": "2", 
-                        "rate": 20
-                }, 
-                {
-                        "src": "1", 
-                        "dst": "2", 
                         "rate": 15
-                }, 
-                {
-                        "src": "1", 
-                        "dst": "3", 
-                        "rate": 10
                 }, 
                 {
                         "src": "0", 
                         "dst": "1", 
-                        "rate": 20
+                        "rate": 10
                 }, 
                 {
                         "src": "4", 
+                        "dst": "3", 
+                        "rate": 10
+                }, 
+                {
+                        "src": "3", 
+                        "dst": "0", 
+                        "rate": 20
+                }, 
+                {
+                        "src": "0", 
+                        "dst": "3", 
+                        "rate": 15
+                }, 
+                {
+                        "src": "1", 
+                        "dst": "2", 
+                        "rate": 5
+                }, 
+                {
+                        "src": "2", 
+                        "dst": "1", 
+                        "rate": 5
+                }, 
+                {
+                        "src": "3", 
+                        "dst": "1", 
+                        "rate": 15
+                }, 
+                {
+                        "src": "4", 
+                        "dst": "2", 
+                        "rate": 10
+                }, 
+                {
+                        "src": "2", 
+                        "dst": "0", 
+                        "rate": 10
+                }, 
+                {
+                        "src": "4", 
+                        "dst": "1", 
+                        "rate": 5
+                }, 
+                {
+                        "src": "1", 
+                        "dst": "0", 
+                        "rate": 10
+                }, 
+                {
+                        "src": "2", 
+                        "dst": "4", 
+                        "rate": 10
+                }, 
+                {
+                        "src": "1", 
                         "dst": "3", 
                         "rate": 5
                 }, 
                 {
                         "src": "0", 
                         "dst": "2", 
-                        "rate": 10
-                }, 
-                {
-                        "src": "3", 
-                        "dst": "4", 
                         "rate": 15
-                }, 
-                {
-                        "src": "2", 
-                        "dst": "0", 
-                        "rate": 20
-                }, 
-                {
-                        "src": "0", 
-                        "dst": "3", 
-                        "rate": 10
-                }, 
-                {
-                        "src": "3", 
-                        "dst": "2", 
-                        "rate": 5
                 }, 
                 {
                         "src": "4", 
                         "dst": "0", 
-                        "rate": 10
-                }, 
-                {
-                        "src": "3", 
-                        "dst": "1", 
-                        "rate": 25
-                }, 
-                {
-                        "src": "2", 
-                        "dst": "4", 
-                        "rate": 10
+                        "rate": 5
                 }, 
                 {
                         "src": "2", 
                         "dst": "3", 
-                        "rate": 20
-                }, 
-                {
-                        "src": "1", 
-                        "dst": "0", 
-                        "rate": 10
+                        "rate": 5
                 }
         ], 
         "miner": "0", 
@@ -166,57 +176,57 @@
                 {
                         "src": "0", 
                         "dst": "5", 
-                        "capacity": 10000000000
+                        "capacity": 1000000000
                 }, 
                 {
                         "src": "1", 
                         "dst": "6", 
-                        "capacity": 10000000000
+                        "capacity": 1000000000
                 }, 
                 {
                         "src": "2", 
                         "dst": "7", 
-                        "capacity": 10000000000
+                        "capacity": 1000000000
                 }, 
                 {
                         "src": "3", 
                         "dst": "8", 
-                        "capacity": 10000000000
+                        "capacity": 1000000000
                 }, 
                 {
                         "src": "4", 
                         "dst": "9", 
-                        "capacity": 10000000000
+                        "capacity": 1000000000
                 }, 
                 {
                         "src": "5", 
                         "dst": "9", 
-                        "capacity": 1000000
+                        "capacity": 50
                 }, 
                 {
                         "src": "5", 
                         "dst": "6", 
-                        "capacity": 1000000
+                        "capacity": 50
                 }, 
                 {
                         "src": "6", 
                         "dst": "8", 
-                        "capacity": 1000000
+                        "capacity": 50
                 }, 
                 {
                         "src": "6", 
                         "dst": "7", 
-                        "capacity": 1000000
+                        "capacity": 50
                 }, 
                 {
                         "src": "7", 
                         "dst": "8", 
-                        "capacity": 1000000
+                        "capacity": 50
                 }, 
                 {
                         "src": "8", 
                         "dst": "9", 
-                        "capacity": 1000000
+                        "capacity": 50
                 }
         ]
 }
