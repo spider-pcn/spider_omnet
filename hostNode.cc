@@ -104,10 +104,10 @@ void hostNode::forwardProbeMessage(routerMsg *msg){
       vector<double> *pathBalances = & ( pMsg->getPathBalances());
       (*pathBalances).push_back(nodeToPaymentChannel[nextDest].balance);
    }
-   cout << "myIndex:" << myIndex() << endl;
-   printNodeToPaymentChannel();
+   //cout << "myIndex:" << myIndex() << endl;
+   //printNodeToPaymentChannel();
    send(msg, nodeToPaymentChannel[nextDest].gate);
-   cout << "after sending " << endl;
+   //cout << "after sending " << endl;
 }
 
 
@@ -180,20 +180,24 @@ void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode
       PathInfo temp = {};
       nodeToShortestPathsMap[destNode][pathIdx] = temp;
       nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
-      cout << "path number " << pathIdx << endl;
+      /*
+
+       cout << "path number " << pathIdx << endl;
       for (int i=0; i<kShortestPaths[pathIdx].size(); i++ ){
           cout << kShortestPaths[pathIdx][i] << ", ";
       }
       cout << endl;
       cout << "before generate probe message" << endl;
+       */
 
       routerMsg * msg = generateProbeMessage(destNode, pathIdx, kShortestPaths[pathIdx]);
-      cout << "after generate probe message" << endl;
-      printChannels();
-      cout << "number Host nodes " << _numHostNodes << endl;
+
+      //cout << "after generate probe message" << endl;
+      //printChannels();
+      //cout << "number Host nodes " << _numHostNodes << endl;
 
       forwardProbeMessage(msg);
-      cout << "after forward probe message" << endl;
+      //cout << "after forward probe message" << endl;
 
    }
 
@@ -228,7 +232,7 @@ void hostNode::initialize()
    successfulDoNotSendTimeOut = {};
 
    if (getIndex() == 0){  //main initialization for global parameters
-      _simulationLength = 25;
+      _simulationLength = 5;
       _maxTravelTime = 0.0;
       //set statRate
       _statRate = 0.5;
@@ -251,7 +255,6 @@ void hostNode::initialize()
       generateChannelsBalancesMap(topologyFile_, _channels, _balances );
    }
 
-   cout << "here1 : " << myIndex() << endl;
 
    //Create nodeToPaymentChannel map
    const char * gateName = "out";
@@ -276,7 +279,7 @@ void hostNode::initialize()
          nodeToPaymentChannel[key] = temp; //TODO: change to myIndex
       }
    } while (i < gateSize);
-   cout << "here2 : " << myIndex() << endl;
+
    //initialize everything for adjacent nodes/nodes with payment channel to me
    for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
    {
@@ -353,7 +356,7 @@ void hostNode::initialize()
       nodeToPaymentChannel[key].statNumSent = 0;
    }
 
-   cout << "here3 : " << myIndex() << endl;
+
    //initialize signals with all other nodes in graph
    for (int i = 0; i < _numHostNodes; ++i) {
       char signalName[64];
@@ -381,7 +384,7 @@ void hostNode::initialize()
 
    }
 
-   cout << "here4 : " << myIndex() << endl;
+
 
    //iterate through the global trans_unit_list and find my TransUnits
    for (int i=0; i<(int)_transUnitList.size(); i++){
@@ -390,31 +393,31 @@ void hostNode::initialize()
       }
    }
 
-   cout << "here5 : " << myIndex() << endl;
+
    //implementing timeSent parameter, send all msgs at beginning
    for (int i=0 ; i<(int)myTransUnits.size(); i++){
 
       TransUnit j = myTransUnits[i];
       double timeSent = j.timeSent;
-      cout << "here5.1 : " << myIndex() << endl;
+
       routerMsg *msg = generateTransactionMessage(j);
-      cout << "here5.11 : " << myIndex() << endl;
+
       if (_useWaterfilling){
          vector<int> blankPath = {};
          msg->setRoute(blankPath);
       }
-      cout << "here5.2 : " << myIndex() << endl;
+
       scheduleAt(timeSent, msg);
 
       if (j.hasTimeOut){ //TODO : timeOut implementation is not going to work with waterfilling
-          cout << "here5.3 : " << myIndex() << endl;
+
          routerMsg *toutMsg = generateTimeOutMessage(msg);
          scheduleAt(timeSent+j.timeOut, toutMsg );
 
       }
 
    }
-   cout << "here6 : " << myIndex() << endl;
+
 
 
    //get stat message
@@ -424,15 +427,15 @@ void hostNode::initialize()
    routerMsg *clearStateMsg = generateClearStateMessage();
    scheduleAt(simTime()+_clearRate, clearStateMsg);
 
-   cout << "finished Host Initialization for node: " << myIndex()  << endl;
+
 }
 
 void hostNode::handleMessage(cMessage *msg)
 {
 
 
-   cout << "Host Time:" << simTime() << endl;
-   cout << "msg: " << msg->getName() << endl;
+   //cout << "Host Time:" << simTime() << endl;
+   //cout << "msg: " << msg->getName() << endl;
 
 
 
@@ -452,49 +455,49 @@ void hostNode::handleMessage(cMessage *msg)
    if (ttmsg->getMessageType()==ACK_MSG){ //preprocessor constants defined in routerMsg_m.h
 
 
-      cout << "[HOST "<< myIndex() <<": RECEIVED ACK MSG] " << msg->getName() << endl;
+      //cout << "[HOST "<< myIndex() <<": RECEIVED ACK MSG] " << msg->getName() << endl;
       //print_message(ttmsg);
       //print_private_values();
       handleAckMessage(ttmsg);
-      cout << "[AFTER HANDLING:]" <<endl;
+      //cout << "[AFTER HANDLING:]" <<endl;
       // print_private_values();
    }
    else if(ttmsg->getMessageType()==TRANSACTION_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED TRANSACTION MSG]  "<< msg->getName() <<endl;
+      //cout<< "[HOST "<< myIndex() <<": RECEIVED TRANSACTION MSG]  "<< msg->getName() <<endl;
       // print_message(ttmsg);
       // print_private_values();
       handleTransactionMessage(ttmsg);
-      cout<< "[AFTER HANDLING:] "<<endl;
+      //cout<< "[AFTER HANDLING:] "<<endl;
       // print_private_values();
    }
    else if(ttmsg->getMessageType()==UPDATE_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED UPDATE MSG] "<< msg->getName() << endl;
+      //cout<< "[HOST "<< myIndex() <<": RECEIVED UPDATE MSG] "<< msg->getName() << endl;
       // print_message(ttmsg);
       // print_private_values();
       handleUpdateMessage(ttmsg);
-      cout<< "[AFTER HANDLING:]  "<<endl;
+      //cout<< "[AFTER HANDLING:]  "<<endl;
       //print_private_values();
 
    }
    else if (ttmsg->getMessageType() ==STAT_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED STAT MSG] "<< msg->getName() << endl;
+      //cout<< "[HOST "<< myIndex() <<": RECEIVED STAT MSG] "<< msg->getName() << endl;
       handleStatMessage(ttmsg);
-      cout<< "[AFTER HANDLING:]  "<<endl;
+      //cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == TIME_OUT_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED TIME_OUT_MSG] "<<msg->getName() << endl;
+      //cout<< "[HOST "<< myIndex() <<": RECEIVED TIME_OUT_MSG] "<<msg->getName() << endl;
       handleTimeOutMessage(ttmsg);
-      cout<< "[AFTER HANDLING:]  "<<endl;
+      //cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == PROBE_MSG){
-      cout<< "[HOST "<< myIndex() <<": RECEIVED PROBE_MSG] "<< msg->getName() << endl;
+      //cout<< "[HOST "<< myIndex() <<": RECEIVED PROBE_MSG] "<< msg->getName() << endl;
       handleProbeMessage(ttmsg);
-      cout<< "[AFTER HANDLING:]  "<<endl;
+      //cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == CLEAR_STATE_MSG){
-       cout<< "[HOST "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] " << msg->getName() << endl;
+       //cout<< "[HOST "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] " << msg->getName() << endl;
       handleClearStateMessage(ttmsg);
-      cout<< "[AFTER HANDLING:]  "<<endl;
+      //cout<< "[AFTER HANDLING:]  "<<endl;
    }
 
 }
@@ -1217,29 +1220,29 @@ routerMsg *hostNode::generateTransactionMessage(TransUnit unit)
 
    msg->setTimeOut(unit.timeOut);
 
-   cout << "generateTransMsg 1 : " << myIndex() << endl;
+
 
    sprintf(msgname, "tic-%d-to-%d routerMsg", unit.sender, unit.receiver);
    routerMsg *rMsg = new routerMsg(msgname);
    if (destNodeToPath.count(unit.receiver) == 0){ //compute route and add to memoization table
-       cout << "generateTransMsg b.1 : " << myIndex() << endl;
+
       vector<int> route = getRoute(unit.sender,unit.receiver);
 
-      cout << "generateTransMsg b.2 : " << myIndex() << endl;
+
       destNodeToPath[unit.receiver] = route;
-      cout << "generateTransMsg b.3 : " << myIndex() << endl;
+
       rMsg->setRoute(route);
    }
    else{
-       cout << "generateTransMsg a.1 : " << myIndex() << endl;
+
       rMsg->setRoute(destNodeToPath[unit.receiver]);
-      cout << "generateTransMsg a.2 : " << myIndex() << endl;
+
    }
-   cout << "generateTransMsg 2 : " << myIndex() << endl;
+
 
    rMsg->setHopCount(0);
    rMsg->setMessageType(TRANSACTION_MSG);
-   cout << "generateTransMsg 3 : " << myIndex() << endl;
+
    rMsg->encapsulate(msg);
    return rMsg;
 }
