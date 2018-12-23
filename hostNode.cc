@@ -197,7 +197,7 @@ void hostNode::initialize()
 
    if (getIndex() == 0){  //main initialization for global parameters
       _simulationLength = 25;
-      _maxTravelTime = 0.2;
+      _maxTravelTime = 0.0;
       //set statRate
       _statRate = 0.5;
       _clearRate = 0.5;

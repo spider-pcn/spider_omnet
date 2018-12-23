@@ -77,6 +77,38 @@ map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> _ch
 
 
 
+void updateMaxTravelTime(vector<int> route){
+
+
+
+    double maxTime = 0;
+
+    for (int i=0; i< ( route.size()-1) ; i++){
+
+        //map<int, vector<pair<int,int>>> _channels;
+        vector<pair<int,int>>* channel = &(_channels[route[i]]);
+        int nextNode = route[i+1];
+
+        auto it = find_if( (*channel).begin(), (*channel).end(),
+            [&nextNode](const pair<int, int>& element){ return element.first == nextNode;} );
+        if (it != (*channel).end()){
+            double deltaTime = it->second;
+            maxTime = maxTime + deltaTime;
+        }
+        else{
+            cout << "ERROR IN updateMaxTravelTime, could not find edge" << endl;
+            cout << "node to node " << route[i] << "," << route[i+1] << endl;
+
+        }
+    }
+
+    if (maxTime > _maxTravelTime){
+        _maxTravelTime = maxTime;
+    }
+
+    return;
+}
+
 
 vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
    //do searching without regard for channel capacities, DFS right now
@@ -101,7 +133,10 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
          printf("] \n");
       }
       cout<<endl;
+
+
       route = dijkstraInputGraph(sender, receiver, tempChannels);
+
 
       printf("%d-th route: ", it);
 
@@ -118,6 +153,7 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
          return shortestRoutes;
       }
       else{
+          updateMaxTravelTime(route);
          shortestRoutes.push_back(route);
       }
       cout << "getKShortestRoutes 1" <<endl;
