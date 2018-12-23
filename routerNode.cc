@@ -123,14 +123,24 @@ void routerNode::initialize()
       cProperty *statisticTemplate;
 
       //numInQueuePerChannel signal
-      sprintf(signalName, "numInQueuePerChannel(node %d)", i);
+      if (key<_numHostNodes){
+              sprintf(signalName, "numInQueuePerChannel(host %d)", key);
+          }
+          else{
+              sprintf(signalName, "numInQueuePerChannel(router %d [%d] )", key - _numHostNodes, key);
+          }
       signal = registerSignal(signalName);
       statisticTemplate = getProperties()->get("statisticTemplate", "numInQueuePerChannelTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       nodeToPaymentChannel[key].numInQueuePerChannelSignal = signal;
 
       //numProcessedPerChannel signal
-      sprintf(signalName, "numProcessedPerChannel(node %d)", i);
+      if (key<_numHostNodes){
+           sprintf(signalName, "numProcessedPerChannel(host %d)", key);
+           }
+           else{
+             sprintf(signalName, "numProcessedPerChannel(router %d [%d])", key-_numHostNodes, key);
+           }
       signal = registerSignal(signalName);
       statisticTemplate = getProperties()->get("statisticTemplate", "numProcessedPerChannelTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
@@ -140,14 +150,25 @@ void routerNode::initialize()
       nodeToPaymentChannel[key].statNumProcessed = 0;
 
       //balancePerChannel signal
-      sprintf(signalName, "balancePerChannel(node %d)", i);
+      if (key<_numHostNodes){
+                  sprintf(signalName, "balancePerChannel(host %d)", key);
+                  }
+                  else{
+                    sprintf(signalName, "balancePerChannel(router %d [%d])", key-_numHostNodes, key);
+                  }
+
       signal = registerSignal(signalName);
       statisticTemplate = getProperties()->get("statisticTemplate", "balancePerChannelTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       nodeToPaymentChannel[key].balancePerChannelSignal = signal;
 
       //numSentPerChannel signal
-      sprintf(signalName, "numSentPerChannel(node %d)", i);
+      if (key<_numHostNodes){
+                  sprintf(signalName, "numSentPerChannel(host %d)", key);
+                  }
+                  else{
+                    sprintf(signalName, "numSentPerChannel(router %d [%d])", key-_numHostNodes, key);
+                  }
       signal = registerSignal(signalName);
       statisticTemplate = getProperties()->get("statisticTemplate", "numSentPerChannelTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
