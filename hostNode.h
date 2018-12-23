@@ -42,7 +42,7 @@ class hostNode : public cSimpleModule
       set<CanceledTrans> canceledTransactions = {};
       map<tuple<int,int>,AckState> transPathToAckState = {}; //key is (transactionId, routeIndex)
       map<int, int> transactionIdToNumHtlc = {}; //allows us to calculate the htlcIndex number
-
+      map<int, int> destNodeToNumTransPending;
 
 
    protected:

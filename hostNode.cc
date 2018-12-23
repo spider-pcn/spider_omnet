@@ -120,6 +120,8 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
       p->pathBalances = pathBalances;
 
 
+
+      if (destNodeToNumTransPending[destNode] > 0){
       //reset the probe message
       vector<int> route = ttmsg->getRoute();
       reverse(route.begin(), route.end());
@@ -129,6 +131,13 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
       vector<double> tempPathBal = {};
       pMsg->setPathBalances(tempPathBal);
       forwardProbeMessage(ttmsg);
+      }
+      else{
+          ttmsg->decapsulate();
+          delete pMsg;
+          delete ttmsg;
+
+      }
    }
    else{ //reverse and send message again
       pMsg->setIsReversed(true);
@@ -333,13 +342,6 @@ void hostNode::initialize()
          msg->setRoute(blankPath);
       }
       scheduleAt(timeSent, msg);
-
-      if (_useWaterfilling){
-         if (nodeToShortestPathsMap.count(j.receiver) == 0 ){
-            vector<vector<int>> kShortestRoutes = getKShortestRoutes(j.sender, j.receiver, _kValue);
-            initializeProbes(kShortestRoutes, j.receiver);
-         }
-      }
 
       if (j.hasTimeOut){ //TODO : timeOut implementation is not going to work with waterfilling
          routerMsg *toutMsg = generateTimeOutMessage(msg);
@@ -1049,19 +1051,39 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
          if(_useWaterfilling && (ttmsg->getRoute().size() == 0)){ //no route is specified -
             //means we need to break up into chunks and assign route
 
+                 if (simTime() == transMsg->getTimeSent()){
+                     destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] + 1;
+                 }
+
+
+
+                  if (nodeToShortestPathsMap.count(destNode) == 0 ){
+                     vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
+                     initializeProbes(kShortestRoutes, destNode);
+                     scheduleAt(simTime() + 1, ttmsg);
+                     return;
+                  }
+                  else{
+
+
+
+
+
             bool recent = probesRecent(nodeToShortestPathsMap[destNode]);
 
             if (recent){ // we made sure all the probes are back
                splitTransactionForWaterfilling(ttmsg);
+               destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode]-1;
                if (transMsg->getAmount()>0){
                   scheduleAt(simTime() + 1, ttmsg);
+
                }
                else{
                   ttmsg->decapsulate();
                   delete transMsg;
                   delete ttmsg;
                   //delete transMsg?
-                  return;
+
                }
 
                return;
@@ -1070,6 +1092,7 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
                scheduleAt(simTime() + 1, ttmsg);
                return;
             }
+                  }
          }
          int nextNode = ttmsg->getRoute()[hopcount+1];
          q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
