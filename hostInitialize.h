@@ -18,3 +18,4 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k);
 vector<int> dijkstraInputGraph(int src,  int dest, map<int, vector<pair<int,int>>> channels);
 double minVectorElemDouble(vector<double> v);
 void updateMaxTravelTime(vector<int> route);
+void printChannels();

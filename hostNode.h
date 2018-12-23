@@ -77,6 +77,9 @@ class hostNode : public cSimpleModule
       virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q);
       virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode);
       virtual void deleteMessagesInQueues();
+
+      //helper
+      virtual void printNodeToPaymentChannel();
 };
 
 #endif

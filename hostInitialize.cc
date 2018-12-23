@@ -36,6 +36,7 @@ vector<int> getRoute(int sender, int receiver){
    //vector<int> route =  breadthFirstSearch(sender, receiver);
    vector<int> route = dijkstraInputGraph(sender, receiver, _channels);
 
+
    /*
       for (int i=0; i<(int)route.size(); i++){
       printf("%i, ", route[i]);
@@ -63,7 +64,7 @@ template <class T,class S> struct pair_equal_to : binary_function <T,pair<T,S>,b
 
 map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> _channels, vector<int> route){
    for (int i=0; i< (route.size() -1); i++){
-      cout << i << "-th iteration out of "<< (route.size() - 1) << endl;
+    //  cout << i << "-th iteration out of "<< (route.size() - 1) << endl;
       int start = route[i];
       int end = route[i+1];
 
@@ -110,6 +111,25 @@ void updateMaxTravelTime(vector<int> route){
 }
 
 
+
+
+
+
+void printChannels(){
+
+        printf("print of channels\n" );
+        for (auto i : _channels){
+           printf("key: %d [",i.first);
+           for (auto k: i.second){
+              printf("(%d, %d) ",get<0>(k), get<1>(k));
+           }
+
+           printf("] \n");
+        }
+        cout<<endl;
+
+}
+
 vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
    //do searching without regard for channel capacities, DFS right now
 
@@ -123,6 +143,7 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
 
    for (int it = 0; it<k; it++){
 
+       /*
       printf("%d print of channels\n", it );
       for (auto i : tempChannels){
          printf("key: %d [",i.first);
@@ -133,11 +154,11 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
          printf("] \n");
       }
       cout<<endl;
-
+    */
 
       route = dijkstraInputGraph(sender, receiver, tempChannels);
 
-
+      /*
       printf("%d-th route: ", it);
 
       for (int i=0; i<(int)route.size(); i++){
@@ -147,7 +168,7 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
 
       printf("\n");
       cout << "route size: " << route.size() << endl;
-
+        */
 
       if (route.size() <= 1){
          return shortestRoutes;
@@ -245,6 +266,7 @@ vector<int> getPath(int parent[], int j)
 void printSolution(int dist[], int source,
       int parent[])
 {
+
    int src = source;
    printf("Vertex\t Distance\tPath");
    for (int i = 0; i < _numNodes; i++)
@@ -259,6 +281,7 @@ void printSolution(int dist[], int source,
          printf("%i, ", resultVect[i]);
       }
    }
+   cout << "end print solution " << endl;
 }
 
 /*
@@ -333,11 +356,13 @@ vector<int> dijkstraInputGraph(int src,  int dest, map<int, vector<pair<int,int>
 
    // print the constructed
    // distance array
-   /*for (int ka=0; ka<numNodes; ka++){
+   /*
+   for (int ka=0; ka< _numNodes; ka++){
      printf("[%i]: %i,  ", ka, parent[ka] );
-     }*/
+     }
 
-   // printSolution(dist,src,  parent);
+    printSolution(dist,src,  parent);
+    */
 
    //printf("\n");
 
@@ -542,14 +567,15 @@ vector<int> breadthFirstSearch(int sender, int receiver){
  */
 void setNumNodes(string topologyFile){
    //TEMPORARILY hardcode
-
+    /*
    _numNodes = 5;
    _numHostNodes = 2;
    _numRouterNodes = 3;
    return;
+    */
 
-
-   int maxNode = -1;
+   int maxHostNode = -1;
+   int maxRouterNode = -1;
    string line;
    ifstream myfile (topologyFile);
    if (myfile.is_open())
@@ -558,20 +584,44 @@ void setNumNodes(string topologyFile){
       {
          vector<string> data = split(line, ' ');
          //generate channels - adjacency map
-         int node1 = stoi(data[0]); //
-         int node2 = stoi(data[1]); //
-         if (node1>maxNode){
-            maxNode = node1;
-         }
-         if (node2>maxNode){
-            maxNode = node2;
-         }
+
+         char node1type = data[0].back();
+        //  cout <<"node1type: " << node1type << endl;
+          char node2type = data[1].back();
+        //   cout <<"node2type: " << node2type << endl;
+
+                int node1 = stoi((data[0]).substr(0,data[0].size()-1)); //
+                if (node1type == 'r' && node1 > maxRouterNode){
+
+                    maxRouterNode = node1;
+
+                    //node1 = node1+ _numHostNodes;
+                }
+                else if (node1type == 'e' && node1 > maxHostNode){
+                    maxHostNode = node1;
+
+                }
+
+                int node2 = stoi(data[1].substr(0,data[1].size()-1)); //
+                if (node2type == 'r' && node2 > maxRouterNode){
+                        maxRouterNode = node2;
+                    //node2 = node2 + _numHostNodes;
+                }
+                else if (node2type == 'e' && node2 > maxHostNode){
+                    maxHostNode = node2;
+                }
+
+
+
       }
       myfile.close();
    }
 
    else cout << "Unable to open file";
-   _numNodes = maxNode + 1;
+   _numHostNodes = maxHostNode + 1;
+   _numRouterNodes = maxRouterNode + 1;
+
+   _numNodes = _numHostNodes + _numRouterNodes;
    return;
 }
 
@@ -583,7 +633,8 @@ void setNumNodes(string topologyFile){
  */
 void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,int>>> &_channels, map<tuple<int,int>,double> &_balances){
    //TEMPORARILY - hardcode _channels map
-   vector<pair<int,int>> tempVector0 = {};
+   /*
+    vector<pair<int,int>> tempVector0 = {};
    tempVector0.push_back(make_pair(2,30));
    _channels[0] = tempVector0;
 
@@ -617,7 +668,7 @@ void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,i
       }
    }
    return;
-
+   */
 
 
    string line;
@@ -627,10 +678,25 @@ void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,i
       while ( getline (myfile,line) )
       {
          vector<string> data = split(line, ' ');
+         cout << "data size" << data.size() << endl;
 
          //generate _channels - adjacency map
-         int node1 = stoi(data[0]); //
-         int node2 = stoi(data[1]); //
+         char node1type = data[0].back();
+         cout <<"node1type: " << node1type << endl;
+         char node2type = data[1].back();
+         cout <<"node2type: " << node2type << endl;
+
+         int node1 = stoi((data[0]).substr(0,data[0].size()-1)); //
+         if (node1type == 'r'){
+             node1 = node1+ _numHostNodes;
+         }
+
+         int node2 = stoi(data[1].substr(0,data[1].size()-1)); //
+         if (node2type == 'r'){
+                      node2 = node2 + _numHostNodes;
+         }
+
+
          int delay1to2 = stoi(data[2]);
          int delay2to1 = stoi(data[3]);
          if (_channels.count(node1)==0){ //node 1 is not in map
@@ -661,6 +727,8 @@ void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,i
    }
 
    else cout << "Unable to open file";
+
+   cout << "finished generateChannelsBalancesMap" << endl;
    return;
 }
 
