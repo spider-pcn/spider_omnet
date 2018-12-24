@@ -197,36 +197,45 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
             workload_type, total_time, exp_size, txn_size_mean)
 
 
+# parse a given line of edge relationships from the topology file
+# and return whether this is a router node and its identifier
+def parse_node(node_name):
+    try:
+        val = int(node_name[:-1])
+        if node_name[-1] == 'r':
+            return True, val
+        if node_name[-1] == 'e':
+            return False, val
+        return -1
+    except:
+        return -1
 
 # parse topology file to get graph structure
 def parse_topo(topo_filename):
     g = nx.Graph()
-    inside_graph = nx.Graph()
-    end_host_map = {}
-    edge_connections = False
+    router_graph = nx.Graph()
+    end_host_map = dict()
 
     with open(topo_filename) as topo_file:
         for line in topo_file:
             if line == '\n':
-                inside_graph = g.copy()
-                edge_connections = True
                 continue
-            n1 = int(line.split()[0][:-1])
-            n2 = int(line.split()[1][:-1])
-            g.add_edge(n1, n2)
+            n1 = parse_node(line.split()[0])
+            n2 = parse_node(line.split()[1])
+            if n1 == -1 or n2 == -1:
+                print "Bad line " + line
+                continue
 
-            if edge_connections:
-                if inside_graph.has_node(n1):
-                    end_host_map[n1] = n2
-                else:
-                    end_host_map[n2] = n1
+            g.add_edge(n1[1], n2[1])
 
-    # if there are no separate end_hosts, return the inside graph itself
-    if not edge_connections:
-        inside_graph = g.copy()
-        end_host_map = {x : x for x in g.nodes()}
+            if n1[0] and n2[0]: 
+                router_graph.add_edge(n1[1], n2[1])
+            elif n1[0]:
+                end_host_map[n1[1]] = n2[1]
+            elif n2[0]:
+                end_host_map[n2[1]] = n1[1]
         
-    return g, inside_graph, end_host_map
+    return g, router_graph, end_host_map
 
 
 
@@ -243,19 +252,17 @@ def circ_demand(node_list, mean, std_dev):
         
         node_list = list(node_list)
         num_nodes = len(node_list)
-        offset = num_nodes
 
 	""" sum of 'mean' number of random permutation matrices """
 	""" note any permutation matrix is a circulation demand """
         """ matrix indices are shifted by number of nodes to account """
-        """ for the fact that router nodes all start after the first n nodes """
 	for i in range(mean):
 		perm = np.random.permutation(node_list)
 		for j, k in enumerate(perm):
-			if (j + offset, k) in demand_dict.keys():
-				demand_dict[j + offset, k] += 1
+			if (j, k) in demand_dict.keys():
+				demand_dict[j, k] += 1
 			else:
-				demand_dict[j + offset, k] = 1
+				demand_dict[j, k] = 1
 
 	""" add 'std_dev' number of additional cycles to the demand """
 	for i in range(std_dev):

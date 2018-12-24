@@ -6,14 +6,14 @@ from config import *
 import re
 
 
-def parseNodeName(nodeName, max_router, max_host):
+def parse_node_name(node_name, max_router, max_host):
     try:
-        val = int(nodeName[:-1])
-        if(nodeName[-1] == 'r'):
+        val = int(node_name[:-1])
+        if(node_name[-1] == 'r'):
             if(val > max_router):
                 max_router = val
             return ("router[" + str(val) + "]", max_router, max_host)
-        if(nodeName[-1] == 'e'):
+        if(node_name[-1] == 'e'):
             if(val > max_host):
                 max_host = val
             return ("host[" + str(val) + "]", max_router, max_host)
@@ -45,14 +45,14 @@ def write_ned_file(topo_filename, output_filename, network_name):
         if line == "\n":
             continue
 
-        n1 = parseNodeName(line.split()[0], max_router, max_host)
+        n1 = parse_node_name(line.split()[0], max_router, max_host)
         if(n1 == -1):
             print "Bad line " + line
             continue
         max_router = n1[1]
         max_host = n1[2]
 
-        n2 = parseNodeName(line.split()[1], max_router, max_host)
+        n2 = parse_node_name(line.split()[1], max_router, max_host)
         if(n2 == -1):
             print "Bad line " + line
             continue
@@ -122,7 +122,6 @@ def generate_graph(size, graph_type):
 # generate extra end host nodes if need be
 def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts):
     f1 = open(output_filename, "w+")
-    f2 = open("for_workload_" + output_filename, "w+")
 
     offset = G.number_of_nodes()
     if (separate_end_hosts == False):
@@ -133,24 +132,14 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         f1.write(str(e[0]) + "r " + str(e[1]) +  "r ")
         f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
         f1.write(str(balance_per_channel/2) + " " + str(balance_per_channel/2) + "\n")
-        f2.write(str(e[0] + offset) + "r " + str(e[1] + offset) +  "r ")
-        f2.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
-        f2.write(str(balance_per_channel/2) + " " + str(balance_per_channel/2) + "\n")
-
 
     # generate extra end host nodes
     if separate_end_hosts: 
-        f2.write("\n")
         for n in G.nodes():
             f1.write(str(n) + "e " + str(n) + "r ")
             f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
-            f1.write(str(0) + " " + str(LARGE_BALANCE) + "\n")
-            f2.write(str(n) + "e " + str(n + offset) + "r ")
-            f2.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
-            f2.write(str(0) + " " + str(LARGE_BALANCE) + "\n")
+            f1.write(str(LARGE_BALANCE/2) + " " + str(LARGE_BALANCE) + "\n")
     f1.close()
-    f2.close()
-
 
 
 
