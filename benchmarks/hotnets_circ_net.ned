@@ -1,4 +1,5 @@
 import routerNode;
+import hostNode;
 
 network ../benchmarks/hotnets_circ_net
 {
@@ -6,28 +7,29 @@ network ../benchmarks/hotnets_circ_net
 		double linkDelay @unit("s") = default(100us);
 		double linkDataRate @unit("Gbps") = default(1Gbps);
 	submodules:
-		node[10]: routerNode {} 
- connections: 
-		node[5].out++ --> {delay = 30.0ms; } --> node[6].in++;  
-		node[5].in++ <-- {delay = 30.0ms; } <-- node[6].out++;  
-		node[5].out++ --> {delay = 30.0ms; } --> node[9].in++;  
-		node[5].in++ <-- {delay = 30.0ms; } <-- node[9].out++;  
-		node[6].out++ --> {delay = 30.0ms; } --> node[7].in++;  
-		node[6].in++ <-- {delay = 30.0ms; } <-- node[7].out++;  
-		node[6].out++ --> {delay = 30.0ms; } --> node[8].in++;  
-		node[6].in++ <-- {delay = 30.0ms; } <-- node[8].out++;  
-		node[7].out++ --> {delay = 30.0ms; } --> node[8].in++;  
-		node[7].in++ <-- {delay = 30.0ms; } <-- node[8].out++;  
-		node[8].out++ --> {delay = 30.0ms; } --> node[9].in++;  
-		node[8].in++ <-- {delay = 30.0ms; } <-- node[9].out++;  
-		node[0].out++ --> {delay = 30.0ms; } --> node[5].in++;  
-		node[0].in++ <-- {delay = 30.0ms; } <-- node[5].out++;  
-		node[1].out++ --> {delay = 30.0ms; } --> node[6].in++;  
-		node[1].in++ <-- {delay = 30.0ms; } <-- node[6].out++;  
-		node[2].out++ --> {delay = 30.0ms; } --> node[7].in++;  
-		node[2].in++ <-- {delay = 30.0ms; } <-- node[7].out++;  
-		node[3].out++ --> {delay = 30.0ms; } --> node[8].in++;  
-		node[3].in++ <-- {delay = 30.0ms; } <-- node[8].out++;  
-		node[4].out++ --> {delay = 30.0ms; } --> node[9].in++;  
-		node[4].in++ <-- {delay = 30.0ms; } <-- node[9].out++;  
+		host[5]: hostNode {} 
+		router[5]: routerNode {} 
+connections: 
+		router[0].out++ --> {delay = 30.0ms; } --> router[1].in++;  
+		router[0].in++ <-- {delay = 30.0ms; } <-- router[1].out++;  
+		router[0].out++ --> {delay = 30.0ms; } --> router[4].in++;  
+		router[0].in++ <-- {delay = 30.0ms; } <-- router[4].out++;  
+		router[1].out++ --> {delay = 30.0ms; } --> router[2].in++;  
+		router[1].in++ <-- {delay = 30.0ms; } <-- router[2].out++;  
+		router[1].out++ --> {delay = 30.0ms; } --> router[3].in++;  
+		router[1].in++ <-- {delay = 30.0ms; } <-- router[3].out++;  
+		router[2].out++ --> {delay = 30.0ms; } --> router[3].in++;  
+		router[2].in++ <-- {delay = 30.0ms; } <-- router[3].out++;  
+		router[3].out++ --> {delay = 30.0ms; } --> router[4].in++;  
+		router[3].in++ <-- {delay = 30.0ms; } <-- router[4].out++;  
+		host[0].out++ --> {delay = 30.0ms; } --> router[0].in++;  
+		host[0].in++ <-- {delay = 30.0ms; } <-- router[0].out++;  
+		host[1].out++ --> {delay = 30.0ms; } --> router[1].in++;  
+		host[1].in++ <-- {delay = 30.0ms; } <-- router[1].out++;  
+		host[2].out++ --> {delay = 30.0ms; } --> router[2].in++;  
+		host[2].in++ <-- {delay = 30.0ms; } <-- router[2].out++;  
+		host[3].out++ --> {delay = 30.0ms; } --> router[3].in++;  
+		host[3].in++ <-- {delay = 30.0ms; } <-- router[3].out++;  
+		host[4].out++ --> {delay = 30.0ms; } --> router[4].in++;  
+		host[4].in++ <-- {delay = 30.0ms; } <-- router[4].out++;  
 }
