@@ -28,6 +28,9 @@ simple hostNode
 
 		@signal[balancePerChannel*](type="long"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
+		
+		@signal[bottleneckPerDestPerPath*](type="long"); 
+		@statisticTemplate[bottleneckPerDestPerPathTemplate](record=vector, stats);
 
 	gates:
 		input in[];

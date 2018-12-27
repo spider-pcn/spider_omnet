@@ -8,4 +8,5 @@ public:
     simtime_t lastUpdated = -1;
     double bottleneck = -1;
     vector<double> pathBalances;
+    simsignal_t bottleneckPerDestPerPathSignal;
 };

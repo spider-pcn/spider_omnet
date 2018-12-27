@@ -75,7 +75,8 @@ class hostNode : public cSimpleModule
       virtual void forwardProbeMessage(routerMsg *msg);
       virtual void sendUpdateMessage(routerMsg *msg);
       virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q);
-      virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode);
+      virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode); //takes a vector of routes, and puts them into the map
+      virtual void restartProbes(int destNode);
       virtual void deleteMessagesInQueues();
 
       //helper

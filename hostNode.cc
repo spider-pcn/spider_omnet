@@ -200,14 +200,45 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
 
 }
 
+void hostNode:: restartProbes(int destNode){
+
+    for (auto p: nodeToShortestPathsMap[destNode] ){
+        routerMsg * msg = generateProbeMessage(destNode, p.first, p.second.path);
+        forwardProbeMessage(msg);
+    }
+
+}
 
 
 void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode){ //maybe less than k routes
+
    for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
       //map<int, map<int, PathInfo>> nodeToShortestPathsMap;
+
       PathInfo temp = {};
       nodeToShortestPathsMap[destNode][pathIdx] = temp;
       nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
+      //initialize signal
+
+
+         char signalName[64];
+         simsignal_t signal;
+         cProperty *statisticTemplate;
+
+         //numInQueuePerChannel signal
+
+         if (destNode<_numHostNodes){
+             sprintf(signalName, "bottleneckPerDestPerPath_%d(host %d)", pathIdx, destNode);
+         }
+         else{
+             sprintf(signalName, "bottleneckPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
+         }
+
+         signal = registerSignal(signalName);
+         statisticTemplate = getProperties()->get("statisticTemplate", "bottleneckPerDestPerPathTemplate");
+         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+         nodeToShortestPathsMap[destNode][pathIdx].bottleneckPerDestPerPathSignal = signal;
+
       /*
 
        cout << "path number " << pathIdx << endl;
@@ -656,6 +687,11 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
 
 
    for (auto it = 0; it<_numHostNodes; it++){ //iterate through all nodes in graph
+
+       for (auto p: nodeToShortestPathsMap[it]){
+           emit(p.second.bottleneckPerDestPerPathSignal, p.second.bottleneck);
+
+       }
       emit(numAttemptedPerDestSignals[it], statNumAttempted[it]);
 
       emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
@@ -1164,6 +1200,9 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
          if(_useWaterfilling && (ttmsg->getRoute().size() == 0)){ //no route is specified -
             //means we need to break up into chunks and assign route
 
+
+
+
                  if (simTime() == transMsg->getTimeSent()){
                      destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] + 1;
                  }
@@ -1172,6 +1211,8 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
 
                   if (nodeToShortestPathsMap.count(destNode) == 0 ){
                      vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
+
+
                     cout << "after K Shortest Routes" << endl;
                      initializeProbes(kShortestRoutes, destNode);
                      cout << "after initialize probes" << endl;
@@ -1203,7 +1244,10 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
 
                return;
             }
-            else{
+            else{ //if not recent
+                if (destNodeToNumTransPending[destNode] == 1){
+                   restartProbes(destNode);
+                }
                scheduleAt(simTime() + 1, ttmsg);
                return;
             }
