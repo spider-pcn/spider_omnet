@@ -39,7 +39,7 @@ class routerNode : public cSimpleModule
           //just generates routerMsg with no encapsulated msg inside
       virtual routerMsg *generateStatMessage();
       virtual routerMsg *generateClearStateMessage();
-
+      virtual void checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits, int node);
       virtual int myIndex();
       virtual void initialize() override;
       virtual void handleMessage(cMessage *msg) override;

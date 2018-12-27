@@ -249,6 +249,17 @@ routerMsg *routerNode::generateStatMessage(){
    rMsg->setMessageType(STAT_MSG);
    return rMsg;
 }
+bool manualFindQueuedTransUnitsByTransactionId( vector<tuple<int, double, routerMsg*, Id>> (queuedTransUnits), int transactionId){
+    for (auto q: queuedTransUnits){
+        int qId = get<0>(get<3>(q));
+        if (qId == transactionId){
+            return true;
+        }
+    }
+    return false;
+}
+
+
 
 void routerNode::handleClearStateMessage(routerMsg* ttmsg){
 
@@ -262,43 +273,99 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
       scheduleAt(simTime()+_clearRate, ttmsg);
    }
 
-   for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); ){ //iterate through all canceledTransactions
+
+   for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end();){ //iterate through all canceledTransactions
       int transactionId = get<0>(*it);
       simtime_t msgArrivalTime = get<1>(*it);
       int prevNode = get<2>(*it);
       int nextNode = get<3>(*it);
 
-      if (simTime() > (msgArrivalTime + _maxTravelTime)){ //we can process it
+      if (simTime() > (msgArrivalTime + _maxTravelTime)){ // we can process
+
+
+
+          //fixed not deleting from the queue
+          // start queue searching
+          vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
+          //sort_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end());
+
+          auto iterQueue = find_if((*queuedTransUnits).begin(),
+                (*queuedTransUnits).end(),
+                [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
+                { return (get<0>(get<3>(p)) == transactionId); });
+          if (iterQueue != (*queuedTransUnits).end()){
+              cout << "queuedTransUnits size before: " << (*queuedTransUnits).size();
+             iterQueue =   (*queuedTransUnits).erase(iterQueue);
+
+             cout << "maxTravelTime: " << _maxTravelTime << endl;
+             cout << "cleared message, size after: " << (*queuedTransUnits).size() << endl;
+
+          }
+          else{
+
+              if (manualFindQueuedTransUnitsByTransactionId((*queuedTransUnits), transactionId)){
+              cout << "could not find " << transactionId << "in " << endl;
+              checkQueuedTransUnits((*queuedTransUnits), nextNode);
+              }
+
+
+
+          }
+
+
+
+
+
+
+
+
+          //we can process it
          map<tuple<int,int>, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
          auto iterIncoming = find_if((*incomingTransUnits).begin(),
                (*incomingTransUnits).end(),
                [&transactionId](const pair<tuple<int, int >, double> & p)
                { return get<0>(p.first) == transactionId; });
-         while (iterIncoming != (*incomingTransUnits).end()){
-            if (iterIncoming != (*incomingTransUnits).end()){
-               iterIncoming = (*incomingTransUnits).erase(iterIncoming);
 
-               tuple<int, int> tempId = make_tuple(transactionId, get<1>(iterIncoming -> first));
+         while (iterIncoming != (*incomingTransUnits).end()){
+
+                iterIncoming = (*incomingTransUnits).erase(iterIncoming);
+
                // start queue searching
                vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
-               sort_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end());
+               //sort_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end());
 
                auto iterQueue = find_if((*queuedTransUnits).begin(),
                      (*queuedTransUnits).end(),
-                     [&tempId](const tuple<int, double, routerMsg*, Id>& p)
-                     { return (get<3>(p) == tempId); });
+                     [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
+                     { return (get<0>(get<3>(p)) == transactionId); });
                if (iterQueue != (*queuedTransUnits).end()){
+                   cout << "queuedTransUnits size before: " << (*queuedTransUnits).size();
                   iterQueue =   (*queuedTransUnits).erase(iterQueue);
+
+                  cout << "maxTravelTime: " << _maxTravelTime << endl;
+                  cout << "cleared message, size after: " << (*queuedTransUnits).size() << endl;
+
+               }
+               else{
+
+                   if (manualFindQueuedTransUnitsByTransactionId((*queuedTransUnits), transactionId)){
+                   cout << "could not find " << transactionId << "in " << endl;
+                   checkQueuedTransUnits((*queuedTransUnits), nextNode);
+                   }
+
+
 
                }
 
                make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
-            }
+
+            //find next in incoming
             auto iterIncoming = find_if((*incomingTransUnits).begin(),
                   (*incomingTransUnits).end(),
                   [&transactionId](const pair<tuple<int, int >, double> & p)
                   { return get<0>(p.first) == transactionId; });
          }
+
          map<tuple<int,int>, double> *outgoingTransUnits = &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
 
          auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
@@ -321,12 +388,16 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                   { return get<0>(p.first) == transactionId; });
          }
 
-         it = canceledTransactions.erase(it);
-      }
-      else{
+         //it = canceledTransactions.erase(it);
          it++;
       }
+      else{
+          it++;
+      }
+
+
    }
+
 }
 
 routerMsg *routerNode::generateClearStateMessage(){
@@ -335,6 +406,35 @@ routerMsg *routerNode::generateClearStateMessage(){
    routerMsg *rMsg = new routerMsg(msgname);
    rMsg->setMessageType(CLEAR_STATE_MSG);
    return rMsg;
+}
+
+
+
+void routerNode::checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits, int nextNode){
+
+    if (queuedTransUnits.size()>0){
+
+    cout << "simTime(): " << simTime() << endl;
+    cout << "queuedTransUnits size: " << queuedTransUnits.size() << endl;
+    for (auto q: queuedTransUnits){
+        routerMsg* msg = get<2>(q);
+        transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
+
+        if (transMsg->getHasTimeOut()){
+            cout << "(" << (transMsg->getTimeSent() + transMsg->getTimeOut()) <<","<< transMsg->getTransactionId() << ","<<nextNode << ") ";
+        }
+        else{
+            cout << "(-1) ";
+        }
+
+    }
+    cout << endl;
+    for (auto c: canceledTransactions){
+        cout << "(" << get<0>(c) << "," <<get<1>(c) <<","<< get<2>(c)<< "," << get<3>(c)<< ") ";
+
+    }
+    cout << endl;
+    }
 }
 
 void routerNode::handleStatMessage(routerMsg* ttmsg){
@@ -349,6 +449,10 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
 
       int node = it->first; //key
+
+      //checkQueuedTransUnits(nodeToPaymentChannel[node].queuedTransUnits, node);
+
+
       emit(nodeToPaymentChannel[node].numInQueuePerChannelSignal, (nodeToPaymentChannel[node].queuedTransUnits).size());
 
       emit(nodeToPaymentChannel[node].balancePerChannelSignal, nodeToPaymentChannel[node].balance);
@@ -380,6 +484,7 @@ void routerNode::handleTimeOutMessage(routerMsg* ttmsg){
    int nextNode = (ttmsg->getRoute())[ttmsg->getHopCount()+1];
    int prevNode = (ttmsg->getRoute())[ttmsg->getHopCount()-1];
 
+
    CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),prevNode, nextNode);
    canceledTransactions.insert(ct);
    forwardTimeOutMessage(ttmsg);
@@ -390,7 +495,7 @@ void routerNode::handleTimeOutMessage(routerMsg* ttmsg){
 
 
 
-void routerNode::handleAckMessage(routerMsg* ttmsg){ //TODO: need to fix handleAckMessage
+void routerNode::handleAckMessage(routerMsg* ttmsg){
    //generate updateMsg
    int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
 
@@ -514,16 +619,28 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
 
    int destination = transMsg->getReceiver();
 
-   //check if message is already failed: (1) past time()>timeSent+timeOut (2) on failedTransUnit list
-   if ( transMsg->getHasTimeOut() && (simTime() > (transMsg->getTimeSent() + transMsg->getTimeOut()))  ){
-      //TODO: change to if transaction is in canceledTransactions set
 
-      //delete yourself
-      ttmsg->decapsulate();
-      delete transMsg;
-      delete ttmsg;
+   //check if message is already failed: (1) past time()>timeSent+timeOut (2) on failedTransUnit list
+   if (transMsg->getHasTimeOut()){
+       int transactionId = transMsg->getTransactionId();
+   auto iter = find_if(canceledTransactions.begin(),
+           canceledTransactions.end(),
+           [&transactionId](const tuple<int, simtime_t, int, int>& p)
+           { return get<0>(p) == transactionId; });
+
+     if ( iter!=canceledTransactions.end() ){
+        //TODO: check to see if transactionId is in canceledTransactions set
+
+        //delete yourself
+        ttmsg->decapsulate();
+        delete transMsg;
+        delete ttmsg;
+        return;
+     }
+
    }
-   else{
+
+
       //not a self-message, add to incoming_trans_units
       int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
       map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
@@ -538,7 +655,7 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
 
       processTransUnits(nextNode, *q);
 
-   }
+
 }
 
 
@@ -573,6 +690,10 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg)
       return false;
    }
    else{
+
+
+
+
       // Increment hop count.
       msg->setHopCount(msg->getHopCount()+1);
       //use hopCount to find next destination

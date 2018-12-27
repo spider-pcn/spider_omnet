@@ -8,6 +8,10 @@ simple hostNode
 		
 		@signal[completionTime](type="long"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 
+		
+		@signal[numCleared](type="long"); 
+		@statistic[numCleared](title="numCleared"; source="numCleared"; record=vector,stats; interpolationmode=none); 
+		
 
 		@display("i=block/routing"); 
 
@@ -22,7 +26,10 @@ simple hostNode
 
 		@signal[numCompletedPerDest*](type="long");  
 		@statisticTemplate[numCompletedPerDestTemplate](record=vector, stats);   
-
+		
+		@signal[numTimedOutPerDest*](type="long");  
+		@statisticTemplate[numTimedOutPerDestTemplate](record=vector, stats);
+		
 		@signal[numAttemptedPerDest*](type="long"); 
 		@statisticTemplate[numAttemptedPerDestTemplate](record=vector, stats);   
 

@@ -32,17 +32,21 @@ class hostNode : public cSimpleModule
       map<int, PaymentChannel> nodeToPaymentChannel;
       vector<int> statNumCompleted;
       vector<int> statNumAttempted;
+      vector<int> statNumTimedOut;
       map<int, vector<int>> destNodeToPath; //store shortest paths
       map<int, map<int, PathInfo>> nodeToShortestPathsMap = {}; //store k shortest paths in waterfilling
       simsignal_t completionTimeSignal;
       vector<simsignal_t> numCompletedPerDestSignals;
       vector<simsignal_t> numAttemptedPerDestSignals;
+      vector<simsignal_t> numTimedOutPerDestSignals;
       vector< TransUnit > myTransUnits; //list of TransUnits that have me as sender
       set<int> successfulDoNotSendTimeOut; //set of transaction units WITH timeouts, that we already received acks for
       set<CanceledTrans> canceledTransactions = {};
       map<tuple<int,int>,AckState> transPathToAckState = {}; //key is (transactionId, routeIndex)
       map<int, int> transactionIdToNumHtlc = {}; //allows us to calculate the htlcIndex number
       map<int, int> destNodeToNumTransPending;
+      int numCleared = 0;
+      simsignal_t numClearedSignal;
 
 
    protected:
