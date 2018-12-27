@@ -312,13 +312,6 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
 
           }
 
-
-
-
-
-
-
-
           //we can process it
          map<tuple<int,int>, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
          auto iterIncoming = find_if((*incomingTransUnits).begin(),
