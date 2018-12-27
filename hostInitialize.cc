@@ -103,6 +103,8 @@ void updateMaxTravelTime(vector<int> route){
         }
     }
 
+    maxTime = (maxTime)/1000 *2; //double for round trip, and convert from milliseconds to seconds
+
     if (maxTime > _maxTravelTime){
         _maxTravelTime = maxTime;
     }

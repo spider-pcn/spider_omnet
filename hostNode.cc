@@ -110,6 +110,19 @@ void hostNode::forwardProbeMessage(routerMsg *msg){
    //cout << "after sending " << endl;
 }
 
+void printVector(vector<int> v){
+    for (auto temp : v){
+        cout << temp << ", ";
+    }
+    cout << endl;
+}
+
+void printVectorDouble(vector<double> v){
+    for (auto temp : v){
+        cout << temp << ", ";
+    }
+    cout << endl;
+}
 
 void hostNode::handleProbeMessage(routerMsg* ttmsg){
    probeMsg *pMsg = check_and_cast<probeMsg *>(ttmsg->getEncapsulatedPacket());
@@ -129,6 +142,7 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
 
       int destNode = pMsg->getReceiver();
 
+
       PathInfo * p = &(nodeToShortestPathsMap[destNode][pathIdx]);
       assert(p->path == pMsg->getPath());
 
@@ -137,7 +151,9 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
       int bottleneck = minVectorElemDouble(pathBalances);
 
       p->bottleneck = bottleneck ;
+
       p->pathBalances = pathBalances;
+      cout << "path Index: " << pathIdx << endl;
 
 
 
@@ -158,6 +174,18 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
           delete ttmsg;
 
       }
+
+      for (auto p: nodeToShortestPathsMap[destNode]){
+          cout << "[index]: "<< p.first << endl;
+          cout << "path: ";
+          printVector(p.second.path);
+          cout << "pathBalances: ";
+          printVectorDouble(p.second.pathBalances);
+          cout << "bottleneck:" << p.second.bottleneck << endl;
+      }
+
+
+
    }
    else{ //reverse and send message again
       pMsg->setIsReversed(true);
@@ -1002,6 +1030,8 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
    double diffToSend;
    double amtToSend;
    int highestBalIdx;
+   //cout << "beginning size: " << pq.size();
+   //cout <<  "total amount: " << transMsg->getAmount();
    while(pq.size()>0 && remainingAmt > 0){
       highestBal = get<0>(pq.top());
       highestBalIdx = get<1>(pq.top());
@@ -1018,12 +1048,26 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
       for (auto p: pathMap){
          pathMap[p.first] = p.second + amtToSend;
          remainingAmt = remainingAmt - amtToSend;
+         cout << "(" << p.first << "," << p.second << ")";
+
+
       }
       pathMap[highestBalIdx] = amtToSend;
       remainingAmt = remainingAmt - amtToSend;
 
    }
 
+
+   //cout << "total amount: "<< transMsg->getAmount();
+
+
+   // print how much was sent on each path
+   /*
+   for (auto p: pathMap){
+       cout << "index: "<< p.first << "; bottleneck: " << nodeToShortestPathsMap[destNode][p.first].bottleneck << "; ";
+       cout << "amtToSend: "<< p.second  << endl;
+   }
+    */
    transMsg->setAmount(remainingAmt);
 
    for (auto p: pathMap){
