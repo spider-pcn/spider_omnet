@@ -149,7 +149,7 @@ parser.add_argument('--num-nodes', type=int, dest='num_nodes', help='number of n
 parser.add_argument('--delay-per-channel', type=int, dest='delay_per_channel', \
         help='delay between nodes (ms)', default=30)
 parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'hotnets_topo', 'simple_line', \
-        'simple_deadlock'], \
+        'simple_deadlock', 'simple_topologies'], \
         help='type of graph (Small world or scale free or custom topology list)', default='small_world')
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 parser.add_argument('--topo-filename', dest='topo_filename', type=str, \
@@ -163,7 +163,16 @@ args = parser.parse_args()
 
 
 # generate graph and print topology and ned file
-if args.graph_type in ['small_world', 'scale_free']:
+if args.num_nodes <= 5 and args.graph_type == 'simple_topologies':
+    if args.num_nodes == 2:
+        G = two_node_graph
+    elif args.num_nodes == 3:
+        G = three_node_graph
+    elif args.num_nodes == 4:
+        G = four_node_graph
+    else:
+        G = five_node_graph
+elif args.graph_type in ['small_world', 'scale_free']:
     G = generate_graph(args.num_nodes, args.graph_type)
 elif args.graph_type == 'hotnets_topo':
     G = hotnets_topo_graph
