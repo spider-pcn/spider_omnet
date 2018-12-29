@@ -58,4 +58,4 @@ LARGE_BALANCE = 1000000000
 # json parameters for lnd testbed
 ENDHOST_LND_ONE_WAY_CAPACITY = 1000000000
 
- 
+LND_FILE_PATH = "../lnd_data/" 

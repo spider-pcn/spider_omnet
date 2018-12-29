@@ -149,7 +149,7 @@ parser.add_argument('--num-nodes', type=int, dest='num_nodes', help='number of n
 parser.add_argument('--delay-per-channel', type=int, dest='delay_per_channel', \
         help='delay between nodes (ms)', default=30)
 parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'hotnets_topo', 'simple_line', \
-        'simple_deadlock', 'simple_topologies'], \
+        'simple_deadlock', 'simple_topologies', 'lnd_dec4_2018', 'lnd_dec28_2018'], \
         help='type of graph (Small world or scale free or custom topology list)', default='small_world')
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 parser.add_argument('--topo-filename', dest='topo_filename', type=str, \
@@ -179,6 +179,8 @@ elif args.graph_type == 'hotnets_topo':
 elif args.graph_type == 'simple_deadlock':
     G = simple_deadlock_graph
     args.separate_end_hosts = False
+elif args.graph_type.startswith('lnd_'):
+    G = nx.read_edgelist(LND_FILE_PATH + args.graph_type + '.edgelist')
 else:
     G = simple_line_graph
     args.separate_end_hosts = False
