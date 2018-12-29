@@ -138,7 +138,7 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         for n in G.nodes():
             f1.write(str(n) + "e " + str(n) + "r ")
             f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
-            f1.write(str(LARGE_BALANCE/2) + " " + str(LARGE_BALANCE) + "\n")
+            f1.write(str(LARGE_BALANCE/2) + " " + str(LARGE_BALANCE/2) + "\n")
     f1.close()
 
 
