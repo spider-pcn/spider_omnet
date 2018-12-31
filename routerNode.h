@@ -59,6 +59,9 @@ class routerNode : public cSimpleModule
       //virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode);
       virtual void deleteMessagesInQueues();
 
+      //helper
+      virtual void printNodeToPaymentChannel();
+
 
 };
 

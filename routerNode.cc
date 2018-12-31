@@ -23,6 +23,22 @@ void routerNode::deleteMessagesInQueues(){
    }
 }
 
+void routerNode:: printNodeToPaymentChannel(){
+
+        printf("print of channels\n" );
+        for (auto i : nodeToPaymentChannel){
+           printf("(key: %d, %f )",i.first, i.second.balance);
+           /*
+           for (auto k: i.second){
+              printf("(%d, %d) ",get<0>(k), get<1>(k));
+           }
+
+           printf("] \n");
+           */
+        }
+        cout<<endl;
+
+}
 
 void routerNode::forwardProbeMessage(routerMsg *msg){
    // Increment hop count.
@@ -189,53 +205,60 @@ void routerNode::initialize()
 
 void routerNode::handleMessage(cMessage *msg)
 {
-   //cout << "Router Time: " << simTime() << endl;
-   //cout << "msg: " << msg->getName() << endl;
+    bool toPrint = false;
+    if (toPrint){
+
+  cout << "before";
+  printNodeToPaymentChannel();
+   cout << "Router Time: " << simTime() << endl;
+   cout << "msg: " << msg->getName() << endl;
+    }
    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
    if (ttmsg->getMessageType()==ACK_MSG){ //preprocessor constants defined in routerMsg_m.h
-      //cout << "[ROUTER "<< myIndex() <<": RECEIVED ACK MSG]"<< msg->getName() << endl;
+       if (toPrint) cout << "[ROUTER "<< myIndex() <<": RECEIVED ACK MSG]"<< msg->getName() << endl;
       //print_message(ttmsg);
       //print_private_values();
       handleAckMessage(ttmsg);
-      //cout << "[AFTER HANDLING:]" <<endl;
+      if (toPrint) cout << "[AFTER HANDLING:]" <<endl;
       // print_private_values();
    }
    else if(ttmsg->getMessageType()==TRANSACTION_MSG){
-      //cout<< "[ROUTER "<< myIndex() <<": RECEIVED TRANSACTION MSG] "<< msg->getName()<<endl;
+       if (toPrint) cout<< "[ROUTER "<< myIndex() <<": RECEIVED TRANSACTION MSG] "<< msg->getName()<<endl;
       // print_message(ttmsg);
       // print_private_values();
       handleTransactionMessage(ttmsg);
-      //cout<< "[AFTER HANDLING:]"<<endl;
+      if (toPrint) cout<< "[AFTER HANDLING:]"<<endl;
       // print_private_values();
    }
    else if(ttmsg->getMessageType()==UPDATE_MSG){
-      //cout<< "[ROUTER "<< myIndex() <<": RECEIVED UPDATE MSG]"<< msg->getName()<<endl;
+       if (toPrint) cout<< "[ROUTER "<< myIndex() <<": RECEIVED UPDATE MSG]"<< msg->getName()<<endl;
       // print_message(ttmsg);
       // print_private_values();
       handleUpdateMessage(ttmsg);
-      //cout<< "[AFTER HANDLING:]  "<<endl;
+      if (toPrint) cout<< "[AFTER HANDLING:]  "<<endl;
       //print_private_values();
    }
    else if (ttmsg->getMessageType() ==STAT_MSG){
-      //cout<< "[ROUTER "<< myIndex() <<": RECEIVED STAT MSG]"<< msg->getName()<<endl;
+       if (toPrint) cout<< "[ROUTER "<< myIndex() <<": RECEIVED STAT MSG]"<< msg->getName()<<endl;
       handleStatMessage(ttmsg);
-      //cout<< "[AFTER HANDLING:]  "<<endl;
+      if (toPrint) cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == TIME_OUT_MSG){
-      //cout<< "[ROUTER "<< myIndex() <<": RECEIVED TIME_OUT_MSG] "<< msg->getName()<<endl;
+       if (toPrint) cout<< "[ROUTER "<< myIndex() <<": RECEIVED TIME_OUT_MSG] "<< msg->getName()<<endl;
       handleTimeOutMessage(ttmsg);
-      //cout<< "[AFTER HANDLING:]  "<<endl;
+      if (toPrint) cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == PROBE_MSG){
-      //cout<< "[ROUTER "<< myIndex() <<": RECEIVED PROBE_MSG] "<< msg->getName()<<endl;
+       if (toPrint)  cout<< "[ROUTER "<< myIndex() <<": RECEIVED PROBE_MSG] "<< msg->getName()<<endl;
       handleProbeMessage(ttmsg);
-      //cout<< "[AFTER HANDLING:]  "<<endl;
+      if (toPrint)  cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == CLEAR_STATE_MSG){
-      //cout<< "[ROUTER "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] "<< msg->getName()<<endl;
+       if (toPrint)  cout<< "[ROUTER "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] "<< msg->getName()<<endl;
       handleClearStateMessage(ttmsg);
-      //cout<< "[AFTER HANDLING:]  "<<endl;
+      if (toPrint) cout<< "[AFTER HANDLING:]  "<<endl;
    }
+   if (toPrint) printNodeToPaymentChannel();
 
 
 
@@ -294,11 +317,11 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                 [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
                 { return (get<0>(get<3>(p)) == transactionId); });
           if (iterQueue != (*queuedTransUnits).end()){
-              cout << "queuedTransUnits size before: " << (*queuedTransUnits).size();
+              //cout << "queuedTransUnits size before: " << (*queuedTransUnits).size();
              iterQueue =   (*queuedTransUnits).erase(iterQueue);
 
-             cout << "maxTravelTime: " << _maxTravelTime << endl;
-             cout << "cleared message, size after: " << (*queuedTransUnits).size() << endl;
+             //cout << "maxTravelTime: " << _maxTravelTime << endl;
+             //cout << "cleared message, size after: " << (*queuedTransUnits).size() << endl;
 
           }
           else{
@@ -332,11 +355,11 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                      [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
                      { return (get<0>(get<3>(p)) == transactionId); });
                if (iterQueue != (*queuedTransUnits).end()){
-                   cout << "queuedTransUnits size before: " << (*queuedTransUnits).size();
+                  // cout << "queuedTransUnits size before: " << (*queuedTransUnits).size();
                   iterQueue =   (*queuedTransUnits).erase(iterQueue);
 
-                  cout << "maxTravelTime: " << _maxTravelTime << endl;
-                  cout << "cleared message, size after: " << (*queuedTransUnits).size() << endl;
+                  //cout << "maxTravelTime: " << _maxTravelTime << endl;
+                  //cout << "cleared message, size after: " << (*queuedTransUnits).size() << endl;
 
                }
                else{
@@ -370,6 +393,7 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
 
             if (iterOutgoing != (*outgoingTransUnits).end()){
                double amount = iterOutgoing -> second;
+               cout << "incremented payment back" << endl;
                nodeToPaymentChannel[nextNode].balance = nodeToPaymentChannel[nextNode].balance + amount;
                iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
 
@@ -381,8 +405,8 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                   { return get<0>(p.first) == transactionId; });
          }
 
-         //it = canceledTransactions.erase(it);
-         it++;
+         it = canceledTransactions.erase(it);
+         //it++;
       }
       else{
           it++;
