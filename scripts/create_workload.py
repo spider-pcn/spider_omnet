@@ -151,7 +151,7 @@ def generate_json_files(filename, graph, inside_graph, start_nodes, end_nodes, a
     demands = []
     for s, e, a in zip(start_nodes, end_nodes, amt_absolute):
         demand_entry = {"src": str(s) + "e", "dst": str(e) + "e",\
-                        "rate": a}
+                        "rate": a/SCALE_AMOUNT}
         demands.append(demand_entry)
 
     json_string["demands"] = demands

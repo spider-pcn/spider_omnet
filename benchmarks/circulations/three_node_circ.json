@@ -29,32 +29,32 @@
                 {
                         "src": "1e", 
                         "dst": "2e", 
-                        "rate": 30
+                        "rate": 6
                 }, 
                 {
                         "src": "0e", 
                         "dst": "1e", 
-                        "rate": 15
+                        "rate": 3
                 }, 
                 {
                         "src": "2e", 
                         "dst": "1e", 
-                        "rate": 35
+                        "rate": 7
                 }, 
                 {
                         "src": "2e", 
                         "dst": "0e", 
-                        "rate": 15
+                        "rate": 3
                 }, 
                 {
                         "src": "1e", 
                         "dst": "0e", 
-                        "rate": 20
+                        "rate": 4
                 }, 
                 {
                         "src": "0e", 
                         "dst": "2e", 
-                        "rate": 20
+                        "rate": 4
                 }
         ], 
         "miner": "0r", 

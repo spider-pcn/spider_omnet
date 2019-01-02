@@ -21,12 +21,12 @@
                 {
                         "src": "0e", 
                         "dst": "1e", 
-                        "rate": 20
+                        "rate": 4
                 }, 
                 {
                         "src": "1e", 
                         "dst": "0e", 
-                        "rate": 20
+                        "rate": 4
                 }
         ], 
         "miner": "0r", 
