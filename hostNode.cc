@@ -301,7 +301,7 @@ void hostNode::initialize()
       _useWaterfilling = true;
 
       if (_useWaterfilling){
-         _kValue = 3;
+         _kValue = 2;
       }
 
 
