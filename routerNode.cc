@@ -724,9 +724,9 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg)
       nodeToPaymentChannel[nextDest].statNumSent =  nodeToPaymentChannel[nextDest].statNumSent+1;
 
       double amt = transMsg->getAmount();
-      cout << "processed amt: " << amt << endl;
+      //cout << "processed amt: " << amt << endl;
       nodeToPaymentChannel[nextDest].balance = nodeToPaymentChannel[nextDest].balance - amt;
-      cout << "balance: " << nodeToPaymentChannel[nextDest].balance << endl;
+      //cout << "balance: " << nodeToPaymentChannel[nextDest].balance << endl;
 
       //int transId = transMsg->getTransactionId();
 

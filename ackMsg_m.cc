@@ -182,6 +182,7 @@ Register_Class(ackMsg)
 ackMsg::ackMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
 {
     this->transactionId = 0;
+    this->receiver = 0;
     this->htlcIndex = 0;
     this->pathIndex = 0;
     this->timeSent = 0;
@@ -211,6 +212,7 @@ ackMsg& ackMsg::operator=(const ackMsg& other)
 void ackMsg::copy(const ackMsg& other)
 {
     this->transactionId = other.transactionId;
+    this->receiver = other.receiver;
     this->htlcIndex = other.htlcIndex;
     this->pathIndex = other.pathIndex;
     this->timeSent = other.timeSent;
@@ -224,6 +226,7 @@ void ackMsg::parsimPack(omnetpp::cCommBuffer *b) const
 {
     ::omnetpp::cPacket::parsimPack(b);
     doParsimPacking(b,this->transactionId);
+    doParsimPacking(b,this->receiver);
     doParsimPacking(b,this->htlcIndex);
     doParsimPacking(b,this->pathIndex);
     doParsimPacking(b,this->timeSent);
@@ -237,6 +240,7 @@ void ackMsg::parsimUnpack(omnetpp::cCommBuffer *b)
 {
     ::omnetpp::cPacket::parsimUnpack(b);
     doParsimUnpacking(b,this->transactionId);
+    doParsimUnpacking(b,this->receiver);
     doParsimUnpacking(b,this->htlcIndex);
     doParsimUnpacking(b,this->pathIndex);
     doParsimUnpacking(b,this->timeSent);
@@ -254,6 +258,16 @@ int ackMsg::getTransactionId() const
 void ackMsg::setTransactionId(int transactionId)
 {
     this->transactionId = transactionId;
+}
+
+int ackMsg::getReceiver() const
+{
+    return this->receiver;
+}
+
+void ackMsg::setReceiver(int receiver)
+{
+    this->receiver = receiver;
 }
 
 int ackMsg::getHtlcIndex() const
@@ -391,7 +405,7 @@ const char *ackMsgDescriptor::getProperty(const char *propertyname) const
 int ackMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 8+basedesc->getFieldCount() : 8;
+    return basedesc ? 9+basedesc->getFieldCount() : 9;
 }
 
 unsigned int ackMsgDescriptor::getFieldTypeFlags(int field) const
@@ -411,8 +425,9 @@ unsigned int ackMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<8) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<9) ? fieldTypeFlags[field] : 0;
 }
 
 const char *ackMsgDescriptor::getFieldName(int field) const
@@ -425,6 +440,7 @@ const char *ackMsgDescriptor::getFieldName(int field) const
     }
     static const char *fieldNames[] = {
         "transactionId",
+        "receiver",
         "htlcIndex",
         "pathIndex",
         "timeSent",
@@ -433,7 +449,7 @@ const char *ackMsgDescriptor::getFieldName(int field) const
         "amount",
         "hasTimeOut",
     };
-    return (field>=0 && field<8) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<9) ? fieldNames[field] : nullptr;
 }
 
 int ackMsgDescriptor::findField(const char *fieldName) const
@@ -441,13 +457,14 @@ int ackMsgDescriptor::findField(const char *fieldName) const
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount() : 0;
     if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+0;
-    if (fieldName[0]=='h' && strcmp(fieldName, "htlcIndex")==0) return base+1;
-    if (fieldName[0]=='p' && strcmp(fieldName, "pathIndex")==0) return base+2;
-    if (fieldName[0]=='t' && strcmp(fieldName, "timeSent")==0) return base+3;
-    if (fieldName[0]=='i' && strcmp(fieldName, "isSuccess")==0) return base+4;
-    if (fieldName[0]=='s' && strcmp(fieldName, "secret")==0) return base+5;
-    if (fieldName[0]=='a' && strcmp(fieldName, "amount")==0) return base+6;
-    if (fieldName[0]=='h' && strcmp(fieldName, "hasTimeOut")==0) return base+7;
+    if (fieldName[0]=='r' && strcmp(fieldName, "receiver")==0) return base+1;
+    if (fieldName[0]=='h' && strcmp(fieldName, "htlcIndex")==0) return base+2;
+    if (fieldName[0]=='p' && strcmp(fieldName, "pathIndex")==0) return base+3;
+    if (fieldName[0]=='t' && strcmp(fieldName, "timeSent")==0) return base+4;
+    if (fieldName[0]=='i' && strcmp(fieldName, "isSuccess")==0) return base+5;
+    if (fieldName[0]=='s' && strcmp(fieldName, "secret")==0) return base+6;
+    if (fieldName[0]=='a' && strcmp(fieldName, "amount")==0) return base+7;
+    if (fieldName[0]=='h' && strcmp(fieldName, "hasTimeOut")==0) return base+8;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -463,13 +480,14 @@ const char *ackMsgDescriptor::getFieldTypeString(int field) const
         "int",
         "int",
         "int",
+        "int",
         "double",
         "bool",
         "string",
         "double",
         "bool",
     };
-    return (field>=0 && field<8) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<9) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **ackMsgDescriptor::getFieldPropertyNames(int field) const
@@ -537,13 +555,14 @@ std::string ackMsgDescriptor::getFieldValueAsString(void *object, int field, int
     ackMsg *pp = (ackMsg *)object; (void)pp;
     switch (field) {
         case 0: return long2string(pp->getTransactionId());
-        case 1: return long2string(pp->getHtlcIndex());
-        case 2: return long2string(pp->getPathIndex());
-        case 3: return double2string(pp->getTimeSent());
-        case 4: return bool2string(pp->getIsSuccess());
-        case 5: return oppstring2string(pp->getSecret());
-        case 6: return double2string(pp->getAmount());
-        case 7: return bool2string(pp->getHasTimeOut());
+        case 1: return long2string(pp->getReceiver());
+        case 2: return long2string(pp->getHtlcIndex());
+        case 3: return long2string(pp->getPathIndex());
+        case 4: return double2string(pp->getTimeSent());
+        case 5: return bool2string(pp->getIsSuccess());
+        case 6: return oppstring2string(pp->getSecret());
+        case 7: return double2string(pp->getAmount());
+        case 8: return bool2string(pp->getHasTimeOut());
         default: return "";
     }
 }
@@ -559,13 +578,14 @@ bool ackMsgDescriptor::setFieldValueAsString(void *object, int field, int i, con
     ackMsg *pp = (ackMsg *)object; (void)pp;
     switch (field) {
         case 0: pp->setTransactionId(string2long(value)); return true;
-        case 1: pp->setHtlcIndex(string2long(value)); return true;
-        case 2: pp->setPathIndex(string2long(value)); return true;
-        case 3: pp->setTimeSent(string2double(value)); return true;
-        case 4: pp->setIsSuccess(string2bool(value)); return true;
-        case 5: pp->setSecret((value)); return true;
-        case 6: pp->setAmount(string2double(value)); return true;
-        case 7: pp->setHasTimeOut(string2bool(value)); return true;
+        case 1: pp->setReceiver(string2long(value)); return true;
+        case 2: pp->setHtlcIndex(string2long(value)); return true;
+        case 3: pp->setPathIndex(string2long(value)); return true;
+        case 4: pp->setTimeSent(string2double(value)); return true;
+        case 5: pp->setIsSuccess(string2bool(value)); return true;
+        case 6: pp->setSecret((value)); return true;
+        case 7: pp->setAmount(string2double(value)); return true;
+        case 8: pp->setHasTimeOut(string2bool(value)); return true;
         default: return false;
     }
 }

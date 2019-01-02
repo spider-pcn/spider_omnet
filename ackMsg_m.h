@@ -24,6 +24,7 @@
  * packet ackMsg
  * {
  *     int transactionId;
+ *     int receiver;
  *     int htlcIndex;
  *     int pathIndex;
  *     double timeSent;
@@ -38,6 +39,7 @@ class ackMsg : public ::omnetpp::cPacket
 {
   protected:
     int transactionId;
+    int receiver;
     int htlcIndex;
     int pathIndex;
     double timeSent;
@@ -65,6 +67,8 @@ class ackMsg : public ::omnetpp::cPacket
     // field getter/setter methods
     virtual int getTransactionId() const;
     virtual void setTransactionId(int transactionId);
+    virtual int getReceiver() const;
+    virtual void setReceiver(int receiver);
     virtual int getHtlcIndex() const;
     virtual void setHtlcIndex(int htlcIndex);
     virtual int getPathIndex() const;

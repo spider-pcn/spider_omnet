@@ -17,6 +17,7 @@
 packet ackMsg
 {
  	int transactionId;
+ 	int receiver;
  	int htlcIndex;
  	int pathIndex; 
  	double timeSent;

@@ -912,7 +912,23 @@ void hostNode::handleAckMessage(routerMsg* ttmsg){ //TODO: fix handleAckMessage
 
    int destNode = ttmsg->getRoute()[0]; //destination of origin TransUnit job
 
+   if (_useWaterfilling){ //check all amt received before incrementing num completed
+       if (transToAmtLeftToComplete.count(aMsg->getTransactionId()) == 0){
+           cout << "error, transaction acknowledged wasn't written to transToAmtLeftToComplete" << endl;
+       }
+       else{
+           (transToAmtLeftToComplete[aMsg->getTransactionId()]).amtReceived =
+                   transToAmtLeftToComplete[aMsg->getTransactionId()].amtReceived + aMsg->getAmount();
+           if (transToAmtLeftToComplete[aMsg->getTransactionId()].amtReceived == transToAmtLeftToComplete[aMsg->getTransactionId()].amtSent){
+               statNumCompleted[aMsg->getReceiver()] = statNumCompleted[aMsg->getReceiver()] + 1;
+               //erase transaction from map
+               transToAmtLeftToComplete.erase(aMsg->getTransactionId());
+           }
+       }
+   }
+   else{
    statNumCompleted[destNode] = statNumCompleted[destNode]+1;
+   }
 
    //broadcast completion time signal
    //ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
@@ -956,6 +972,7 @@ routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg){ //default is false
    aMsg->setIsSuccess(isSuccess);
    aMsg->setTimeSent(timeSent);
    aMsg->setAmount(amount);
+   aMsg->setReceiver(transMsg->getReceiver());
    aMsg->setHasTimeOut(hasTimeOut);
    aMsg->setHtlcIndex(transMsg->getHtlcIndex());
    if (_useWaterfilling){
@@ -1214,7 +1231,7 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
 
       vector<int> path = nodeToShortestPathsMap[destNode][p.first].path;
       double amt = p.second;
-      cout << "generate trans msg for amt: " << amt << endl;
+      //cout << "generate trans msg for amt: " << amt << endl;
       routerMsg* waterMsg = generateWaterfillingTransactionMessage(amt, path, p.first, transMsg); //TODO:
       handleTransactionMessage(waterMsg);
    }
@@ -1299,6 +1316,10 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
                  if (simTime() == transMsg->getTimeSent()){
                      statNumAttempted[destNode] = statNumAttempted[destNode]+1;
                      destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] + 1;
+                     AckState * s = new AckState();
+                     s->amtReceived = 0;
+                     s->amtSent = transMsg->getAmount();
+                     transToAmtLeftToComplete[transMsg->getTransactionId()] = *s;
                  }
 
 
