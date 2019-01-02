@@ -393,7 +393,7 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
 
             if (iterOutgoing != (*outgoingTransUnits).end()){
                double amount = iterOutgoing -> second;
-               cout << "incremented payment back" << endl;
+               //cout << "incremented payment back" << endl;
                nodeToPaymentChannel[nextNode].balance = nodeToPaymentChannel[nextNode].balance + amount;
                iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
 
@@ -723,8 +723,10 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg)
       //numSentPerChannel incremented every time (key,value) pair added to outgoing_trans_units map
       nodeToPaymentChannel[nextDest].statNumSent =  nodeToPaymentChannel[nextDest].statNumSent+1;
 
-      int amt = transMsg->getAmount();
+      double amt = transMsg->getAmount();
+      cout << "processed amt: " << amt << endl;
       nodeToPaymentChannel[nextDest].balance = nodeToPaymentChannel[nextDest].balance - amt;
+      cout << "balance: " << nodeToPaymentChannel[nextDest].balance << endl;
 
       //int transId = transMsg->getTransactionId();
 

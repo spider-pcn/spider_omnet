@@ -1099,7 +1099,7 @@ routerMsg* hostNode::generateWaterfillingTransactionMessage(double amt, vector<i
    sprintf(msgname, "tic-%d-to-%d water-routerTransMsg", myIndex(), transMsg->getReceiver());
    routerMsg *rMsg = new routerMsg(msgname);
    rMsg->setRoute(path);
-   printVector(path);
+   //printVector(path);
 
 
    rMsg->setHopCount(0);
@@ -1136,20 +1136,23 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
 
    map<int, double> pathMap = {}; //key is pathIdx, double is amt
    priority_queue<pair<double,int>> pq;
+   cout << "bottleneck: ";
    for (auto iter: nodeToShortestPathsMap[destNode] ){
       int key = iter.first;
       double bottleneck = (iter.second).bottleneck;
+      cout << bottleneck << " (" << iter.second.lastUpdated<<"), ";
+
       pq.push(make_pair(bottleneck, key)); //automatically sorts with biggest first index-element
       //cout << "pathLength: " << (iter.second).path.size() << endl;
    }
-
+   cout << endl;
    double highestBal;
    double secHighestBal;
    double diffToSend;
    double amtToSend;
    int highestBalIdx;
-   //cout << "beginning size: " << pq.size();
-   //cout <<  "total amount: " << transMsg->getAmount();
+   //cout << "beginning size: " << pq.size() << endl;
+   //cout <<  "total amount: " << remainingAmt; //transMsg->getAmount();
    while(pq.size()>0 && remainingAmt > 0){
       highestBal = get<0>(pq.top());
       highestBalIdx = get<1>(pq.top());
@@ -1161,18 +1164,20 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
          secHighestBal = get<0>(pq.top());
       }
       diffToSend = highestBal - secHighestBal;
-      amtToSend = min(remainingAmt/(pq.size()+1),diffToSend);
+
+
+      amtToSend = min(remainingAmt/(pathMap.size()+1),diffToSend);
+      //cout << "diffToSend: " << diffToSend << "; amtToSend: " << amtToSend << endl;
+
 
       for (auto p: pathMap){
          pathMap[p.first] = p.second + amtToSend;
          remainingAmt = remainingAmt - amtToSend;
-         cout << "(" << p.first << "," << p.second << ")";
-
-
+         //cout << "(" << p.first << "," << p.second << ")";
       }
       pathMap[highestBalIdx] = amtToSend;
       remainingAmt = remainingAmt - amtToSend;
-
+      //cout << "remainingAmt: " << remainingAmt << endl;
    }
 
 
@@ -1180,12 +1185,17 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
 
 
    // print how much was sent on each path
-   /*
+
    for (auto p: pathMap){
+
        cout << "index: "<< p.first << "; bottleneck: " << nodeToShortestPathsMap[destNode][p.first].bottleneck << "; ";
        cout << "amtToSend: "<< p.second  << endl;
+
    }
-    */
+   cout << endl;
+
+
+
    transMsg->setAmount(remainingAmt);
 
    for (auto p: pathMap){
@@ -1204,6 +1214,7 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
 
       vector<int> path = nodeToShortestPathsMap[destNode][p.first].path;
       double amt = p.second;
+      cout << "generate trans msg for amt: " << amt << endl;
       routerMsg* waterMsg = generateWaterfillingTransactionMessage(amt, path, p.first, transMsg); //TODO:
       handleTransactionMessage(waterMsg);
    }
@@ -1294,7 +1305,11 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
 
                   if (nodeToShortestPathsMap.count(destNode) == 0 ){
                      vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
-
+                     cout << "source: " << transMsg->getSender() << ", dest: " << destNode << endl;
+                     for (auto v: kShortestRoutes){
+                         cout << "route: ";
+                         printVector(v);
+                     }
 
                     cout << "after K Shortest Routes" << endl;
                      initializeProbes(kShortestRoutes, destNode);

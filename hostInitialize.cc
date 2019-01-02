@@ -16,7 +16,7 @@ double minVectorElemDouble(vector<double> v){
 bool probesRecent(map<int, PathInfo> probes){
    for (auto iter : probes){
       int key = iter.first;
-      if ((iter.second).lastUpdated == -1){
+      if ((iter.second).lastUpdated == -1 || ((simTime() - (iter.second).lastUpdated) > _maxTravelTime) ){
          return false;
       }
 
@@ -68,9 +68,11 @@ map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> _ch
       int start = route[i];
       int end = route[i+1];
 
-
+      //only erase if edge is between two router nodes
+      if (start>= _numHostNodes && end>= _numHostNodes){
       vector< pair <int, int> >::iterator it = find_if(_channels[start].begin(),_channels[start].end(),bind1st(pair_equal_to<int,int>(),end));
       _channels[start].erase(it);
+      }
    }
 
    return _channels;
