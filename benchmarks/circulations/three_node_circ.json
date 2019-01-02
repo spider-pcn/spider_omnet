@@ -5,72 +5,111 @@
                         "name": "0r"
                 }, 
                 {
+                        "ip": "10.0.2.100", 
+                        "name": "0e"
+                }, 
+                {
                         "ip": "10.0.1.101", 
                         "name": "1r"
                 }, 
                 {
+                        "ip": "10.0.2.101", 
+                        "name": "1e"
+                }, 
+                {
                         "ip": "10.0.1.102", 
                         "name": "2r"
+                }, 
+                {
+                        "ip": "10.0.2.102", 
+                        "name": "2e"
                 }
         ], 
         "demands": [
                 {
-                        "src": "1", 
-                        "dst": "2", 
+                        "src": "1e", 
+                        "dst": "2e", 
                         "rate": 30
                 }, 
                 {
-                        "src": "0", 
-                        "dst": "1", 
+                        "src": "0e", 
+                        "dst": "1e", 
                         "rate": 15
                 }, 
                 {
-                        "src": "2", 
-                        "dst": "1", 
+                        "src": "2e", 
+                        "dst": "1e", 
                         "rate": 35
                 }, 
                 {
-                        "src": "2", 
-                        "dst": "0", 
+                        "src": "2e", 
+                        "dst": "0e", 
                         "rate": 15
                 }, 
                 {
-                        "src": "1", 
-                        "dst": "0", 
+                        "src": "1e", 
+                        "dst": "0e", 
                         "rate": 20
                 }, 
                 {
-                        "src": "0", 
-                        "dst": "2", 
+                        "src": "0e", 
+                        "dst": "2e", 
                         "rate": 20
                 }
         ], 
-        "miner": "0", 
+        "miner": "0r", 
         "btcd_connections": [
                 {
-                        "src": "0", 
-                        "dst": "1"
+                        "src": "0r", 
+                        "dst": "1r"
                 }, 
                 {
-                        "src": "1", 
-                        "dst": "2"
+                        "src": "0e", 
+                        "dst": "0r"
+                }, 
+                {
+                        "src": "1r", 
+                        "dst": "2r"
+                }, 
+                {
+                        "src": "1e", 
+                        "dst": "1r"
+                }, 
+                {
+                        "src": "2e", 
+                        "dst": "2r"
                 }
         ], 
         "lnd_channels": [
                 {
-                        "src": "0", 
-                        "dst": "1", 
+                        "src": "0r", 
+                        "dst": "0e", 
+                        "capacity": 1000000000
+                }, 
+                {
+                        "src": "0r", 
+                        "dst": "1r", 
                         "capacity": 50
                 }, 
                 {
-                        "src": "0", 
-                        "dst": "2", 
+                        "src": "0r", 
+                        "dst": "2r", 
                         "capacity": 50
                 }, 
                 {
-                        "src": "1", 
-                        "dst": "2", 
+                        "src": "1r", 
+                        "dst": "1e", 
+                        "capacity": 1000000000
+                }, 
+                {
+                        "src": "1r", 
+                        "dst": "2r", 
                         "capacity": 50
+                }, 
+                {
+                        "src": "2r", 
+                        "dst": "2e", 
+                        "capacity": 1000000000
                 }
         ]
 }
