@@ -107,39 +107,42 @@ def generate_json_files(filename, graph, inside_graph, start_nodes, end_nodes, a
     json_string = {}
 
     # create btcd connections
+    # routers connected to each other and end hosts connected to respective router
     btcd_connections = []
     for i in range(graph.number_of_nodes() - 1):
-        connection = {"src": str(i), "dst" : str(i + 1)}
+        connection = {"src": str(i) + "r", "dst" : str(i + 1) + "r"}
         btcd_connections.append(connection)
+        connection = {"src": str(i) + "e", "dst" : str(i) + "r"}
+        btcd_connections.append(connection)
+    connection = {"src": str(graph.number_of_nodes() - 1) + "e", "dst" : str(graph.number_of_nodes() - 1) + "r"}
+    btcd_connections.append(connection)
     json_string["btcd_connections"] = btcd_connections
 
     # miner node
-    json_string["miner"] = "0"
+    json_string["miner"] = "0r"
 
 
-    # create nodes and assign them distinct ips
+    # create nodesi for end hosts and router nodes and assign them distinct ips
     nodes = []
     for n in graph.nodes():
-        if inside_graph.has_node(n):
-            node_type = "r"
-        else:
-            node_type = "e"
-
-        node = {"name": str(n) + node_type, "ip" : "10.0.1." + str(100 + n)}
+        node = {"name": str(n) + "r", "ip" : "10.0.1." + str(100 + n)}
         nodes.append(node)
-
+        node = {"name": str(n) + "e", "ip" : "10.0.2." + str(100 + n)}
+        nodes.append(node)
     json_string["nodes"] = nodes
 
     # creates all the lnd channels
     edges = []
     for (u,v) in graph.edges():
-        if inside_graph.has_node(u) and inside_graph.has_node(v):
-            cap = balance/2
-        else:
+        if  u == v:
             cap = ENDHOST_LND_ONE_WAY_CAPACITY
+            node_type = "e"
+        else:
+            cap = balance/2
+            node_type = "r"
 
-        if u < v: 
-            edge = {"src": str(u), "dst": str(v), "capacity" : cap}
+        if u <= v: 
+            edge = {"src": str(u) + "r", "dst": str(v) + node_type, "capacity" : cap}
             edges.append(edge)
 
     json_string["lnd_channels"] = edges
@@ -147,7 +150,7 @@ def generate_json_files(filename, graph, inside_graph, start_nodes, end_nodes, a
     # creates the string for the demands
     demands = []
     for s, e, a in zip(start_nodes, end_nodes, amt_absolute):
-        demand_entry = {"src": str(s), "dst": str(e),\
+        demand_entry = {"src": str(s) + "e", "dst": str(e) + "e",\
                         "rate": a}
         demands.append(demand_entry)
 
@@ -234,7 +237,7 @@ def parse_topo(topo_filename):
                 end_host_map[n1[1]] = n2[1]
             elif n2[0]:
                 end_host_map[n2[1]] = n1[1]
-        
+    
     return g, router_graph, end_host_map
 
 
