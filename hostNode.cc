@@ -155,6 +155,7 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
       p->pathBalances = pathBalances;
       //cout << "path Index: " << pathIdx << endl;
 
+      emit(nodeToShortestPathsMap[destNode][pathIdx].probeBackPerDestPerPathSignal,pathIdx);
 
 
       if (destNodeToNumTransPending[destNode] > 0){
@@ -238,6 +239,55 @@ void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode
          statisticTemplate = getProperties()->get("statisticTemplate", "bottleneckPerDestPerPathTemplate");
          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
          nodeToShortestPathsMap[destNode][pathIdx].bottleneckPerDestPerPathSignal = signal;
+
+         if (destNode<_numHostNodes){
+                     sprintf(signalName, "probeBackPerDestPerPath_%d(host %d)", pathIdx, destNode);
+                 }
+                 else{
+                     sprintf(signalName, "probeBackPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
+                 }
+
+
+
+         signal = registerSignal(signalName);
+                statisticTemplate = getProperties()->get("statisticTemplate", "probeBackPerDestPerPathTemplate");
+                getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+                nodeToShortestPathsMap[destNode][pathIdx].probeBackPerDestPerPathSignal = signal;
+
+
+                if (destNode<_numHostNodes){
+                            sprintf(signalName, "rateCompletedPerDestPerPath_%d(host %d)", pathIdx, destNode);
+                        }
+                        else{
+                            sprintf(signalName, "rateCompletedPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
+                        }
+
+
+
+                signal = registerSignal(signalName);
+                       statisticTemplate = getProperties()->get("statisticTemplate", "rateCompletedPerDestPerPathTemplate");
+                       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+                       nodeToShortestPathsMap[destNode][pathIdx].rateCompletedPerDestPerPathSignal = signal;
+
+
+
+                       if (destNode<_numHostNodes){
+                                   sprintf(signalName, "rateAttemptedPerDestPerPath_%d(host %d)", pathIdx, destNode);
+                               }
+                               else{
+                                   sprintf(signalName, "rateAttemptedPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
+                               }
+
+
+
+                       signal = registerSignal(signalName);
+                              statisticTemplate = getProperties()->get("statisticTemplate", "rateAttemptedPerDestPerPathTemplate");
+                              getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+                              nodeToShortestPathsMap[destNode][pathIdx].rateAttemptedPerDestPerPathSignal = signal;
+
+
+
+
 
       /*
 
@@ -745,6 +795,16 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
        for (auto p: nodeToShortestPathsMap[it]){
            emit(p.second.bottleneckPerDestPerPathSignal, p.second.bottleneck);
 
+           //emit rateCompleted per path
+           emit(p.second.rateCompletedPerDestPerPathSignal, p.second.statRateCompleted);
+
+           nodeToShortestPathsMap[it][p.first].statRateCompleted = 0;
+
+           //emit rateAttempted per path
+           emit(p.second.rateAttemptedPerDestPerPathSignal, p.second.statRateAttempted);
+           nodeToShortestPathsMap[it][p.first].statRateAttempted = 0;
+
+
        }
       emit(numAttemptedPerDestSignals[it], statNumAttempted[it]);
 
@@ -919,6 +979,11 @@ void hostNode::handleAckMessage(routerMsg* ttmsg){ //TODO: fix handleAckMessage
        else{
            (transToAmtLeftToComplete[aMsg->getTransactionId()]).amtReceived =
                    transToAmtLeftToComplete[aMsg->getTransactionId()].amtReceived + aMsg->getAmount();
+
+           //increment rateNumCompletedPerDestPerPath
+           nodeToShortestPathsMap[aMsg->getReceiver()][aMsg->getPathIndex()].statRateCompleted =
+                   nodeToShortestPathsMap[aMsg->getReceiver()][aMsg->getPathIndex()].statRateCompleted + 1;
+
            if (transToAmtLeftToComplete[aMsg->getTransactionId()].amtReceived == transToAmtLeftToComplete[aMsg->getTransactionId()].amtSent){
                statNumCompleted[aMsg->getReceiver()] = statNumCompleted[aMsg->getReceiver()] + 1;
                //erase transaction from map
@@ -1232,7 +1297,11 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
       vector<int> path = nodeToShortestPathsMap[destNode][p.first].path;
       double amt = p.second;
       //cout << "generate trans msg for amt: " << amt << endl;
-      routerMsg* waterMsg = generateWaterfillingTransactionMessage(amt, path, p.first, transMsg); //TODO:
+      routerMsg* waterMsg = generateWaterfillingTransactionMessage(amt, path, p.first, transMsg);
+      //increment numAttempted per path
+      nodeToShortestPathsMap[destNode][p.first].statRateAttempted =
+                  nodeToShortestPathsMap[destNode][p.first].statRateAttempted + 1;
+
       handleTransactionMessage(waterMsg);
    }
    //cout << "number of probes after water gen: " <<  nodeToShortestPathsMap[destNode].size();

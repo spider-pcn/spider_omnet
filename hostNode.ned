@@ -41,6 +41,15 @@ simple hostNode
 		
 		@signal[bottleneckPerDestPerPath*](type="long"); 
 		@statisticTemplate[bottleneckPerDestPerPathTemplate](record=vector, stats);
+		
+		@signal[probeBackPerDestPerPath*](type="long"); 
+		@statisticTemplate[probeBackPerDestPerPathTemplate](record=vector, stats);
+		
+		@signal[rateCompletedPerDestPerPath*](type="long"); 
+		@statisticTemplate[rateCompletedPerDestPerPathTemplate](record=vector, stats);
+		
+		@signal[rateAttemptedPerDestPerPath*](type="long"); 
+		@statisticTemplate[rateAttemptedPerDestPerPathTemplate](record=vector, stats);
 
 	gates:
 		input in[];
