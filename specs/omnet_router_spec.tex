@@ -488,6 +488,49 @@ We add the "acked amount" to the ack messages and keep track of the total amount
     \item When an ack is received at the sender, get the transaction id and path index from the ack, and update the map transPathToAmtState
 \end{itemize}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Other Baselines}
+\subsection{SilentWhispers}
+
+Landmark Routing is a reasonable proxy since SilentWhispers builds on top of it. 
+
+\begin{itemize}
+    \item Additional data structures/information:
+        \begin{itemize}
+            \item Set of landmarks (global information and likely to be routers) - a few well connected nodes - 
+                to be picked ahead of time based on graph connectivity
+            \item Shortest Paths to and from landmarks (per end host)
+                computed via BFS (\vls{Should this be computed once in
+                    the beginning or periodically with preference towards links with credit? Nothing about
+                the paper seems to suggest that this is done in any ``smart'' fashion}_
+        \end{itemize}
+
+    \item Changes to how transaction messages are handled:
+        \begin{itemize}
+            \item First sender sends a ``probe'' to the landmark along the shortest path
+            \item Every node appends its balance information
+            \item Landmark sends a probe to the destination on its shortest path
+            \item Landmark uses the two probes to compute minimum on that path
+            \item Sends the minimum back to sender
+            \item Sender waits for all probes to come back and then computes splits for the transaction
+                such that total transaction amount is met, but individual minimum balances aren't violated
+            \item Sender sends out transaction
+        \end{itemize}
+
+    \item Probes to landmark need not be sent back, landmark does the minimum computation and sends 
+        only result back
+    
+    \item No change to timeouts, though the delay with this setup might be a lot higher
+
+    \item Acks are received for every individual path and now the transaction is successful only if all paths
+        returned a successful ack. \vls{Check if this is easy to modify/is already somewhat implemented for 
+        sequencing for WF}.
+\end{itemize}
+
+
+\subsection{SpeedyMurmurs}
+
+\subsection{Backpressure}
 
 \end{document}
 
