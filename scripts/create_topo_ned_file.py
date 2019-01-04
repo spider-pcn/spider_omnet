@@ -4,7 +4,7 @@ import argparse
 import networkx as nx
 from config import *
 import re
-
+import os
 
 def parse_node_name(node_name, max_router, max_host):
     try:
@@ -188,7 +188,8 @@ else:
 
 print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename, \
         args.separate_end_hosts)
-write_ned_file(args.topo_filename, args.network_name + '.ned', args.network_name)
+network_base = os.path.basename(args.network_name)
+write_ned_file(args.topo_filename, args.network_name + '.ned', network_base)
 
 
 

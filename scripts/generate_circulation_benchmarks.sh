@@ -8,12 +8,12 @@ balance=100
 
 prefix=("two_node" "three_node" "four_node" "five_node" \
     "hotnets" "lnd_dec4_2018" "lnd_dec28_2018" \
-    "40_sw_routers" "60_sw_routers" "80_sw_routers"  \
-    "100_sw_routers" "200_sw_routers" "400_sw_routers" "600_sw_routers" \
-    "800_sw_routers" "1000_sw_routers"\
-    "40_sf_routers" "60_sf_routers" "80_sf_routers"  \
-    "100_sf_routers" "200_sf_routers" "400_sf_routers" "600_sf_routers" \
-    "800_sf_routers" "1000_sf_routers")
+    "sw_40_routers" "sw_60_routers" "sw_80_routers"  \
+    "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
+    "sw_800_routers" "sw_1000_routers"\
+    "sf_40_routers" "sf_60_routers" "sf_80_routers"  \
+    "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
+    "sf_800_routers" "sf_1000_routers")
 
 
 arraylength=${#prefix[@]}
