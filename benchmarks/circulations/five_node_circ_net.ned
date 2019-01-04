@@ -1,7 +1,7 @@
 import routerNode;
 import hostNode;
 
-network ../benchmarks/circulations/five_node_circ_net
+network five_node_circ_net
 {
 	parameters:
 		double linkDelay @unit("s") = default(100us);

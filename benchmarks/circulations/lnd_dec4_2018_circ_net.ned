@@ -1,7 +1,7 @@
 import routerNode;
 import hostNode;
 
-network ../benchmarks/circulations/lnd_dec4_2018_circ_net
+network lnd_dec4_2018_circ_net
 {
 	parameters:
 		double linkDelay @unit("s") = default(100us);
