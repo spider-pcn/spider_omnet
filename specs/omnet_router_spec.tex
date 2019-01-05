@@ -12,6 +12,7 @@
 \usepackage[normalem]{ulem}
 \usepackage{wrapfig}
 \usepackage{program}
+\usepackage{hyperref}
 
 
 \title{Omnet Router Specification}
@@ -489,48 +490,136 @@ We add the "acked amount" to the ack messages and keep track of the total amount
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Other Baselines}
-\subsection{SilentWhispers}
+\section{Simpler SilentWhispers}
 
-Landmark Routing is a reasonable proxy since SilentWhispers builds on top of it. 
+\subsection{Overview}
+Landmark Routing is a reasonable proxy since SilentWhispers builds on top of it. The idea is that there are a
+set of landmarks that are responsible for routing in that the sender sends transactions to the landmark which 
+then sends transactions to the destination. There are multiple landmarks and the question is how should a 
+transaction be split across the paths that use each landmark. SilentWhispers does this last part in a privacy
+preserving manner, but we are going to assume that we can relay this balance information and do the minimum
+computation without the secret sharing overhead.
 
-\begin{itemize}
-    \item Additional data structures/information:
-        \begin{itemize}
-            \item Set of landmarks (global information and likely to be routers) - a few well connected nodes - 
-                to be picked ahead of time based on graph connectivity
-            \item Shortest Paths to and from landmarks (per end host)
-                computed via BFS (\vls{Should this be computed once in
-                    the beginning or periodically with preference towards links with credit? Nothing about
-                the paper seems to suggest that this is done in any ``smart'' fashion}_
-        \end{itemize}
+\subsection{Additional data structures/information}
+    \begin{itemize}
+        \item Set of landmarks (global information and likely to be routers) - a few well connected nodes - 
+            to be picked ahead of time based on graph connectivity
+        \item Table at Landmarks of source $\rightarrow$ landmark balance information 
+            while it is sending a probe to find thelandmark $\rightarrow$ destination minimum balance
+        \item Shortest Paths to and from landmarks (per end host/source and destination)
+            computed via BFS (\vls{Should this be computed once in
+                the beginning or periodically with preference towards links with credit? Nothing about
+            the paper seems to suggest that this is done in any ``smart'' fashion. This should not be changed
+        too frequently otherwise the minimum will be computed for one path and the transaction sent on 
+    a different one})
+    \end{itemize}
 
-    \item Changes to how transaction messages are handled:
-        \begin{itemize}
-            \item First sender sends a ``probe'' to the landmark along the shortest path
-            \item Every node appends its balance information
-            \item Landmark sends a probe to the destination on its shortest path
-            \item Landmark uses the two probes to compute minimum on that path
-            \item Sends the minimum back to sender
-            \item Sender waits for all probes to come back and then computes splits for the transaction
-                such that total transaction amount is met, but individual minimum balances aren't violated
-            \item Sender sends out transaction
-        \end{itemize}
-
-    \item Probes to landmark need not be sent back, landmark does the minimum computation and sends 
-        only result back
     
+\subsection{New Message Types}
+    \begin{itemize}
+        \item ProbeToLandmarkMsg
+                \begin{itemize} 
+                \item Sender
+                \item Landmark
+                \item Destination
+                \item Path to Landmark
+                \item Current Hop Number (starts at 0 when the sender creates this message)
+                \item Empty Map of node to channel balance on the outgoing channel from that node along the path
+                \end{itemize}
+        \item ProbeFromLandmarkMsg
+                \begin{itemize} 
+                \item Original Sender
+                \item Landmark
+                \item Destination
+                \item Path from Landmark to Destination
+                \item Is the probe on the reverse path? (if so, just need to forward it back)
+                \item Current Hop Number (starts at 0 when the landmark creates this message)
+                \item Empty Map of node to channel balance on the outgoing channel from that node along the path
+                \end{itemize}
+        \item MinimumInfoMsg
+            \begin{itemize}
+                \item Original Sender
+                \item Landmark sending this info back to the above sender
+                \item Destination for whom this minumum was computed
+                \item Minimum balance on path from above sender via above landmark to above destination
+                \item Path from landmark to sender
+                \item Current Hop Number (Starts at 0 when landmark creates this message)
+            \end{itemize}
+    \end{itemize}
+
+\subsection{Implementation}
+\subsubsection{Changes to handling transactions at the sender}       
+\begin{itemize}
+    \item First sender sends a ``probe'' to every landmark along the shortest path to that landmark 
+               %if there isn't already a probe to the landmark due to a pending transaction
+    \item Sender gets a minimum from each landmark corresponding to the minimum on the path through that 
+        landmark to the destination
+    \item Sender waits for all probes to come back and then computes splits for the transaction
+        such that total transaction amount is met, but individual path minimum balances aren't violated
+    \item Sender sends out transaction according to splits on all these paths
+    \item Actual splits computed somewhat randomly and then reassign amounts that exceed minimum and so on
+        until and unless there is no way to achieve the transaction (See \url{https://github.com/vibhaa/lightning_routing/blob/7660d88a8808019dd1d4590cad44d10112851aeb/speedy/src/treeembedding/credit/partioner/Partitioner.java#L23})
+\end{itemize}
+
+\subsubsection{Handling ProbeToLandmarkMsg}
+                \begin{itemize}
+                    \item Initiated at the sender - 
+                        to be sent to a particular landmark - with the goal of probing
+                        balance to the destination
+                    \item Intermediate nodes append their balance information onto it
+                    \item When landmark receives it, it computes minimum balance on the forward path and
+                        stores it in a table of source - (route, min balance) information
+                    \item the landmark finds the 
+                        shortest path to the destination. It creates and sends out a new probe to 
+                        the destination
+                \end{itemize}
+                
+\subsubsection{Handling ProbeFromLandmarkMsg}
+                \begin{itemize}
+                    \item Initiated at the landmark once probe from sender has been received
+                    \item Intermediate nodes append their balance information
+                    \item When the destination receives a ``probe from landmark'' it sends 
+                        it back to the landmark
+                    \item Intermediate nodes merely forward on the way back
+                    \item Landmark computes the minimum when it gets the probe back and 
+                        sends the minimum back in a new message
+                \end{itemize}
+
+\subsubsection{Handling MinimumMsg}
+                \begin{itemize}
+                    \item Initiated at the landmark after it recieves probeFromLandmarkMsg back
+                    \item Landmark computes the minimum of all the 
+                        balances on the received probe and the minimum stored
+                        in the source - (route, min balance) table
+                    \item Landmark Embeds this information and the reverse of route from the same table and 
+                        sends message to sender
+                    \item Intermediate nodes forward this all the way to the sender
+                    \item Sender aggregates information from all probes and computes transaction splits
+                \end{itemize}
+
+\subsection{Questions/Comments}
+\begin{itemize}
     \item No change to timeouts, though the delay with this setup might be a lot higher
+
+    \item How to compute shortest paths? Should this just be stored at sender and landmark (this seems simplest
+        to reason about)?
 
     \item Acks are received for every individual path and now the transaction is successful only if all paths
         returned a successful ack. \vls{Check if this is easy to modify/is already somewhat implemented for 
         sequencing for WF}.
+
+    \item If we are assuming small transactions of indivisible size, should we just send it on one path
+        with the maximum bottleneck balance or are we splitting transactions actually?
+
+    \item One option is to reuse the ProbeToLandmarkMsg for the minimum information also, but that would mean 
+        holding onto the message for a while, which seems not ideal.
+
 \end{itemize}
 
 
-\subsection{SpeedyMurmurs}
+\section{SpeedyMurmurs}
 
-\subsection{Backpressure}
+\section{Backpressure}
 
 \end{document}
 
