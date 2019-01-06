@@ -30,6 +30,9 @@ simple hostNode
 		@signal[fracSuccessfulPerDest*](type="long");  
 		@statisticTemplate[fracSuccessfulPerDestTemplate](record=vector, stats);   
 		
+		@signal[pathPerTransPerDest*](type="long");  
+		@statisticTemplate[pathPerTransPerDestTemplate](record=vector, stats);   
+		
 		@signal[numTimedOutPerDest*](type="long");  
 		@statisticTemplate[numTimedOutPerDestTemplate](record=vector, stats);
 		

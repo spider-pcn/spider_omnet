@@ -491,6 +491,13 @@ void hostNode::initialize()
 
       statNumAttempted.push_back(0);
 
+      //pathPerTransPerDest signal
+          sprintf(signalName, "pathPerTransPerDest(host node %d)", i);
+               signal = registerSignal(signalName);
+               statisticTemplate = getProperties()->get("statisticTemplate", "pathPerTransPerDestTemplate");
+               getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+               pathPerTransPerDestSignals.push_back(signal);
+
 
       //numTimedOutPerDest signal
       sprintf(signalName, "numTimedOutPerDest_Total(host node %d)", i);
@@ -1323,6 +1330,7 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
       double amt = p.second;
       //cout << "generate trans msg for amt: " << amt << endl;
       routerMsg* waterMsg = generateWaterfillingTransactionMessage(amt, path, p.first, transMsg);
+      emit(pathPerTransPerDestSignals[destNode], p.first);
       //increment numAttempted per path
       nodeToShortestPathsMap[destNode][p.first].statRateAttempted =
          nodeToShortestPathsMap[destNode][p.first].statRateAttempted + 1;
