@@ -351,7 +351,7 @@ void hostNode::initialize()
       _useWaterfilling = true;
 
       if (_useWaterfilling){
-         _kValue = 2;
+         _kValue = 4;
       }
 
 
@@ -583,7 +583,7 @@ void hostNode::handleMessage(cMessage *msg)
 
    if (simTime() > _simulationLength){
       //print  map<int, int> transactionIdToNumHtlc
-      /*
+
          int splitTrans = 0;
          for (auto p: transactionIdToNumHtlc){
          cout << "(" << p.first << "," << p.second << ") ";
@@ -593,7 +593,7 @@ void hostNode::handleMessage(cMessage *msg)
          cout << "number greater than 1: " << splitTrans << endl;
          cout << "maxTravelTime:" << _maxTravelTime << endl;
          endSimulation();
-       */
+
 
 
 
@@ -1313,6 +1313,8 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
    transMsg->setAmount(remainingAmt);
 
    for (auto p: pathMap){
+
+       if (p.second > 0){
       tuple<int,int> key = make_tuple(transMsg->getTransactionId(),p.first); //key is (transactionId, pathIndex)
 
       //update the data structure keeping track of how much sent and received on each path
@@ -1336,6 +1338,7 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
          nodeToShortestPathsMap[destNode][p.first].statRateAttempted + 1;
 
       handleTransactionMessage(waterMsg);
+       }
    }
    //cout << "number of probes after water gen: " <<  nodeToShortestPathsMap[destNode].size();
 
