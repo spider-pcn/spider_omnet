@@ -39,6 +39,7 @@ class hostNode : public cSimpleModule
       vector<simsignal_t> numCompletedPerDestSignals;
       vector<simsignal_t> numAttemptedPerDestSignals;
       vector<simsignal_t> numTimedOutPerDestSignals;
+      vector<simsignal_t> pathPerTransPerDestSignals; //signal showing which path index was chosen for each transaction
       vector<simsignal_t> fracSuccessfulPerDestSignals;
       vector< TransUnit > myTransUnits; //list of TransUnits that have me as sender
       set<int> successfulDoNotSendTimeOut; //set of transaction units WITH timeouts, that we already received acks for
