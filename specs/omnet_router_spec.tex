@@ -625,11 +625,17 @@ node is assigned a coordinate which is then used to compute relative distances b
 made privacy preserving, which we can ignore. \vls{shortcuts??}. A combination of these distances and the 
 presence of funds is used to determine what routes to use for every transaction.
 
+\subsection{Global State for Coordinates}
 Coordinate generation starts at the landmarks and then visits neighbors and their neighbors and so on. At each
 point, one generates an empty coordinate list for the landmark or the root and then adds a new dimension for 
 the next level of children. In this new dimension, you start with $1$ for the first child and go on until all 
 children at this level have been assigned coordinates. Then you process all of their neighbors and so on.
-(See Figure 1 of \url{https://arxiv.org/pdf/1709.05748.pdf}). 
+(See Figure 1 of \url{https://arxiv.org/pdf/1709.05748.pdf}). This process is repeated for every one of the $L$ landmarks generating a separate coordinate for every node according to the tree corresponding to that landmark.
+
+It is ideal if these coordinates can be maintained as global state that is updated via a trigger from
+any node when a link's balance becomes 0 or when a link's balance changes from 0 to some non-zero value alone.
+\vls{What are the exact details here?}
+
 
 \subsection{New Message Types}
 \begin{itemize}
@@ -642,19 +648,17 @@ children at this level have been assigned coordinates. Then you process all of t
             \item Route so far 
             \item Failure
         \end{itemize}
-    \item ClearAmtMsg
-        \begin{itemize}
-            \item Sender
-            \item Landmark $i$
-            \item Destination
-            \item Clearing amount $c_i$ for this path
-            \item Path to clear amount on
-        \end{itemize}
 \end{itemize}
 
 \subsection{Additional Data structures}
 \begin{itemize}
-    \item  List of $L$ coordinates for every node which denotes the coordinate in the $i$^{th} landmark's tree
+    \item  List of $L$ coordinates for every node which denotes the coordinate in the $i^{th}$ landmark's tree
+        (Part of the global state)
+    \item (Per node) Per payment channel ``guaranteedAvailableCredit'' 
+        denoting what is available after considering amount reserved for transactions that
+        we are currently discovering routes for. Initialized to the balance on a given node's end for every
+        payment channel.
+
 \end{itemize}
 
 \subsection{Implementation}
@@ -665,10 +669,9 @@ children at this level have been assigned coordinates. Then you process all of t
     \item For each landmark $i$ and the split $c_i$, initiate a routeDiscoverMsg and send it to the neighbor
         that is closest to the sender (based on coordinate distance) \vls{not sure how to account for 
         ``shortcuts''} and has atleast $c_i$ balance on the corresponding payment channel.
-    \item When a successful routeDiscoverMsg has been received for landmark $i$, send the ``clear amount 
-        $c_i$`` on that path message
-    \item If a failure was received instead, send out a timeoutMsg (on that path $i$) alone to release funds
-        that were reserved (this path will be reflected in reverse in the failure message, so reuse that)
+    \item When a successful routeDiscoverMsg has been received for landmark $i$, send out an HTLC for
+        the path through that landmark for amount $c_i$
+    \item If a failure was received instead, just track this part of the payment as incomplete. 
     \item Keep track of how much of the transaction has been completed so far and retry (\vls{not sure if 
         this is needed or we declare failure at the first instance of an unsuccessful routeDiscoverMsg})
 \end{itemize}
@@ -679,17 +682,42 @@ children at this level have been assigned coordinates. Then you process all of t
         and the corresponding split
     \item If failure is false, 
         \begin{itemize}
-            \item find the closest neighbor based on coordinate distances and as long as the balance on the payment 
-        channel between current hop and neighbor is atleast $c_i$
-            \item If such a neighbor is found, append this neighbor to the route and forward RouteDiscoverMsg 
+            \item find the closest neighbor based on coordinate distances and as long as the 
+                guaranteedAvailableCredit on the payment channel between 
+                current hop and neighbor is atleast $c_i$
+            \item If such a neighbor is found, 
+                \begin{itemize}
+                    \item append this neighbor to the route and forward RouteDiscoverMsg 
         onto the next router
-            \item Reserve funds $c_i$ on the payment channel between current node and neighbor or in other 
-                words add it to the inflight funds on this payment channel at the current node's end.
+                    \item Reserve funds $c_i$ on the payment channel between current node by decrementing the 
+                guaranteedAvailableCredit with this neighbor by $c_i$.
+        \end{itemize}
             \item If no such neighbor found, set Failure to true, reverse the route and 
                 send it back to the sender
         \end{itemize}
-    \item If failure is true, just forward the message back all the way to sender
+    \item If failure is true, 
+        \begin{itemize} 
+            \item increment guaranteedAvailableCredit by $c_i$ on the payment channel
+        between current node and the nextHop in the forward direction (to restore funds that were reserved)
+            \item forward the message backwards (in the opposite direction as dictated by 
+                the route) all the way to sender
+        \end{itemize}
 \end{itemize}
+
+\subsubsection{Changes to Handling Acks}
+Once an Ack has been received at a certain node for the payment channel to a neighboring node, if the 
+guaranteedAvailableCredit at the receiving node's end for that payment channel is $0$, initiate a recomputation
+of global coordinate state.
+
+
+\subsubsection{Changes to Handling BalanceUpdate Messages}
+Do the regular processing for HTLCs by adding the amount to inflight outgoing and then waiting for Acks before
+updating balances and so on. But, also increment the guaranteedAvailableCredit at the receiving node's end 
+for a given payment channel since it reflects the clearing out of payment channel state between 
+two nodes. If a given node's guaranteedAvailableCredit for a payment channel goes up from $0$ to non-zero,
+initiate a recomputation of global coordinate state.
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
