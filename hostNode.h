@@ -59,7 +59,7 @@ class hostNode : public cSimpleModule
       virtual routerMsg *generateAckMessage(routerMsg *msg);
           //generates ack message and destroys input parameter msg
       //virtual routerMsg *generateAckMessageFromTimeOutMsg(routerMsg *msg);
-      virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
+      virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount, int htlcIndex);
           //just generates routerMsg with no encapsulated msg inside
       virtual routerMsg *generateStatMessage();
       virtual routerMsg *generateClearStateMessage();

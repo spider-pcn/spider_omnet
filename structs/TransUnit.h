@@ -19,6 +19,6 @@ class TransUnit{
          receiver = receiver1;
          priorityClass=  priorityClass1;
          hasTimeOut =  true; // TODO: temp, original: hasTimeOut1;
-         timeOut = 5.0; // TODO: temp, original: timeOut1;
+         timeOut = 1.0; // TODO: temp, original: timeOut1;
       }
 };

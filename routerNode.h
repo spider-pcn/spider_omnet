@@ -35,7 +35,7 @@ class routerNode : public cSimpleModule
 
    protected:
 
-      virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
+      virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount, int htlcIndex);
           //just generates routerMsg with no encapsulated msg inside
       virtual routerMsg *generateStatMessage();
       virtual routerMsg *generateClearStateMessage();
@@ -50,7 +50,7 @@ class routerNode : public cSimpleModule
       virtual void handleStatMessage(routerMsg *msg);
       virtual void handleProbeMessage(routerMsg *msg);
       virtual void handleClearStateMessage(routerMsg *msg);
-      virtual bool forwardTransactionMessage(routerMsg *msg);
+      virtual bool forwardTransactionMessage(routerMsg *msg, int dest);
       virtual void forwardAckMessage(routerMsg *msg);
       virtual void forwardTimeOutMessage(routerMsg *msg);
       virtual void forwardProbeMessage(routerMsg *msg);
