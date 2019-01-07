@@ -58,4 +58,24 @@ LARGE_BALANCE = 1000000000
 # json parameters for lnd testbed
 ENDHOST_LND_ONE_WAY_CAPACITY = 1000000000
 
-LND_FILE_PATH = "../lnd_data/" 
+LND_FILE_PATH = "../lnd_data/"
+
+
+
+''' OMNET SPECIFIC STUFF '''
+# maximum number of paths to consider or plot data for
+MAX_K = 4
+
+# List of recognized and parsable omnet signals
+RECOGNIZED_OMNET_SIGNALS = ["numInQueuePerChannel",\
+        "numSentPerChannel", "balancePerChannel", "numProcessedPerChannel",\
+        "numAttemptedPerDest_Total", "numCompletedPerDest_Total", "numTimedOutPerDest_Total",\
+        "fracSuccessfulPerDest_Total",\
+        "bottleneckPerDestPerPath", "rateCompletedPerDestPerPath", "rateAttemptedPerDestPerPath"]
+
+
+# map of what field to parse for what plot
+INTERESTING_SIGNALS = dict()
+INTERESTING_SIGNALS["completion_rate_cdfs"] = ["rateCompletedPerDestPerPath",\
+        "rateAttemptedPerDestPerPath"] 
+
