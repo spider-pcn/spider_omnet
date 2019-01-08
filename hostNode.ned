@@ -5,6 +5,8 @@ simple hostNode
 	    
 		string topologyFile = default("sample-topology.txt");
 		string workloadFile = default("sample-workload.txt");
+		bool timeoutEnabled = default(true);
+		bool waterfillingEnabled = default(true);
 		
 		@signal[completionTime](type="long"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 

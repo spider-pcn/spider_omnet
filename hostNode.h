@@ -70,7 +70,10 @@ class hostNode : public cSimpleModule
       virtual void initialize() override;
       virtual void handleMessage(cMessage *msg) override;
       virtual void handleTransactionMessage(routerMsg *msg);
-      virtual void handleTimeOutMessage(routerMsg *msg);
+      virtual bool handleTransactionMessageTimeOut(routerMsg *msg); //returns true if message was deleted
+      virtual void handleTransactionMessageWaterfilling(routerMsg *msg);
+      virtual void handleTimeOutMessageShortestPath(routerMsg *msg);
+      virtual void handleTimeOutMessageWaterfilling(routerMsg *msg);
       virtual void handleAckMessage(routerMsg *msg);
       virtual void handleUpdateMessage(routerMsg *msg);
       virtual void handleStatMessage(routerMsg *msg);
