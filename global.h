@@ -39,7 +39,6 @@ extern double _clearRate;
 extern double _maxTravelTime;
 //map of balances for each edge; key = <int,int> is <source, destination>
 //extern bool withFailures;
-extern bool _useWaterfilling;
 extern bool _waterfillingEnabled;
 extern bool _timeoutEnabled;
 extern int _kValue; //for k shortest paths

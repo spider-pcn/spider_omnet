@@ -44,8 +44,10 @@ class routerNode : public cSimpleModule
       virtual void initialize() override;
       virtual void handleMessage(cMessage *msg) override;
       virtual void handleTransactionMessage(routerMsg *msg);
+      virtual bool handleTransactionMessageTimeOut(routerMsg *msg);
       virtual void handleTimeOutMessage(routerMsg *msg);
       virtual void handleAckMessage(routerMsg *msg);
+      virtual void handleAckMessageTimeOut(routerMsg *msg);
       virtual void handleUpdateMessage(routerMsg *msg);
       virtual void handleStatMessage(routerMsg *msg);
       virtual void handleProbeMessage(routerMsg *msg);

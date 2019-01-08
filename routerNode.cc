@@ -77,26 +77,7 @@ void routerNode::initialize()
    string topologyFile_ = par("topologyFile");
    string workloadFile_ = par("workloadFile");
 
-   //TODO: may be redudant if hostNode is initialized first
-
-   if (myIndex() == 0){  //main initialization for global parameters
-      //TODO: initialize numRouterNodes
-      //TODO: initiialize numHostNodes
-      _useWaterfilling = true;
-
-      if (_useWaterfilling){
-         _kValue = 3;
-      }
-
-      setNumNodes(topologyFile_); //TODO: condense into generate_trans_unit_list
-      // add all the TransUnits into global list
-      generateTransUnitList(workloadFile_, _transUnitList);
-
-      //create "channels" map - from topology file - let hostNodes be 0-k, routerNodes be k+1-n
-      //to calculate index of routerNode
-      //create "balances" map - from topology file
-      generateChannelsBalancesMap(topologyFile_, _channels, _balances );
-   }
+   // no need for if (myIndex==0), as will always be initialized in a host node
 
    //Create nodeToPaymentChannel map
    const char * gateName = "out";
@@ -216,27 +197,24 @@ void routerNode::handleMessage(cMessage *msg)
    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
    if (ttmsg->getMessageType()==ACK_MSG){ //preprocessor constants defined in routerMsg_m.h
       if (toPrint) cout << "[ROUTER "<< myIndex() <<": RECEIVED ACK MSG]"<< msg->getName() << endl;
-      //print_message(ttmsg);
-      //print_private_values();
+      if (_timeoutEnabled){
+          handleAckMessageTimeOut(ttmsg);
+      }
       handleAckMessage(ttmsg);
       if (toPrint) cout << "[AFTER HANDLING:]" <<endl;
-      // print_private_values();
    }
    else if(ttmsg->getMessageType()==TRANSACTION_MSG){
       if (toPrint) cout<< "[ROUTER "<< myIndex() <<": RECEIVED TRANSACTION MSG] "<< msg->getName()<<endl;
-      // print_message(ttmsg);
-      // print_private_values();
+      if (_timeoutEnabled && handleTransactionMessageTimeOut(ttmsg)){ //handleTransactionMessageTimeOut(ttmsg) returns true if msg deleted
+          return;
+      }
       handleTransactionMessage(ttmsg);
       if (toPrint) cout<< "[AFTER HANDLING:]"<<endl;
-      // print_private_values();
    }
    else if(ttmsg->getMessageType()==UPDATE_MSG){
       if (toPrint) cout<< "[ROUTER "<< myIndex() <<": RECEIVED UPDATE MSG]"<< msg->getName()<<endl;
-      // print_message(ttmsg);
-      // print_private_values();
       handleUpdateMessage(ttmsg);
       if (toPrint) cout<< "[AFTER HANDLING:]  "<<endl;
-      //print_private_values();
    }
    else if (ttmsg->getMessageType() ==STAT_MSG){
       if (toPrint) cout<< "[ROUTER "<< myIndex() <<": RECEIVED STAT MSG]"<< msg->getName()<<endl;
@@ -259,9 +237,6 @@ void routerNode::handleMessage(cMessage *msg)
       if (toPrint) cout<< "[AFTER HANDLING:]  "<<endl;
    }
    if (toPrint) printNodeToPaymentChannel();
-
-
-
 }
 
 
@@ -283,19 +258,13 @@ bool manualFindQueuedTransUnitsByTransactionId( vector<tuple<int, double, router
 }
 
 
-
 void routerNode::handleClearStateMessage(routerMsg* ttmsg){
-
-
    if (simTime() > _simulationLength){
       delete ttmsg;
-
    }
    else{
-
       scheduleAt(simTime()+_clearRate, ttmsg);
    }
-
 
    for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end();){ //iterate through all canceledTransactions
       int transactionId = get<0>(*it);
@@ -304,25 +273,17 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
       int nextNode = get<3>(*it);
 
       if (simTime() > (msgArrivalTime + _maxTravelTime)){ // we can process
-
-
-
          //fixed not deleting from the queue
          // start queue searching
          vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
-         //sort_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end());
 
          auto iterQueue = find_if((*queuedTransUnits).begin(),
                (*queuedTransUnits).end(),
                [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
                { return (get<0>(get<3>(p)) == transactionId); });
          while (iterQueue != (*queuedTransUnits).end()){
-            //cout << "queuedTransUnits size before: " << (*queuedTransUnits).size();
+
             iterQueue =   (*queuedTransUnits).erase(iterQueue);
-
-            //cout << "maxTravelTime: " << _maxTravelTime << endl;
-            //cout << "cleared message, size after: " << (*queuedTransUnits).size() << endl;
-
 
             iterQueue = find_if((*queuedTransUnits).begin(),
                   (*queuedTransUnits).end(),
@@ -331,14 +292,12 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
 
          }
 
+         /*
          if (manualFindQueuedTransUnitsByTransactionId((*queuedTransUnits), transactionId)){
             cout << "could not find " << transactionId << "in " << endl;
             checkQueuedTransUnits((*queuedTransUnits), nextNode);
          }
-
-
-
-
+         */
 
          //we can process it
          map<tuple<int,int>, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
@@ -353,19 +312,13 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
 
             // start queue searching
             vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
-            //sort_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end());
 
             iterQueue = find_if((*queuedTransUnits).begin(),
                   (*queuedTransUnits).end(),
                   [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
                   { return (get<0>(get<3>(p)) == transactionId); });
             if (iterQueue != (*queuedTransUnits).end()){
-               // cout << "queuedTransUnits size before: " << (*queuedTransUnits).size();
                iterQueue =   (*queuedTransUnits).erase(iterQueue);
-
-               //cout << "maxTravelTime: " << _maxTravelTime << endl;
-               //cout << "cleared message, size after: " << (*queuedTransUnits).size() << endl;
-
             }
             else{
 
@@ -373,13 +326,9 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                   cout << "could not find " << transactionId << "in " << endl;
                   checkQueuedTransUnits((*queuedTransUnits), nextNode);
                }
-
-
-
             }
 
             make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
-
             //find next in incoming
             iterIncoming = find_if((*incomingTransUnits).begin(),
                   (*incomingTransUnits).end(),
@@ -393,37 +342,25 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                (*outgoingTransUnits).end(),
                [&transactionId](const pair<tuple<int, int >, double> & p)
                { return get<0>(p.first) == transactionId; });
-
-
-         cout << "start: " << transactionId << endl;
-         //TODO: causing problem with balances going over 100
          while (iterOutgoing != (*outgoingTransUnits).end()){
-            cout << "(" << get<0>(iterOutgoing->first) << "," << get<1>(iterOutgoing->first) << ") ";
 
             if (iterOutgoing != (*outgoingTransUnits).end()){
                double amount = iterOutgoing -> second;
-               //cout << "incremented payment back" << endl;
                nodeToPaymentChannel[nextNode].balance = nodeToPaymentChannel[nextNode].balance + amount;
                iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
 
             }
-
             iterOutgoing = find_if((*outgoingTransUnits).begin(),
                   (*outgoingTransUnits).end(),
                   [&transactionId](const pair<tuple<int, int >, double> & p)
                   { return get<0>(p.first) == transactionId; });
          }
-         cout << endl;
          it = canceledTransactions.erase(it);
-         //it++;
       }//end if we can process
       else{
          it++;
       }
-
-
    }//end iterating over canceledTransactions
-
 }
 
 routerMsg *routerNode::generateClearStateMessage(){
@@ -434,10 +371,7 @@ routerMsg *routerNode::generateClearStateMessage(){
    return rMsg;
 }
 
-
-
 void routerNode::checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits, int nextNode){
-
    if (queuedTransUnits.size()>0){
 
       cout << "simTime(): " << simTime() << endl;
@@ -476,9 +410,6 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
 
       int node = it->first; //key
 
-      //checkQueuedTransUnits(nodeToPaymentChannel[node].queuedTransUnits, node);
-
-
       emit(nodeToPaymentChannel[node].numInQueuePerChannelSignal, (nodeToPaymentChannel[node].queuedTransUnits).size());
 
       emit(nodeToPaymentChannel[node].balancePerChannelSignal, nodeToPaymentChannel[node].balance);
@@ -496,10 +427,9 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
 void routerNode::forwardTimeOutMessage(routerMsg* msg){
    // Increment hop count.
    msg->setHopCount(msg->getHopCount()+1);
+
    //use hopCount to find next destination
    int nextDest = msg->getRoute()[msg->getHopCount()];
-   //ackMsg *aMsg = check_and_cast<ackMsg *>(msg->getEncapsulatedPacket());
-
    send(msg, nodeToPaymentChannel[nextDest].gate);
 
 }
@@ -510,7 +440,6 @@ void routerNode::handleTimeOutMessage(routerMsg* ttmsg){
    int nextNode = (ttmsg->getRoute())[ttmsg->getHopCount()+1];
    int prevNode = (ttmsg->getRoute())[ttmsg->getHopCount()-1];
 
-
    CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),prevNode, nextNode);
    canceledTransactions.insert(ct);
    forwardTimeOutMessage(ttmsg);
@@ -519,7 +448,18 @@ void routerNode::handleTimeOutMessage(routerMsg* ttmsg){
 
 
 
-
+void routerNode::handleAckMessageTimeOut(routerMsg* ttmsg){
+    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
+    //check if transactionId is in canceledTransaction set
+        int transactionId = aMsg->getTransactionId();
+        auto iter = find_if(canceledTransactions.begin(),
+              canceledTransactions.end(),
+              [&transactionId](const tuple<int, simtime_t, int, int>& p)
+              { return get<0>(p) == transactionId; });
+        if (iter!=canceledTransactions.end()){
+           canceledTransactions.erase(iter);
+        }
+}
 
 void routerNode::handleAckMessage(routerMsg* ttmsg){
    //generate updateMsg
@@ -534,32 +474,11 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
    //increment signal numProcessed
    nodeToPaymentChannel[prevNode].statNumProcessed = nodeToPaymentChannel[prevNode].statNumProcessed+1;
 
-   if (aMsg->getIsSuccess() == false){
-      //should not occur
-   }
-   else{ //successful transaction
-
-      //check if transactionId is in canceledTransaction set
-      int transactionId = aMsg->getTransactionId();
-
-      //TODO: not sure if this works properly
-      auto iter = find_if(canceledTransactions.begin(),
-            canceledTransactions.end(),
-            [&transactionId](const tuple<int, simtime_t, int, int>& p)
-            { return get<0>(p) == transactionId; });
-
-      if (iter!=canceledTransactions.end()){
-         canceledTransactions.erase(iter);
-      }
-
-
       routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), prevNode, aMsg->getAmount(), aMsg->getHtlcIndex() );
       sendUpdateMessage(uMsg);
 
-
       forwardAckMessage(ttmsg);
 
-   }
 }
 
 
@@ -634,6 +553,27 @@ void routerNode::sendUpdateMessage(routerMsg *msg){
    send(msg, nodeToPaymentChannel[nextDest].gate);
 }
 
+
+bool routerNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+
+    int transactionId = transMsg->getTransactionId();
+        auto iter = find_if(canceledTransactions.begin(),
+              canceledTransactions.end(),
+              [&transactionId](const tuple<int, simtime_t, int, int>& p)
+              { return get<0>(p) == transactionId; });
+
+        if ( iter!=canceledTransactions.end() ){
+
+           //delete yourself
+           ttmsg->decapsulate();
+           delete transMsg;
+           delete ttmsg;
+           return true;
+        }
+        return false;
+}
+
 /* handleTransactionMessage - checks if message has arrived
  *      1. has arrived - turn transactionMsg into ackMsg, forward ackMsg
  *      2. has not arrived - add to appropriate job queue q, process q as
@@ -646,26 +586,6 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
 
    int destination = transMsg->getReceiver();
 
-
-   //check if message is already failed: (1) past time()>timeSent+timeOut (2) on failedTransUnit list
-   if (transMsg->getHasTimeOut()){
-      int transactionId = transMsg->getTransactionId();
-      auto iter = find_if(canceledTransactions.begin(),
-            canceledTransactions.end(),
-            [&transactionId](const tuple<int, simtime_t, int, int>& p)
-            { return get<0>(p) == transactionId; });
-
-      if ( iter!=canceledTransactions.end() ){
-         //TODO: check to see if transactionId is in canceledTransactions set
-
-         //delete yourself
-         ttmsg->decapsulate();
-         delete transMsg;
-         delete ttmsg;
-         return;
-      }
-
-   }
 
 
    //not a self-message, add to incoming_trans_units
@@ -712,10 +632,9 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest)
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
 
    int nextDest = msg->getRoute()[msg->getHopCount()+1];
-
-
-
+   /*
    int transactionId = transMsg->getTransactionId();
+
 
    auto iter = find_if(canceledTransactions.begin(),
          canceledTransactions.end(),
@@ -723,21 +642,15 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest)
          { return get<0>(p) == transactionId; });
 
    if ( iter!=canceledTransactions.end() ){
-      //TODO: check to see if transactionId is in canceledTransactions set
 
       return false;
    }
-
-
+    */
 
    if (nodeToPaymentChannel[dest].balance <= 0 || transMsg->getAmount() > nodeToPaymentChannel[dest].balance){
       return false;
    }
    else{
-
-
-
-
       // Increment hop count.
       msg->setHopCount(msg->getHopCount()+1);
       //use hopCount to find next destination
@@ -760,7 +673,5 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest)
       send(msg, nodeToPaymentChannel[nextDest].gate);
       return true;
    } //end else (transMsg->getAmount() >nodeToPaymentChannel[dest].balance)
-
-
 }
 
