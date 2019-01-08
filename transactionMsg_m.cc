@@ -187,6 +187,10 @@ transactionMsg::transactionMsg(const char *name, short kind) : ::omnetpp::cPacke
     this->receiver = 0;
     this->priorityClass = 0;
     this->transactionId = 0;
+    this->hasTimeOut = false;
+    this->timeOut = 0;
+    this->htlcIndex = 0;
+    this->pathIndex = 0;
 }
 
 transactionMsg::transactionMsg(const transactionMsg& other) : ::omnetpp::cPacket(other)
@@ -214,6 +218,10 @@ void transactionMsg::copy(const transactionMsg& other)
     this->receiver = other.receiver;
     this->priorityClass = other.priorityClass;
     this->transactionId = other.transactionId;
+    this->hasTimeOut = other.hasTimeOut;
+    this->timeOut = other.timeOut;
+    this->htlcIndex = other.htlcIndex;
+    this->pathIndex = other.pathIndex;
 }
 
 void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -225,6 +233,10 @@ void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->receiver);
     doParsimPacking(b,this->priorityClass);
     doParsimPacking(b,this->transactionId);
+    doParsimPacking(b,this->hasTimeOut);
+    doParsimPacking(b,this->timeOut);
+    doParsimPacking(b,this->htlcIndex);
+    doParsimPacking(b,this->pathIndex);
 }
 
 void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -236,6 +248,10 @@ void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->receiver);
     doParsimUnpacking(b,this->priorityClass);
     doParsimUnpacking(b,this->transactionId);
+    doParsimUnpacking(b,this->hasTimeOut);
+    doParsimUnpacking(b,this->timeOut);
+    doParsimUnpacking(b,this->htlcIndex);
+    doParsimUnpacking(b,this->pathIndex);
 }
 
 double transactionMsg::getAmount() const
@@ -296,6 +312,46 @@ int transactionMsg::getTransactionId() const
 void transactionMsg::setTransactionId(int transactionId)
 {
     this->transactionId = transactionId;
+}
+
+bool transactionMsg::getHasTimeOut() const
+{
+    return this->hasTimeOut;
+}
+
+void transactionMsg::setHasTimeOut(bool hasTimeOut)
+{
+    this->hasTimeOut = hasTimeOut;
+}
+
+double transactionMsg::getTimeOut() const
+{
+    return this->timeOut;
+}
+
+void transactionMsg::setTimeOut(double timeOut)
+{
+    this->timeOut = timeOut;
+}
+
+int transactionMsg::getHtlcIndex() const
+{
+    return this->htlcIndex;
+}
+
+void transactionMsg::setHtlcIndex(int htlcIndex)
+{
+    this->htlcIndex = htlcIndex;
+}
+
+int transactionMsg::getPathIndex() const
+{
+    return this->pathIndex;
+}
+
+void transactionMsg::setPathIndex(int pathIndex)
+{
+    this->pathIndex = pathIndex;
 }
 
 class transactionMsgDescriptor : public omnetpp::cClassDescriptor
@@ -363,7 +419,7 @@ const char *transactionMsgDescriptor::getProperty(const char *propertyname) cons
 int transactionMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 6+basedesc->getFieldCount() : 6;
+    return basedesc ? 10+basedesc->getFieldCount() : 10;
 }
 
 unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
@@ -381,8 +437,12 @@ unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<6) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<10) ? fieldTypeFlags[field] : 0;
 }
 
 const char *transactionMsgDescriptor::getFieldName(int field) const
@@ -400,8 +460,12 @@ const char *transactionMsgDescriptor::getFieldName(int field) const
         "receiver",
         "priorityClass",
         "transactionId",
+        "hasTimeOut",
+        "timeOut",
+        "htlcIndex",
+        "pathIndex",
     };
-    return (field>=0 && field<6) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<10) ? fieldNames[field] : nullptr;
 }
 
 int transactionMsgDescriptor::findField(const char *fieldName) const
@@ -414,6 +478,10 @@ int transactionMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='r' && strcmp(fieldName, "receiver")==0) return base+3;
     if (fieldName[0]=='p' && strcmp(fieldName, "priorityClass")==0) return base+4;
     if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+5;
+    if (fieldName[0]=='h' && strcmp(fieldName, "hasTimeOut")==0) return base+6;
+    if (fieldName[0]=='t' && strcmp(fieldName, "timeOut")==0) return base+7;
+    if (fieldName[0]=='h' && strcmp(fieldName, "htlcIndex")==0) return base+8;
+    if (fieldName[0]=='p' && strcmp(fieldName, "pathIndex")==0) return base+9;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -432,8 +500,12 @@ const char *transactionMsgDescriptor::getFieldTypeString(int field) const
         "int",
         "int",
         "int",
+        "bool",
+        "double",
+        "int",
+        "int",
     };
-    return (field>=0 && field<6) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<10) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **transactionMsgDescriptor::getFieldPropertyNames(int field) const
@@ -506,6 +578,10 @@ std::string transactionMsgDescriptor::getFieldValueAsString(void *object, int fi
         case 3: return long2string(pp->getReceiver());
         case 4: return long2string(pp->getPriorityClass());
         case 5: return long2string(pp->getTransactionId());
+        case 6: return bool2string(pp->getHasTimeOut());
+        case 7: return double2string(pp->getTimeOut());
+        case 8: return long2string(pp->getHtlcIndex());
+        case 9: return long2string(pp->getPathIndex());
         default: return "";
     }
 }
@@ -526,6 +602,10 @@ bool transactionMsgDescriptor::setFieldValueAsString(void *object, int field, in
         case 3: pp->setReceiver(string2long(value)); return true;
         case 4: pp->setPriorityClass(string2long(value)); return true;
         case 5: pp->setTransactionId(string2long(value)); return true;
+        case 6: pp->setHasTimeOut(string2bool(value)); return true;
+        case 7: pp->setTimeOut(string2double(value)); return true;
+        case 8: pp->setHtlcIndex(string2long(value)); return true;
+        case 9: pp->setPathIndex(string2long(value)); return true;
         default: return false;
     }
 }

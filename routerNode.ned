@@ -1,8 +1,11 @@
 simple routerNode
 {
 	parameters:
+	    bool isHost = false;
 		string topologyFile = default("sample-topology.txt");
 		string workloadFile = default("sample-workload.txt");
+		bool timeoutEnabled = default(true);
+		bool waterfillingEnabled = default(true);
 		
 		@signal[completionTime](type="long"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 
@@ -17,13 +20,7 @@ simple routerNode
 
 		@signal[numSentPerChannel*](type="long");  
 		@statisticTemplate[numSentPerChannelTemplate](record=vector, stats);   
-
-		@signal[numCompletedPerDest*](type="long");  
-		@statisticTemplate[numCompletedPerDestTemplate](record=vector, stats);   
-
-		@signal[numAttemptedPerDest*](type="long"); 
-		@statisticTemplate[numAttemptedPerDestTemplate](record=vector, stats);   
-
+		
 		@signal[balancePerChannel*](type="long"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
 

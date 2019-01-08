@@ -18,6 +18,9 @@ cplusplus {{
 #define ACK_MSG 1
 #define UPDATE_MSG 2
 #define STAT_MSG 3
+#define TIME_OUT_MSG 4
+#define PROBE_MSG 5
+#define CLEAR_STATE_MSG 6
 
 typedef std::vector<int> IntVector;
 }};

@@ -21,5 +21,9 @@ packet transactionMsg
     int receiver;
     int priorityClass;
     int transactionId; //is messageID of transactionMsg
+    bool hasTimeOut;
+    double timeOut;
+    int htlcIndex;
+    int pathIndex;
 }
 

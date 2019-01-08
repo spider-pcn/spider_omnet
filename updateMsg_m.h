@@ -25,6 +25,7 @@
  * {
  *     double amount;
  *     int transactionId; //is messageID of transactionMsg
+ *     int htlcIndex;
  * }
  * </pre>
  */
@@ -33,6 +34,7 @@ class updateMsg : public ::omnetpp::cPacket
   protected:
     double amount;
     int transactionId;
+    int htlcIndex;
 
   private:
     void copy(const updateMsg& other);
@@ -55,6 +57,8 @@ class updateMsg : public ::omnetpp::cPacket
     virtual void setAmount(double amount);
     virtual int getTransactionId() const;
     virtual void setTransactionId(int transactionId);
+    virtual int getHtlcIndex() const;
+    virtual void setHtlcIndex(int htlcIndex);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const updateMsg& obj) {obj.parsimPack(b);}

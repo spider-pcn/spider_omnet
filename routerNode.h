@@ -9,6 +9,8 @@
 #include "transactionMsg_m.h"
 #include "ackMsg_m.h"
 #include "updateMsg_m.h"
+#include "timeOutMsg_m.h"
+#include "probeMsg_m.h"
 #include <iostream>
 #include <algorithm>
 #include <string>
@@ -16,74 +18,55 @@
 #include <deque>
 #include <map>
 #include <fstream>
-#include "transUnit.h"
+#include "global.h"
+
 
 using namespace std;
 using namespace omnetpp;
 
-
-struct paymentChannel{
-    //channel information
-    cGate* gate;
-    double balance;
-    vector<tuple<int, double, routerMsg*>> queuedTransUnits; //make_heap in initialization
-    map<int, double> incomingTransUnits; //(key,value) := (transactionId, amount)
-    map<int, double> outgoingTransUnits;
-
-    //statistics - ones for per payment channel
-    int statNumProcessed;
-    int statNumSent;
-    simsignal_t numInQueuePerChannelSignal;
-    simsignal_t numProcessedPerChannelSignal;
-    simsignal_t balancePerChannelSignal;
-    simsignal_t numSentPerChannelSignal;
-
-};
-
-
 class routerNode : public cSimpleModule
 {
    private:
+
       string topologyFile_;
       string workloadFile_;
-      map<int, paymentChannel> nodeToPaymentChannel;
-      vector<int> statNumCompleted;
-      vector<int> statNumAttempted;
-      map<int, vector<int>> destNodeToPath;
-      simsignal_t completionTimeSignal;
-      vector<simsignal_t> numCompletedPerDestSignals;
-      vector<simsignal_t> numAttemptedPerDestSignals;
-      vector< transUnit > myTransUnits; //list of transUnits that have me as sender
+      map<int, PaymentChannel> nodeToPaymentChannel;
+      set<CanceledTrans> canceledTransactions = {};
 
    protected:
-      virtual routerMsg *generateTransactionMessage(transUnit transUnit);
-      virtual routerMsg *generateAckMessage(routerMsg *msg);
-      virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount);
+
+      virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount, int htlcIndex);
           //just generates routerMsg with no encapsulated msg inside
       virtual routerMsg *generateStatMessage();
-
+      virtual routerMsg *generateClearStateMessage();
+      virtual void checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits, int node);
+      virtual int myIndex();
       virtual void initialize() override;
       virtual void handleMessage(cMessage *msg) override;
       virtual void handleTransactionMessage(routerMsg *msg);
+      virtual bool handleTransactionMessageTimeOut(routerMsg *msg);
+      virtual void handleTimeOutMessage(routerMsg *msg);
       virtual void handleAckMessage(routerMsg *msg);
+      virtual void handleAckMessageTimeOut(routerMsg *msg);
       virtual void handleUpdateMessage(routerMsg *msg);
       virtual void handleStatMessage(routerMsg *msg);
-      virtual void forwardTransactionMessage(routerMsg *msg);
+      virtual void handleProbeMessage(routerMsg *msg);
+      virtual void handleClearStateMessage(routerMsg *msg);
+      virtual bool forwardTransactionMessage(routerMsg *msg, int dest);
       virtual void forwardAckMessage(routerMsg *msg);
+      virtual void forwardTimeOutMessage(routerMsg *msg);
+      virtual void forwardProbeMessage(routerMsg *msg);
       virtual void sendUpdateMessage(routerMsg *msg);
-      virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *>>& q);
+      virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q);
+      //virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode);
       virtual void deleteMessagesInQueues();
+
+      //helper
+      virtual void printNodeToPaymentChannel();
+
 
 };
 
 
-//global parameters
-extern vector<transUnit> transUnitList;
-extern int numNodes;
-//number of nodes in network
-extern map<int, vector<pair<int,int>>> channels; //adjacency list format of graph edges of network
-extern map<tuple<int,int>,double> balances;
-extern double statRate;
-//map of balances for each edge; key = <int,int> is <source, destination>
 
 #endif

@@ -17,9 +17,13 @@
 packet ackMsg
 {
  	int transactionId;
+ 	int receiver;
+ 	int htlcIndex;
+ 	int pathIndex; 
  	double timeSent;
  	bool isSuccess; //status, true for success, false for failure
     string secret=""; 
     double amount;
+    bool hasTimeOut;
  }
 

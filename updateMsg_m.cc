@@ -183,6 +183,7 @@ updateMsg::updateMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kin
 {
     this->amount = 0;
     this->transactionId = 0;
+    this->htlcIndex = 0;
 }
 
 updateMsg::updateMsg(const updateMsg& other) : ::omnetpp::cPacket(other)
@@ -206,6 +207,7 @@ void updateMsg::copy(const updateMsg& other)
 {
     this->amount = other.amount;
     this->transactionId = other.transactionId;
+    this->htlcIndex = other.htlcIndex;
 }
 
 void updateMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -213,6 +215,7 @@ void updateMsg::parsimPack(omnetpp::cCommBuffer *b) const
     ::omnetpp::cPacket::parsimPack(b);
     doParsimPacking(b,this->amount);
     doParsimPacking(b,this->transactionId);
+    doParsimPacking(b,this->htlcIndex);
 }
 
 void updateMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -220,6 +223,7 @@ void updateMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     ::omnetpp::cPacket::parsimUnpack(b);
     doParsimUnpacking(b,this->amount);
     doParsimUnpacking(b,this->transactionId);
+    doParsimUnpacking(b,this->htlcIndex);
 }
 
 double updateMsg::getAmount() const
@@ -240,6 +244,16 @@ int updateMsg::getTransactionId() const
 void updateMsg::setTransactionId(int transactionId)
 {
     this->transactionId = transactionId;
+}
+
+int updateMsg::getHtlcIndex() const
+{
+    return this->htlcIndex;
+}
+
+void updateMsg::setHtlcIndex(int htlcIndex)
+{
+    this->htlcIndex = htlcIndex;
 }
 
 class updateMsgDescriptor : public omnetpp::cClassDescriptor
@@ -307,7 +321,7 @@ const char *updateMsgDescriptor::getProperty(const char *propertyname) const
 int updateMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 2+basedesc->getFieldCount() : 2;
+    return basedesc ? 3+basedesc->getFieldCount() : 3;
 }
 
 unsigned int updateMsgDescriptor::getFieldTypeFlags(int field) const
@@ -321,8 +335,9 @@ unsigned int updateMsgDescriptor::getFieldTypeFlags(int field) const
     static unsigned int fieldTypeFlags[] = {
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<2) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<3) ? fieldTypeFlags[field] : 0;
 }
 
 const char *updateMsgDescriptor::getFieldName(int field) const
@@ -336,8 +351,9 @@ const char *updateMsgDescriptor::getFieldName(int field) const
     static const char *fieldNames[] = {
         "amount",
         "transactionId",
+        "htlcIndex",
     };
-    return (field>=0 && field<2) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<3) ? fieldNames[field] : nullptr;
 }
 
 int updateMsgDescriptor::findField(const char *fieldName) const
@@ -346,6 +362,7 @@ int updateMsgDescriptor::findField(const char *fieldName) const
     int base = basedesc ? basedesc->getFieldCount() : 0;
     if (fieldName[0]=='a' && strcmp(fieldName, "amount")==0) return base+0;
     if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+1;
+    if (fieldName[0]=='h' && strcmp(fieldName, "htlcIndex")==0) return base+2;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -360,8 +377,9 @@ const char *updateMsgDescriptor::getFieldTypeString(int field) const
     static const char *fieldTypeStrings[] = {
         "double",
         "int",
+        "int",
     };
-    return (field>=0 && field<2) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<3) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **updateMsgDescriptor::getFieldPropertyNames(int field) const
@@ -430,6 +448,7 @@ std::string updateMsgDescriptor::getFieldValueAsString(void *object, int field, 
     switch (field) {
         case 0: return double2string(pp->getAmount());
         case 1: return long2string(pp->getTransactionId());
+        case 2: return long2string(pp->getHtlcIndex());
         default: return "";
     }
 }
@@ -446,6 +465,7 @@ bool updateMsgDescriptor::setFieldValueAsString(void *object, int field, int i, 
     switch (field) {
         case 0: pp->setAmount(string2double(value)); return true;
         case 1: pp->setTransactionId(string2long(value)); return true;
+        case 2: pp->setHtlcIndex(string2long(value)); return true;
         default: return false;
     }
 }

@@ -310,6 +310,7 @@ parser.add_argument('--generate-json-also', action="store_true", help="do you ne
         for the custom topology")
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 
+
 args = parser.parse_args()
 
 output_prefix = args.output_file_prefix

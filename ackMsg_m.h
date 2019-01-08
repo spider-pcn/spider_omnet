@@ -24,10 +24,14 @@
  * packet ackMsg
  * {
  *     int transactionId;
+ *     int receiver;
+ *     int htlcIndex;
+ *     int pathIndex;
  *     double timeSent;
  *     bool isSuccess; //status, true for success, false for failure
  *     string secret = "";
  *     double amount;
+ *     bool hasTimeOut;
  * }
  * </pre>
  */
@@ -35,10 +39,14 @@ class ackMsg : public ::omnetpp::cPacket
 {
   protected:
     int transactionId;
+    int receiver;
+    int htlcIndex;
+    int pathIndex;
     double timeSent;
     bool isSuccess;
     ::omnetpp::opp_string secret;
     double amount;
+    bool hasTimeOut;
 
   private:
     void copy(const ackMsg& other);
@@ -59,6 +67,12 @@ class ackMsg : public ::omnetpp::cPacket
     // field getter/setter methods
     virtual int getTransactionId() const;
     virtual void setTransactionId(int transactionId);
+    virtual int getReceiver() const;
+    virtual void setReceiver(int receiver);
+    virtual int getHtlcIndex() const;
+    virtual void setHtlcIndex(int htlcIndex);
+    virtual int getPathIndex() const;
+    virtual void setPathIndex(int pathIndex);
     virtual double getTimeSent() const;
     virtual void setTimeSent(double timeSent);
     virtual bool getIsSuccess() const;
@@ -67,6 +81,8 @@ class ackMsg : public ::omnetpp::cPacket
     virtual void setSecret(const char * secret);
     virtual double getAmount() const;
     virtual void setAmount(double amount);
+    virtual bool getHasTimeOut() const;
+    virtual void setHasTimeOut(bool hasTimeOut);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const ackMsg& obj) {obj.parsimPack(b);}
