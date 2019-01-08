@@ -79,7 +79,8 @@ INTERESTING_SIGNALS = dict()
 INTERESTING_SIGNALS["completion_rate_cdfs"] = ["rateCompletedPerDestPerPath",\
         "rateAttemptedPerDestPerPath"]
 INTERESTING_SIGNALS["balance"] = ["balancePerChannel"]
-INTERESTING_SIGNALS["queue_info"] = ["numInQueuePerChannel"]
-INTERESTING_SIGNALS["num_sent_per_channel"] = ["numSentPerChannel"]
-
+INTERESTING_SIGNALS["numInQueue"] = ["numInQueuePerChannel"]
+INTERESTING_SIGNALS["numSent"] = ["numSentPerChannel"]
+INTERESTING_SIGNALS["fracSuccessful"] = ["fracSuccessfulPerDest"]
+INTERESTING_SIGNALS["numTimedOut"] = ["numTimedOutPerDest"]
 

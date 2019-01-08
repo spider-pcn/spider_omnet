@@ -15,17 +15,20 @@ def parse_vec_declaration(line):
 
     signal_info = words[3].split('"')[1].split("(")[0] if'"' in words[3] else words[3].split(":")[0] 
     dest_node = -1
+    dest_node_type = None
     if words[3].endswith("router"):
         dest_node = int(words[4]) 
+        dest_node_type = "router"
         # the actual node number int(words[5].split("[")[1].split("]")[0])
     elif not signal_info.startswith("completionTime"): # dont know what this is
         if words[4] == 'node':
             dest_node = int(words[5].split(")")[0])
         else: 
             dest_node = int(words[4].split(")")[0])
+        dest_node_type = "host"
 
 
-    return vector_id, (owner_node, owner_node_type, signal_info, dest_node)
+    return vector_id, (owner_node, owner_node_type, signal_info, dest_node, dest_node_type)
 
 
 # parse a line that is guaranteed to comprise of 4 columns the first of which is the vector id, second is
