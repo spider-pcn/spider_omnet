@@ -27,7 +27,8 @@ args = parser.parse_args()
 fmts = ['r--o', 'b-^']
 
 
-def compute_path_completion_rates(filename):
+
+def compute_avg_path_completion_rates(filename):
     completion_fractions = []
     all_timeseries, vec_id_to_info_map = parse_vec_file(filename, "completion_rate_cdfs")
 
@@ -65,12 +66,14 @@ def compute_path_completion_rates(filename):
         rates_completed_across_paths = avg_rate_completed[key]
 
         for path_id, attempt_rate in rates_attempted_across_paths.items():
-            completion_fractions.append(rates_completed_across_paths[path_id]/attempt_rate)
+            if attempt_rate > 0: 
+                completion_fractions.append(rates_completed_across_paths[path_id]/attempt_rate)
 
     return completion_fractions
 
 
-
+# plot cdf of completion fractions across all paths used between different sources and destination pairs
+# for the given set of algorithms
 def plot_completion_rate_cdf(args):
     def bar_x_coord(bw, ix):
         return bw - (len(args.summaries)/2.0 - ix)*args.bar_width
@@ -81,7 +84,7 @@ def plot_completion_rate_cdf(args):
     for i in range(len(args.vec_files)):
         scale = 1
         # returns all the data points for the completion rates for individual paths to every source dest pair
-        res = compute_path_completion_rates(args.vec_files[i])
+        res = compute_avg_path_completion_rates(args.vec_files[i])
         keys = sorted(res)
         ys = np.linspace(0.1, 1.0, 100)
         
@@ -89,9 +92,10 @@ def plot_completion_rate_cdf(args):
         #xerr_low = [k - data[k][0] for k in keys]
         #xerr_high = [data[k][1] - k for k in keys]
         #plt.errorbar(keys, ys, xerr=[keys, keys], fmt=fmts[i], label=args.labels[i], linewidth=3, markersize=15)
-        plt.hist(keys, normed='True', cumulative='True', label=args.labels[i], linewidth=3, histtype='step')
+        plt.hist(keys, bins = 100, normed='True', cumulative='True', label=args.labels[i], \
+                linewidth=3, histtype='step')
 
-    plt.title('Completion rate cdfs for waterfilling')
+    plt.title('Completion rate cdfs for waterfilling') # TODO: put topology file here
     plt.xlabel('Achieved completion rates')
     plt.ylabel('CDF')
     plt.ylim(0,1.1)
@@ -99,11 +103,15 @@ def plot_completion_rate_cdf(args):
     plt.tight_layout()
     plt.savefig(args.save)
 
-matplotlib.rcParams['figure.figsize'] = [15, 10]
-plt.rc('font', size=40)          # controls default text sizes
-plt.rc('axes', titlesize=42)     # fontsize of the axes title
-plt.rc('axes', labelsize=40)    # fontsize of the x and y labels
-plt.rc('xtick', labelsize=32)    # fontsize of the tick labels
-plt.rc('ytick', labelsize=32)    # fontsize of the tick labels
-plt.rc('legend', fontsize=34)    # legend fontsize
-plot_completion_rate_cdf(args)
+
+def main():
+    matplotlib.rcParams['figure.figsize'] = [15, 10]
+    plt.rc('font', size=40)          # controls default text sizes
+    plt.rc('axes', titlesize=42)     # fontsize of the axes title
+    plt.rc('axes', labelsize=40)    # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=32)    # fontsize of the tick labels
+    plt.rc('ytick', labelsize=32)    # fontsize of the tick labels
+    plt.rc('legend', fontsize=34)    # legend fontsize
+    plot_completion_rate_cdf(args)
+
+main()

@@ -113,6 +113,7 @@ def generate_graph(size, graph_type):
     print 'Generated a ', graph_type, ' graph'
     print 'number of nodes: ', G.number_of_nodes()
     print 'Number of Edges: ', G.number_of_edges()
+    print 'Number of connected components: ', nx.number_connected_components(G)
     return G
 
 
