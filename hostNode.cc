@@ -572,6 +572,15 @@ void hostNode::handleMessage(cMessage *msg)
       //cout << "[HOST "<< myIndex() <<": RECEIVED ACK MSG] " << msg->getName() << endl;
       //print_message(ttmsg);
       //print_private_values();
+       if (_timeoutEnabled){
+           handleAckMessageTimeOut(ttmsg);
+       }
+       if (_waterfillingEnabled){
+           handleAckMessageWaterfilling(ttmsg);
+       }
+       else{
+           handleAckMessageShortestPath(ttmsg);
+       }
       handleAckMessage(ttmsg);
       //cout << "[AFTER HANDLING:]" <<endl;
       // print_private_values();
@@ -897,6 +906,71 @@ void hostNode::handleTimeOutMessageShortestPath(routerMsg* ttmsg){
    }//end else ((ttmsg->getHopCount())==0)
 }
 
+void hostNode::handleAckMessageTimeOut(routerMsg* ttmsg){
+    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
+
+    //check if transactionId is in canceledTransaction set
+    int transactionId = aMsg->getTransactionId();
+
+    //TODO: not sure if this works properly
+    auto iter = find_if(canceledTransactions.begin(),
+          canceledTransactions.end(),
+          [&transactionId](const tuple<int, simtime_t, int, int>& p)
+          { return get<0>(p) == transactionId; });
+
+    if (iter!=canceledTransactions.end()){
+       canceledTransactions.erase(iter);
+    }
+
+
+    //at last index of route
+    //add transactionId to set of successful transactions that we don't need to send time out messages
+    if (!_waterfillingEnabled){
+       successfulDoNotSendTimeOut.insert(aMsg->getTransactionId());
+
+    }
+    else{ //_waterfillingEnabled
+       tuple<int,int> key = make_tuple(aMsg->getTransactionId(), aMsg->getPathIndex());
+
+       transPathToAckState[key].amtReceived = transPathToAckState[key].amtReceived + aMsg->getAmount();
+       /*
+          if (transPathToAckState[key].amtReceived == transPathToAckState[key].amtSent){
+          transPathToAckState.erase(key);
+          }
+        */
+
+    }
+
+}
+
+
+void hostNode::handleAckMessageShortestPath(routerMsg* ttmsg){
+     int destNode = ttmsg->getRoute()[0]; //destination of origin TransUnit job
+     statNumCompleted[destNode] = statNumCompleted[destNode]+1;
+
+}
+
+void hostNode::handleAckMessageWaterfilling(routerMsg* ttmsg){
+     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
+   //check all amt received before incrementing num completed
+        if (transToAmtLeftToComplete.count(aMsg->getTransactionId()) == 0){
+           cout << "error, transaction acknowledged wasn't written to transToAmtLeftToComplete" << endl;
+        }
+        else{
+           (transToAmtLeftToComplete[aMsg->getTransactionId()]).amtReceived =
+              transToAmtLeftToComplete[aMsg->getTransactionId()].amtReceived + aMsg->getAmount();
+
+           //increment rateNumCompletedPerDestPerPath
+           nodeToShortestPathsMap[aMsg->getReceiver()][aMsg->getPathIndex()].statRateCompleted =
+              nodeToShortestPathsMap[aMsg->getReceiver()][aMsg->getPathIndex()].statRateCompleted + 1;
+
+           if (transToAmtLeftToComplete[aMsg->getTransactionId()].amtReceived == transToAmtLeftToComplete[aMsg->getTransactionId()].amtSent){
+              statNumCompleted[aMsg->getReceiver()] = statNumCompleted[aMsg->getReceiver()] + 1;
+              //erase transaction from map
+              transToAmtLeftToComplete.erase(aMsg->getTransactionId());
+           }
+        }
+}
 
 /* handleAckMessage
  */
@@ -912,70 +986,11 @@ void hostNode::handleAckMessage(routerMsg* ttmsg){ //TODO: fix handleAckMessage
 
    //increment signal numProcessed
    nodeToPaymentChannel[prevNode].statNumProcessed = nodeToPaymentChannel[prevNode].statNumProcessed+1;
-
    //assume successful transaction
 
    routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), prevNode, aMsg->getAmount(), aMsg->getHtlcIndex() );
    sendUpdateMessage(uMsg);
 
-
-   //check if transactionId is in canceledTransaction set
-   int transactionId = aMsg->getTransactionId();
-
-   //TODO: not sure if this works properly
-   auto iter = find_if(canceledTransactions.begin(),
-         canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int>& p)
-         { return get<0>(p) == transactionId; });
-
-   if (iter!=canceledTransactions.end()){
-      canceledTransactions.erase(iter);
-   }
-
-
-
-   //at last index of route
-   //add transactionId to set of successful transactions that we don't need to send time out messages
-   if (aMsg->getHasTimeOut()  && !_useWaterfilling){
-      successfulDoNotSendTimeOut.insert(aMsg->getTransactionId());
-
-   }
-   else if(aMsg->getHasTimeOut()  && _useWaterfilling){
-      tuple<int,int> key = make_tuple(aMsg->getTransactionId(), aMsg->getPathIndex());
-
-      transPathToAckState[key].amtReceived = transPathToAckState[key].amtReceived + aMsg->getAmount();
-      /*
-         if (transPathToAckState[key].amtReceived == transPathToAckState[key].amtSent){
-         transPathToAckState.erase(key);
-         }
-       */
-
-   }
-
-   int destNode = ttmsg->getRoute()[0]; //destination of origin TransUnit job
-
-   if (_useWaterfilling){ //check all amt received before incrementing num completed
-      if (transToAmtLeftToComplete.count(aMsg->getTransactionId()) == 0){
-         cout << "error, transaction acknowledged wasn't written to transToAmtLeftToComplete" << endl;
-      }
-      else{
-         (transToAmtLeftToComplete[aMsg->getTransactionId()]).amtReceived =
-            transToAmtLeftToComplete[aMsg->getTransactionId()].amtReceived + aMsg->getAmount();
-
-         //increment rateNumCompletedPerDestPerPath
-         nodeToShortestPathsMap[aMsg->getReceiver()][aMsg->getPathIndex()].statRateCompleted =
-            nodeToShortestPathsMap[aMsg->getReceiver()][aMsg->getPathIndex()].statRateCompleted + 1;
-
-         if (transToAmtLeftToComplete[aMsg->getTransactionId()].amtReceived == transToAmtLeftToComplete[aMsg->getTransactionId()].amtSent){
-            statNumCompleted[aMsg->getReceiver()] = statNumCompleted[aMsg->getReceiver()] + 1;
-            //erase transaction from map
-            transToAmtLeftToComplete.erase(aMsg->getTransactionId());
-         }
-      }
-   }
-   else{
-      statNumCompleted[destNode] = statNumCompleted[destNode]+1;
-   }
 
    //broadcast completion time signal
    //ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
@@ -1406,11 +1421,7 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
          int transactionId = transMsg->getTransactionId();
          routerMsg* newMsg =  generateAckMessage(ttmsg);
          //forward ack message - no need to wait;
-
          //check if transactionId is in canceledTransaction set
-
-
-
          auto iter = find_if(canceledTransactions.begin(),
                canceledTransactions.end(),
                [&transactionId](const tuple<int, simtime_t, int, int>& p)
@@ -1438,8 +1449,6 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
       }
 
 }
-
-
 
 routerMsg *hostNode::generateTimeOutMessage(routerMsg* msg)
 {
@@ -1510,7 +1519,6 @@ void hostNode:: processTransUnits(int dest, vector<tuple<int, double , routerMsg
       }
    }
 }
-
 
 /*
  *  forwardTransactionMessage - given a message representing a TransUnit, increments hopCount, finds next destination,

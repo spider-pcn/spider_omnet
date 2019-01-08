@@ -75,6 +75,9 @@ class hostNode : public cSimpleModule
       virtual void handleTimeOutMessageShortestPath(routerMsg *msg);
       virtual void handleTimeOutMessageWaterfilling(routerMsg *msg);
       virtual void handleAckMessage(routerMsg *msg);
+      virtual void handleAckMessageTimeOut(routerMsg *msg);
+      virtual void handleAckMessageWaterfilling(routerMsg *msg);
+      virtual void handleAckMessageShortestPath(routerMsg *msg);
       virtual void handleUpdateMessage(routerMsg *msg);
       virtual void handleStatMessage(routerMsg *msg);
       virtual void handleProbeMessage(routerMsg *msg);
