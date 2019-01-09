@@ -17,8 +17,11 @@ int _kValue;
 double _simulationLength;
 bool _waterfillingEnabled;
 bool _timeoutEnabled;
+bool _loggingEnabled;
+bool _signalsEnabled;
 
 #define MSGSIZE 100
+#define SMALLEST_INDIVISIBLE_UNIT 1
 
 Define_Module(hostNode);
 
@@ -126,7 +129,7 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
       int bottleneck = minVectorElemDouble(pathBalances);
       p->bottleneck = bottleneck ;
       p->pathBalances = pathBalances;
-      emit(nodeToShortestPathsMap[destNode][pathIdx].probeBackPerDestPerPathSignal,pathIdx);
+      if (_signalsEnabled) emit(nodeToShortestPathsMap[destNode][pathIdx].probeBackPerDestPerPathSignal,pathIdx);
 
       if (destNodeToNumTransPending[destNode] > 0){
          //reset the probe message
@@ -179,7 +182,7 @@ void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode
       simsignal_t signal;
       cProperty *statisticTemplate;
 
-      //numInQueuePerChannel signal
+    // numInQueuePerChannel signal
       if (destNode<_numHostNodes){
          sprintf(signalName, "bottleneckPerDestPerPath_%d(host %d)", pathIdx, destNode);
       }
@@ -238,7 +241,7 @@ void hostNode::initialize()
    string topologyFile_ = par("topologyFile");
    string workloadFile_ = par("workloadFile");
 
-   completionTimeSignal = registerSignal("completionTime");
+    completionTimeSignal = registerSignal("completionTime");
 
    successfulDoNotSendTimeOut = {};
 
@@ -250,6 +253,8 @@ void hostNode::initialize()
       _clearRate = 0.5;
       _waterfillingEnabled = true; //par("waterfillingEnabled");
       _timeoutEnabled = true; // par("timeoutEnabled");
+      _signalsEnabled = false;
+      _loggingEnabled = false;
 
       if (_waterfillingEnabled){
          _kValue = 4;
@@ -383,7 +388,7 @@ void hostNode::initialize()
       statRateCompleted.push_back(0);
 
 
-      //numCompletedPerDest signal
+       //numCompletedPerDest signal
 
          sprintf(signalName, "numCompletedPerDest_Total(host node %d)", i);
          signal = registerSignal(signalName);
@@ -404,23 +409,23 @@ void hostNode::initialize()
       statRateAttempted.push_back(0);
 
       //numAttemptedPerDest signal
-          sprintf(signalName, "numAttemptedPerDest_Total(host node %d)", i);
-          signal = registerSignal(signalName);
-          statisticTemplate = getProperties()->get("statisticTemplate", "numAttemptedPerDestTemplate");
-          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-          numAttemptedPerDestSignals.push_back(signal);
+      sprintf(signalName, "numAttemptedPerDest_Total(host node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "numAttemptedPerDestTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      numAttemptedPerDestSignals.push_back(signal);
 
-          statNumAttempted.push_back(0);
+      statNumAttempted.push_back(0);
 
-      //pathPerTransPerDest signal
-          sprintf(signalName, "pathPerTransPerDest(host node %d)", i);
-               signal = registerSignal(signalName);
-               statisticTemplate = getProperties()->get("statisticTemplate", "pathPerTransPerDestTemplate");
-               getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-               pathPerTransPerDestSignals.push_back(signal);
+  //pathPerTransPerDest signal
+      sprintf(signalName, "pathPerTransPerDest(host node %d)", i);
+           signal = registerSignal(signalName);
+           statisticTemplate = getProperties()->get("statisticTemplate", "pathPerTransPerDestTemplate");
+           getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+           pathPerTransPerDestSignals.push_back(signal);
 
 
-      //numTimedOutPerDest signal
+  //numTimedOutPerDest signal
       sprintf(signalName, "numTimedOutPerDest_Total(host node %d)", i);
       signal = registerSignal(signalName);
       statisticTemplate = getProperties()->get("statisticTemplate", "numTimedOutPerDestTemplate");
@@ -484,12 +489,14 @@ void hostNode::handleMessage(cMessage *msg)
       //print  map<int, int> transactionIdToNumHtlc
          int splitTrans = 0;
          for (auto p: transactionIdToNumHtlc){
-         cout << "(" << p.first << "," << p.second << ") ";
+         if (_loggingEnabled) cout << "(" << p.first << "," << p.second << ") ";
          if (p.second>1) splitTrans++;
          }
-         cout << endl;
-         cout << "number greater than 1: " << splitTrans << endl;
-         cout << "maxTravelTime:" << _maxTravelTime << endl;
+         if (_loggingEnabled) {
+             cout << endl;
+             cout << "number greater than 1: " << splitTrans << endl;
+             cout << "maxTravelTime:" << _maxTravelTime << endl;
+         }
          endSimulation();
 
       if (ttmsg->getMessageType() == TRANSACTION_MSG){
@@ -699,24 +706,27 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
 
    }
 
-   for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
+   if (_signalsEnabled) {
+           for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
 
-      int node = it->first; //key
-      emit(nodeToPaymentChannel[node].numInQueuePerChannelSignal, (nodeToPaymentChannel[node].queuedTransUnits).size());
+          int node = it->first; //key
+          emit(nodeToPaymentChannel[node].numInQueuePerChannelSignal, (nodeToPaymentChannel[node].queuedTransUnits).size());
 
-      emit(nodeToPaymentChannel[node].balancePerChannelSignal, nodeToPaymentChannel[node].balance);
+          emit(nodeToPaymentChannel[node].balancePerChannelSignal, nodeToPaymentChannel[node].balance);
 
-      emit(nodeToPaymentChannel[node].numProcessedPerChannelSignal, nodeToPaymentChannel[node].statNumProcessed);
-      nodeToPaymentChannel[node].statNumProcessed = 0;
+          emit(nodeToPaymentChannel[node].numProcessedPerChannelSignal, nodeToPaymentChannel[node].statNumProcessed);
+          nodeToPaymentChannel[node].statNumProcessed = 0;
 
-      emit(nodeToPaymentChannel[node].numSentPerChannelSignal, nodeToPaymentChannel[node].statNumSent);
-      nodeToPaymentChannel[node].statNumSent = 0;
+          emit(nodeToPaymentChannel[node].numSentPerChannelSignal, nodeToPaymentChannel[node].statNumSent);
+          nodeToPaymentChannel[node].statNumSent = 0;
+       }
    }
-   for (auto it = 0; it<_numHostNodes; it++){ //iterate through all nodes in graph
+   
+    for (auto it = 0; it<_numHostNodes; it++){ //iterate through all nodes in graph
 
       if (it != getIndex()){
          for (auto p: nodeToShortestPathsMap[it]){
-            emit(p.second.bottleneckPerDestPerPathSignal, p.second.bottleneck);
+            if (_signalsEnabled) emit(p.second.bottleneckPerDestPerPathSignal, p.second.bottleneck);
 
             //emit rateCompleted per path
             emit(p.second.rateCompletedPerDestPerPathSignal, p.second.statRateCompleted);
@@ -726,21 +736,24 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
             emit(p.second.rateAttemptedPerDestPerPathSignal, p.second.statRateAttempted);
             nodeToShortestPathsMap[it][p.first].statRateAttempted = 0;
          }
+
          emit(rateAttemptedPerDestSignals[it], statRateAttempted[it]);
          statRateAttempted[it] = 0;
 
          emit(rateCompletedPerDestSignals[it], statRateCompleted[it]);
          statRateCompleted[it] = 0;
+         
 
-         emit(numAttemptedPerDestSignals[it], statNumAttempted[it]);
+         if (_signalsEnabled) {
+            emit(numAttemptedPerDestSignals[it], statNumAttempted[it]);
+            emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
 
-         emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
+             emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
 
-         emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
+             int frac = ((100*statNumCompleted[it])/(maxTwoNum(statNumAttempted[it],1)));
+             emit(fracSuccessfulPerDestSignals[it],frac);
 
-         int frac = ((100*statNumCompleted[it])/(maxTwoNum(statNumAttempted[it],1)));
-
-         emit(fracSuccessfulPerDestSignals[it],frac);
+         }
 
       }//end if
    }//end for
@@ -866,7 +879,8 @@ void hostNode::handleAckMessageWaterfilling(routerMsg* ttmsg){
      ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
    //check all amt received before incrementing num completed
         if (transToAmtLeftToComplete.count(aMsg->getTransactionId()) == 0){
-           cout << "error, transaction acknowledged wasn't written to transToAmtLeftToComplete" << endl;
+           cout << "error, transaction " << aMsg->getTransactionId() <<" htlc index:" << aMsg->getHtlcIndex() << 
+               " acknowledged at time " << simTime() << " wasn't written to transToAmtLeftToComplete" << endl;
         }
         else{
            (transToAmtLeftToComplete[aMsg->getTransactionId()]).amtReceived =
@@ -909,7 +923,7 @@ void hostNode::handleAckMessage(routerMsg* ttmsg){
    //ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
    simtime_t timeTakenInMilli = 1000*(simTime() - aMsg->getTimeSent());
 
-   emit(completionTimeSignal, timeTakenInMilli);
+   if (_signalsEnabled) emit(completionTimeSignal, timeTakenInMilli);
 
    //delete ack message
    ttmsg->decapsulate();
@@ -1115,21 +1129,21 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
 
    map<int, double> pathMap = {}; //key is pathIdx, double is amt
    priority_queue<pair<double,int>> pq;
-   cout << "bottleneck: ";
+   if (_loggingEnabled) cout << "bottleneck: ";
    for (auto iter: nodeToShortestPathsMap[destNode] ){
       int key = iter.first;
       double bottleneck = (iter.second).bottleneck;
-      cout << bottleneck << " (" << iter.second.lastUpdated<<"), ";
+      if (_loggingEnabled) cout << bottleneck << " (" << iter.second.lastUpdated<<"), ";
       pq.push(make_pair(bottleneck, key)); //automatically sorts with biggest first index-element
    }
-   cout << endl;
+   if (_loggingEnabled) cout << endl;
    double highestBal;
    double secHighestBal;
    double diffToSend;
    double amtToSend;
    int highestBalIdx;
 
-   while(pq.size()>0 && remainingAmt > 0){
+   while(pq.size()>0 && remainingAmt > SMALLEST_INDIVISIBLE_UNIT){
       highestBal = get<0>(pq.top());
       highestBalIdx = get<1>(pq.top());
       pq.pop();
@@ -1152,6 +1166,13 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
 
    }
 
+   if (remainingAmt > 0) {
+       highestBalIdx = get<1>(pq.top());
+       pathMap[highestBalIdx] = pathMap[highestBalIdx] + remainingAmt;
+       remainingAmt = 0;
+   }
+
+
    // print how much was sent on each path
    /*
    for (auto p: pathMap){
@@ -1164,28 +1185,30 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
    transMsg->setAmount(remainingAmt);
    for (auto p: pathMap){
        if (p.second > 0){
-      tuple<int,int> key = make_tuple(transMsg->getTransactionId(),p.first); //key is (transactionId, pathIndex)
+          tuple<int,int> key = make_tuple(transMsg->getTransactionId(),p.first); //key is (transactionId, pathIndex)
 
-      //update the data structure keeping track of how much sent and received on each path
-      if (transPathToAckState.count(key) == 0){
-         AckState temp = {};
-         temp.amtSent = p.second;
-         temp.amtReceived = 0;
-         transPathToAckState[key] = temp;
-      }
-      else{
-         transPathToAckState[key].amtSent =  transPathToAckState[key].amtSent + p.second;
-      }
+          //update the data structure keeping track of how much sent and received on each path
+          if (transPathToAckState.count(key) == 0){
+             AckState temp = {};
+             temp.amtSent = p.second;
+             temp.amtReceived = 0;
+             transPathToAckState[key] = temp;
+          }
+          else{
+             transPathToAckState[key].amtSent =  transPathToAckState[key].amtSent + p.second;
+          }
 
-      vector<int> path = nodeToShortestPathsMap[destNode][p.first].path;
-      double amt = p.second;
+          vector<int> path = nodeToShortestPathsMap[destNode][p.first].path;
+          double amt = p.second;
 
-      routerMsg* waterMsg = generateWaterfillingTransactionMessage(amt, path, p.first, transMsg);
-      emit(pathPerTransPerDestSignals[destNode], p.first);
-      //increment numAttempted per path
-      nodeToShortestPathsMap[destNode][p.first].statRateAttempted =
-      nodeToShortestPathsMap[destNode][p.first].statRateAttempted + 1;
-      handleTransactionMessage(waterMsg);
+         
+          routerMsg* waterMsg = generateWaterfillingTransactionMessage(amt, path, p.first, transMsg);
+          
+          if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], p.first);
+          //increment numAttempted per path
+          nodeToShortestPathsMap[destNode][p.first].statRateAttempted =
+          nodeToShortestPathsMap[destNode][p.first].statRateAttempted + 1;
+          handleTransactionMessage(waterMsg);
        }
    }
 }
@@ -1244,15 +1267,16 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
 
                if (nodeToShortestPathsMap.count(destNode) == 0 ){
                   vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
-                  cout << "source: " << transMsg->getSender() << ", dest: " << destNode << endl;
-                  for (auto v: kShortestRoutes){
-                     cout << "route: ";
-                     printVector(v);
-                  }
+                  if (_loggingEnabled) {
+                      cout << "source: " << transMsg->getSender() << ", dest: " << destNode << endl;
+                      for (auto v: kShortestRoutes){
+                         cout << "route: ";
+                         printVector(v);
+                      }
 
-                  cout << "after K Shortest Routes" << endl;
+                      cout << "after K Shortest Routes" << endl;
+                  }
                   initializeProbes(kShortestRoutes, destNode);
-                  cout << "after initialize probes" << endl;
                   scheduleAt(simTime() + 1, ttmsg);
                   return;
                }

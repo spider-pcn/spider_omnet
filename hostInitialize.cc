@@ -137,8 +137,10 @@ void printChannels(){
 vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
    //do searching without regard for channel capacities, DFS right now
 
-   printf("sender: %i; receiver: %i \n ", sender, receiver);
-   cout<<endl;
+   if (_loggingEnabled) {
+       printf("sender: %i; receiver: %i \n ", sender, receiver);
+       cout<<endl;
+   }
    //vector<int> route =  breadthFirstSearch(sender, receiver);
    // print channels
    vector<vector<int>> shortestRoutes = {};
@@ -181,10 +183,12 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
           updateMaxTravelTime(route);
          shortestRoutes.push_back(route);
       }
-      cout << "getKShortestRoutes 1" <<endl;
-      cout << "route size: " << route.size() << endl;
-      tempChannels = removeRoute(tempChannels,route);
-      cout << "getKShortestRoutes 2" <<endl;
+      if (_loggingEnabled) {
+          cout << "getKShortestRoutes 1" <<endl;
+          cout << "route size: " << route.size() << endl;
+          tempChannels = removeRoute(tempChannels,route);
+          cout << "getKShortestRoutes 2" <<endl;
+      }
    }
 
    return shortestRoutes;
@@ -682,13 +686,16 @@ void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,i
       while ( getline (myfile,line) )
       {
          vector<string> data = split(line, ' ');
-         cout << "data size" << data.size() << endl;
 
          //generate _channels - adjacency map
          char node1type = data[0].back();
-         cout <<"node1type: " << node1type << endl;
          char node2type = data[1].back();
-         cout <<"node2type: " << node2type << endl;
+
+         if (_loggingEnabled) {
+            cout <<"node2type: " << node2type << endl;
+            cout <<"node1type: " << node1type << endl;
+            cout << "data size" << data.size() << endl;
+         }
 
          int node1 = stoi((data[0]).substr(0,data[0].size()-1)); //
          if (node1type == 'r'){

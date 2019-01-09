@@ -44,3 +44,6 @@ extern bool _timeoutEnabled;
 extern int _kValue; //for k shortest paths
 extern double _simulationLength;
 
+extern bool _signalsEnabled;
+extern bool _loggingEnabled;
+
