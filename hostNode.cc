@@ -248,7 +248,7 @@ void hostNode::initialize()
       //set statRate
       _statRate = 0.2;
       _clearRate = 0.5;
-      _waterfillingEnabled = false; //par("waterfillingEnabled");
+      _waterfillingEnabled = true; //par("waterfillingEnabled");
       _timeoutEnabled = true; // par("timeoutEnabled");
 
       if (_waterfillingEnabled){

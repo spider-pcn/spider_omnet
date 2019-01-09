@@ -621,7 +621,7 @@ void setNumNodes(string topologyFile){
       myfile.close();
    }
 
-   else cout << "Unable to open file";
+   else cout << "Unable to open file" << topologyFile << endl;
    _numHostNodes = maxHostNode + 1;
    _numRouterNodes = maxRouterNode + 1;
 
@@ -730,7 +730,7 @@ void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,i
       myfile.close();
    }
 
-   else cout << "Unable to open file";
+   else cout << "Unable to open file " << topologyFile << endl;
 
    cout << "finished generateChannelsBalancesMap" << endl;
    return;
@@ -774,7 +774,7 @@ void generateTransUnitList(string workloadFile, vector<TransUnit> &_transUnitLis
       myfile.close();
    }
 
-   else cout << "Unable to open file";
+   else cout << "Unable to open file" << workloadFile << endl;
    return;
 
 }
