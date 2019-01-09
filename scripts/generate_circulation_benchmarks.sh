@@ -69,8 +69,8 @@ do
     # create the ini file
     $PYTHON create_ini_file.py \
             --network-name $network\
-            --topo-filename $topofile\
-            --workload-filename ${workload}_workload.txt\
+            --topo-filename ${topofile:3}\
+            --workload-filename ${workload:3}_workload.txt\
             --ini-filename $inifile
 done 
 
