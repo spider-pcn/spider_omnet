@@ -430,15 +430,32 @@ void routerNode::forwardTimeOutMessage(routerMsg* msg){
 
    //use hopCount to find next destination
    int nextDest = msg->getRoute()[msg->getHopCount()];
+
+   /*cout << "channels:" << endl;
+   for (auto p: nodeToPaymentChannel){
+       cout <<"("<< p.first << "," << p.second.gate <<") " ;
+
+   }
+   cout << endl;
+   */
    send(msg, nodeToPaymentChannel[nextDest].gate);
 
 }
 
 void routerNode::handleTimeOutMessage(routerMsg* ttmsg){
+   /*
+   vector<int> route = ttmsg->getRoute();
+   for (auto r:route){
+       cout << r << ", ";
+   }
+   cout << endl;
+    */
 
    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
    int nextNode = (ttmsg->getRoute())[ttmsg->getHopCount()+1];
    int prevNode = (ttmsg->getRoute())[ttmsg->getHopCount()-1];
+   //cout << "nextNode:" << nextNode << endl;
+   //cout << "nextHopCount:" << ttmsg->getHopCount()+1 << endl;
 
    CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),prevNode, nextNode);
    canceledTransactions.insert(ct);

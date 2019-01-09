@@ -32,10 +32,14 @@ class hostNode : public cSimpleModule
       map<int, PaymentChannel> nodeToPaymentChannel;
       vector<int> statNumCompleted;
       vector<int> statNumAttempted;
+      vector<int> statRateCompleted;
+      vector<int> statRateAttempted;
       vector<int> statNumTimedOut;
       map<int, vector<int>> destNodeToPath; //store shortest paths
       map<int, map<int, PathInfo>> nodeToShortestPathsMap = {}; //store k shortest paths in waterfilling
       simsignal_t completionTimeSignal;
+      vector<simsignal_t> rateCompletedPerDestSignals;
+      vector<simsignal_t> rateAttemptedPerDestSignals;
       vector<simsignal_t> numCompletedPerDestSignals;
       vector<simsignal_t> numAttemptedPerDestSignals;
       vector<simsignal_t> numTimedOutPerDestSignals;

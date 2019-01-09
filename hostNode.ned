@@ -26,6 +26,9 @@ simple hostNode
 		@signal[numSentPerChannel*](type="long");  
 		@statisticTemplate[numSentPerChannelTemplate](record=vector, stats);   
 
+		@signal[rateCompletedPerDest*](type="long");  
+		@statisticTemplate[rateCompletedPerDestTemplate](record=vector, stats);   
+		
 		@signal[numCompletedPerDest*](type="long");  
 		@statisticTemplate[numCompletedPerDestTemplate](record=vector, stats);   
 		
@@ -37,6 +40,9 @@ simple hostNode
 		
 		@signal[numTimedOutPerDest*](type="long");  
 		@statisticTemplate[numTimedOutPerDestTemplate](record=vector, stats);
+		
+		@signal[rateAttemptedPerDest*](type="long"); 
+		@statisticTemplate[rateAttemptedPerDestTemplate](record=vector, stats);   
 		
 		@signal[numAttemptedPerDest*](type="long"); 
 		@statisticTemplate[numAttemptedPerDestTemplate](record=vector, stats);   

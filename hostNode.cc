@@ -14,7 +14,7 @@ map<tuple<int,int>,double> _balances;
 double _statRate;
 double _clearRate;
 int _kValue;
-double _simulationLength; //TODO: need to set this in hostInitialize
+double _simulationLength;
 bool _waterfillingEnabled;
 bool _timeoutEnabled;
 
@@ -249,7 +249,7 @@ void hostNode::initialize()
       _statRate = 0.2;
       _clearRate = 0.5;
       _waterfillingEnabled = false; //par("waterfillingEnabled");
-      _timeoutEnabled = false; // par("timeoutEnabled");
+      _timeoutEnabled = true; // par("timeoutEnabled");
 
       if (_waterfillingEnabled){
          _kValue = 4;
@@ -372,24 +372,45 @@ void hostNode::initialize()
       simsignal_t signal;
       cProperty *statisticTemplate;
 
+      //rateCompletedPerDest signal
+
+      sprintf(signalName, "rateCompletedPerDest_Total(host node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "rateCompletedPerDestTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      rateCompletedPerDestSignals.push_back(signal);
+
+      statRateCompleted.push_back(0);
+
+
       //numCompletedPerDest signal
 
-      sprintf(signalName, "numCompletedPerDest_Total(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numCompletedPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      numCompletedPerDestSignals.push_back(signal);
+         sprintf(signalName, "numCompletedPerDest_Total(host node %d)", i);
+         signal = registerSignal(signalName);
+         statisticTemplate = getProperties()->get("statisticTemplate", "numCompletedPerDestTemplate");
+         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+         numCompletedPerDestSignals.push_back(signal);
 
-      statNumCompleted.push_back(0);
+         statNumCompleted.push_back(0);
+
+
+      //rateAttemptedPerDest signal
+      sprintf(signalName, "rateAttemptedPerDest_Total(host node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "rateAttemptedPerDestTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      rateAttemptedPerDestSignals.push_back(signal);
+
+      statRateAttempted.push_back(0);
 
       //numAttemptedPerDest signal
-      sprintf(signalName, "numAttemptedPerDest_Total(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numAttemptedPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      numAttemptedPerDestSignals.push_back(signal);
+          sprintf(signalName, "numAttemptedPerDest_Total(host node %d)", i);
+          signal = registerSignal(signalName);
+          statisticTemplate = getProperties()->get("statisticTemplate", "numAttemptedPerDestTemplate");
+          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+          numAttemptedPerDestSignals.push_back(signal);
 
-      statNumAttempted.push_back(0);
+          statNumAttempted.push_back(0);
 
       //pathPerTransPerDest signal
           sprintf(signalName, "pathPerTransPerDest(host node %d)", i);
@@ -705,6 +726,12 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
             emit(p.second.rateAttemptedPerDestPerPathSignal, p.second.statRateAttempted);
             nodeToShortestPathsMap[it][p.first].statRateAttempted = 0;
          }
+         emit(rateAttemptedPerDestSignals[it], statRateAttempted[it]);
+         statRateAttempted[it] = 0;
+
+         emit(rateCompletedPerDestSignals[it], statRateCompleted[it]);
+         statRateCompleted[it] = 0;
+
          emit(numAttemptedPerDestSignals[it], statNumAttempted[it]);
 
          emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
@@ -745,7 +772,7 @@ void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
                        // cout << "sent time out msg" << endl;
                        routerMsg* waterTimeOutMsg = generateWaterfillingTimeOutMessage(
                              nodeToShortestPathsMap[destination][p.first].path, transactionId, destination);
-                       //TODO: forwardTimeOutMsg
+
                        statNumTimedOut[destination] = statNumTimedOut[destination]  + 1;
                        forwardTimeOutMessage(waterTimeOutMsg);
                     }
@@ -832,6 +859,7 @@ void hostNode::handleAckMessageTimeOut(routerMsg* ttmsg){
 void hostNode::handleAckMessageShortestPath(routerMsg* ttmsg){
      int destNode = ttmsg->getRoute()[0]; //destination of origin TransUnit job
      statNumCompleted[destNode] = statNumCompleted[destNode]+1;
+     statRateCompleted[destNode] = statRateCompleted[destNode]+1;
 }
 
 void hostNode::handleAckMessageWaterfilling(routerMsg* ttmsg){
@@ -850,6 +878,7 @@ void hostNode::handleAckMessageWaterfilling(routerMsg* ttmsg){
 
            if (transToAmtLeftToComplete[aMsg->getTransactionId()].amtReceived == transToAmtLeftToComplete[aMsg->getTransactionId()].amtSent){
               statNumCompleted[aMsg->getReceiver()] = statNumCompleted[aMsg->getReceiver()] + 1;
+              statRateCompleted[aMsg->getReceiver()] = statRateCompleted[aMsg->getReceiver()] + 1;
               //erase transaction from map
               transToAmtLeftToComplete.erase(aMsg->getTransactionId());
            }
@@ -1043,7 +1072,7 @@ routerMsg* hostNode::generateWaterfillingTransactionMessage(double amt, vector<i
    }
 
    msg->setHtlcIndex(htlcIndex);
-   msg->setHasTimeOut(transMsg->getHasTimeOut()); //TODO: all waterfilling transactions do not have time out rn , transMsg->hasTimeOut);
+   msg->setHasTimeOut(transMsg->getHasTimeOut());
    msg->setPathIndex(pathIndex);
    msg->setTimeOut(transMsg->getTimeOut());
    msg->setTransactionId(transMsg->getTransactionId());
@@ -1179,7 +1208,7 @@ bool hostNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
             { return get<0>(p) == transactionId; });
 
       if ( iter!=canceledTransactions.end() || (transMsg->getHasTimeOut() && (simTime() > transMsg->getTimeSent() + transMsg->getTimeOut())) ){
-         //TODO: check to see if transactionId is in canceledTransactions set
+
 
          //delete yourself
          ttmsg->decapsulate();
@@ -1205,6 +1234,7 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
      //means we need to break up into chunks and assign route
                if (simTime() == transMsg->getTimeSent()){
                   statNumAttempted[destNode] = statNumAttempted[destNode]+1;
+                  statRateAttempted[destNode] = statRateAttempted[destNode]+1;
                   destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] + 1;
                   AckState * s = new AckState();
                   s->amtReceived = 0;
@@ -1269,12 +1299,18 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
  */
 void hostNode::handleTransactionMessage(routerMsg* ttmsg){
 
+
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
 
    int hopcount = ttmsg->getHopCount();
    vector<tuple<int, double , routerMsg *, Id>> *q;
 
    int destination = transMsg->getReceiver();
+
+   if (!_waterfillingEnabled){
+       statNumAttempted[destination] = statNumAttempted[destination] + 1;
+       statRateAttempted[destination] = statRateAttempted[destination] + 1;
+   }
 
    //check if transactionId is in canceledTransaction set
    int transactionId = transMsg->getTransactionId();
