@@ -70,7 +70,7 @@ do
     $PYTHON create_ini_file.py \
             --network-name $network\
             --topo-filename $topofile\
-            --workload-filename $workload\
+            --workload-filename ${workload}_workload.txt\
             --ini-filename $inifile
 done 
 

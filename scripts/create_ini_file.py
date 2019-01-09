@@ -14,8 +14,8 @@ f = open(args.ini_filename, "w+")
 f.write("[General]\n\n")
 f.write("[Config " +  os.path.basename(args.network_name) + "]\n")
 f.write("network = " + os.path.basename(args.network_name) + "\n")
-f.write("**.topologyFile = \"" + os.path.basename(args.topo_filename) + "\"\n")
-f.write("**.workloadFile = \"" + os.path.basename(args.workload_filename) + "\"\n\n")
+f.write("**.topologyFile = \"" + args.topo_filename + "\"\n")
+f.write("**.workloadFile = \"" + args.workload_filename + "\"\n\n")
 f.close()
 
 
