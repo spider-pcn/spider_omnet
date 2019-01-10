@@ -7,6 +7,7 @@ import json
 import numpy as np
 from parse_vec_files import *
 from matplotlib.backends.backend_pdf import PdfPages
+from cycler import cycler
 
 parser = argparse.ArgumentParser('Analysis Plots')
 parser.add_argument('--vec_file',
@@ -36,7 +37,7 @@ parser.add_argument('--save',
 
 args = parser.parse_args()
 
-fmts = ['r--', 'b-', 'g-.']
+#fmts = ['r--', 'b-', 'g-.']
 
 # returns a dictionary of the necessary stats where key is a router node
 # and value is another dictionary where the key is the partner node 
@@ -77,12 +78,14 @@ def plot_relevant_stats(data, pdf, signal_type):
     
     for router, channel_info in data.items():
         plt.figure()
+        plt.rc('axes', prop_cycle = (cycler('color', ['r', 'g', 'b', 'y', 'c', 'm', 'y', 'k']) +
+            cycler('linestyle', ['-', '--', ':', '-.', '-', '--', ':', '-.'])))
         i = 0
         for channel, info in channel_info.items():
             time = [t[0] for t in info]
             values = [t[1] for t in info]
             label_name = str(router) + "->" + str(channel)
-            plt.plot(time, values, fmts[i%len(fmts)], label=label_name)
+            plt.plot(time, values, label=label_name)
             i += 1
         
         plt.title(signal_type + " for Router " + str(router))

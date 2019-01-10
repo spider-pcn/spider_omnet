@@ -41,7 +41,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         start_nodes, end_nodes, amt_relative = [], [], []
         num_nodes = graph.number_of_nodes()
     	""" generate circution demand """
-    	demand_dict = circ_demand(num_nodes, mean=MEAN_RATE, std_dev=CIRCULATION_STD_DEV)
+    	demand_dict = circ_demand(list(graph), mean=MEAN_RATE, std_dev=CIRCULATION_STD_DEV)
 
     	for i, j in demand_dict.keys():
             start_nodes.append(i)
@@ -174,7 +174,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     
     if is_circulation:
     	""" generate circution demand """
-    	demand_dict = circ_demand(inside_graph.nodes, mean=MEAN_RATE, std_dev=CIRCULATION_STD_DEV)
+    	demand_dict = circ_demand(list(inside_graph), mean=MEAN_RATE, std_dev=CIRCULATION_STD_DEV)
 
     	for i, j in demand_dict.keys():
     	    start_nodes.append(end_host_map[i])
@@ -252,8 +252,6 @@ def circ_demand(node_list, mean, std_dev):
 
 	demand_dict = {}
         
-        
-        node_list = list(node_list)
         num_nodes = len(node_list)
 
 	""" sum of 'mean' number of random permutation matrices """

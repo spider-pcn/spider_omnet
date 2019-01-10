@@ -76,7 +76,7 @@ RECOGNIZED_OMNET_SIGNALS = ["numInQueuePerChannel",\
 
 # map of what field to parse for what plot
 INTERESTING_SIGNALS = dict()
-INTERESTING_SIGNALS["completion_rate_cdfs"] = ["rateCompletedPerDestPer",\
+INTERESTING_SIGNALS["completion_rate_cdfs"] = ["rateCompletedPerDest",\
         "rateAttemptedPerDest"]
 INTERESTING_SIGNALS["balance"] = ["balancePerChannel"]
 INTERESTING_SIGNALS["numInQueue"] = ["numInQueuePerChannel"]
