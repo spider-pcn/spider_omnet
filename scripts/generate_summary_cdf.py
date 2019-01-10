@@ -28,7 +28,7 @@ fmts = ['r--o', 'b-^']
 
 
 
-def compute_avg_path_completion_rates(filename):
+def compute_avg_path_completion_rates(filename, shortest=True):
     completion_fractions = []
     all_timeseries, vec_id_to_info_map = parse_vec_file(filename, "completion_rate_cdfs")
 
@@ -43,7 +43,12 @@ def compute_avg_path_completion_rates(filename):
         src_dest_pair = (vector_details[0], vector_details[3])
 
         signal_name = vector_details[2]
-        path_id = int(signal_name.split("_")[1])
+        if "Path" not in signal_name and not shortest:
+            continue
+        elif not shortest:
+            path_id = int(signal_name.split("_")[1])
+        else:
+            path_id = 0
         signal_values = [t[1] for t in timeseries]
 
         
@@ -63,11 +68,11 @@ def compute_avg_path_completion_rates(filename):
     # a single list with the completion fractions for all of them
     for key in avg_rate_attempted.keys():
         rates_attempted_across_paths = avg_rate_attempted[key]
-        rates_completed_across_paths = avg_rate_completed[key]
+        rates_completed_across_paths = avg_rate_completed.get(key, dict())
 
         for path_id, attempt_rate in rates_attempted_across_paths.items():
             if attempt_rate > 0: 
-                completion_fractions.append(rates_completed_across_paths[path_id]/attempt_rate)
+                completion_fractions.append(rates_completed_across_paths.get(path_id, 0)/attempt_rate)
 
     return completion_fractions
 
@@ -84,7 +89,7 @@ def plot_completion_rate_cdf(args):
     for i in range(len(args.vec_files)):
         scale = 1
         # returns all the data points for the completion rates for individual paths to every source dest pair
-        res = compute_avg_path_completion_rates(args.vec_files[i])
+        res = compute_avg_path_completion_rates(args.vec_files[i], "wf" in args.vec_files[i])
         keys = sorted(res)
         ys = np.linspace(0.1, 1.0, 100)
         
@@ -92,7 +97,7 @@ def plot_completion_rate_cdf(args):
         #xerr_low = [k - data[k][0] for k in keys]
         #xerr_high = [data[k][1] - k for k in keys]
         #plt.errorbar(keys, ys, xerr=[keys, keys], fmt=fmts[i], label=args.labels[i], linewidth=3, markersize=15)
-        plt.hist(keys, bins = 100, normed='True', cumulative='True', label=args.labels[i], \
+        plt.hist(keys, bins = 100, density='True', cumulative='True', label=args.labels[i], \
                 linewidth=3, histtype='step')
 
     plt.title('Completion rate cdfs for waterfilling') # TODO: put topology file here
