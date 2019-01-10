@@ -28,8 +28,6 @@ class routerNode : public cSimpleModule
 {
    private:
 
-      string topologyFile_;
-      string workloadFile_;
       map<int, PaymentChannel> nodeToPaymentChannel;
       set<CanceledTrans> canceledTransactions = {};
 
