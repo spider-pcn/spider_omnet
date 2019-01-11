@@ -10,7 +10,7 @@ from config import *
 
 # generates the start and end nodes for a fixed set of topologies - hotnets/line/simple graph
 def generate_workload_standard(filename, payment_graph_topo, workload_type, total_time, \
-        exp_size, txn_size_mean, generate_json_also, is_circulation):
+        exp_size, txn_size_mean, generate_json_also, circ_frac, std_workload=False):
     # by default ASSUMES NO END HOSTS
 
     # define start and end nodes and amounts
@@ -37,11 +37,17 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         graph = simple_line_graph
 
     # generate circulation instead if you need a circulation
-    if is_circulation:
+    if not std_workload:
         start_nodes, end_nodes, amt_relative = [], [], []
         num_nodes = graph.number_of_nodes()
-    	""" generate circution demand """
-    	demand_dict = circ_demand(list(graph), mean=MEAN_RATE, std_dev=CIRCULATION_STD_DEV)
+    	
+        """ generate circulation and dag demand """
+        dag_frac = 1 - circ_frac
+    	demand_dict_circ = circ_demand(list(graph), mean=int(MEAN_RATE*circ_frac), std_dev=CIRCULATION_STD_DEV)
+        demand_dict_dag = dag_demand(list(graph), mean=int(MEAN_RATE*dag_frac), std_dev=CIRCULATION_STD_DEV)
+        demand_dict = { key: demand_dict_circ.get(key, 0) + demand_dict_dag.get(key, 0) \
+                for key in set(demand_dict_circ) | set(demand_dict_dag) } 
+
 
     	for i, j in demand_dict.keys():
             start_nodes.append(i)
@@ -168,27 +174,24 @@ def generate_json_files(filename, graph, inside_graph, start_nodes, end_nodes, a
 # either be exponentially distributed or constant size
 def generate_workload_for_provided_topology(filename, inside_graph, whole_graph, end_host_map, \
         workload_type, total_time, \
-        exp_size, txn_size_mean, generate_json_also, is_circulation):
+        exp_size, txn_size_mean, generate_json_also, circ_frac):
     num_nodes = inside_graph.number_of_nodes()
     start_nodes, end_nodes, amt_relative = [], [], []
     
-    if is_circulation:
-    	""" generate circution demand """
-    	demand_dict = circ_demand(list(inside_graph), mean=MEAN_RATE, std_dev=CIRCULATION_STD_DEV)
 
-    	for i, j in demand_dict.keys():
-    	    start_nodes.append(end_host_map[i])
-    	    end_nodes.append(end_host_map[j])
-    	    amt_relative.append(demand_dict[i, j])	
+    """ generate circulation and dag demand """
+    dag_frac = 1 - circ_frac
+    demand_dict_circ = circ_demand(list(inside_graph), mean=int(MEAN_RATE*circ_frac), \
+            std_dev=CIRCULATION_STD_DEV)
+    demand_dict_dag = dag_demand(list(inside_graph), mean=int(MEAN_RATE*dag_frac), \
+            std_dev=CIRCULATION_STD_DEV)
+    demand_dict = { key: demand_dict_circ.get(key, 0) + demand_dict_dag.get(key, 0) \
+            for key in set(demand_dict_circ) | set(demand_dict_dag) } 
 
-    else:
-        num_sender_receiver_pairs = num_nodes
-        for i in range(num_sender_receiver_pairs):
-            sender_receiver_pair = random.sample(inside_graph.nodes, 2)
-            start_nodes.append(end_host_map[sender_receiver_pair[0]])
-            end_nodes.append(end_host_map[sender_receiver_pair[1]])
-            amt_relative.append(random.choice(range(1, MEAN_RATE * 2, 1)))
-
+    for i, j in demand_dict.keys():
+    	start_nodes.append(end_host_map[i])
+    	end_nodes.append(end_host_map[j])
+    	amt_relative.append(demand_dict[i, j])	
     amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
     print "generated workload" 
@@ -285,14 +288,44 @@ def circ_demand(node_list, mean, std_dev):
 
 	return demand_dict
 
+# generate dag for node ids mentioned in node_list,
+# with average total demand out of a node equal to 'mean', and a 
+# perturbation of 'std_dev' 
+def dag_demand(node_list, mean, std_dev):
+
+	assert type(mean) is int
+	assert type(std_dev) is int
+
+	demand_dict = {}
+        perm = np.random.permutation(node_list)
+
+	""" use a random ordering of the nodes """
+        """ as the topological sort of the DAG demand to produce """
+        """ generate demand from a node to only nodes higher """
+        """ than it in the random ordering """
+        for i, node in enumerate(perm[:-1]):
+            receiver_node_list = perm[i + 1:]
+            total_demand_from_node = mean + np.random.choice([std_dev, -1*std_dev])
+
+            for j in range(total_demand_from_node):
+                receiver = np.random.choice(receiver_node_list)
+                demand_dict[node, receiver] = demand_dict.get((node, receiver), 0) + 1
+
+	""" remove diagonal entries of demand matrix """
+	for (i, j) in demand_dict.keys():
+		if i == j:
+			del demand_dict[i, j]
+
+	return demand_dict
+
 
 # parse arguments
 parser = argparse.ArgumentParser(description="Create arbitrary txn workloads to run the omnet simulator on")
 parser.add_argument('--graph-topo', \
         choices=['hotnets_topo', 'simple_line', 'simple_deadlock', 'custom'],\
         help='type of graph (Small world or scale free or custom topology)', default='simple_line')
-parser.add_argument('--payment-graph-type', choices=['dag', 'circulation'], \
-	help='type of payment graph (dag or circulation)', default='circulation')
+parser.add_argument('--payment-graph-dag-percentage', type=int,\
+	help='percentage of circulation to put in the payment graph', default=0)
 parser.add_argument('--topo-filename', dest='topo_filename', type=str, \
         help='name of topology file to generate worklooad for')
 parser.add_argument('output_file_prefix', type=str, help='name of the output workload file', \
@@ -312,7 +345,7 @@ parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel
 args = parser.parse_args()
 
 output_prefix = args.output_file_prefix
-is_circulation = True if args.payment_graph_type == 'circulation' else False
+circ_frac = (100 - args.payment_graph_dag_percentage) / 100.0
 distribution = args.interval_distribution
 total_time = args.total_time
 txn_size_mean = args.txn_size_mean
@@ -329,11 +362,11 @@ np.random.seed(SEED)
 random.seed(SEED)
 if graph_topo != 'custom':
     generate_workload_standard(output_prefix, graph_topo, distribution, \
-            total_time, exp_size, txn_size_mean, generate_json_also, is_circulation)
+            total_time, exp_size, txn_size_mean, generate_json_also, circ_frac)
 elif topo_filename is None:
     raise Exception("Topology needed for custom file")
 else:
     whole_graph, inside_graph, end_host_map = parse_topo(topo_filename)
     generate_workload_for_provided_topology(output_prefix, inside_graph, whole_graph, end_host_map,\
             distribution, total_time, exp_size,\
-            txn_size_mean, generate_json_also, is_circulation)
+            txn_size_mean, generate_json_also, circ_frac)

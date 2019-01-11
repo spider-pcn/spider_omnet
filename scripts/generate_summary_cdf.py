@@ -45,16 +45,16 @@ def compute_avg_path_completion_rates(filename, shortest=True):
         src_dest_pair = (vector_details[0], vector_details[3])
 
         signal_name = vector_details[2]
-        if "Path" in signal_name:
+        '''if "Path" in signal_name:
             continue
-        path_id = 0
+        path_id = 0'''
 
-        '''if "Path" not in signal_name and not shortest:
+        if "Path" not in signal_name and not shortest:
             continue
         elif not shortest:
             path_id = int(signal_name.split("_")[1])
         else:
-            path_id = 0'''
+            path_id = 0
         signal_values = [t[1] for t in timeseries]
 
         if "rateAttempted" in signal_name:
@@ -110,7 +110,7 @@ def plot_completion_rate_cdf(args):
         plt.hist(keys, bins = 100, density='True', cumulative='True', label=args.labels[i], \
                 linewidth=3, histtype='step')
 
-    plt.title('Completion rate cdfs for waterfilling') # TODO: put topology file here
+    plt.title('Completion rate cdfs') # TODO: put topology file here
     plt.xlabel('Achieved completion rates')
     plt.ylabel('CDF')
     plt.ylim(0,1.1)
