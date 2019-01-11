@@ -17,6 +17,7 @@ prefix=("two_node" "three_node" "four_node" "five_node" \
 
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
+mkdir -p $PATH
 
 # generate the files
 for (( i=0; i<${arraylength}; i++ ));
