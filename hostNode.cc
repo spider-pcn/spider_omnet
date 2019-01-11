@@ -246,18 +246,18 @@ void hostNode::initialize()
    successfulDoNotSendTimeOut = {};
 
    if (getIndex() == 0){  //main initialization for global parameters
-      _simulationLength = 30;
-      _maxTravelTime = 0.0;
+      _simulationLength = par("simulationLength");
+      _maxTravelTime = 0.0; 
       //set statRate
-      _statRate = 0.2;
-      _clearRate = 0.5;
-      _waterfillingEnabled = true; //par("waterfillingEnabled");
-      _timeoutEnabled = true; // par("timeoutEnabled");
-      _signalsEnabled = false;
-      _loggingEnabled = false;
+      _statRate = par("statRate");
+      _clearRate = par("timeoutClearRate");
+      _waterfillingEnabled = par("waterfillingEnabled");
+      _timeoutEnabled = par("timeoutEnabled");
+      _signalsEnabled = par("signalsEnabled");
+      _loggingEnabled = par("loggingEnabled");
 
       if (_waterfillingEnabled){
-         _kValue = 4;
+         _kValue = par("numPathChoices");
       }
 
 

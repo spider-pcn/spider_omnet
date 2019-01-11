@@ -27,7 +27,7 @@ do
     network="${PATH_NAME}${workloadname}_net"
     topofile="${PATH_NAME}${prefix[i]}_topo.txt"
     workload="${PATH_NAME}$workloadname"
-    inifile="${PATH_NAME}$workloadname.ini"
+    inifile="${PATH_NAME}${workloadname}_default.ini"
 
     if [ $i -le 3 ]; then
         graph_type="simple_topologies"
