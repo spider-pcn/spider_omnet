@@ -1,21 +1,24 @@
 #!/bin/bash
-PATH="benchmarks/circulations/"
+PATH_NAME="benchmarks/circulations/"
 
-prefix=("sw_40_routers" "sf_40_routers"\
-    "sw_400_routers" "sf_400_routers")
-    #"sw_1000_routers" "sf_1000_routers")
+#prefix=("sw_40_routers" "sf_40_routers"\
+#    "sw_400_routers" "sf_400_routers")
+#    #"sw_1000_routers" "sf_1000_routers")
+
+prefix=("sf_40_routers")
+
 
 arraylength=${#prefix[@]}
 
-cp hostNode.ned $PATH
-cp routerNode.ned $PATH
+cp hostNode.ned ${PATH_NAME}
+cp routerNode.ned ${PATH_NAME}
 
 for (( i=0; i<${arraylength}; i++));
 do 
-    inifile=$PATH${prefix[i]}_circ.ini
+    inifile=${PATH_NAME}${prefix[i]}_circ.ini
     network=${prefix[i]}_circ_net
 
     # run the omnetexecutable with the right parameters
-    ./spiderNet -u Cmdenv -f $inifile -c $network -n $PATH
+    ./spiderNet -u Cmdenv -f $inifile -c $network -n ${PATH_NAME}
 done
 

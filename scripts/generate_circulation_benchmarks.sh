@@ -1,5 +1,5 @@
 #!/bin/bash
-PATH="../benchmarks/circulations/"
+PATH_NAME="../benchmarks/circulations/"
 
 num_nodes=("2" "3" "4" "5" "10" "0" "0" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
     "40" "60" "80" "100" "200" "400" "600" "800" "1000")
@@ -17,17 +17,17 @@ prefix=("two_node" "three_node" "four_node" "five_node" \
 
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
-mkdir -p $PATH
+mkdir -p ${PATH_NAME}
 
 # generate the files
 for (( i=0; i<${arraylength}; i++ ));
 do 
     # generate the graph first to ned file
     workloadname="${prefix[i]}_circ"
-    network="$PATH${workloadname}_net"
-    topofile="$PATH${prefix[i]}_topo.txt"
-    workload="$PATH$workloadname"
-    inifile="$PATH$workloadname.ini"
+    network="${PATH_NAME}${workloadname}_net"
+    topofile="${PATH_NAME}${prefix[i]}_topo.txt"
+    workload="${PATH_NAME}$workloadname"
+    inifile="${PATH_NAME}$workloadname.ini"
 
     if [ $i -le 3 ]; then
         graph_type="simple_topologies"
