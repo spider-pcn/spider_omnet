@@ -164,19 +164,9 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
 
       route = dijkstraInputGraph(sender, receiver, tempChannels);
 
-      /*
-      printf("%d-th route: ", it);
-
-      for (int i=0; i<(int)route.size(); i++){
-         printf("%i, ", route[i]);
-      }
-
-
-      printf("\n");
-      cout << "route size: " << route.size() << endl;
-        */
-
+     
       if (route.size() <= 1){
+         //cout << "Number of Routes between " << sender << " and " << receiver << " is " << shortestRoutes.size() << endl;
          return shortestRoutes;
       }
       else{
@@ -186,11 +176,16 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
       if (_loggingEnabled) {
           cout << "getKShortestRoutes 1" <<endl;
           cout << "route size: " << route.size() << endl;
-          tempChannels = removeRoute(tempChannels,route);
           cout << "getKShortestRoutes 2" <<endl;
       }
-   }
 
+      // remove channels
+      tempChannels = removeRoute(tempChannels,route);
+   }
+    
+   
+   if (_loggingEnabled)
+       cout << "Number of Routes between " << sender << " and " << receiver << " is " << shortestRoutes.size() << endl;
    return shortestRoutes;
 }
 
