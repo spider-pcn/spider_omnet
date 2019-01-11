@@ -62,7 +62,7 @@ do
             --graph-topo custom\
             --payment-graph-dag-percentage 0\
             --topo-filename $topofile\
-            --experiment-time 600\
+            --experiment-time 30\
             --balance-per-channel $balance\
             --generate-json-also\
 
