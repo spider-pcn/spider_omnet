@@ -34,7 +34,7 @@ do
         network="$path${workloadname}_net"
         topofile="$path${prefix[i]}_topo.txt"
         workload="$path$workloadname"
-        inifile="$path$workloadname.ini"
+        inifile="$path$workloadname_default.ini"
 
         if [ $i -le 3 ]; then
             graph_type="simple_topologies"
