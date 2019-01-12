@@ -3,7 +3,7 @@
 #include "hostInitialize.h"
 
 //global parameters
-vector<TransUnit> _transUnitList; //list of all transUnits
+map<int, vector<TransUnit>> _transUnitList; //list of all transUnits
 int _numNodes;
 int _numRouterNodes;
 int _numHostNodes;
@@ -303,11 +303,11 @@ void hostNode::initialize()
 
       setNumNodes(topologyFile_);
       // add all the TransUnits into global list
-      generateTransUnitList(workloadFile_, _transUnitList);
+      generateTransUnitList(workloadFile_);
 
       //create "channels" map - from topology file
       //create "balances" map - from topology file
-      generateChannelsBalancesMap(topologyFile_, _channels, _balances );
+      generateChannelsBalancesMap(topologyFile_);
    }
 
 
@@ -353,7 +353,7 @@ void hostNode::initialize()
       cProperty *statisticTemplate;
 
       //numInQueuePerChannel signal
-      if (key<_numHostNodes){
+      if (key<_numHostNodes) {
          sprintf(signalName, "numInQueuePerChannel(host %d)", key);
       }
       else{
@@ -366,11 +366,11 @@ void hostNode::initialize()
       nodeToPaymentChannel[key].numInQueuePerChannelSignal = signal;
 
       //numProcessedPerChannel signal
-      if (key<_numHostNodes){
+      if (key<_numHostNodes) {
          sprintf(signalName, "numProcessedPerChannel(host %d)", key);
       }
-      else{
-         sprintf(signalName, "numProcessedPerChannel(router %d [%d])", key-_numHostNodes, key);
+      else {
+         sprintf(signalName, "numProcessedPerChannel(router %d [%d])", key - _numHostNodes, key);
       }
       signal = registerSignal(signalName);
       statisticTemplate = getProperties()->get("statisticTemplate", "numProcessedPerChannelTemplate");
@@ -382,11 +382,11 @@ void hostNode::initialize()
 
       //balancePerChannel signal
 
-      if (key<_numHostNodes){
+      if (key<_numHostNodes) {
          sprintf(signalName, "balancePerChannel(host %d)", key);
       }
-      else{
-         sprintf(signalName, "balancePerChannel(router %d [%d])", key-_numHostNodes, key);
+      else {
+         sprintf(signalName, "balancePerChannel(router %d [%d])", key - _numHostNodes, key);
       }
 
       signal = registerSignal(signalName);
@@ -395,10 +395,10 @@ void hostNode::initialize()
       nodeToPaymentChannel[key].balancePerChannelSignal = signal;
 
       //numSentPerChannel signal
-      if (key<_numHostNodes){
+      if (key < _numHostNodes) {
          sprintf(signalName, "numSentPerChannel(host %d)", key);
       }
-      else{
+      else {
          sprintf(signalName, "numSentPerChannel(router %d [%d])", key-_numHostNodes, key);
       }
       signal = registerSignal(signalName);
@@ -428,15 +428,15 @@ void hostNode::initialize()
       statRateCompleted.push_back(0);
 
 
-       //numCompletedPerDest signal
+      //numCompletedPerDest signal
 
-         sprintf(signalName, "numCompletedPerDest_Total(host node %d)", i);
-         signal = registerSignal(signalName);
-         statisticTemplate = getProperties()->get("statisticTemplate", "numCompletedPerDestTemplate");
-         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-         numCompletedPerDestSignals.push_back(signal);
+      sprintf(signalName, "numCompletedPerDest_Total(host node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "numCompletedPerDestTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      numCompletedPerDestSignals.push_back(signal);
 
-         statNumCompleted.push_back(0);
+      statNumCompleted.push_back(0);
 
 
       //rateAttemptedPerDest signal
@@ -457,15 +457,15 @@ void hostNode::initialize()
 
       statNumAttempted.push_back(0);
 
-  //pathPerTransPerDest signal
+      //pathPerTransPerDest signal
       sprintf(signalName, "pathPerTransPerDest(host node %d)", i);
-           signal = registerSignal(signalName);
-           statisticTemplate = getProperties()->get("statisticTemplate", "pathPerTransPerDestTemplate");
-           getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-           pathPerTransPerDestSignals.push_back(signal);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "pathPerTransPerDestTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      pathPerTransPerDestSignals.push_back(signal);
 
 
-  //numTimedOutPerDest signal
+      //numTimedOutPerDest signal
       sprintf(signalName, "numTimedOutPerDest_Total(host node %d)", i);
       signal = registerSignal(signalName);
       statisticTemplate = getProperties()->get("statisticTemplate", "numTimedOutPerDestTemplate");
@@ -481,17 +481,10 @@ void hostNode::initialize()
       fracSuccessfulPerDestSignals.push_back(signal);
    }
 
-   //iterate through the global trans_unit_list and find my TransUnits
-   for (int i=0; i<(int)_transUnitList.size(); i++){
-      if (_transUnitList[i].sender == myIndex()){
-         myTransUnits.push_back(_transUnitList[i]);
-      }
-   }
-
    //implementing timeSent parameter, send all msgs at beginning
-   for (int i=0 ; i<(int)myTransUnits.size(); i++){
+   for (int i=0; i<(int)(_transUnitList[myIndex()].size()); i++) {
 
-      TransUnit j = myTransUnits[i];
+      TransUnit j = _transUnitList[myIndex()][i];
       double timeSent = j.timeSent;
       routerMsg *msg = generateTransactionMessage(j); //TODO: flag to whether to calculate path
 
@@ -504,7 +497,7 @@ void hostNode::initialize()
 
       if (_timeoutEnabled && j.hasTimeOut){
          routerMsg *toutMsg = generateTimeOutMessage(msg);
-         scheduleAt(timeSent+j.timeOut, toutMsg );
+         scheduleAt(timeSent + j.timeOut, toutMsg );
       }
    }
 
@@ -513,8 +506,8 @@ void hostNode::initialize()
    scheduleAt(simTime()+0, statMsg);
 
    if (_timeoutEnabled){
-   routerMsg *clearStateMsg = generateClearStateMessage();
-   scheduleAt(simTime()+_clearRate, clearStateMsg);
+     routerMsg *clearStateMsg = generateClearStateMessage();
+     scheduleAt(simTime()+_clearRate, clearStateMsg);
    }
 
    if (_priceSchemeEnabled){
