@@ -15,13 +15,15 @@ prefix=("two_node" "three_node" "four_node" "five_node" \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers")
 
-dag_percent=("25")
+dag_percent=("1" "5" "25")
 
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
 
 # generate the files
-for (( i=0; i<${arraylength}; i++ ));
+#for (( i=0; i<${arraylength}; i++ ));
+array=( 7 16 )
+for i in "${array[@]}";
 do 
     for (( j=0; j<${#dag_percent[@]}; j++ ));
     do
@@ -69,9 +71,10 @@ do
                 --graph-topo custom\
                 --payment-graph-dag-percentage ${dag_percent[j]}\
                 --topo-filename $topofile\
-                --experiment-time 30\
+                --experiment-time 300\
                 --balance-per-channel $balance\
                 --generate-json-also\
+                --timeout_value 5
 
         # create the ini file
         $PYTHON create_ini_file.py \

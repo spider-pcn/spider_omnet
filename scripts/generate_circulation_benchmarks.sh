@@ -20,7 +20,9 @@ PYTHON="/usr/bin/python"
 mkdir -p ${PATH_NAME}
 
 # generate the files
-for (( i=0; i<${arraylength}; i++ ));
+#for (( i=0; i<${arraylength}; i++ ));
+array=( 7 16 )
+for i in "${array[@]}"
 do 
     # generate the graph first to ned file
     workloadname="${prefix[i]}_circ"
@@ -62,7 +64,7 @@ do
             --graph-topo custom\
             --payment-graph-dag-percentage 0\
             --topo-filename $topofile\
-            --experiment-time 30\
+            --experiment-time 300\
             --balance-per-channel $balance\
             --generate-json-also\
 
