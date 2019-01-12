@@ -35,6 +35,8 @@ OBJS = \
     $O/hostNode.o \
     $O/routerNode.o \
     $O/ackMsg_m.o \
+    $O/priceQueryMsg_m.o \
+    $O/priceUpdateMsg_m.o \
     $O/probeMsg_m.o \
     $O/routerMsg_m.o \
     $O/timeOutMsg_m.o \
@@ -44,6 +46,8 @@ OBJS = \
 # Message files
 MSGFILES = \
     ackMsg.msg \
+    priceQueryMsg.msg \
+    priceUpdateMsg.msg \
     probeMsg.msg \
     routerMsg.msg \
     timeOutMsg.msg \

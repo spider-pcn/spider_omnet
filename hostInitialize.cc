@@ -12,11 +12,15 @@ double minVectorElemDouble(vector<double> v){
    return min;
 }
 
+double maxDouble(double x, double y){
+    if (x>y) return x;
+    return y;
+}
 
 bool probesRecent(map<int, PathInfo> probes){
    for (auto iter : probes){
       int key = iter.first;
-      if ((iter.second).lastUpdated == -1  || ((simTime() - (iter.second).lastUpdated) > _maxTravelTime) ){
+      if ((iter.second).lastUpdated == -1  || ((simTime() - (iter.second).lastUpdated) > 10*_maxTravelTime) ){
          return false;
       }
 

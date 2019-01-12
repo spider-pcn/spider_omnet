@@ -22,6 +22,13 @@ cplusplus {{
 #define PROBE_MSG 5
 #define CLEAR_STATE_MSG 6
 
+//new msg types for price scheme
+#define TRIGGER_PRICE_UPDATE_MSG 7
+#define TRIGGER_PRICE_QUERY_MSG 8
+#define PRICE_UPDATE_MSG 9
+#define PRICE_QUERY_MSG 10
+
+
 typedef std::vector<int> IntVector;
 }};
 

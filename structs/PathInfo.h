@@ -14,4 +14,11 @@ public:
     simsignal_t rateAttemptedPerDestPerPathSignal;
     int statRateCompleted = 0; //rate value, is reset on handle stat message TODO: .ned file, initialize/register, emit
     int statRateAttempted = 0;
+
+    //additional parameters for price scheme
+    double rateToSendTrans;
+    double timeToNextSend;
+    double sumOfTransUnitsInFlight;
+    simsignal_t priceLastUpdated;
+
 };

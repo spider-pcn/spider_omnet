@@ -29,7 +29,10 @@ class hostNode : public cSimpleModule
 
       string topologyFile_;
       string workloadFile_;
+
       map<int, PaymentChannel> nodeToPaymentChannel;
+      map<int, DestInfo> nodeToDestInfo; //one structure per destination;
+          //TODO: incorporate the signals into nodeToDestInfo
       vector<int> statNumCompleted;
       vector<int> statNumAttempted;
       vector<int> statRateCompleted;
@@ -70,12 +73,18 @@ class hostNode : public cSimpleModule
       virtual routerMsg *generateClearStateMessage();
       virtual routerMsg *generateTimeOutMessage(routerMsg *transMsg);
       virtual routerMsg *generateProbeMessage(int destNode, int pathIdx, vector<int> path);
+      virtual routerMsg *generateTriggerPriceUpdateMessage();
+      virtual routerMsg *generatePriceUpdateMessage(double xLocal, int dest);
+      virtual routerMsg *generateTriggerPriceQueryMessage();
+      virtual routerMsg *generatePriceQueryMessage(vector<int> route, int routeIndex);
+
       virtual void splitTransactionForWaterfilling(routerMsg * ttMsg);
       virtual void initialize() override;
       virtual void handleMessage(cMessage *msg) override;
       virtual void handleTransactionMessage(routerMsg *msg);
       virtual bool handleTransactionMessageTimeOut(routerMsg *msg); //returns true if message was deleted
       virtual void handleTransactionMessageWaterfilling(routerMsg *msg);
+      virtual void handleTransactionMessagePriceScheme(routerMsg *msg);
       virtual void handleTimeOutMessageShortestPath(routerMsg *msg);
       virtual void handleTimeOutMessageWaterfilling(routerMsg *msg);
       virtual void handleAckMessage(routerMsg *msg);
@@ -86,9 +95,15 @@ class hostNode : public cSimpleModule
       virtual void handleStatMessage(routerMsg *msg);
       virtual void handleProbeMessage(routerMsg *msg);
       virtual void handleClearStateMessage(routerMsg *msg);
+      virtual void handleTriggerPriceUpdateMessage(routerMsg *msg);
+      virtual void handlePriceUpdateMessage(routerMsg* ttmsg);
+      virtual void handleTriggerPriceQueryMessage(routerMsg *msg);
+      virtual void handlePriceQueryMessage(routerMsg* ttmsg);
+
       virtual bool forwardTransactionMessage(routerMsg *msg);
       virtual void forwardAckMessage(routerMsg *msg);
       virtual void forwardTimeOutMessage(routerMsg *msg);
+      virtual void forwardMessage(routerMsg *msg);
       virtual void forwardProbeMessage(routerMsg *msg);
       virtual void sendUpdateMessage(routerMsg *msg);
       virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q);

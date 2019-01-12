@@ -181,6 +181,10 @@ void routerNode::initialize()
    routerMsg *clearStateMsg = generateClearStateMessage();
    scheduleAt(simTime() + _clearRate, clearStateMsg);
 
+   if (_priceSchemeEnabled){
+   routerMsg *triggerPriceUpdateMsg = generateTriggerPriceUpdateMessage();
+   scheduleAt(simTime() + _tUpdate, triggerPriceUpdateMsg );
+   }
 
 }
 
@@ -236,9 +240,103 @@ void routerNode::handleMessage(cMessage *msg)
       handleClearStateMessage(ttmsg);
       if (toPrint) cout<< "[AFTER HANDLING:]  "<<endl;
    }
+   else if (ttmsg->getMessageType() == TRIGGER_PRICE_UPDATE_MSG){
+      if (toPrint)  cout<< "[ROUTER "<< myIndex() <<": RECEIVED TRIGGER_PRICE_UPDATE_MSG] "<< msg->getName()<<endl;
+       handleTriggerPriceUpdateMessage(ttmsg); //TODO: need to write
+      if (toPrint) cout<< "[AFTER HANDLING:]  "<<endl;
+   }
+   else if (ttmsg->getMessageType() == PRICE_UPDATE_MSG){
+         if (toPrint)  cout<< "[ROUTER "<< myIndex() <<": RECEIVED PRICE_UPDATE_MSG] "<< msg->getName()<<endl;
+                 handlePriceUpdateMessage(ttmsg); //TODO: need to write
+                if (toPrint) cout<< "[AFTER HANDLING:]  "<<endl;
+     }
+   else if (ttmsg->getMessageType() == PRICE_QUERY_MSG){
+         if (toPrint)  cout<< "[ROUTER "<< myIndex() <<": RECEIVED PRICE_QUERY_MSG] "<< msg->getName()<<endl;
+               handlePriceQueryMessage(ttmsg); //TODO: need to write
+         if (toPrint) cout<< "[AFTER HANDLING:]  "<<endl;
+     }
+
    if (toPrint) printNodeToPaymentChannel();
 }
 
+void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
+    priceQueryMsg *pqMsg = check_and_cast<priceQueryMsg *>(ttmsg->getEncapsulatedPacket());
+
+    bool isReversed = pqMsg->getIsReversed();
+    if (!isReversed){ //is at hopcount 0
+        int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
+        double zOld = pqMsg->getZValue();
+        double lambda = nodeToPaymentChannel[nextNode].lambda;
+        double muLocal = nodeToPaymentChannel[nextNode].muLocal;
+        double muRemote = nodeToPaymentChannel[nextNode].muRemote;
+        double zNew =  zOld + (2 * lambda) + muLocal  - muRemote;
+        pqMsg->setZValue(zNew);
+        forwardMessage(ttmsg);
+    }
+    else{
+        forwardMessage(ttmsg);
+    }
+}
+
+
+
+void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
+    priceUpdateMsg *puMsg = check_and_cast<priceUpdateMsg *>(ttmsg->getEncapsulatedPacket());
+    double xRemote = puMsg->getXLocal();
+    int sender = ttmsg->getRoute()[0];
+
+    //Update $\lambda$, $mu_local$ and $mu_remote$
+    double xLocal = nodeToPaymentChannel[sender].xLocal;
+    double cValue = nodeToPaymentChannel[sender].totalCapacity;
+    double oldLambda = nodeToPaymentChannel[sender].lambda;
+    double oldMuLocal = nodeToPaymentChannel[sender].muLocal;
+    double oldMuRemote = nodeToPaymentChannel[sender].muRemote;
+
+    nodeToPaymentChannel[sender].lambda = maxDouble(oldLambda + _eta*(xLocal + xRemote - (cValue/_maxTravelTime)),0);
+    nodeToPaymentChannel[sender].muLocal = maxDouble(oldMuLocal + _kappa*(xLocal - xRemote) , 0);
+    nodeToPaymentChannel[sender].muRemote = maxDouble(oldMuRemote + _kappa*(xRemote - xLocal) , 0);
+
+}
+
+
+
+void routerNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
+   if (simTime() > _simulationLength){
+      delete ttmsg;
+   }
+   else{
+      scheduleAt(simTime()+_tUpdate, ttmsg);
+   }
+
+   for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all canceledTransactions
+     nodeToPaymentChannel[it->first].xLocal =   nodeToPaymentChannel[it->first].nValue / _tUpdate;
+     nodeToPaymentChannel[it->first].nValue = 0;
+     routerMsg * priceUpdateMsg = generatePriceUpdateMessage(nodeToPaymentChannel[it->first].xLocal, it->first);
+      sendUpdateMessage(priceUpdateMsg);
+   }
+
+
+
+}
+
+ routerMsg * routerNode::generatePriceUpdateMessage(double xLocal, int reciever){
+     char msgname[MSGSIZE];
+
+        sprintf(msgname, "tic-%d-to-%d priceUpdateMsg", myIndex(), reciever);
+
+        routerMsg *rMsg = new routerMsg(msgname);
+
+        vector<int> route= {myIndex(),reciever};
+        rMsg->setRoute(route);
+        rMsg->setHopCount(0);
+        rMsg->setMessageType(PRICE_UPDATE_MSG);
+
+        priceUpdateMsg *puMsg = new priceUpdateMsg(msgname);
+
+        puMsg->setXLocal(xLocal);
+        rMsg->encapsulate(puMsg);
+        return rMsg;
+ }
 
 routerMsg *routerNode::generateStatMessage(){
    char msgname[MSGSIZE];
@@ -371,6 +469,16 @@ routerMsg *routerNode::generateClearStateMessage(){
    return rMsg;
 }
 
+
+routerMsg *routerNode::generateTriggerPriceUpdateMessage(){
+   char msgname[MSGSIZE];
+   sprintf(msgname, "node-%d triggerPriceUpdateMsg", myIndex());
+   routerMsg *rMsg = new routerMsg(msgname);
+   rMsg->setMessageType(TRIGGER_PRICE_UPDATE_MSG);
+   return rMsg;
+}
+
+
 void routerNode::checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits, int nextNode){
    if (queuedTransUnits.size()>0){
 
@@ -439,8 +547,17 @@ void routerNode::forwardTimeOutMessage(routerMsg* msg){
    cout << endl;
    */
    send(msg, nodeToPaymentChannel[nextDest].gate);
-
 }
+
+
+virtual void forwardMessage(routerMsg *msg){
+    msg->setHopCount(msg->getHopCount()+1);
+      //use hopCount to find next destination
+      int nextDest = msg->getRoute()[msg->getHopCount()];
+
+      send(msg, nodeToPaymentChannel[nextDest].gate);
+}
+
 
 void routerNode::handleTimeOutMessage(routerMsg* ttmsg){
    /*

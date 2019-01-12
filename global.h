@@ -10,6 +10,8 @@
 #include "updateMsg_m.h"
 #include "timeOutMsg_m.h"
 #include "probeMsg_m.h"
+#include "priceUpdateMsg_m.h"
+#include "priceQueryMsg_m.h"
 #include <iostream>
 #include <algorithm>
 #include <string>
@@ -22,6 +24,7 @@
 #include "structs/TransUnit.h"
 #include "structs/CanceledTrans.h"
 #include "structs/AckState.h"
+#include "structs/DestInfo.h"
 
 #define MSGSIZE 100
 using namespace std;
@@ -44,3 +47,10 @@ extern bool _timeoutEnabled;
 extern int _kValue; //for k shortest paths
 extern double _simulationLength;
 
+//parameters for price scheme
+extern bool _priceSchemeEnabled;
+extern double _eta; //for price computation
+extern double _kappa; //for price computation
+extern double _tUpdate; //for triggering price updates at routers
+extern double _tQuery; //for triggering price query probes
+extern double _alpha; //parameter for rate updates

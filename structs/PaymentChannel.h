@@ -13,6 +13,16 @@ public:
     map<Id, double> incomingTransUnits; //(key,value) := ((transactionId, htlcIndex), amount)
     map<Id, double> outgoingTransUnits;
 
+    //channel information for price scheme
+    int nValue;// Total amount across all transactions (i.e. the sum of the amount in each transaction)
+        // that have arrived to be sent along the channel
+    double xLocal; //Transaction arrival rate ($x_local$)
+    double totalCapacity; //Total channel capacity ($C$)
+    double lambda; //Price due to load ($\lambda$)
+    double muLocal; //Price due to channel imbalance at my end  ($\mu_{local}$)
+    double muRemote; //Price due to imbalance at the other end of the channel ($\mu_{remote}$)
+
+
     //statistics - ones for per payment channel
     int statNumProcessed;
     int statNumSent;
