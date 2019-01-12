@@ -26,9 +26,6 @@ using namespace omnetpp;
 class hostNode : public cSimpleModule
 {
    private:
-
-      string topologyFile_;
-      string workloadFile_;
       map<int, PaymentChannel> nodeToPaymentChannel;
       vector<int> statNumCompleted;
       vector<int> statNumAttempted;
