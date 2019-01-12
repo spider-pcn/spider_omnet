@@ -53,6 +53,15 @@ def aggregate_info_per_node(filename, signal_type, is_router):
         src_node = vector_details[0]
         src_node_type = vector_details[1]
         dest_node_type = vector_details[4]
+
+        if signal_type is "balance":
+            if (src_node_type == "router" and dest_node_type == "host") or \
+                    (src_node_type == "host" and dest_node_type == "router"):
+                        for t in timeseries:
+                            if t[1] == 0:
+                                print "End host " + str(src_node) + " hitting zero at time " + str(t[0])
+
+
         if is_router and (src_node_type != "router" or dest_node_type != "router"):
             continue
 

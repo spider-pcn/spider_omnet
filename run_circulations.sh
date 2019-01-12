@@ -1,12 +1,9 @@
 #!/bin/bash
 PATH_NAME="benchmarks/circulations/"
 
-#prefix=("sw_40_routers" "sf_40_routers"\
-#    "sw_400_routers" "sf_400_routers")
-#    #"sw_1000_routers" "sf_1000_routers")
-
-prefix=("sf_40_routers")
-
+prefix=("sw_40_routers" "sf_40_routers")
+    #"sw_400_routers" "sf_400_routers")
+    #"sw_1000_routers" "sf_1000_routers")
 
 arraylength=${#prefix[@]}
 
