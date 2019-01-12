@@ -56,11 +56,14 @@ class routerNode : public cSimpleModule
       virtual void handleClearStateMessage(routerMsg *msg);
       virtual void handleTriggerPriceUpdateMessage(routerMsg *msg);
       virtual void handlePriceUpdateMessage(routerMsg* ttmsg);
+      virtual void handlePriceQueryMessage(routerMsg* ttmsg);
 
       virtual bool forwardTransactionMessage(routerMsg *msg, int dest);
       virtual void forwardAckMessage(routerMsg *msg);
       virtual void forwardTimeOutMessage(routerMsg *msg);
       virtual void forwardProbeMessage(routerMsg *msg);
+      virtual void forwardMessage(routerMsg *msg);
+      virtual void handleTransactionMessagePriceScheme(routerMsg* ttmsg);
       virtual void sendUpdateMessage(routerMsg *msg);
       virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q);
       //virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode);

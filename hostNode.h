@@ -108,7 +108,7 @@ class hostNode : public cSimpleModule
       virtual void deleteMessagesInQueues();
 
       //helper
-      virtual void printNodeToPaymentChannel();
+      virtual bool printNodeToPaymentChannel();
 };
 
 #endif

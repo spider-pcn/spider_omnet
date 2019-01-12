@@ -211,6 +211,11 @@ void routerNode::handleMessage(cMessage *msg)
       if (_timeoutEnabled && handleTransactionMessageTimeOut(ttmsg)){ //handleTransactionMessageTimeOut(ttmsg) returns true if msg deleted
           return;
       }
+      if (_priceSchemeEnabled){
+          handleTransactionMessagePriceScheme(ttmsg); //increment N value
+      }
+
+
       handleTransactionMessage(ttmsg);
       if (_loggingEnabled) cout<< "[AFTER HANDLING:]"<<endl;
    }
@@ -240,26 +245,26 @@ void routerNode::handleMessage(cMessage *msg)
       if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == TRIGGER_PRICE_UPDATE_MSG){
-      if (toPrint)  cout<< "[ROUTER "<< myIndex() <<": RECEIVED TRIGGER_PRICE_UPDATE_MSG] "<< msg->getName()<<endl;
+      if (_loggingEnabled)  cout<< "[ROUTER "<< myIndex() <<": RECEIVED TRIGGER_PRICE_UPDATE_MSG] "<< msg->getName()<<endl;
        handleTriggerPriceUpdateMessage(ttmsg); //TODO: need to write
-      if (toPrint) cout<< "[AFTER HANDLING:]  "<<endl;
+      if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == PRICE_UPDATE_MSG){
-         if (toPrint)  cout<< "[ROUTER "<< myIndex() <<": RECEIVED PRICE_UPDATE_MSG] "<< msg->getName()<<endl;
+         if (_loggingEnabled)  cout<< "[ROUTER "<< myIndex() <<": RECEIVED PRICE_UPDATE_MSG] "<< msg->getName()<<endl;
                  handlePriceUpdateMessage(ttmsg); //TODO: need to write
-                if (toPrint) cout<< "[AFTER HANDLING:]  "<<endl;
+                if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
      }
    else if (ttmsg->getMessageType() == PRICE_QUERY_MSG){
-         if (toPrint)  cout<< "[ROUTER "<< myIndex() <<": RECEIVED PRICE_QUERY_MSG] "<< msg->getName()<<endl;
+         if (_loggingEnabled)  cout<< "[ROUTER "<< myIndex() <<": RECEIVED PRICE_QUERY_MSG] "<< msg->getName()<<endl;
                handlePriceQueryMessage(ttmsg); //TODO: need to write
-         if (toPrint) cout<< "[AFTER HANDLING:]  "<<endl;
+         if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
      }
 
-   if (toPrint) printNodeToPaymentChannel();
    if (_loggingEnabled) printNodeToPaymentChannel();
+
 }
 
-void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
+void routerNode::handlePriceQueryMessage(routerMsg* ttmsg){
     priceQueryMsg *pqMsg = check_and_cast<priceQueryMsg *>(ttmsg->getEncapsulatedPacket());
 
     bool isReversed = pqMsg->getIsReversed();
@@ -552,7 +557,7 @@ void routerNode::forwardTimeOutMessage(routerMsg* msg){
 }
 
 
-virtual void forwardMessage(routerMsg *msg){
+void routerNode::forwardMessage(routerMsg *msg){
     msg->setHopCount(msg->getHopCount()+1);
       //use hopCount to find next destination
       int nextDest = msg->getRoute()[msg->getHopCount()];
@@ -708,6 +713,19 @@ bool routerNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
            return true;
         }
         return false;
+}
+
+
+
+void routerNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){ //increment nValue
+   int hopcount = ttmsg->getHopCount();
+   vector<tuple<int, double , routerMsg *, Id>> *q;
+   transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+
+   //not a self-message, add to incoming_trans_units
+   int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
+   nodeToPaymentChannel[prevNode].nValue = nodeToPaymentChannel[prevNode].nValue + 1;
+
 }
 
 /* handleTransactionMessage - checks if message has arrived
