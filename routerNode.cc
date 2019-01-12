@@ -74,11 +74,7 @@ void routerNode::handleProbeMessage(routerMsg* ttmsg){
 
 void routerNode::initialize()
 {
-   string topologyFile_ = par("topologyFile");
-   string workloadFile_ = par("workloadFile");
-
    // no need for if (myIndex==0), as will always be initialized in a host node
-
    //Create nodeToPaymentChannel map
    const char * gateName = "out";
    cGate *destGate = NULL;
