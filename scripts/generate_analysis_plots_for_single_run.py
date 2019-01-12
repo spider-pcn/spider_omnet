@@ -8,6 +8,7 @@ import numpy as np
 from parse_vec_files import *
 from matplotlib.backends.backend_pdf import PdfPages
 from cycler import cycler
+from config import *
 
 parser = argparse.ArgumentParser('Analysis Plots')
 parser.add_argument('--vec_file',
@@ -82,20 +83,34 @@ def aggregate_info_per_node(filename, signal_type, is_router):
     return node_signal_info
 
 # plots every router's signal_type info in a new pdf page
-def plot_relevant_stats(data, pdf, signal_type):
+def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False):
     color_opts = ['#fa9e9e', '#a4e0f9', '#57a882', '#ad62aa']
+    router_wealth_info =[]
     
     for router, channel_info in data.items():
+        channel_bal_timeseries = []
         plt.figure()
         plt.rc('axes', prop_cycle = (cycler('color', ['r', 'g', 'b', 'y', 'c', 'm', 'y', 'k']) +
             cycler('linestyle', ['-', '--', ':', '-.', '-', '--', ':', '-.'])))
+        
         i = 0
         for channel, info in channel_info.items():
             time = [t[0] for t in info]
             values = [t[1] for t in info]
             label_name = str(router) + "->" + str(channel)
             plt.plot(time, values, label=label_name)
+            if compute_router_wealth:
+                channel_bal_timeseries.append((time, values))
             i += 1
+
+        if compute_router_wealth:
+            router_wealth = []
+            for i, time in enumerate(channel_bal_timeseries[0][0]):
+                wealth = 0
+                for j in channel_bal_timeseries:
+                    wealth += j[1][i]
+                router_wealth.append(wealth)
+            router_wealth_info.append((router,channel_bal_timeseries[0][0], router_wealth))
         
         plt.title(signal_type + " for Router " + str(router))
         plt.xlabel("Time")
@@ -103,6 +118,17 @@ def plot_relevant_stats(data, pdf, signal_type):
         plt.legend()
         pdf.savefig()  # saves the current figure into a pdf page
         plt.close()
+
+    if compute_router_wealth:
+        for (r, time, wealth) in router_wealth_info:
+            plt.plot(time, wealth, label=str(r))
+        plt.title("Router Wealth Timeseries")
+        plt.xlabel("Time")
+        plt.ylabel("Router Wealth")
+        plt.legend()
+        pdf.savefig()  # saves the current figure into a pdf page
+        plt.close()
+
 
 
 # plot per router channel information on a per router basis depending on the type of signal wanted
@@ -115,7 +141,7 @@ def plot_per_payment_channel_stats(args):
     with PdfPages(args.save + "_per_channel_info.pdf") as pdf:
         if args.balance: 
             data_to_plot = aggregate_info_per_node(args.vec_file, "balance", True)
-            plot_relevant_stats(data_to_plot, pdf, "Balance")
+            plot_relevant_stats(data_to_plot, pdf, "Balance", compute_router_wealth=True)
             
         if args.queue_info:
             data_to_plot = aggregate_info_per_node(args.vec_file, "numInQueue", True)
@@ -124,12 +150,9 @@ def plot_per_payment_channel_stats(args):
         if args.num_sent_per_channel:
             data_to_plot = aggregate_info_per_node(args.vec_file, "numSent", True)
             plot_relevant_stats(data_to_plot, pdf, "Number Sent")
+    print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + args.save + "_per_channel_info.pdf"
+    
 
-'''
-per src dest
-number of timeouts
-sumber attempted - separate plot per sender
-number completed'''
 
 # plot per router channel information on a per router basis depending on the type of signal wanted
 def plot_per_src_dest_stats(args):
@@ -146,6 +169,9 @@ def plot_per_src_dest_stats(args):
         if args.frac_completed: 
             data_to_plot = aggregate_info_per_node(args.vec_file, "fracSuccessful", False)
             plot_relevant_stats(data_to_plot, pdf, "Percentage of Transactions Successful")
+    print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + \
+            args.save + "_per_src_dest_stats.pdf"
+
 
 
 def main():
