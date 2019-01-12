@@ -241,13 +241,12 @@ void hostNode::initialize()
    string topologyFile_ = par("topologyFile");
    string workloadFile_ = par("workloadFile");
 
-    completionTimeSignal = registerSignal("completionTime");
+   completionTimeSignal = registerSignal("completionTime");
 
    successfulDoNotSendTimeOut = {};
 
    if (getIndex() == 0){  //main initialization for global parameters
       _simulationLength = par("simulationLength");
-      _maxTravelTime = 0.0; 
       //set statRate
       _statRate = par("statRate");
       _clearRate = par("timeoutClearRate");
@@ -260,6 +259,7 @@ void hostNode::initialize()
          _kValue = par("numPathChoices");
       }
 
+      _maxTravelTime = 0.0; 
 
       setNumNodes(topologyFile_);
       // add all the TransUnits into global list

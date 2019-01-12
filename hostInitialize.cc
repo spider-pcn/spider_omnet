@@ -694,7 +694,7 @@ void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,i
 
          int node1 = stoi((data[0]).substr(0,data[0].size()-1)); //
          if (node1type == 'r'){
-             node1 = node1+ _numHostNodes;
+             node1 = node1 + _numHostNodes;
          }
 
          int node2 = stoi(data[1].substr(0,data[1].size()-1)); //
