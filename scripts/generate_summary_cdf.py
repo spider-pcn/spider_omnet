@@ -81,10 +81,11 @@ def compute_avg_path_completion_rates(filename, shortest=True):
             if attempt_rate > 0: 
                 completion_fractions.append(rates_completed_across_paths.get(path_id, 0)/attempt_rate)
 
+    overall_success = total_completed/float(total_attempted)
     print filename, ": "
     print "Average across source destinations: ", np.average(np.array(completion_fractions))
     print "Overall success rate: ", total_completed, total_attempted
-    return completion_fractions
+    return overall_success, completion_fractions
 
 
 # plot cdf of completion fractions across all paths used between different sources and destination pairs
@@ -99,7 +100,7 @@ def plot_completion_rate_cdf(args):
     for i in range(len(args.vec_files)):
         scale = 1
         # returns all the data points for the completion rates for individual paths to every source dest pair
-        res = compute_avg_path_completion_rates(args.vec_files[i], "wf" not in args.vec_files)
+        overall_succ, res = compute_avg_path_completion_rates(args.vec_files[i], "wf" not in args.vec_files)
         keys = sorted(res)
         ys = np.linspace(0.1, 1.0, 100)
         
@@ -107,8 +108,10 @@ def plot_completion_rate_cdf(args):
         #xerr_low = [k - data[k][0] for k in keys]
         #xerr_high = [data[k][1] - k for k in keys]
         #plt.errorbar(keys, ys, xerr=[keys, keys], fmt=fmts[i], label=args.labels[i], linewidth=3, markersize=15)
-        plt.hist(keys, bins = 100, density='True', cumulative='True', label=args.labels[i], \
+        n, bins, patches = plt.hist(keys, bins = 100, density='True', cumulative='True', label=args.labels[i] \
+                + "(" + str(overall_succ) + ")", \
                 linewidth=3, histtype='step')
+        patches[0].set_xy(patches[0].get_xy()[:-1])
 
     plt.title('Completion rate cdfs') # TODO: put topology file here
     plt.xlabel('Achieved completion rates')
@@ -126,7 +129,8 @@ def main():
     plt.rc('axes', labelsize=40)    # fontsize of the x and y labels
     plt.rc('xtick', labelsize=32)    # fontsize of the tick labels
     plt.rc('ytick', labelsize=32)    # fontsize of the tick labels
-    plt.rc('legend', fontsize=34)    # legend fontsize
+    #plt.rc('legend', fontsize=34)    # legend fontsize for paper
+    plt.rc('legend', fontsize=20)    # legend fontsize
     plot_completion_rate_cdf(args)
 
 main()
