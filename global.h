@@ -30,7 +30,7 @@
 using namespace std;
 
 //global parameters
-extern vector<TransUnit> _transUnitList;
+extern map<int, vector<TransUnit>> _transUnitList;
 extern int _numNodes;
 //number of nodes in network
 extern int _numRouterNodes;
