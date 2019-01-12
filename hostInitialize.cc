@@ -638,7 +638,7 @@ void setNumNodes(string topologyFile){
  *      each line of file is of form
  *      [node1] [node2] [1->2 delay] [2->1 delay] [balance at node1 end] [balance at node2 end]
  */
-void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,int>>> &_channels, map<tuple<int,int>,double> &_balances){
+void generateChannelsBalancesMap(string topologyFile) {
    //TEMPORARILY - hardcode _channels map
    /*
     vector<pair<int,int>> tempVector0 = {};
@@ -747,7 +747,8 @@ void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,i
  *      each line of file is of form:
  *      [amount] [timeSent] [sender] [receiver] [priorityClass]
  */
-void generateTransUnitList(string workloadFile, vector<TransUnit> &_transUnitList){
+//Radhika: do we need to pass global variables as arguments?
+void generateTransUnitList(string workloadFile){
    string line;
    ifstream myfile (workloadFile);
    if (myfile.is_open())
@@ -773,8 +774,8 @@ void generateTransUnitList(string workloadFile, vector<TransUnit> &_transUnitLis
          // instantiate all the transUnits that need to be sent
          TransUnit tempTU = TransUnit(amount, timeSent, sender, receiver, priorityClass, hasTimeOut, timeOut);
 
-         // add all the transUnits into global list
-         _transUnitList.push_back(tempTU);
+         // add all the transUnits into global per-sender map
+         _transUnitList[sender].push_back(tempTU);
 
       }
       myfile.close();
