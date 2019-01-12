@@ -28,7 +28,7 @@ fmts = ['r--o', 'b-^']
 
 
 
-def compute_avg_path_completion_rates(filename):
+def compute_avg_path_completion_rates(filename, shortest=True):
     completion_fractions = []
     all_timeseries, vec_id_to_info_map = parse_vec_file(filename, "completion_rate_cdfs")
 
@@ -36,6 +36,8 @@ def compute_avg_path_completion_rates(filename):
     # MAX_K paths each identified by path id
     avg_rate_attempted = dict()
     avg_rate_completed = dict()
+    total_completed = 0
+    total_attempted = 0
 
     # aggregate information on a per src_Dest pair and per path level
     for vec_id, timeseries in all_timeseries.items():
@@ -43,18 +45,28 @@ def compute_avg_path_completion_rates(filename):
         src_dest_pair = (vector_details[0], vector_details[3])
 
         signal_name = vector_details[2]
-        path_id = int(signal_name.split("_")[1])
+        '''if "Path" in signal_name:
+            continue
+        path_id = 0'''
+
+        if "Path" not in signal_name and not shortest:
+            continue
+        elif not shortest:
+            path_id = int(signal_name.split("_")[1])
+        else:
+            path_id = 0
         signal_values = [t[1] for t in timeseries]
 
-        
         if "rateAttempted" in signal_name:
             cur_info = avg_rate_attempted.get(src_dest_pair, dict())
             cur_info[path_id] = np.average(np.array(signal_values))
             avg_rate_attempted[src_dest_pair] = cur_info
+            total_attempted += np.sum(signal_values)
         elif "rateCompleted" in signal_name:
             cur_info = avg_rate_completed.get(src_dest_pair, dict())
             cur_info[path_id] = np.average(np.array(signal_values))
             avg_rate_completed[src_dest_pair] = cur_info
+            total_completed += np.sum(signal_values)
         else: 
             print "UNINTERESTING TIME SERIES OF VECTOR of type", signal_name, "FOUND"
 
@@ -63,13 +75,17 @@ def compute_avg_path_completion_rates(filename):
     # a single list with the completion fractions for all of them
     for key in avg_rate_attempted.keys():
         rates_attempted_across_paths = avg_rate_attempted[key]
-        rates_completed_across_paths = avg_rate_completed[key]
+        rates_completed_across_paths = avg_rate_completed.get(key, dict())
 
         for path_id, attempt_rate in rates_attempted_across_paths.items():
             if attempt_rate > 0: 
-                completion_fractions.append(rates_completed_across_paths[path_id]/attempt_rate)
+                completion_fractions.append(rates_completed_across_paths.get(path_id, 0)/attempt_rate)
 
-    return completion_fractions
+    overall_success = total_completed/float(total_attempted)
+    print filename, ": "
+    print "Average across source destinations: ", np.average(np.array(completion_fractions))
+    print "Overall success rate: ", total_completed, total_attempted
+    return overall_success, completion_fractions
 
 
 # plot cdf of completion fractions across all paths used between different sources and destination pairs
@@ -84,7 +100,7 @@ def plot_completion_rate_cdf(args):
     for i in range(len(args.vec_files)):
         scale = 1
         # returns all the data points for the completion rates for individual paths to every source dest pair
-        res = compute_avg_path_completion_rates(args.vec_files[i])
+        overall_succ, res = compute_avg_path_completion_rates(args.vec_files[i], "wf" not in args.vec_files)
         keys = sorted(res)
         ys = np.linspace(0.1, 1.0, 100)
         
@@ -92,10 +108,12 @@ def plot_completion_rate_cdf(args):
         #xerr_low = [k - data[k][0] for k in keys]
         #xerr_high = [data[k][1] - k for k in keys]
         #plt.errorbar(keys, ys, xerr=[keys, keys], fmt=fmts[i], label=args.labels[i], linewidth=3, markersize=15)
-        plt.hist(keys, bins = 100, normed='True', cumulative='True', label=args.labels[i], \
+        n, bins, patches = plt.hist(keys, bins = 100, density='True', cumulative='True', label=args.labels[i] \
+                + "(" + str(overall_succ) + ")", \
                 linewidth=3, histtype='step')
+        patches[0].set_xy(patches[0].get_xy()[:-1])
 
-    plt.title('Completion rate cdfs for waterfilling') # TODO: put topology file here
+    plt.title('Completion rate cdfs') # TODO: put topology file here
     plt.xlabel('Achieved completion rates')
     plt.ylabel('CDF')
     plt.ylim(0,1.1)
@@ -111,7 +129,8 @@ def main():
     plt.rc('axes', labelsize=40)    # fontsize of the x and y labels
     plt.rc('xtick', labelsize=32)    # fontsize of the tick labels
     plt.rc('ytick', labelsize=32)    # fontsize of the tick labels
-    plt.rc('legend', fontsize=34)    # legend fontsize
+    #plt.rc('legend', fontsize=34)    # legend fontsize for paper
+    plt.rc('legend', fontsize=20)    # legend fontsize
     plot_completion_rate_cdf(args)
 
 main()

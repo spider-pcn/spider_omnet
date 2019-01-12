@@ -1,5 +1,5 @@
-#!/bin/sh
-PATH="../benchmarks/circulations/"
+#!/bin/bash
+PATH_NAME="../benchmarks/circulations/"
 
 num_nodes=("2" "3" "4" "5" "10" "0" "0" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
     "40" "60" "80" "100" "200" "400" "600" "800" "1000")
@@ -15,19 +15,21 @@ prefix=("two_node" "three_node" "four_node" "five_node" \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers")
 
-
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
+mkdir -p ${PATH_NAME}
 
 # generate the files
-for (( i=0; i<${arraylength}; i++ ));
+#for (( i=0; i<${arraylength}; i++ ));
+array=( 7 16 )
+for i in "${array[@]}"
 do 
     # generate the graph first to ned file
     workloadname="${prefix[i]}_circ"
-    network="$PATH${workloadname}_net"
-    topofile="$PATH${prefix[i]}_topo.txt"
-    workload="$PATH$workloadname"
-    inifile="$PATH$workloadname.ini"
+    network="${PATH_NAME}${workloadname}_net"
+    topofile="${PATH_NAME}${prefix[i]}_topo.txt"
+    workload="${PATH_NAME}$workloadname"
+    inifile="${PATH_NAME}${workloadname}_default.ini"
 
     if [ $i -le 3 ]; then
         graph_type="simple_topologies"
@@ -60,17 +62,17 @@ do
     # create transactions corresponding to this experiment run
     $PYTHON create_workload.py $workload uniform\
             --graph-topo custom\
-            --payment-graph-type circulation\
+            --payment-graph-dag-percentage 0\
             --topo-filename $topofile\
-            --experiment-time 30\
+            --experiment-time 300\
             --balance-per-channel $balance\
             --generate-json-also\
 
     # create the ini file
     $PYTHON create_ini_file.py \
             --network-name $network\
-            --topo-filename $topofile\
-            --workload-filename $workload\
+            --topo-filename ${topofile:3}\
+            --workload-filename ${workload:3}_workload.txt\
             --ini-filename $inifile
 done 
 

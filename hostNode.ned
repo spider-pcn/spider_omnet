@@ -6,8 +6,17 @@ simple hostNode
 		string topologyFile = default("sample-topology.txt");
 		string workloadFile = default("sample-workload.txt");
 
+		double simulationLength = default(30.0);
+		double statRate = default(0.2);
+		bool signalsEnabled = default(false);
+		bool loggingEnabled = default(false);
+
 		bool timeoutEnabled = default(true);
-		bool waterfillingEnabled = default(true);
+		double timeoutClearRate = default(0.5);
+
+		bool waterfillingEnabled = default(false);
+		int numPathChoices = default(4);
+
 		
 		@signal[completionTime](type="long"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 

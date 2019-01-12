@@ -54,3 +54,7 @@ extern double _kappa; //for price computation
 extern double _tUpdate; //for triggering price updates at routers
 extern double _tQuery; //for triggering price query probes
 extern double _alpha; //parameter for rate updates
+
+extern bool _signalsEnabled;
+extern bool _loggingEnabled;
+

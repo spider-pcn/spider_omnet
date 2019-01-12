@@ -141,8 +141,10 @@ void printChannels(){
 vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
    //do searching without regard for channel capacities, DFS right now
 
-   printf("sender: %i; receiver: %i \n ", sender, receiver);
-   cout<<endl;
+   if (_loggingEnabled) {
+       printf("sender: %i; receiver: %i \n ", sender, receiver);
+       cout<<endl;
+   }
    //vector<int> route =  breadthFirstSearch(sender, receiver);
    // print channels
    vector<vector<int>> shortestRoutes = {};
@@ -166,31 +168,28 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
 
       route = dijkstraInputGraph(sender, receiver, tempChannels);
 
-      /*
-      printf("%d-th route: ", it);
-
-      for (int i=0; i<(int)route.size(); i++){
-         printf("%i, ", route[i]);
-      }
-
-
-      printf("\n");
-      cout << "route size: " << route.size() << endl;
-        */
-
+     
       if (route.size() <= 1){
+         //cout << "Number of Routes between " << sender << " and " << receiver << " is " << shortestRoutes.size() << endl;
          return shortestRoutes;
       }
       else{
           updateMaxTravelTime(route);
          shortestRoutes.push_back(route);
       }
-      cout << "getKShortestRoutes 1" <<endl;
-      cout << "route size: " << route.size() << endl;
-      tempChannels = removeRoute(tempChannels,route);
-      cout << "getKShortestRoutes 2" <<endl;
-   }
+      if (_loggingEnabled) {
+          cout << "getKShortestRoutes 1" <<endl;
+          cout << "route size: " << route.size() << endl;
+          cout << "getKShortestRoutes 2" <<endl;
+      }
 
+      // remove channels
+      tempChannels = removeRoute(tempChannels,route);
+   }
+    
+   
+   if (_loggingEnabled)
+       cout << "Number of Routes between " << sender << " and " << receiver << " is " << shortestRoutes.size() << endl;
    return shortestRoutes;
 }
 
@@ -625,7 +624,7 @@ void setNumNodes(string topologyFile){
       myfile.close();
    }
 
-   else cout << "Unable to open file";
+   else cout << "Unable to open file" << topologyFile << endl;
    _numHostNodes = maxHostNode + 1;
    _numRouterNodes = maxRouterNode + 1;
 
@@ -686,17 +685,20 @@ void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,i
       while ( getline (myfile,line) )
       {
          vector<string> data = split(line, ' ');
-         cout << "data size" << data.size() << endl;
 
          //generate _channels - adjacency map
          char node1type = data[0].back();
-         cout <<"node1type: " << node1type << endl;
          char node2type = data[1].back();
-         cout <<"node2type: " << node2type << endl;
+
+         if (_loggingEnabled) {
+            cout <<"node2type: " << node2type << endl;
+            cout <<"node1type: " << node1type << endl;
+            cout << "data size" << data.size() << endl;
+         }
 
          int node1 = stoi((data[0]).substr(0,data[0].size()-1)); //
          if (node1type == 'r'){
-             node1 = node1+ _numHostNodes;
+             node1 = node1 + _numHostNodes;
          }
 
          int node2 = stoi(data[1].substr(0,data[1].size()-1)); //
@@ -734,7 +736,7 @@ void generateChannelsBalancesMap(string topologyFile, map<int, vector<pair<int,i
       myfile.close();
    }
 
-   else cout << "Unable to open file";
+   else cout << "Unable to open file " << topologyFile << endl;
 
    cout << "finished generateChannelsBalancesMap" << endl;
    return;
@@ -778,7 +780,7 @@ void generateTransUnitList(string workloadFile, vector<TransUnit> &_transUnitLis
       myfile.close();
    }
 
-   else cout << "Unable to open file";
+   else cout << "Unable to open file" << workloadFile << endl;
    return;
 
 }

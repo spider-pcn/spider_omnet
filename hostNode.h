@@ -26,11 +26,7 @@ using namespace omnetpp;
 class hostNode : public cSimpleModule
 {
    private:
-
-      string topologyFile_;
-      string workloadFile_;
-
-      map<int, PaymentChannel> nodeToPaymentChannel;
+     map<int, PaymentChannel> nodeToPaymentChannel;
       map<int, DestInfo> nodeToDestInfo; //one structure per destination;
           //TODO: incorporate the signals into nodeToDestInfo
       vector<int> statNumCompleted;
