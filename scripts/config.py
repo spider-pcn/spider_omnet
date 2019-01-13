@@ -60,7 +60,7 @@ PORT_NUMBER=8000
 
 # json parameters for lnd testbed
 ENDHOST_LND_ONE_WAY_CAPACITY = 1000000000
-
+ROUTER_CAPACITY = 100
 LND_FILE_PATH = "../lnd_data/"
 
 
@@ -84,6 +84,7 @@ INTERESTING_SIGNALS["completion_rate_cdfs"] = ["rateCompletedPerDest",\
 INTERESTING_SIGNALS["balance"] = ["balancePerChannel"]
 INTERESTING_SIGNALS["numInQueue"] = ["numInQueuePerChannel"]
 INTERESTING_SIGNALS["numSent"] = ["numSentPerChannel"]
-INTERESTING_SIGNALS["fracSuccessful"] = ["fracSuccessfulPerDest"]
+INTERESTING_SIGNALS["rateCompleted"] = ["rateCompletedPerDest_Total"] 
+INTERESTING_SIGNALS["rateAttempted"] = ["rateAttemptedPerDest_Total"]
 INTERESTING_SIGNALS["numTimedOut"] = ["numTimedOutPerDest"]
 

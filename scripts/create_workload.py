@@ -79,7 +79,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
 # write to file - assume no priority for now
 # transaction sizes are either constant or exponentially distributed around their mean
 def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
-        workload_type, total_time, exp_size, txn_size_mean, timeout_value, mode="w"):
+        workload_type, total_time, exp_size, txn_size_mean, timeout_value, mode="w", start_time=0):
     outfile = open(filename, mode)
 
     if distribution == 'uniform':
@@ -89,7 +89,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
             while cur_time < total_time:
                 rate = amt_absolute[k]
                 txn_size = np.random_exponential(txn_size_mean) if exp_size else txn_size_mean
-                outfile.write(str(txn_size) + " " + str(cur_time) + " " + str(start_nodes[k]) + \
+                outfile.write(str(txn_size) + " " + str(cur_time + start_time) + " " + str(start_nodes[k]) + \
                         " " + str(end_nodes[k]) + " 0 " + str(timeout_value) + "\n")
                 cur_time += (1.0 / rate)
 
@@ -102,7 +102,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
             # if the rate is higher, given pair will have more transactions in a single second
             while current_time < total_time:
                 txn_size = np.random_exponential(txn_size_mean) if exp_size else txn_size_mean
-                outfile.write(str(txn_size) + " " + str(time_start) + " " + str(start_nodes[k]) + \
+                outfile.write(str(txn_size) + " " + str(current_time + start_time) + " " + str(start_nodes[k]) + \
                         " " + str(end_nodes[k]) + " 0 " + str(timeout_value) + "\n")
                 time_incr = np.random.exponential(beta)
                 current_time = current_time + time_incr 
@@ -203,29 +203,48 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     total = reduce(lambda x, value: x + value, demand_dict.itervalues(), 0)
     print "Circulation", circ_total
     print "total", total
+    print circ_frac
+    print dag_frac
     
     split_dag_and_circ = False
     if split_dag_and_circ:
+        # first 100 seconds all circulation
         for i, j in demand_dict_circ.keys():
     	    start_nodes.append(end_host_map[i])
     	    end_nodes.append(end_host_map[j])
-    	    amt_relative.append(demand_dict[i, j])	
+    	    amt_relative.append(demand_dict_circ[i, j])	
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
         write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, total_time, exp_size, txn_size_mean, timeout_value)
+            workload_type, 100, exp_size, txn_size_mean, timeout_value)
 
-        start_nodes = []
-        end_nodes = []
-        amt_relative = []
-        for i, j in demand_dict_dag.keys():
+        # 25% dag on the second 100 seconds
+        start_nodes, end_nodes, amt_relative = [], [], []
+        circ_frac = 0.75
+        dag_frac = 0.25
+        demand_dict = dict()
+        demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
+            for key in set(demand_dict_circ) | set(demand_dict_dag) } 
+        print demand_dict
+        for i, j in demand_dict.keys():
     	    start_nodes.append(end_host_map[i])
     	    end_nodes.append(end_host_map[j])
-    	    amt_relative.append(demand_dict[i, j])	
+    	    amt_relative.append(demand_dict[i, j])
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
         write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, total_time/3, exp_size, txn_size_mean, timeout_value, "a")
+            workload_type, 100, exp_size, txn_size_mean, timeout_value, "a", start_time = 100)
+
+        # nothing for 100 seconds, then circulation again for 100
+        start_nodes, end_nodes, amt_relative = [], [], []
+        for i, j in demand_dict_circ.keys():
+    	    start_nodes.append(end_host_map[i])
+    	    end_nodes.append(end_host_map[j])
+    	    amt_relative.append(demand_dict_circ[i, j])	
+        amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+
+        write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
+            workload_type, 100, exp_size, txn_size_mean, timeout_value, "a", start_time = 300)
 
         return
 

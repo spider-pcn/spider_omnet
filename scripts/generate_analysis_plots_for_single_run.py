@@ -18,6 +18,9 @@ parser.add_argument('--vec_file',
 parser.add_argument('--balance',
         action='store_true',
         help='Plot balance information for all routers')
+parser.add_argument('--inflight',
+        action='store_true',
+        help='Plot inflight funds information for all routers (need to be used with --balance to work)')
 parser.add_argument('--num_sent_per_channel',
         action='store_true',
         help='Plot number sent per channel for all routers')
@@ -82,7 +85,51 @@ def aggregate_info_per_node(filename, signal_type, is_router):
         
     return node_signal_info
 
+# use the balance information to get amount inlfight on every channel
+def aggregate_inflight_info(bal_timeseries):
+    node_signal_info = dict()
+
+    for router, channel_info in bal_timeseries.items():
+        inflight_info = dict()
+        for partner, router_partner_TS in channel_info.items():
+            if router < partner:
+                inflight_TS = []
+                partner_router_TS = bal_timeseries[partner][router]
+
+                for i, (time, forward_bal) in enumerate(router_partner_TS):
+                    backward_bal = partner_router_TS[i][1]
+                    inflight_TS.append((time, ROUTER_CAPACITY - forward_bal - backward_bal))
+                
+                inflight_info[partner] = inflight_TS
+        node_signal_info[router] = inflight_info
+    return node_signal_info
+
+
+# use the successful and attempted information to get fraction of successful txns in every interval
+def aggregate_frac_successful_info(success, attempted):
+    node_signal_info = dict()
+
+    for router, channel_info in success.items():
+        frac_successful = dict()
+        for partner, success_TS in channel_info.items():
+            frac_succ_TS = []
+            attempt_TS = attempted[router][partner]
+
+            for i, (time, num_succeeded) in enumerate(success_TS):
+                num_attempted = attempt_TS[i][1]
+                if num_attempted == 0:
+                    frac_succ_TS.append((time, 0))
+                else:
+                    frac_succ_TS.append((time, num_succeeded/float(num_attempted)))
+                frac_successful[partner] = frac_succ_TS
+        node_signal_info[router] = frac_successful
+    
+    return node_signal_info
+
+
+
 # plots every router's signal_type info in a new pdf page
+# and add a router wealth plot separately
 def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False):
     color_opts = ['#fa9e9e', '#a4e0f9', '#57a882', '#ad62aa']
     router_wealth_info =[]
@@ -142,6 +189,11 @@ def plot_per_payment_channel_stats(args):
         if args.balance: 
             data_to_plot = aggregate_info_per_node(args.vec_file, "balance", True)
             plot_relevant_stats(data_to_plot, pdf, "Balance", compute_router_wealth=True)
+
+            if args.inflight:
+                inflight_data_to_plot = aggregate_inflight_info(data_to_plot)
+                plot_relevant_stats(inflight_data_to_plot, pdf, "Inflight Funds")
+
             
         if args.queue_info:
             data_to_plot = aggregate_info_per_node(args.vec_file, "numInQueue", True)
@@ -167,8 +219,11 @@ def plot_per_src_dest_stats(args):
             plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Timed Out")
         
         if args.frac_completed: 
-            data_to_plot = aggregate_info_per_node(args.vec_file, "fracSuccessful", False)
-            plot_relevant_stats(data_to_plot, pdf, "Percentage of Transactions Successful")
+            successful = aggregate_info_per_node(args.vec_file, "rateCompleted", False)
+            attempted = aggregate_info_per_node(args.vec_file, "rateAttempted", False)
+            data_to_plot = aggregate_frac_successful_info(successful, attempted)
+            plot_relevant_stats(data_to_plot, pdf, "Fraction of successful txns in each window")
+ 
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + \
             args.save + "_per_src_dest_stats.pdf"
 
