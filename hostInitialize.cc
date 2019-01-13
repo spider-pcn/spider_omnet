@@ -39,6 +39,8 @@ vector<int> getRoute(int sender, int receiver){
    // printf("sender: %i; receiver: %i \n [", sender, receiver);
    //vector<int> route =  breadthFirstSearch(sender, receiver);
    vector<int> route = dijkstraInputGraph(sender, receiver, _channels);
+	 //Radhika TODO: seems like the dijkstra algorithm for the same sender 
+	 //is being called again and again for different destinations. Can optimize. 
 
 
    /*
@@ -316,13 +318,14 @@ vector<int> dijkstraInputGraph(int src,  int dest, map<int, vector<pair<int,int>
    // Initialize all distances as INFINITE and stpSet[] as false
    for (int i = 0; i < _numNodes; i++)
    {
-      parent[src] = -1;
       dist[i] = INT_MAX;
       parent[i] = -2;
       sptSet[i] = false;
    }
 
-   // Distance of source vertex from itself is always 0
+   // Parent of source is -1 (used for identifying source later) 
+   parent[src] = -1;
+	 // Distance of source vertex from itself is always 0
    dist[src] = 0;
 
    // Find shortest path for all vertices
@@ -331,7 +334,7 @@ vector<int> dijkstraInputGraph(int src,  int dest, map<int, vector<pair<int,int>
       // Pick the minimum distance vertex from the set of vertices not yet processed.
       // u is always equal to src in first iteration.
       int u = minDistance(dist, sptSet);
-      if (u==-1){
+      if (u == -1){
          vector<int> empty = {};
          return empty;
 
