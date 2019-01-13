@@ -1060,17 +1060,19 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
    for (auto it = 0; it<_numHostNodes; it++){ //iterate through all nodes in graph
 
       if (it != getIndex()){
-         for (auto p: nodeToShortestPathsMap[it]){
-            if (_signalsEnabled) emit(p.second.bottleneckPerDestPerPathSignal, p.second.bottleneck);
+          if (nodeToShortestPathsMap.count(it) > 0) {
+             for (auto p: nodeToShortestPathsMap[it]){
+                if (_signalsEnabled) emit(p.second.bottleneckPerDestPerPathSignal, p.second.bottleneck);
 
-            //emit rateCompleted per path
-            emit(p.second.rateCompletedPerDestPerPathSignal, p.second.statRateCompleted);
-            nodeToShortestPathsMap[it][p.first].statRateCompleted = 0;
+                //emit rateCompleted per path
+                emit(p.second.rateCompletedPerDestPerPathSignal, p.second.statRateCompleted);
+                nodeToShortestPathsMap[it][p.first].statRateCompleted = 0;
 
-            //emit rateAttempted per path
-            emit(p.second.rateAttemptedPerDestPerPathSignal, p.second.statRateAttempted);
-            nodeToShortestPathsMap[it][p.first].statRateAttempted = 0;
-         }
+                //emit rateAttempted per path
+                emit(p.second.rateAttemptedPerDestPerPathSignal, p.second.statRateAttempted);
+                nodeToShortestPathsMap[it][p.first].statRateAttempted = 0;
+             }
+          }
 
          emit(rateAttemptedPerDestSignals[it], statRateAttempted[it]);
          statRateAttempted[it] = 0;
@@ -1525,13 +1527,16 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
       remainingAmt = remainingAmt - amtToSend;
 
    }
-
-   if (remainingAmt > 0) {
-      highestBalIdx = get<1>(pq.top());
-      pathMap[highestBalIdx] = pathMap[highestBalIdx] + remainingAmt;
-      remainingAmt = 0;
+   
+   if (remainingAmt > 0 && pq.size()>0 ) {
+       highestBalIdx = get<1>(pq.top());
+       pathMap[highestBalIdx] = pathMap[highestBalIdx] + remainingAmt;
+       remainingAmt = 0;
    }
-
+   else {
+       cout << "PATHS NOT FOUND to " << destNode << "WHEN IT SHOULD HAVE BEEN";
+        throw std::exception();
+   }
 
    // print how much was sent on each path
    /*
@@ -1764,7 +1769,7 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
          }
          else{
             ttmsg->decapsulate();
-            delete transMsg;
+            [<65;18;39Mdelete transMsg;
             delete ttmsg;
          }
          return;
