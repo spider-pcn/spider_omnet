@@ -5,6 +5,7 @@ import networkx as nx
 from config import *
 import re
 import os
+import math
 
 def parse_node_name(node_name, max_router, max_host):
     try:
@@ -104,7 +105,9 @@ def generate_graph(size, graph_type):
     if graph_type == 'small_world':
         G = nx.watts_strogatz_graph(size, size/8, 0.25, seed=SEED)
     elif graph_type == 'scale_free':
-        G = nx.scale_free_graph(size,seed=SEED)
+        G = nx.barabasi_albert_graph(size, 8, seed=SEED)
+    elif graph_type == 'tree':
+        G = nx.random_tree(size, seed=SEED)
 
     # remove self loops and parallel edges
     G.remove_edges_from(G.selfloop_edges())
@@ -150,7 +153,7 @@ parser.add_argument('--num-nodes', type=int, dest='num_nodes', help='number of n
 parser.add_argument('--delay-per-channel', type=int, dest='delay_per_channel', \
         help='delay between nodes (ms)', default=30)
 parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'hotnets_topo', 'simple_line', \
-        'simple_deadlock', 'simple_topologies', 'lnd_dec4_2018', 'lnd_dec28_2018'], \
+        'simple_deadlock', 'simple_topologies', 'lnd_dec4_2018', 'lnd_dec28_2018', 'tree'], \
         help='type of graph (Small world or scale free or custom topology list)', default='small_world')
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 parser.add_argument('--topo-filename', dest='topo_filename', type=str, \
@@ -173,7 +176,7 @@ if args.num_nodes <= 5 and args.graph_type == 'simple_topologies':
         G = four_node_graph
     else:
         G = five_node_graph
-elif args.graph_type in ['small_world', 'scale_free']:
+elif args.graph_type in ['small_world', 'scale_free', 'tree']:
     G = generate_graph(args.num_nodes, args.graph_type)
 elif args.graph_type == 'hotnets_topo':
     G = hotnets_topo_graph
