@@ -212,6 +212,7 @@ void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode
 
    for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
       //map<int, map<int, PathInfo>> nodeToShortestPathsMap;
+      //Radhika TODO: PathInfo can be a struct and need not be a class. 
       PathInfo temp = {};
       nodeToShortestPathsMap[destNode][pathIdx] = temp;
       nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
@@ -560,6 +561,7 @@ void hostNode::initialize()
 
       if (_waterfillingEnabled || _priceSchemeEnabled){
          vector<int> blankPath = {};
+         //Radhika TODO: maybe no need to compute path to begin with?
          msg->setRoute(blankPath);
       }
 
@@ -616,6 +618,7 @@ void hostNode::handleMessage(cMessage *msg)
    //cout << "msg: " << msg->getName() << endl;
    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
 
+   //Radhika TODO: figure out what's happening here.
    if (simTime() > _simulationLength){
       //print  map<int, int> transactionIdToNumHtlc
       int splitTrans = 0;
@@ -1209,6 +1212,7 @@ void hostNode::handleAckMessageTimeOut(routerMsg* ttmsg){
 
    }
    else{ //_waterfillingEnabled
+    //Radhika TODO: following should happen irrespective of timeouts?
       tuple<int,int> key = make_tuple(aMsg->getTransactionId(), aMsg->getPathIndex());
 
       transPathToAckState[key].amtReceived = transPathToAckState[key].amtReceived + aMsg->getAmount();
@@ -1218,7 +1222,6 @@ void hostNode::handleAckMessageTimeOut(routerMsg* ttmsg){
          }
        */
    }
-
 }
 
 void hostNode::handleAckMessageShortestPath(routerMsg* ttmsg){
@@ -1265,7 +1268,7 @@ void hostNode::handleAckMessage(routerMsg* ttmsg){
    (*outgoingTransUnits).erase(make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex()));
 
    //increment signal numProcessed
-   nodeToPaymentChannel[prevNode].statNumProcessed = nodeToPaymentChannel[prevNode].statNumProcessed+1;
+   nodeToPaymentChannel[prevNode].statNumProcessed = nodeToPaymentChannel[prevNode].statNumProcessed + 1;
    //assume successful transaction
 
    routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), prevNode, aMsg->getAmount(), aMsg->getHtlcIndex() );
@@ -1745,7 +1748,7 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
 
       if (recent){ // we made sure all the probes are back
          destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode]-1;
-         if (simTime() < (transMsg->getTimeSent()+ transMsg->getTimeOut())){ //TODO: remove
+         if ((!_timeoutEnabled) || (simTime() < (transMsg->getTimeSent() + transMsg->getTimeOut()))) { //TODO: remove?
             splitTransactionForWaterfilling(ttmsg);
             if (transMsg->getAmount()>0){
                destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode]+1;

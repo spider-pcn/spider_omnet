@@ -68,20 +68,20 @@ template <class T,class S> struct pair_equal_to : binary_function <T,pair<T,S>,b
    }
 };
 
-map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> _channels, vector<int> route){
+map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> channels, vector<int> route){
    for (int i=0; i< (route.size() -1); i++){
     //  cout << i << "-th iteration out of "<< (route.size() - 1) << endl;
       int start = route[i];
       int end = route[i+1];
 
       //only erase if edge is between two router nodes
-      if (start>= _numHostNodes && end>= _numHostNodes){
-      vector< pair <int, int> >::iterator it = find_if(_channels[start].begin(),_channels[start].end(),bind1st(pair_equal_to<int,int>(),end));
-      _channels[start].erase(it);
+      if (start >= _numHostNodes && end >= _numHostNodes) {
+        vector< pair <int, int> >::iterator it = find_if(channels[start].begin(),channels[start].end(),bind1st(pair_equal_to<int,int>(),end));
+        channels[start].erase(it);
       }
    }
 
-   return _channels;
+   return channels;
 }
 
 
@@ -95,6 +95,7 @@ void updateMaxTravelTime(vector<int> route){
     for (int i=0; i< ( route.size()-1) ; i++){
 
         //map<int, vector<pair<int,int>>> _channels;
+        //Radhika TODO: might be better to store channel map indexed using both nodes. check if it breaks anything.
         vector<pair<int,int>>* channel = &(_channels[route[i]]);
         int nextNode = route[i+1];
 
