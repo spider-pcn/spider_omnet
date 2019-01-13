@@ -353,33 +353,44 @@ def circ_demand(node_list, mean, std_dev):
 # generate dag for node ids mentioned in node_list,
 # with average total demand out of a node equal to 'mean', and a 
 # perturbation of 'std_dev' 
-def dag_demand(node_list, mean, std_dev):
+def dag_demand(node_list, mean, std_dev, gen_method="topological_sort"):
         print "DAG_DEMAND", mean
 
-	assert type(mean) is int
-	assert type(std_dev) is int
+        assert type(mean) is int
+        assert type(std_dev) is int
 
-	demand_dict = {}
-        perm = np.random.permutation(node_list)
+        demand_dict = {}
 
-	""" use a random ordering of the nodes """
-        """ as the topological sort of the DAG demand to produce """
-        """ generate demand from a node to only nodes higher """
-        """ than it in the random ordering """
-        for i, node in enumerate(perm[:-1]):
-            receiver_node_list = perm[i + 1:]
-            total_demand_from_node = mean + np.random.choice([std_dev, -1*std_dev])
+        if gen_method == "src_skew":
+            """ sample receiver uniformly at random and source from exponential distribution """
+            for i in range(len(node_list) * mean):
+                receiver = np.random.choice(node_list)
+                sender = len(node_list)
+                while sender >= len(node_list):
+                    sender = int(np.random.exponential(len(node_list)/3))
 
-            for j in range(total_demand_from_node):
-                receiver = np.random.choice(receiver_node_list)
-                demand_dict[node, receiver] = demand_dict.get((node, receiver), 0) + 1
+                demand_dict[sender, receiver] = demand_dict.get((sender, receiver), 0) + 1
+        else:
+            perm = np.random.permutation(node_list)
 
-	""" remove diagonal entries of demand matrix """
-	for (i, j) in demand_dict.keys():
-		if i == j:
-			del demand_dict[i, j]
+            """ use a random ordering of the nodes """
+            """ as the topological sort of the DAG demand to produce """
+            """ generate demand from a node to only nodes higher """
+            """ than it in the random ordering """
+            for i, node in enumerate(perm[:-1]):
+                receiver_node_list = perm[i + 1:]
+                total_demand_from_node = mean + np.random.choice([std_dev, -1*std_dev])
 
-	return demand_dict
+                for j in range(total_demand_from_node):
+                    receiver = np.random.choice(receiver_node_list)
+                    demand_dict[node, receiver] = demand_dict.get((node, receiver), 0) + 1
+
+        """ remove diagonal entries of demand matrix """
+        for (i, j) in demand_dict.keys():
+                if i == j:
+                        del demand_dict[i, j]
+
+        return demand_dict
 
 
 # parse arguments
