@@ -128,7 +128,7 @@ void hostNode::forwardProbeMessage(routerMsg *msg){
       vector<double> *pathBalances = & ( pMsg->getPathBalances());
       (*pathBalances).push_back(nodeToPaymentChannel[nextDest].balance);
    }
-   cout << "forwardProbeMsg send:" << simTime() << endl;
+   if (_loggingEnabled) cout << "forwardProbeMsg send:" << simTime() << endl;
    send(msg, nodeToPaymentChannel[nextDest].gate);
 }
 
@@ -357,14 +357,14 @@ void hostNode::initialize()
       //set statRate
       _statRate = par("statRate");
       _clearRate = par("timeoutClearRate");
-      _waterfillingEnabled = false;//par("waterfillingEnabled");
-      _timeoutEnabled = false; //par("timeoutEnabled");
+      _waterfillingEnabled = par("waterfillingEnabled");
+      _timeoutEnabled = par("timeoutEnabled");
       _signalsEnabled = par("signalsEnabled");
-      _loggingEnabled = false; //true;// par("loggingEnabled");
+      _loggingEnabled = par("loggingEnabled");
       _eta = 0.5;
       _kappa = 0.5;
       _tUpdate = 0.5;
-      _priceSchemeEnabled = true;
+      _priceSchemeEnabled = false;
 
       if (_waterfillingEnabled){
          _kValue = par("numPathChoices");
@@ -1101,7 +1101,7 @@ void hostNode::forwardTimeOutMessage(routerMsg* msg){
    msg->setHopCount(msg->getHopCount()+1);
    //use hopCount to find next destination
    int nextDest = msg->getRoute()[msg->getHopCount()];
-   cout << "forwardTimeOutMsg send: " << simTime() << endl;
+   if (_loggingEnabled) cout << "forwardTimeOutMsg send: " << simTime() << endl;
    send(msg, nodeToPaymentChannel[nextDest].gate);
 }
 
@@ -1111,7 +1111,7 @@ void hostNode::forwardMessage(routerMsg* msg){
    msg->setHopCount(msg->getHopCount()+1);
    //use hopCount to find next destination
    int nextDest = msg->getRoute()[msg->getHopCount()];
-   cout << "forwardMsg send: "<< simTime() << endl;
+   if (_loggingEnabled) cout << "forwardMsg send: "<< simTime() << endl;
    send(msg, nodeToPaymentChannel[nextDest].gate);
 }
 
@@ -1345,7 +1345,7 @@ void hostNode::forwardAckMessage(routerMsg *msg){
    msg->setHopCount(msg->getHopCount()+1);
    //use hopCount to find next destination
    int nextDest = msg->getRoute()[msg->getHopCount()];
-   cout << "forwardAckMsg send: "<< simTime() << endl;
+   if (_loggingEnabled) cout << "forwardAckMsg send: "<< simTime() << endl;
    send(msg, nodeToPaymentChannel[nextDest].gate);
 }
 
@@ -1420,10 +1420,13 @@ void hostNode::sendUpdateMessage(routerMsg *msg){
    msg->setHopCount(msg->getHopCount()+1);
    //use hopCount to find next destination
    int nextDest = msg->getRoute()[msg->getHopCount()];
-   cout << "forwardUpdateMsg send:"<< simTime() << endl;
-   cout << "msgName: "<< msg->getName() << endl;
-   cout << "route: " << endl;
-   printVector(msg->getRoute());
+   
+   if (_loggingEnabled) {
+       cout << "forwardUpdateMsg send:"<< simTime() << endl;
+       cout << "msgName: "<< msg->getName() << endl;
+       cout << "route: " << endl;
+       printVector(msg->getRoute());
+   }
    send(msg, nodeToPaymentChannel[nextDest].gate);
 }
 
@@ -1964,7 +1967,7 @@ bool hostNode::forwardTransactionMessage(routerMsg *msg)
       nodeToPaymentChannel[nextDest].balance = nodeToPaymentChannel[nextDest].balance - amt;
 
       //int transId = transMsg->getTransactionId();
-      cout << "forwardTransactionMsg send: " << simTime() << endl;
+      if (_loggingEnabled) cout << "forwardTransactionMsg send: " << simTime() << endl;
       send(msg, nodeToPaymentChannel[nextDest].gate);
       return true;
    } //end else (transMsg->getAmount() >nodeToPaymentChannel[dest].balance)
