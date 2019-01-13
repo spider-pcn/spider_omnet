@@ -56,7 +56,8 @@ do
             --topo-filename $topofile\
             --num-nodes ${num_nodes[i]}\
             --balance-per-channel $balance\
-            --separate-end-hosts
+            --separate-end-hosts\
+            #--randomize-start-bal
 
 
     # create transactions corresponding to this experiment run

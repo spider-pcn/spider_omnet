@@ -6,6 +6,7 @@ from config import *
 import re
 import os
 import math
+import random
 
 def parse_node_name(node_name, max_router, max_host):
     try:
@@ -124,7 +125,8 @@ def generate_graph(size, graph_type):
 
 # print the output in the desired format for write_ned_file to read
 # generate extra end host nodes if need be
-def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts):
+def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts,\
+        randomize_bal=False):
     f1 = open(output_filename, "w+")
 
     offset = G.number_of_nodes()
@@ -135,7 +137,12 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
 
         f1.write(str(e[0]) + "r " + str(e[1]) +  "r ")
         f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
-        f1.write(str(balance_per_channel/2) + " " + str(balance_per_channel/2) + "\n")
+        if randomize_bal:
+            one_end_bal = random.randint(1, balance_per_channel)
+            other_end_bal = balance_per_channel - one_end_bal
+            f1.write(str(one_end_bal) + " " + str(other_end_bal) + "\n")
+        else:
+            f1.write(str(balance_per_channel/2) + " " + str(balance_per_channel/2) + "\n")
 
     # generate extra end host nodes
     if separate_end_hosts: 
@@ -162,6 +169,9 @@ parser.add_argument('--network-name', type=str, dest='network_name', \
         help='name of the output ned filename', default='simpleNet')
 parser.add_argument('--separate-end-hosts', action='store_true', \
         help='do you need separate end hosts that only send transactions')
+parser.add_argument('--randomize-start-bal', action='store_true', \
+        help='Do not start from pergect balance, but rather randomize it')
+
 
 args = parser.parse_args()
 
@@ -191,7 +201,7 @@ else:
 
 
 print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename, \
-        args.separate_end_hosts)
+        args.separate_end_hosts, args.randomize_start_bal)
 network_base = os.path.basename(args.network_name)
 write_ned_file(args.topo_filename, args.network_name + '.ned', network_base)
 
