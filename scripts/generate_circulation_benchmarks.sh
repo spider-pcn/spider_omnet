@@ -2,7 +2,7 @@
 PATH_NAME="../benchmarks/circulations/"
 
 num_nodes=("2" "3" "4" "5" "10" "0" "0" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
-    "40" "60" "80" "100" "200" "400" "600" "800" "1000")
+    "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40")
 
 balance=100
 
@@ -13,7 +13,7 @@ prefix=("two_node" "three_node" "four_node" "five_node" \
     "sw_800_routers" "sw_1000_routers"\
     "sf_40_routers" "sf_60_routers" "sf_80_routers"  \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
-    "sf_800_routers" "sf_1000_routers")
+    "sf_800_routers" "sf_1000_routers" "tree_40_routers")
 
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
@@ -21,7 +21,7 @@ mkdir -p ${PATH_NAME}
 
 # generate the files
 #for (( i=0; i<${arraylength}; i++ ));
-array=( 7 16 )
+array=( 7 16 25)
 for i in "${array[@]}"
 do 
     # generate the graph first to ned file
@@ -31,18 +31,18 @@ do
     workload="${PATH_NAME}$workloadname"
     inifile="${PATH_NAME}${workloadname}_default.ini"
 
-    if [ $i -le 3 ]; then
-        graph_type="simple_topologies"
-    elif [ $i == 4 ]; then
-        graph_type="hotnets_topo"
-    elif [ $i == 5 ]; then
-        graph_type="lnd_dec4_2018"
-    elif [ $i == 6 ]; then
-        graph_type="lnd_dec28_2018"
-    elif [ $i -le 15 ]; then
+    if [ ${prefix[i]:0:2} == "sw" ]; then
         graph_type="small_world"
-    else
+    elif [ ${prefix[i]:0:2} == "sf" ]; then
         graph_type="scale_free"
+    elif [ ${prefix[i]:0:4} == "tree" ]; then
+        graph_type="tree"
+    elif [ ${prefix[i]:0:3} == "lnd"]; then
+        graph_type=$prefix{i}
+    elif [ ${prefix[i]} == "hotnets"]; then
+        graph_type="hotnets_topo"
+    else
+        graph_type="simple_topologies"
     fi
 
     echo $network

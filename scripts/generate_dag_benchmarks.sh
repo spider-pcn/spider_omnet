@@ -15,7 +15,7 @@ prefix=("two_node" "three_node" "four_node" "five_node" \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers")
 
-dag_percent=("1" "5" "25")
+dag_percent=("23") #"1" "5" "25")
 
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
@@ -37,20 +37,21 @@ do
         topofile="$path${prefix[i]}_topo.txt"
         workload="$path$workloadname"
         inifile="$path$workloadname_default.ini"
-
-        if [ $i -le 3 ]; then
-            graph_type="simple_topologies"
-        elif [ $i == 4 ]; then
-            graph_type="hotnets_topo"
-        elif [ $i == 5 ]; then
-            graph_type="lnd_dec4_2018"
-        elif [ $i == 6 ]; then
-            graph_type="lnd_dec28_2018"
-        elif [ $i -le 15 ]; then
+        
+        if [ ${prefix[i]:0:2} == "sw" ]; then
             graph_type="small_world"
-        else
+        elif [ ${prefix[i]:0:2} == "sf" ]; then
             graph_type="scale_free"
+        elif [ ${prefix[i]:0:4} == "tree" ]; then
+            graph_type="tree"
+        elif [ ${prefix[i]:0:3} == "lnd"]; then
+            graph_type=$prefix{i}
+        elif [ ${prefix[i]} == "hotnets"]; then
+            graph_type="hotnets_topo"
+        else
+            graph_type="simple_topologies"
         fi
+
 
         echo $network
         echo $topofile
