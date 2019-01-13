@@ -1769,7 +1769,7 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
          }
          else{
             ttmsg->decapsulate();
-            [<65;18;39Mdelete transMsg;
+            delete transMsg;
             delete ttmsg;
          }
          return;

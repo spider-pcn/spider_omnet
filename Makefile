@@ -41,6 +41,7 @@ OBJS = \
     $O/routerMsg_m.o \
     $O/timeOutMsg_m.o \
     $O/transactionMsg_m.o \
+    $O/transactionSendMsg_m.o \
     $O/updateMsg_m.o
 
 # Message files
@@ -52,6 +53,7 @@ MSGFILES = \
     routerMsg.msg \
     timeOutMsg.msg \
     transactionMsg.msg \
+    transactionSendMsg.msg \
     updateMsg.msg
 
 # SM files
