@@ -186,13 +186,8 @@ void routerNode::initialize()
 
 void routerNode::handleMessage(cMessage *msg)
 {
-   if (_loggingEnabled){
 
-      cout << "before";
-      printNodeToPaymentChannel();
-      cout << "Router Time: " << simTime() << endl;
-      cout << "msg: " << msg->getName() << endl;
-   }
+
    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
    if (ttmsg->getMessageType()==ACK_MSG){ //preprocessor constants defined in routerMsg_m.h
       if (_loggingEnabled) cout << "[ROUTER "<< myIndex() <<": RECEIVED ACK MSG]"<< msg->getName() << endl;
@@ -255,8 +250,6 @@ void routerNode::handleMessage(cMessage *msg)
                handlePriceQueryMessage(ttmsg); //TODO: need to write
          if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
      }
-
-   if (_loggingEnabled) printNodeToPaymentChannel();
 
 }
 

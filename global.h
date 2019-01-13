@@ -12,6 +12,7 @@
 #include "probeMsg_m.h"
 #include "priceUpdateMsg_m.h"
 #include "priceQueryMsg_m.h"
+#include "transactionSendMsg_m.h"
 #include <iostream>
 #include <algorithm>
 #include <string>

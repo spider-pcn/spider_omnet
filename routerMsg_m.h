@@ -33,13 +33,14 @@
 #define TRIGGER_PRICE_QUERY_MSG 8
 #define PRICE_UPDATE_MSG 9
 #define PRICE_QUERY_MSG 10
+#define TRIGGER_TRANSACTION_SEND_MSG 11
 
 
 typedef std::vector<int> IntVector;
 // }}
 
 /**
- * Class generated from <tt>routerMsg.msg:39</tt> by nedtool.
+ * Class generated from <tt>routerMsg.msg:40</tt> by nedtool.
  * <pre>
  * packet routerMsg
  * {

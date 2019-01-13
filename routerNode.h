@@ -28,7 +28,7 @@ class routerNode : public cSimpleModule
 {
    private:
 
-      map<int, PaymentChannel> nodeToPaymentChannel;
+      map<int, PaymentChannel> nodeToPaymentChannel = {};
       set<CanceledTrans> canceledTransactions = {};
 
    protected:

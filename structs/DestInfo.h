@@ -5,5 +5,5 @@ using namespace omnetpp;
 
 class DestInfo{
 public:
-    vector<routerMsg *> transWaitingToBeSent;
+    deque<routerMsg *> transWaitingToBeSent = {};
 };

@@ -29,26 +29,26 @@ class hostNode : public cSimpleModule
      map<int, PaymentChannel> nodeToPaymentChannel;
       map<int, DestInfo> nodeToDestInfo; //one structure per destination;
           //TODO: incorporate the signals into nodeToDestInfo
-      vector<int> statNumCompleted;
-      vector<int> statNumAttempted;
-      vector<int> statRateCompleted;
-      vector<int> statRateAttempted;
-      vector<int> statNumTimedOut;
-      map<int, vector<int>> destNodeToPath; //store shortest paths
+      vector<int> statNumCompleted = {};
+      vector<int> statNumAttempted = {};
+      vector<int> statRateCompleted = {};
+      vector<int> statRateAttempted = {};
+      vector<int> statNumTimedOut = {};
+      map<int, vector<int>> destNodeToPath = {}; //store shortest paths
       map<int, map<int, PathInfo>> nodeToShortestPathsMap = {}; //store k shortest paths in waterfilling
       simsignal_t completionTimeSignal;
-      vector<simsignal_t> rateCompletedPerDestSignals;
-      vector<simsignal_t> rateAttemptedPerDestSignals;
-      vector<simsignal_t> numCompletedPerDestSignals;
-      vector<simsignal_t> numAttemptedPerDestSignals;
-      vector<simsignal_t> numTimedOutPerDestSignals;
-      vector<simsignal_t> pathPerTransPerDestSignals; //signal showing which path index was chosen for each transaction
-      vector<simsignal_t> fracSuccessfulPerDestSignals;
-      set<int> successfulDoNotSendTimeOut; //set of transaction units WITH timeouts, that we already received acks for
+      vector<simsignal_t> rateCompletedPerDestSignals = {};
+      vector<simsignal_t> rateAttemptedPerDestSignals = {};
+      vector<simsignal_t> numCompletedPerDestSignals = {};
+      vector<simsignal_t> numAttemptedPerDestSignals = {};
+      vector<simsignal_t> numTimedOutPerDestSignals = {};
+      vector<simsignal_t> pathPerTransPerDestSignals = {}; //signal showing which path index was chosen for each transaction
+      vector<simsignal_t> fracSuccessfulPerDestSignals = {};
+      set<int> successfulDoNotSendTimeOut = {}; //set of transaction units WITH timeouts, that we already received acks for
       set<CanceledTrans> canceledTransactions = {};
       map<tuple<int,int>,AckState> transPathToAckState = {}; //key is (transactionId, routeIndex)
       map<int, int> transactionIdToNumHtlc = {}; //allows us to calculate the htlcIndex number
-      map<int, int> destNodeToNumTransPending;
+      map<int, int> destNodeToNumTransPending = {};
       map<int, AckState> transToAmtLeftToComplete = {};
       int numCleared = 0;
       simsignal_t numClearedSignal;
@@ -72,6 +72,7 @@ class hostNode : public cSimpleModule
       virtual routerMsg *generatePriceUpdateMessage(double xLocal, int dest);
       virtual routerMsg *generateTriggerPriceQueryMessage();
       virtual routerMsg *generatePriceQueryMessage(vector<int> route, int routeIndex);
+      virtual routerMsg *generateTriggerTransactionSendMessage(vector<int> route, int routeIndex, int destNode);
 
       virtual void splitTransactionForWaterfilling(routerMsg * ttMsg);
       virtual void initialize() override;
@@ -94,6 +95,7 @@ class hostNode : public cSimpleModule
       virtual void handlePriceUpdateMessage(routerMsg* ttmsg);
       virtual void handleTriggerPriceQueryMessage(routerMsg *msg);
       virtual void handlePriceQueryMessage(routerMsg* ttmsg);
+      virtual void handleTriggerTransactionSendMessage(routerMsg* ttmsg);
 
       virtual bool forwardTransactionMessage(routerMsg *msg);
       virtual void forwardAckMessage(routerMsg *msg);
@@ -103,6 +105,7 @@ class hostNode : public cSimpleModule
       virtual void sendUpdateMessage(routerMsg *msg);
       virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q);
       virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode); //takes a vector of routes, and puts them into the map
+      virtual void initializePriceProbes(vector<vector<int>> kShortestPaths, int destNode);
       virtual void restartProbes(int destNode);
       virtual void deleteMessagesInQueues();
 

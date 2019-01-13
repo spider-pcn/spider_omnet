@@ -14,33 +14,21 @@
 //
 cplusplus {{
 #include <vector>
-#define TRANSACTION_MSG 0
-#define ACK_MSG 1
-#define UPDATE_MSG 2
-#define STAT_MSG 3
-#define TIME_OUT_MSG 4
-#define PROBE_MSG 5
-#define CLEAR_STATE_MSG 6
-
-//new msg types for price scheme
-#define TRIGGER_PRICE_UPDATE_MSG 7
-#define TRIGGER_PRICE_QUERY_MSG 8
-#define PRICE_UPDATE_MSG 9
-#define PRICE_QUERY_MSG 10
-#define TRIGGER_TRANSACTION_SEND_MSG 11
-
-
+#include <map>
 typedef std::vector<int> IntVector;
+typedef std::vector<double> DoubleVector;
+typedef std::map<int, double> IntMap;
 }};
 
 class noncobject IntVector;
+class noncobject IntMap;
+class noncobject DoubleVector;
 
-packet routerMsg 
+packet transactionSendMsg
 //if encapIsAck == false needs to look in encapsulated transactionMsg for priority class and amount
 {
-    IntVector route;
-    int hopCount = 0;
-    int messageType;  //0 for transaction, 1 for ack, 2 for balance update
-   
-}
+	int pathIndex;
+	IntVector transactionPath;
+	int receiver;
 
+}
