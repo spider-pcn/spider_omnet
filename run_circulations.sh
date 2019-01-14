@@ -8,11 +8,11 @@ prefix=("sw_40_routers" "sf_40_routers")
 arraylength=${#prefix[@]}
 
 #general parameters that do not affect config names
-simulationLength=30.0
-statCollectionRate=0.2
+simulationLength=300.0
+statCollectionRate=2
 timeoutClearRate=0.5
 timeoutEnabled=true
-signalsEnabled=false
+signalsEnabled=true
 loggingEnabled=false
 
 cp hostNode.ned ${PATH_NAME}

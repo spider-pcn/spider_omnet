@@ -20,7 +20,7 @@ double maxDouble(double x, double y){
 bool probesRecent(map<int, PathInfo> probes){
    for (auto iter : probes){
       int key = iter.first;
-      if ((iter.second).lastUpdated == -1  || ((simTime() - (iter.second).lastUpdated) > 10*_maxTravelTime) ){
+      if ((iter.second).lastUpdated == -1  || ((simTime() - (iter.second).lastUpdated) > _maxTravelTime) ){
          return false;
       }
 
