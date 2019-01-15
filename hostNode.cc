@@ -781,6 +781,7 @@ void hostNode::handleMessage(cMessage *msg)
          handleAckMessagePriceScheme(ttmsg);
       }
       else{
+         if(_loggingEnabled) cout << "handleAckMessageShortestPath" << endl;
          handleAckMessageShortestPath(ttmsg);
       }
       handleAckMessage(ttmsg);
