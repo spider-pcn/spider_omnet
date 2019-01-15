@@ -1178,8 +1178,8 @@ void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
 
          int pathIndex = p.first;
          tuple<int,int> key = make_tuple(transactionId, pathIndex);
-         cout << "transPathToAckState.count(key): " << transPathToAckState.count(key) << endl;
-         cout << "transactionId: " << transactionId << "; pathIndex: " << pathIndex << endl;
+         if(_loggingEnabled) cout << "transPathToAckState.count(key): " << transPathToAckState.count(key) << endl;
+         if(_loggingEnabled) cout << "transactionId: " << transactionId << "; pathIndex: " << pathIndex << endl;
          if(transPathToAckState[key].amtSent == transPathToAckState[key].amtReceived){
             //do not generate time out msg for path
 
@@ -1276,6 +1276,7 @@ void hostNode::handleAckMessageTimeOut(routerMsg* ttmsg){
    //check if transactionId is in canceledTransaction set
    int transactionId = aMsg->getTransactionId();
 
+	 //Radhika: what if there are multiple HTLC's per transaction? 
    auto iter = find_if(canceledTransactions.begin(),
          canceledTransactions.end(),
          [&transactionId](const tuple<int, simtime_t, int, int>& p)
@@ -1290,16 +1291,6 @@ void hostNode::handleAckMessageTimeOut(routerMsg* ttmsg){
    if (!_waterfillingEnabled){
       successfulDoNotSendTimeOut.insert(aMsg->getTransactionId());
 
-   }
-   else{ //_waterfillingEnabled
-      tuple<int,int> key = make_tuple(aMsg->getTransactionId(), aMsg->getPathIndex());
-
-      transPathToAckState[key].amtReceived = transPathToAckState[key].amtReceived + aMsg->getAmount();
-      /*
-         if (transPathToAckState[key].amtReceived == transPathToAckState[key].amtSent){
-         transPathToAckState.erase(key);
-         }
-       */
    }
 }
 
@@ -1330,6 +1321,16 @@ void hostNode::handleAckMessageWaterfilling(routerMsg* ttmsg){
          //erase transaction from map
          transToAmtLeftToComplete.erase(aMsg->getTransactionId());
       }
+
+			//increment transaction amount ack on a path. 
+      tuple<int,int> key = make_tuple(aMsg->getTransactionId(), aMsg->getPathIndex());
+      transPathToAckState[key].amtReceived = transPathToAckState[key].amtReceived + aMsg->getAmount();
+			//Radhika: why is this commented out?
+      /*
+         if (transPathToAckState[key].amtReceived == transPathToAckState[key].amtSent){
+         transPathToAckState.erase(key);
+         }
+       */
    }
 }
 
@@ -1653,7 +1654,6 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
 
          if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], p.first);
          //increment numAttempted per path
-				 //Radhika: might need to move this to when transaction arrive. 
          nodeToShortestPathsMap[destNode][p.first].statRateAttempted =
             nodeToShortestPathsMap[destNode][p.first].statRateAttempted + 1;
          handleTransactionMessage(waterMsg);
@@ -1661,7 +1661,7 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
    }
 }
 
-
+//If transaction already timed-out, delete it without processing it. 
 bool hostNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
 
@@ -1823,13 +1823,15 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
 
    int hopcount = ttmsg->getHopCount();
 
-   int destination = transMsg->getReceiver();
    //is a self-message/at hop count = 0
    int destNode = transMsg->getReceiver();
    int nextNode = ttmsg->getRoute()[hopcount+1];
+
+   assert(destNode != myIndex()); 
    //no route is specified -
    //means we need to break up into chunks and assign route
 
+	 //If transaction seen for first time, update stats.
    if (simTime() == transMsg->getTimeSent()){ //TODO: flag for transactionMessage (isFirstTime seen)
       statNumAttempted[destNode] = statNumAttempted[destNode]+1;
       statRateAttempted[destNode] = statRateAttempted[destNode]+1;
@@ -1840,6 +1842,7 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
       transToAmtLeftToComplete[transMsg->getTransactionId()] = *s;
    }
 
+	 //If destination seen for first time, compute K shortest paths and initialize probes.
    if (nodeToShortestPathsMap.count(destNode) == 0 ){
       vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
       if (_loggingEnabled) {
@@ -1859,6 +1862,7 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
    else{
       bool recent = probesRecent(nodeToShortestPathsMap[destNode]);
 
+      //if all probes from destination are recent enough, send transaction on one or more paths.
       if (recent){ // we made sure all the probes are back
          destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode]-1;
          if ((!_timeoutEnabled) || (simTime() < (transMsg->getTimeSent() + transMsg->getTimeOut()))) { //TODO: remove?
@@ -1875,6 +1879,7 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
             }
 
          }
+         //don't send transaction if it has timed out.
          else{
             ttmsg->decapsulate();
             delete transMsg;
@@ -1882,7 +1887,7 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
          }
          return;
       }
-      else{ //if not recent
+      else{ //if not recent, reschedule transaction to arrive after 1sec. 
          if (destNodeToNumTransPending[destNode] == 1){
             restartProbes(destNode);
          }
@@ -1924,6 +1929,7 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
       if (_timeoutEnabled){
          //forward ack message - no need to wait;
          //check if transactionId is in canceledTransaction set
+				 //Radhika: what if we have multiple HTLC's per transaction id? Why is this check needed?
          auto iter = find_if(canceledTransactions.begin(),
                canceledTransactions.end(),
                [&transactionId](const tuple<int, simtime_t, int, int>& p)
