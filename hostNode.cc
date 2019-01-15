@@ -356,10 +356,10 @@ void hostNode::initialize()
       //set statRate
       _statRate = par("statRate");
       _clearRate = par("timeoutClearRate");
-      _waterfillingEnabled = par("waterfillingEnabled");
-      _timeoutEnabled = par("timeoutEnabled");
-      _signalsEnabled = par("signalsEnabled");
-      _loggingEnabled = par("loggingEnabled");
+      _waterfillingEnabled = true; //par("waterfillingEnabled");
+      _timeoutEnabled = true; //par("timeoutEnabled");
+      _signalsEnabled = true; //par("signalsEnabled");
+      _loggingEnabled = false;//par("loggingEnabled");
       _eta = 0.5;
       _kappa = 0.5;
       _tUpdate = 0.5;
@@ -1160,8 +1160,11 @@ void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
       int destination = toutMsg->getReceiver();
       // map<int, map<int, PathInfo>> nodeToShortestPathsMap = {};
       for (auto p : (nodeToShortestPathsMap[destination])){
+
          int pathIndex = p.first;
          tuple<int,int> key = make_tuple(transactionId, pathIndex);
+         cout << "transPathToAckState.count(key): " << transPathToAckState.count(key) << endl;
+         cout << "transactionId: " << transactionId << "; pathIndex: " << pathIndex << endl;
          if(transPathToAckState[key].amtSent == transPathToAckState[key].amtReceived){
             //do not generate time out msg for path
 
@@ -1169,30 +1172,37 @@ void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
          }
          else{
 
-            // cout << "sent time out msg" << endl;
-             int nextNode = (ttmsg->getRoute())[ttmsg->getHopCount()+1];
-                     CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),-1, nextNode);
-                     canceledTransactions.insert(ct);
+
             routerMsg* waterTimeOutMsg = generateWaterfillingTimeOutMessage(
                   nodeToShortestPathsMap[destination][p.first].path, transactionId, destination);
 
+            int nextNode = (waterTimeOutMsg->getRoute())[waterTimeOutMsg->getHopCount()+1];
+                    CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),-1, nextNode);
+                    canceledTransactions.insert(ct);
+
             statNumTimedOut[destination] = statNumTimedOut[destination]  + 1;
             forwardTimeOutMessage(waterTimeOutMsg);
+
+
          }
          //TODO: HandleClearStateMessage to remove this key
       }
+
+
       delete ttmsg;
 
 
 
    }
    else{
+
        CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),(ttmsg->getRoute())[ttmsg->getHopCount()-1],-1);
          canceledTransactions.insert(ct);
       //is at the destination
       ttmsg->decapsulate();
       delete toutMsg;
       delete ttmsg;
+
    }//end else ((ttmsg->getHopCount())==0)
 
 }
