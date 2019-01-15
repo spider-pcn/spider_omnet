@@ -26,32 +26,45 @@ using namespace omnetpp;
 class hostNode : public cSimpleModule
 {
    private:
-     map<int, PaymentChannel> nodeToPaymentChannel;
-      map<int, DestInfo> nodeToDestInfo; //one structure per destination;
-          //TODO: incorporate the signals into nodeToDestInfo
-      vector<int> statNumCompleted = {};
-      vector<int> statNumAttempted = {};
-      vector<int> statRateCompleted = {};
-      vector<int> statRateAttempted = {};
-      vector<int> statNumTimedOut = {};
-      map<int, vector<int>> destNodeToPath = {}; //store shortest paths
-      map<int, map<int, PathInfo>> nodeToShortestPathsMap = {}; //store k shortest paths in waterfilling
-      simsignal_t completionTimeSignal;
-      vector<simsignal_t> rateCompletedPerDestSignals = {};
-      vector<simsignal_t> rateAttemptedPerDestSignals = {};
-      vector<simsignal_t> numCompletedPerDestSignals = {};
-      vector<simsignal_t> numAttemptedPerDestSignals = {};
-      vector<simsignal_t> numTimedOutPerDestSignals = {};
-      vector<simsignal_t> pathPerTransPerDestSignals = {}; //signal showing which path index was chosen for each transaction
-      vector<simsignal_t> fracSuccessfulPerDestSignals = {};
-      set<int> successfulDoNotSendTimeOut = {}; //set of transaction units WITH timeouts, that we already received acks for
-      set<CanceledTrans> canceledTransactions = {};
-      map<tuple<int,int>,AckState> transPathToAckState = {}; //key is (transactionId, routeIndex)
-      map<int, int> transactionIdToNumHtlc = {}; //allows us to calculate the htlcIndex number
-      map<int, int> destNodeToNumTransPending = {};
-      map<int, AckState> transToAmtLeftToComplete = {};
-      int numCleared = 0;
-      simsignal_t numClearedSignal;
+        map<int, PaymentChannel> nodeToPaymentChannel;
+        map<int, DestInfo> nodeToDestInfo; //one structure per destination;
+              //TODO: incorporate the signals into nodeToDestInfo
+        vector<int> statNumCompleted = {};
+        vector<int> statNumArrived = {};
+        vector<int> statRateCompleted = {};
+        vector<int> statRateAttempted = {};
+        vector<int> statNumTimedOut = {};
+        vector<int> statNumTimedOutAtSender = {};
+        vector<int> statRateArrived = {};
+
+
+        //store shortest paths
+        map<int, vector<int>> destNodeToPath = {};       
+        //store k shortest paths in waterfilling
+        map<int, map<int, PathInfo>> nodeToShortestPathsMap = {};       
+        simsignal_t completionTimeSignal;
+        vector<simsignal_t> rateCompletedPerDestSignals = {};
+        vector<simsignal_t> rateAttemptedPerDestSignals = {};
+        vector<simsignal_t> rateArrivedPerDestSignals = {};
+        vector<simsignal_t> numCompletedPerDestSignals = {};
+        vector<simsignal_t> numArrivedPerDestSignals = {};
+        vector<simsignal_t> numTimedOutPerDestSignals = {};
+        vector<simsignal_t> numTimedOutAtSenderSignals = {};
+
+        //signal showing which path index was chosen for each transaction
+        vector<simsignal_t> pathPerTransPerDestSignals = {};       
+        vector<simsignal_t> fracSuccessfulPerDestSignals = {};
+
+        //set of transaction units WITH timeouts, that we already received acks for
+        set<int> successfulDoNotSendTimeOut = {};       
+        set<CanceledTrans> canceledTransactions = {};
+
+        map<tuple<int,int>,AckState> transPathToAckState = {}; //key is (transactionId, routeIndex)
+        map<int, int> transactionIdToNumHtlc = {}; //allows us to calculate the htlcIndex number
+        map<int, int> destNodeToNumTransPending = {};
+        map<int, AckState> transToAmtLeftToComplete = {};
+        int numCleared = 0;
+        simsignal_t numClearedSignal;
 
 
    protected:

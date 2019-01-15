@@ -634,17 +634,24 @@ void hostNode::initialize()
       statisticTemplate = getProperties()->get("statisticTemplate", "rateAttemptedPerDestTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       rateAttemptedPerDestSignals.push_back(signal);
-
       statRateAttempted.push_back(0);
+      
+      //rateArrivedPerDest signal
+      sprintf(signalName, "rateArrivedPerDest_Total(host node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "rateArrivedPerDestTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      rateArrivedPerDestSignals.push_back(signal);
+      statRateArrived.push_back(0);
 
       //numAttemptedPerDest signal
-      sprintf(signalName, "numAttemptedPerDest_Total(host node %d)", i);
+      sprintf(signalName, "numArrivedPerDest_Total(host node %d)", i);
       signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numAttemptedPerDestTemplate");
+      statisticTemplate = getProperties()->get("statisticTemplate", "numArrivedPerDestTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      numAttemptedPerDestSignals.push_back(signal);
+      numArrivedPerDestSignals.push_back(signal);
 
-      statNumAttempted.push_back(0);
+      statNumArrived.push_back(0);
 
       //pathPerTransPerDest signal
       sprintf(signalName, "pathPerTransPerDest(host node %d)", i);
@@ -654,13 +661,21 @@ void hostNode::initialize()
       pathPerTransPerDestSignals.push_back(signal);
 
 
-      //numTimedOutPerDest signal
-      sprintf(signalName, "numTimedOutPerDest_Total(host node %d)", i);
+      //numtimedoutperdest signal
+      sprintf(signalName, "numTimedOutPerDest_total(host node %d)", i);
       signal = registerSignal(signalName);
       statisticTemplate = getProperties()->get("statisticTemplate", "numTimedOutPerDestTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       numTimedOutPerDestSignals.push_back(signal);
       statNumTimedOut.push_back(0);
+
+      //numtimedoutperdestatsender  signal
+      sprintf(signalName, "NumTimedOutPerDest_Sender(host node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statistictemplate", "numTimedOutPerDestTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      numTimedOutAtSenderSignals.push_back(signal);
+      statNumTimedOutAtSender.push_back(0);
 
       //fracSuccessfulPerDest signal
       sprintf(signalName, "fracSuccessfulPerDest_Total(host node %d)", i);
@@ -1079,7 +1094,7 @@ void hostNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
       scheduleAt(simTime()+_tUpdate, ttmsg);
    }
 
-   for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all canceledTransactions
+   for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){      
       nodeToPaymentChannel[it->first].xLocal =   nodeToPaymentChannel[it->first].nValue / _tUpdate;
       nodeToPaymentChannel[it->first].nValue = 0;
       if (it->first<0){
@@ -1325,18 +1340,22 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
 
          emit(rateAttemptedPerDestSignals[it], statRateAttempted[it]);
          statRateAttempted[it] = 0;
-
+         
+         emit(rateArrivedPerDestSignals[it], statRateArrived[it]);
+         statRateArrived[it] = 0;
+         
          emit(rateCompletedPerDestSignals[it], statRateCompleted[it]);
          statRateCompleted[it] = 0;
 
 
          if (_signalsEnabled) {
-            emit(numAttemptedPerDestSignals[it], statNumAttempted[it]);
+            emit(numArrivedPerDestSignals[it], statNumArrived[it]);
             emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
 
             emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
+            emit(numTimedOutAtSenderSignals[it], statNumTimedOutAtSender[it]);
 
-            int frac = ((100*statNumCompleted[it])/(maxTwoNum(statNumAttempted[it],1)));
+            int frac = ((100*statNumCompleted[it])/(maxTwoNum(statNumArrived[it],1)));
             emit(fracSuccessfulPerDestSignals[it],frac);
 
          }
@@ -1852,8 +1871,13 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
       cout << endl;
     */
 
-	 //Radhika: where is this check that if balance 0, don't send happening?
+    //Radhika: where is this check that if balance 0, don't send happening?
+    // works as long as txn is sent on one path only
+   if (remainingAmt == 0) {
+       statRateAttempted[destNode] = statRateAttempted[destNode] + 1;
+   }
    transMsg->setAmount(remainingAmt);
+   
    for (auto p: pathMap){
       if (p.second > 0){
          tuple<int,int> key = make_tuple(transMsg->getTransactionId(),p.first); //key is (transactionId, pathIndex)
@@ -1897,7 +1921,11 @@ bool hostNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
          { return get<0>(p) == transactionId; });
 	 //Radhika: is the first condition needed? Isn't last condition enough??
    if ( iter!=canceledTransactions.end() || (transMsg->getHasTimeOut() && (simTime() > transMsg->getTimeSent() + transMsg->getTimeOut())) ){
-
+      
+       if (getIndex() == transMsg->getSender()) {
+          statNumTimedOutAtSender[transMsg->getReceiver()] = 
+              statNumTimedOutAtSender[transMsg->getReceiver()] + 1;
+       }
 
       //delete yourself
       ttmsg->decapsulate();
@@ -1923,8 +1951,8 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
    int nextNode = ttmsg->getRoute()[hopcount+1];
 
 
-   statNumAttempted[destNode] = statNumAttempted[destNode]+1;
-   statRateAttempted[destNode] = statRateAttempted[destNode]+1;
+   statNumArrived[destNode] = statNumArrived[destNode]+1;
+   statRateArrived[destNode] = statRateArrived[destNode]+1;
 
    destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] + 1;
 
@@ -2057,8 +2085,8 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
 
 	 //If transaction seen for first time, update stats.
    if (simTime() == transMsg->getTimeSent()){ //TODO: flag for transactionMessage (isFirstTime seen)
-      statNumAttempted[destNode] = statNumAttempted[destNode]+1;
-      statRateAttempted[destNode] = statRateAttempted[destNode]+1;
+      statNumArrived[destNode] = statNumArrived[destNode]+1;
+      statRateArrived[destNode] = statRateArrived[destNode]+1;
       destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] + 1;
       AckState * s = new AckState();
       s->amtReceived = 0;
@@ -2137,7 +2165,9 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
    int destination = transMsg->getReceiver();
 
    if (!_waterfillingEnabled){
-      statNumAttempted[destination] = statNumAttempted[destination] + 1;
+       // in waterfilling message can be received multiple times, so only update when simTime == transTime
+      statNumArrived[destination] = statNumArrived[destination] + 1;
+      statRateArrived[destination] = statRateArrived[destination] + 1;
       statRateAttempted[destination] = statRateAttempted[destination] + 1;
    }
 
