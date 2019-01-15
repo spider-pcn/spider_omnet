@@ -1672,7 +1672,7 @@ bool hostNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
          canceledTransactions.end(),
          [&transactionId](const tuple<int, simtime_t, int, int>& p)
          { return get<0>(p) == transactionId; });
-	 //Radhika: is the first condition needed? Isn't last condition enoughIsn't last condition enough??
+	 //Radhika: is the first condition needed? Isn't last condition enough??
    if ( iter!=canceledTransactions.end() || (transMsg->getHasTimeOut() && (simTime() > transMsg->getTimeSent() + transMsg->getTimeOut())) ){
 
 
