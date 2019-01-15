@@ -29,7 +29,6 @@ double _tQuery; //for triggering price query probes at hosts
 double _alpha;
 
 
-#define MSGSIZE 100
 #define SMALLEST_INDIVISIBLE_UNIT 1
 
 Define_Module(hostNode);
@@ -651,14 +650,14 @@ void hostNode::handleMessage(cMessage *msg)
       //print_message(ttmsg);
       //print_private_values();
       if (_timeoutEnabled){
-         cout << "handleAckMessageTimeOut" << endl;
+         if(_loggingEnabled) cout << "handleAckMessageTimeOut" << endl;
          handleAckMessageTimeOut(ttmsg);
       }
       if (_waterfillingEnabled){
          handleAckMessageWaterfilling(ttmsg);
       }
       else{ //includes _priceSchemeEnabled case
-         cout << "handleAckMessageShortestPath" << endl;
+         if(_loggingEnabled) cout << "handleAckMessageShortestPath" << endl;
          handleAckMessageShortestPath(ttmsg);
       }
       handleAckMessage(ttmsg);
@@ -1192,6 +1191,7 @@ void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
             routerMsg* waterTimeOutMsg = generateWaterfillingTimeOutMessage(
                   nodeToShortestPathsMap[destination][p.first].path, transactionId, destination);
 
+						// Radhika: what if a transaction on two different paths have same next hop?
             int nextNode = (waterTimeOutMsg->getRoute())[waterTimeOutMsg->getHopCount()+1];
                     CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),-1, nextNode);
                     canceledTransactions.insert(ct);
@@ -1206,9 +1206,6 @@ void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
 
 
       delete ttmsg;
-
-
-
    }
    else{
 
@@ -1295,7 +1292,6 @@ void hostNode::handleAckMessageTimeOut(routerMsg* ttmsg){
 
    }
    else{ //_waterfillingEnabled
-    //Radhika TODO: following should happen irrespective of timeouts?
       tuple<int,int> key = make_tuple(aMsg->getTransactionId(), aMsg->getPathIndex());
 
       transPathToAckState[key].amtReceived = transPathToAckState[key].amtReceived + aMsg->getAmount();
@@ -1589,6 +1585,7 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
    double amtToSend;
    int highestBalIdx;
 
+	 //Radhika TODO: need to walk over this code with Vibhaa if we encounter this case.
    while(pq.size()>0 && remainingAmt > SMALLEST_INDIVISIBLE_UNIT){
       highestBal = get<0>(pq.top());
       highestBalIdx = get<1>(pq.top());
@@ -1631,6 +1628,7 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
       cout << endl;
     */
 
+	 //Radhika: where is this check that if balance 0, don't send happening?
    transMsg->setAmount(remainingAmt);
    for (auto p: pathMap){
       if (p.second > 0){
@@ -1655,6 +1653,7 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
 
          if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], p.first);
          //increment numAttempted per path
+				 //Radhika: might need to move this to when transaction arrive. 
          nodeToShortestPathsMap[destNode][p.first].statRateAttempted =
             nodeToShortestPathsMap[destNode][p.first].statRateAttempted + 1;
          handleTransactionMessage(waterMsg);
@@ -1673,7 +1672,7 @@ bool hostNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
          canceledTransactions.end(),
          [&transactionId](const tuple<int, simtime_t, int, int>& p)
          { return get<0>(p) == transactionId; });
-
+	 //Radhika: is the first condition needed? Isn't last condition enoughIsn't last condition enough??
    if ( iter!=canceledTransactions.end() || (transMsg->getHasTimeOut() && (simTime() > transMsg->getTimeSent() + transMsg->getTimeOut())) ){
 
 
