@@ -414,7 +414,7 @@ parser.add_argument('--exp_size', action='store_true', help='should txns be expo
 parser.add_argument('--generate-json-also', action="store_true", help="do you need to generate json file also \
         for the custom topology")
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
-parser.add_argument('--timeout_value', type=float, help='generic time out for all transactions', default=5)
+parser.add_argument('--timeout-value', type=float, help='generic time out for all transactions', default=5)
 
 
 

@@ -628,8 +628,9 @@ void hostNode::handleMessage(cMessage *msg)
       if (_loggingEnabled) {
          cout << endl;
          cout << "number greater than 1: " << splitTrans << endl;
-         cout << "maxTravelTime:" << _maxTravelTime << endl;
       }
+
+      cout << "maxTravelTime:" << _maxTravelTime << endl;
       endSimulation();
 
       if (ttmsg->getMessageType() == TRANSACTION_MSG){

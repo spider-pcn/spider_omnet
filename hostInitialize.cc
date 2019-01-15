@@ -170,6 +170,7 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
     */
 
       route = dijkstraInputGraph(sender, receiver, tempChannels);
+      //cout << "route length is " << route.size() << endl;
 
      
       if (route.size() <= 1){
