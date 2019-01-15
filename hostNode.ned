@@ -15,6 +15,7 @@ simple hostNode
 		double timeoutClearRate = default(0.5);
 
 		bool waterfillingEnabled = default(false);
+		bool priceSchemeEnabled = default(false);
 		int numPathChoices = default(4);
 
 		

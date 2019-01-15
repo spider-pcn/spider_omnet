@@ -362,7 +362,7 @@ void hostNode::initialize()
       _eta = 0.5;
       _kappa = 0.5;
       _tUpdate = 0.5;
-      _priceSchemeEnabled = false;
+      _priceSchemeEnabled = par("priceSchemeEnabled");
 
       if (_waterfillingEnabled || _priceSchemeEnabled){
          _kValue = par("numPathChoices");

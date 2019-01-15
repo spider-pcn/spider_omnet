@@ -13,7 +13,7 @@ parser.add_argument('--signals-enabled', type=str, help='are signals enabled?', 
 parser.add_argument('--logging-enabled', type=str, help='is logging enabled?', dest='loggingEnabled', default='false')
 parser.add_argument('--timeout-clear-rate', type=str, help='rate of clearing data after timeouts', dest='timeoutClearRate', default='0.5')
 parser.add_argument('--timeout-enabled', type=str, help='are timeouts enabled?', dest='timeoutEnabled', default='true')
-parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, LP, silentWhispers], else will default to waterfilling', dest='routingScheme', default='default')
+parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, priceScheme, silentWhispers], else will default to waterfilling', dest='routingScheme', default='default')
 parser.add_argument('--num-path-choices', type=str, help='number of path choices', dest='numPathChoices', default='default')
 args = parser.parse_args()
 
@@ -25,7 +25,7 @@ if(args.routingScheme != 'default'):
     configname = configname + "_" + args.routingScheme
 
 #arg parse might support a cleaner way to deal with this
-if(args.routingScheme not in ['shortestPath', 'waterfilling', 'LP', 'silentWhispers']):
+if(args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers']):
     if(args.routingScheme != 'default'):
         print "******************"
         print "WARNING: ill-specified routing scheme, defaulting to waterfilling, with no special config generated"
@@ -52,6 +52,8 @@ f.write("**.timeoutEnabled = " + args.timeoutEnabled + "\n")
 f.write("**.numPathChoices = " + args.numPathChoices + "\n")
 if(args.routingScheme == 'waterfilling'):
     f.write("**.waterfillingEnabled = true\n")
+if(args.routingScheme == 'priceScheme'):
+    f.write("**.priceSchemeEnabled = true\n")
 f.close()
 
 
