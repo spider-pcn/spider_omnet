@@ -89,6 +89,7 @@ class hostNode : public cSimpleModule
       virtual void handleAckMessageShortestPath(routerMsg *msg);
       virtual void handleUpdateMessage(routerMsg *msg);
       virtual void handleStatMessage(routerMsg *msg);
+      virtual void handleStatMessagePriceScheme(routerMsg *msg);
       virtual void handleProbeMessage(routerMsg *msg);
       virtual void handleClearStateMessage(routerMsg *msg);
       virtual void handleClearStateMessagePriceScheme(routerMsg *msg);
@@ -97,7 +98,7 @@ class hostNode : public cSimpleModule
       virtual void handleTriggerPriceQueryMessage(routerMsg *msg);
       virtual void handlePriceQueryMessage(routerMsg* ttmsg);
       virtual void handleTriggerTransactionSendMessage(routerMsg* ttmsg);
-
+      virtual void handleAckMessagePriceScheme(routerMsg* ttmsg);
       virtual bool forwardTransactionMessage(routerMsg *msg);
       virtual void forwardAckMessage(routerMsg *msg);
       virtual void forwardTimeOutMessage(routerMsg *msg);

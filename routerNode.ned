@@ -23,6 +23,22 @@ simple routerNode
 		
 		@signal[balancePerChannel*](type="long"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
+		
+		//price scheme payment channel specific signals
+		@signal[nValuePerChannel*](type="long"); 
+		@statisticTemplate[nValuePerChannelTemplate](record=vector, stats);
+		
+		@signal[xLocalPerChannel*](type="long"); 
+		@statisticTemplate[xLocalPerChannelTemplate](record=vector, stats);
+
+		@signal[lambdaPerChannel*](type="long"); 
+		@statisticTemplate[lambdaPerChannelTemplate](record=vector, stats);
+		
+		@signal[muLocalPerChannel*](type="long"); 
+		@statisticTemplate[muLocalPerChannelTemplate](record=vector, stats);
+		
+		@signal[muRemotePerChannel*](type="long"); 
+		@statisticTemplate[muRemotePerChannelTemplate](record=vector, stats);
 
 	gates:
 		input in[];

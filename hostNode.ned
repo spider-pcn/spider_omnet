@@ -71,6 +71,41 @@ simple hostNode
 		
 		@signal[rateAttemptedPerDestPerPath*](type="long"); 
 		@statisticTemplate[rateAttemptedPerDestPerPathTemplate](record=vector, stats);
+		
+		//price scheme payment channel specific signals
+		@signal[nValuePerChannel*](type="long"); 
+		@statisticTemplate[nValuePerChannelTemplate](record=vector, stats);
+		
+		@signal[xLocalPerChannel*](type="long"); 
+		@statisticTemplate[xLocalPerChannelTemplate](record=vector, stats);
+
+		@signal[lambdaPerChannel*](type="long"); 
+		@statisticTemplate[lambdaPerChannelTemplate](record=vector, stats);
+		
+		@signal[muLocalPerChannel*](type="long"); 
+		@statisticTemplate[muLocalPerChannelTemplate](record=vector, stats);
+		
+		@signal[muRemotePerChannel*](type="long"); 
+		@statisticTemplate[muRemotePerChannelTemplate](record=vector, stats);
+		
+		//price scheme path specific signals
+		@signal[rateToSendTransPerPath*](type="long"); 
+		@statisticTemplate[rateToSendTransPerPathTemplate](record=vector, stats);
+		
+		@signal[timeToNextSendPerPath*](type="long"); 
+		@statisticTemplate[timeToNextSendPerPathTemplate](record=vector, stats);
+		
+		@signal[sumOfTransUnitsInFlightPerPath*](type="long"); 
+		@statisticTemplate[sumOfTransUnitsInFlightPerPathTemplate](record=vector, stats);
+		
+		@signal[priceLastUpdatedPerPath*](type="long"); 
+		@statisticTemplate[priceLastUpdatedPerPathTemplate](record=vector, stats);
+		
+		@signal[isSendTimerSetPerPath*](type="long"); 
+		@statisticTemplate[isSendTimerSetPerPathTemplate](record=vector, stats);
+		
+		
+		
 
 	gates:
 		input in[];

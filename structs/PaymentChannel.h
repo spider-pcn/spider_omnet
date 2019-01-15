@@ -22,6 +22,12 @@ public:
     double muLocal; //Price due to channel imbalance at my end  ($\mu_{local}$)
     double muRemote; //Price due to imbalance at the other end of the channel ($\mu_{remote}$)
 
+    //statistics for price scheme per payment channel
+    simsignal_t nValueSignal;
+    simsignal_t xLocalSignal;
+    simsignal_t lambdaSignal;
+    simsignal_t muLocalSignal;
+    simsignal_t muRemoteSignal;
 
     //statistics - ones for per payment channel
     int statNumProcessed;

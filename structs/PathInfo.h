@@ -24,4 +24,12 @@ public:
     routerMsg * triggerTransSendMsg;
     bool isSendTimerSet = false;
 
+    //signals for price scheme per path
+    simsignal_t rateToSendTransSignal;
+    simsignal_t timeToNextSendSignal;
+    simsignal_t sumOfTransUnitsInFlightSignal;
+    simsignal_t priceLastUpdatedSignal;
+    simsignal_t isSendTimerSetSignal;
+
+
 };

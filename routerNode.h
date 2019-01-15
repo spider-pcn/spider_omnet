@@ -52,6 +52,7 @@ class routerNode : public cSimpleModule
       virtual void handleAckMessageTimeOut(routerMsg *msg);
       virtual void handleUpdateMessage(routerMsg *msg);
       virtual void handleStatMessage(routerMsg *msg);
+      virtual void handleStatMessagePriceScheme(routerMsg *msg);
       virtual void handleProbeMessage(routerMsg *msg);
       virtual void handleClearStateMessage(routerMsg *msg);
       virtual void handleTriggerPriceUpdateMessage(routerMsg *msg);
