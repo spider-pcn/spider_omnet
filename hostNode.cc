@@ -356,10 +356,10 @@ void hostNode::initialize()
       //set statRate
       _statRate = par("statRate");
       _clearRate = par("timeoutClearRate");
-      _waterfillingEnabled = true; //par("waterfillingEnabled");
-      _timeoutEnabled = true; //par("timeoutEnabled");
-      _signalsEnabled = true; //par("signalsEnabled");
-      _loggingEnabled = false;//par("loggingEnabled");
+      _waterfillingEnabled = par("waterfillingEnabled");
+      _timeoutEnabled = par("timeoutEnabled");
+      _signalsEnabled = par("signalsEnabled");
+      _loggingEnabled = par("loggingEnabled");
       _eta = 0.5;
       _kappa = 0.5;
       _tUpdate = 0.5;
@@ -765,6 +765,7 @@ void hostNode::handleMessage(cMessage *msg)
 
 
 void hostNode::handleClearStateMessagePriceScheme(routerMsg *msg){
+
     return;
 }
 
@@ -779,20 +780,35 @@ void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
 
    if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0){ //has trans to send
        //remove the transaction $tu$ at the head of the queue
+
+
        routerMsg * msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
        nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
-
-       //Send the transaction $tu$ along the corresponding path.
        transactionMsg *transMsg = check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
+       //Send the transaction $tu$ along the corresponding path.
+       while(simTime() > transMsg->getTimeSent() + transMsg->getTimeOut() ){
+           msgToSend->decapsulate();
+           delete msgToSend;
+           delete transMsg;
+
+           msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
+           nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
+           transMsg = check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
+
+       }
        transMsg->setPathIndex(pathIndex);
        msgToSend->setRoute(path);
        msgToSend->setHopCount(0);
        //generate time out message here, when path is decided
        routerMsg *toutMsg = generateTimeOutMessage(msgToSend);
         forwardTransactionMessage(msgToSend);
+
+
+
         //cout << "flag1" << endl;
         //TODO: clear state needs to clear destNodeToTransWaiting queues, so this will never be scheduled to the past?
         scheduleAt(transMsg->getTimeSent() + transMsg->getTimeOut(), toutMsg );
+
         //cout << "flag2" << endl;
 
         //Update the  “time when next transaction can be sent” to (“current time” +
@@ -1711,9 +1727,10 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
    int transactionId = transMsg->getTransactionId();
    //cout << "ttmsg->getHopCount(): " << ttmsg->getHopCount() << endl;
    //cout << "ttmsg->getRoute(): ";
-   printVector(ttmsg->getRoute());
+   //printVector(ttmsg->getRoute());
 
    if(ttmsg->getRoute().size() > 0){ // are at last index of route
+       cout << "at last index of route " << endl;
       int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
       //transaction arrival, need to increment nValue
       nodeToPaymentChannel[prevNode].nValue = nodeToPaymentChannel[prevNode].nValue + 1;
@@ -1735,14 +1752,15 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
          if (iter!=canceledTransactions.end()){
             canceledTransactions.erase(iter);
          }
-         return;
+
       }
+      cout << "ackMessage route:";
+      printVector(newMsg->getRoute());
+      cout << "myIndex(): " << myIndex() << endl;
       forwardAckMessage(newMsg);
       return;
    }
    else{
-
-
       //is a self-message/at hop count = 0
       int destNode = transMsg->getReceiver();
 
