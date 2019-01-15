@@ -173,21 +173,16 @@ void routerNode::initialize()
 
       if (_priceSchemeEnabled){
 
-         //nValueSignal
-
          if (key<_numHostNodes) {
             sprintf(signalName, "nValuePerChannel(host %d)", key);
          }
          else {
             sprintf(signalName, "nValuePerChannel(router %d [%d])", key - _numHostNodes, key);
          }
-
          signal = registerSignal(signalName);
          statisticTemplate = getProperties()->get("statisticTemplate", "nValuePerChannelTemplate");
          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
          nodeToPaymentChannel[key].nValueSignal = signal;
-
-         //balancePerChannel signal
 
          if (key<_numHostNodes) {
             sprintf(signalName, "xLocalPerChannel(host %d)", key);
@@ -195,13 +190,10 @@ void routerNode::initialize()
          else {
             sprintf(signalName, "xLocalPerChannel(router %d [%d])", key - _numHostNodes, key);
          }
-
          signal = registerSignal(signalName);
          statisticTemplate = getProperties()->get("statisticTemplate", "xLocalPerChannelTemplate");
          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
          nodeToPaymentChannel[key].xLocalSignal = signal;
-
-         //balancePerChannel signal
 
          if (key<_numHostNodes) {
             sprintf(signalName, "lambdaPerChannel(host %d)", key);
@@ -209,14 +201,11 @@ void routerNode::initialize()
          else {
             sprintf(signalName, "lambdaPerChannel(router %d [%d])", key - _numHostNodes, key);
          }
-
          signal = registerSignal(signalName);
          statisticTemplate = getProperties()->get("statisticTemplate", "lambdaPerChannelTemplate");
          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
          nodeToPaymentChannel[key].lambdaSignal = signal;
 
-
-         //balancePerChannel signal
 
          if (key<_numHostNodes) {
             sprintf(signalName, "muLocalPerChannel(host %d)", key);
@@ -224,13 +213,10 @@ void routerNode::initialize()
          else {
             sprintf(signalName, "muLocalPerChannel(router %d [%d])", key - _numHostNodes, key);
          }
-
          signal = registerSignal(signalName);
          statisticTemplate = getProperties()->get("statisticTemplate", "muLocalPerChannelTemplate");
          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
          nodeToPaymentChannel[key].muLocalSignal = signal;
-
-         //balancePerChannel signal
 
          if (key<_numHostNodes) {
             sprintf(signalName, "muRemotePerChannel(host %d)", key);
@@ -238,7 +224,6 @@ void routerNode::initialize()
          else {
             sprintf(signalName, "muRemotePerChannel(router %d [%d])", key - _numHostNodes, key);
          }
-
          signal = registerSignal(signalName);
          statisticTemplate = getProperties()->get("statisticTemplate", "muRemotePerChannelTemplate");
          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
@@ -263,7 +248,6 @@ void routerNode::initialize()
 void routerNode::handleMessage(cMessage *msg)
 {
 
-
    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
    if (ttmsg->getMessageType()==ACK_MSG){ //preprocessor constants defined in routerMsg_m.h
       if (_loggingEnabled) cout << "[ROUTER "<< myIndex() <<": RECEIVED ACK MSG]"<< msg->getName() << endl;
@@ -281,7 +265,6 @@ void routerNode::handleMessage(cMessage *msg)
       if (_priceSchemeEnabled){
          handleTransactionMessagePriceScheme(ttmsg); //increment N value
       }
-
 
       handleTransactionMessage(ttmsg);
       if (_loggingEnabled) cout<< "[AFTER HANDLING:]"<<endl;
@@ -351,8 +334,6 @@ void routerNode::handlePriceQueryMessage(routerMsg* ttmsg){
    }
 }
 
-
-
 void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
    priceUpdateMsg *puMsg = check_and_cast<priceUpdateMsg *>(ttmsg->getEncapsulatedPacket());
    double xRemote = puMsg->getXLocal();
@@ -368,10 +349,7 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
    nodeToPaymentChannel[sender].lambda = maxDouble(oldLambda + _eta*(xLocal + xRemote - (cValue/_maxTravelTime)),0);
    nodeToPaymentChannel[sender].muLocal = maxDouble(oldMuLocal + _kappa*(xLocal - xRemote) , 0);
    nodeToPaymentChannel[sender].muRemote = maxDouble(oldMuRemote + _kappa*(xRemote - xLocal) , 0);
-
 }
-
-
 
 void routerNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
    if (simTime() > _simulationLength){
@@ -387,8 +365,6 @@ void routerNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
       routerMsg * priceUpdateMsg = generatePriceUpdateMessage(nodeToPaymentChannel[it->first].xLocal, it->first);
       sendUpdateMessage(priceUpdateMsg);
    }
-
-
 
 }
 
@@ -463,14 +439,6 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
 
          }
 
-         /*
-            if (manualFindQueuedTransUnitsByTransactionId((*queuedTransUnits), transactionId)){
-            cout << "could not find " << transactionId << "in " << endl;
-            checkQueuedTransUnits((*queuedTransUnits), nextNode);
-            }
-          */
-
-         //we can process it
          map<tuple<int,int>, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
          auto iterIncoming = find_if((*incomingTransUnits).begin(),
                (*incomingTransUnits).end(),
@@ -578,7 +546,6 @@ void routerNode::checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id
    }
 }
 
-
 void routerNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
 
    if (_signalsEnabled) {
@@ -596,13 +563,9 @@ void routerNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
          simsignal_t muRemoteSignal;
 
          emit(p->nValueSignal, p->nValue);
-
          emit(p->xLocalSignal, p->xLocal);
-
          emit(p->lambdaSignal, p->lambda);
-
          emit(p->muLocalSignal, p->muLocal);
-
          emit(p->muRemoteSignal, p->muRemote);
 
       }
@@ -644,14 +607,6 @@ void routerNode::forwardTimeOutMessage(routerMsg* msg){
 
    //use hopCount to find next destination
    int nextDest = msg->getRoute()[msg->getHopCount()];
-
-   /*cout << "channels:" << endl;
-     for (auto p: nodeToPaymentChannel){
-     cout <<"("<< p.first << "," << p.second.gate <<") " ;
-
-     }
-     cout << endl;
-    */
    send(msg, nodeToPaymentChannel[nextDest].gate);
 }
 
@@ -664,29 +619,16 @@ void routerNode::forwardMessage(routerMsg *msg){
    send(msg, nodeToPaymentChannel[nextDest].gate);
 }
 
-
 void routerNode::handleTimeOutMessage(routerMsg* ttmsg){
-   /*
-      vector<int> route = ttmsg->getRoute();
-      for (auto r:route){
-      cout << r << ", ";
-      }
-      cout << endl;
-    */
-
    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
    int nextNode = (ttmsg->getRoute())[ttmsg->getHopCount()+1];
    int prevNode = (ttmsg->getRoute())[ttmsg->getHopCount()-1];
-   //cout << "nextNode:" << nextNode << endl;
-   //cout << "nextHopCount:" << ttmsg->getHopCount()+1 << endl;
 
    CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),prevNode, nextNode);
    canceledTransactions.insert(ct);
    forwardTimeOutMessage(ttmsg);
 
 }
-
-
 
 void routerNode::handleAckMessageTimeOut(routerMsg* ttmsg){
    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
@@ -718,9 +660,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
    sendUpdateMessage(uMsg);
 
    forwardAckMessage(ttmsg);
-
 }
-
 
 void routerNode::forwardAckMessage(routerMsg *msg){
    // Increment hop count.
@@ -780,8 +720,6 @@ routerMsg *routerNode::generateUpdateMessage(int transId, int receiver, double a
    return rMsg;
 }
 
-
-
 /*
  * forwardUpdateMessage - sends updateMessage to appropriate destination
  */
@@ -814,8 +752,6 @@ bool routerNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
    return false;
 }
 
-
-
 void routerNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){ //increment nValue
    int hopcount = ttmsg->getHopCount();
    vector<tuple<int, double , routerMsg *, Id>> *q;
@@ -839,8 +775,6 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
 
    int destination = transMsg->getReceiver();
 
-
-
    //not a self-message, add to incoming_trans_units
    int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
    map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
@@ -854,8 +788,6 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
    push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
 
    processTransUnits(nextNode, *q);
-
-
 }
 
 
@@ -885,20 +817,6 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest)
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
 
    int nextDest = msg->getRoute()[msg->getHopCount()+1];
-   /*
-      int transactionId = transMsg->getTransactionId();
-
-
-      auto iter = find_if(canceledTransactions.begin(),
-      canceledTransactions.end(),
-      [&transactionId](const tuple<int, simtime_t, int, int>& p)
-      { return get<0>(p) == transactionId; });
-
-      if ( iter!=canceledTransactions.end() ){
-
-      return false;
-      }
-    */
 
    if (nodeToPaymentChannel[dest].balance <= 0 || transMsg->getAmount() > nodeToPaymentChannel[dest].balance){
       return false;

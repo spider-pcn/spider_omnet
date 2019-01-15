@@ -730,9 +730,11 @@ void hostNode::handleMessage(cMessage *msg)
       }
       else if (_priceSchemeEnabled){
          handleTransactionMessagePriceScheme(ttmsg);
+      }
       else{
          handleTransactionMessage(ttmsg);
       }
+
       if (_loggingEnabled) cout<< "[AFTER HANDLING:] "<<endl;
    }
    else if(ttmsg->getMessageType()==UPDATE_MSG){
@@ -798,6 +800,7 @@ void hostNode::handleMessage(cMessage *msg)
       handleTriggerTransactionSendMessage(ttmsg);
       if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
    }
+
 }
 
 void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
