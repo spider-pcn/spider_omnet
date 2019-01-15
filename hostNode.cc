@@ -55,7 +55,10 @@ void hostNode::deleteMessagesInQueues(){
 
 
 
+
 routerMsg * hostNode::generatePriceQueryMessage(vector<int> path, int pathIdx){
+   //cout << "generatePriceQuery path:" ;
+   //printVector(path);
 
    int destNode = path[path.size()-1];
    char msgname[MSGSIZE];
@@ -132,12 +135,7 @@ void hostNode::forwardProbeMessage(routerMsg *msg){
    send(msg, nodeToPaymentChannel[nextDest].gate);
 }
 
-void printVector(vector<int> v){
-   for (auto temp : v){
-      cout << temp << ", ";
-   }
-   cout << endl;
-}
+
 
 void printVectorDouble(vector<double> v){
    for (auto temp : v){
@@ -278,15 +276,16 @@ void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode
 
 void hostNode::initializePriceProbes(vector<vector<int>> kShortestPaths, int destNode){ //maybe less than k routes
 
+   //cout << "initPriceProbes1" << endl;
    for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
       //map<int, map<int, PathInfo>> nodeToShortestPathsMap;
       PathInfo temp = {};
       nodeToShortestPathsMap[destNode][pathIdx] = temp;
       nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
 
-      routerMsg * triggerTransSendMsg = generateTriggerTransactionSendMessage(kShortestPaths[pathIdx], pathIdx, destNode); //TODO: finish
+      routerMsg * triggerTransSendMsg = generateTriggerTransactionSendMessage(kShortestPaths[pathIdx], pathIdx, destNode);
       nodeToShortestPathsMap[destNode][pathIdx].triggerTransSendMsg = triggerTransSendMsg;
-
+      //cout << "initPriceProbes2" << endl;
       //initialize signals
       char signalName[64];
       simsignal_t signal;
@@ -303,7 +302,7 @@ void hostNode::initializePriceProbes(vector<vector<int>> kShortestPaths, int des
       statisticTemplate = getProperties()->get("statisticTemplate", "bottleneckPerDestPerPathTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       nodeToShortestPathsMap[destNode][pathIdx].bottleneckPerDestPerPathSignal = signal;
-
+      //cout << "initPriceProbes3" << endl;
       if (destNode<_numHostNodes){
          sprintf(signalName, "probeBackPerDestPerPath_%d(host %d)", pathIdx, destNode);
       }
@@ -314,7 +313,7 @@ void hostNode::initializePriceProbes(vector<vector<int>> kShortestPaths, int des
       statisticTemplate = getProperties()->get("statisticTemplate", "probeBackPerDestPerPathTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       nodeToShortestPathsMap[destNode][pathIdx].probeBackPerDestPerPathSignal = signal;
-
+      //cout << "initPriceProbes4" << endl;
       if (destNode<_numHostNodes){
          sprintf(signalName, "rateCompletedPerDestPerPath_%d(host %d)", pathIdx, destNode);
       }
@@ -326,7 +325,7 @@ void hostNode::initializePriceProbes(vector<vector<int>> kShortestPaths, int des
       statisticTemplate = getProperties()->get("statisticTemplate", "rateCompletedPerDestPerPathTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       nodeToShortestPathsMap[destNode][pathIdx].rateCompletedPerDestPerPathSignal = signal;
-
+      cout << "initPriceProbes5" << endl;
       if (destNode<_numHostNodes){
          sprintf(signalName, "rateAttemptedPerDestPerPath_%d(host %d)", pathIdx, destNode);
       }
@@ -366,7 +365,7 @@ void hostNode::initialize()
       _tUpdate = 0.5;
       _priceSchemeEnabled = false;
 
-      if (_waterfillingEnabled){
+      if (_waterfillingEnabled || _priceSchemeEnabled){
          _kValue = par("numPathChoices");
       }
 
@@ -567,7 +566,7 @@ void hostNode::initialize()
 
       scheduleAt(timeSent, msg);
 
-      if (_timeoutEnabled && j.hasTimeOut){
+      if (_timeoutEnabled && !_priceSchemeEnabled && j.hasTimeOut){
          routerMsg *toutMsg = generateTimeOutMessage(msg);
          scheduleAt(timeSent + j.timeOut, toutMsg );
       }
@@ -652,12 +651,14 @@ void hostNode::handleMessage(cMessage *msg)
       //print_message(ttmsg);
       //print_private_values();
       if (_timeoutEnabled){
+         cout << "handleAckMessageTimeOut" << endl;
          handleAckMessageTimeOut(ttmsg);
       }
       if (_waterfillingEnabled){
          handleAckMessageWaterfilling(ttmsg);
       }
-      else{
+      else{ //includes _priceSchemeEnabled case
+         cout << "handleAckMessageShortestPath" << endl;
          handleAckMessageShortestPath(ttmsg);
       }
       handleAckMessage(ttmsg);
@@ -669,7 +670,7 @@ void hostNode::handleMessage(cMessage *msg)
       // print_message(ttmsg);
       // print_private_values();
       if (_timeoutEnabled && handleTransactionMessageTimeOut(ttmsg)){
-         //handleTransactionMessageTimeOut(ttmsg) returns true if message was deleted
+         //note: handleTransactionMessageTimeOut(ttmsg) returns true if message was deleted
          return;
       }
       if (_waterfillingEnabled && (ttmsg->getRoute().size() == 0)){
@@ -722,32 +723,37 @@ void hostNode::handleMessage(cMessage *msg)
    }
    else if (ttmsg->getMessageType() == CLEAR_STATE_MSG){
       if (_loggingEnabled) cout<< "[HOST "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] " << msg->getName() << endl;
+      if (_priceSchemeEnabled){
+         handleClearStateMessagePriceScheme(ttmsg); //clears the transactions queued in nodeToDestInfo
+          //TODO: need to write function
+      }
+
       handleClearStateMessage(ttmsg);
       if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == TRIGGER_PRICE_UPDATE_MSG){
       if (_loggingEnabled)  cout<< "[HOST "<< myIndex() <<": RECEIVED TRIGGER_PRICE_UPDATE_MSG] "<< msg->getName()<<endl;
-      handleTriggerPriceUpdateMessage(ttmsg); //TODO: need to write
+      handleTriggerPriceUpdateMessage(ttmsg);
       if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == PRICE_UPDATE_MSG){
       if (_loggingEnabled)  cout<< "[HOST "<< myIndex() <<": RECEIVED PRICE_UPDATE_MSG] "<< msg->getName()<<endl;
-      handlePriceUpdateMessage(ttmsg); //TODO: need to write
+      handlePriceUpdateMessage(ttmsg);
       if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == TRIGGER_PRICE_QUERY_MSG){
       if (_loggingEnabled)  cout<< "[HOST "<< myIndex() <<": RECEIVED TRIGGER_PRICE_QUERY_MSG] "<< msg->getName()<<endl;
-      handleTriggerPriceQueryMessage(ttmsg); //TODO: need to write
+      handleTriggerPriceQueryMessage(ttmsg);
       if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == PRICE_QUERY_MSG){
       if (_loggingEnabled)  cout<< "[HOST "<< myIndex() <<": RECEIVED PRICE_QUERY_MSG] "<< msg->getName()<<endl;
-       handlePriceQueryMessage(ttmsg); //TODO: need to write
+       handlePriceQueryMessage(ttmsg);
       if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == TRIGGER_TRANSACTION_SEND_MSG){
        if (_loggingEnabled)  cout<< "[HOST "<< myIndex() <<": RECEIVED TRIGGER_TRANSACTION_SEND_MSG] "<< msg->getName()<<endl;
-         handleTriggerTransactionSendMessage(ttmsg); //TODO: need to write
+         handleTriggerTransactionSendMessage(ttmsg);
        if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
    }
    /*
@@ -758,11 +764,16 @@ void hostNode::handleMessage(cMessage *msg)
 }
 
 
+void hostNode::handleClearStateMessagePriceScheme(routerMsg *msg){
+    return;
+}
 
 void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
    transactionSendMsg *tsMsg = check_and_cast<transactionSendMsg *>(ttmsg->getEncapsulatedPacket());
 
    vector<int> path = tsMsg->getTransactionPath();
+   //cout << "send transaction on path:" << endl;
+   printVector(path);
    int pathIndex = tsMsg->getPathIndex();
    int destNode = tsMsg->getReceiver();
 
@@ -772,15 +783,26 @@ void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
        nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
 
        //Send the transaction $tu$ along the corresponding path.
-       transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+       transactionMsg *transMsg = check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
        transMsg->setPathIndex(pathIndex);
        msgToSend->setRoute(path);
+       msgToSend->setHopCount(0);
+       //generate time out message here, when path is decided
+       routerMsg *toutMsg = generateTimeOutMessage(msgToSend);
         forwardTransactionMessage(msgToSend);
+        //cout << "flag1" << endl;
+        //TODO: clear state needs to clear destNodeToTransWaiting queues, so this will never be scheduled to the past?
+        scheduleAt(transMsg->getTimeSent() + transMsg->getTimeOut(), toutMsg );
+        //cout << "flag2" << endl;
 
         //Update the  “time when next transaction can be sent” to (“current time” +
               //(“amount in the transaction $tu$ that is currently being sent” / “rate”)).
+        double rateToSendTrans = nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans;
+        if (rateToSendTrans == 0){
+           rateToSendTrans = 0.5; //TODO: fix constant
+        }
         nodeToShortestPathsMap[destNode][pathIndex].timeToNextSend =
-                simTime() + transMsg->getAmount()/nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans;
+                simTime() + transMsg->getAmount()/rateToSendTrans;
 
         //If there are more transactions queued up, set a timer to send the “trigger
              //sending transaction” self-message at the “time when next transaction can
@@ -797,7 +819,11 @@ void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
 
 
 void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
+
    priceQueryMsg *pqMsg = check_and_cast<priceQueryMsg *>(ttmsg->getEncapsulatedPacket());
+   //cout << "handlePriceQueryMsg route: ";
+   //printVector(ttmsg->getRoute());
+   //cout << "myIndex: " << myIndex() << endl;
 
    bool isReversed = pqMsg->getIsReversed();
    if (!isReversed && ttmsg->getHopCount() == 0){ //is at hopcount 0
@@ -862,11 +888,17 @@ void hostNode::handleTriggerPriceQueryMessage(routerMsg* ttmsg){
    }
 
    for (auto it = destNodeToNumTransPending.begin(); it!=destNodeToNumTransPending.end(); it++){
+       if (it->first == myIndex()) continue; //TODO: fix this error
       if (it->second>0){ //if we have transactions pending
          for (auto p = nodeToShortestPathsMap[it->first].begin() ; p!= nodeToShortestPathsMap[it->first].end(); p++){
+
             //p is per path in the destNode
             int routeIndex = p->first;
-            PathInfo pInfo = p->second;
+            PathInfo pInfo = nodeToShortestPathsMap[it->first][p->first];
+            //cout << "destNode: " << it->first << endl;
+            //cout << "vector to generate new generate price query message: ";
+            //printVector(pInfo.path);
+
             routerMsg * msg = generatePriceQueryMessage(pInfo.path, routeIndex);// TODO: adjust parameters
             handlePriceQueryMessage(msg);
          }
@@ -1099,6 +1131,7 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
 
 void hostNode::forwardTimeOutMessage(routerMsg* msg){
    // Increment hop count.
+    //cout << "forwardTimeOutMessage" << endl;
    msg->setHopCount(msg->getHopCount()+1);
    //use hopCount to find next destination
    int nextDest = msg->getRoute()[msg->getHopCount()];
@@ -1119,6 +1152,7 @@ void hostNode::forwardMessage(routerMsg* msg){
 void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
 
+
    if ((ttmsg->getHopCount())==0){ //is at the sender
 
       //TODO: add to canceledTrans set
@@ -1134,7 +1168,11 @@ void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
 
          }
          else{
+
             // cout << "sent time out msg" << endl;
+             int nextNode = (ttmsg->getRoute())[ttmsg->getHopCount()+1];
+                     CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),-1, nextNode);
+                     canceledTransactions.insert(ct);
             routerMsg* waterTimeOutMsg = generateWaterfillingTimeOutMessage(
                   nodeToShortestPathsMap[destination][p.first].path, transactionId, destination);
 
@@ -1149,10 +1187,9 @@ void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
 
    }
    else{
+       CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),(ttmsg->getRoute())[ttmsg->getHopCount()-1],-1);
+         canceledTransactions.insert(ct);
       //is at the destination
-
-      CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),(ttmsg->getRoute())[ttmsg->getHopCount()-1],-1);
-      canceledTransactions.insert(ct);
       ttmsg->decapsulate();
       delete toutMsg;
       delete ttmsg;
@@ -1165,11 +1202,19 @@ void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
  */
 void hostNode::handleTimeOutMessageShortestPath(routerMsg* ttmsg){
 
+  //cout << "timeout1" << endl;
    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
+   //cout << "timeout1.2" << endl;
    int destination = toutMsg->getReceiver();
+
+   //cout << "timeout1.3" << endl;
+
    if ((ttmsg->getHopCount())==0){ //is at the sender
+       //cout << "timeout1.4" << endl;
+
       if (successfulDoNotSendTimeOut.count(toutMsg->getTransactionId())>0){ //already received ack for it, do not send out
-         successfulDoNotSendTimeOut.erase(toutMsg->getTransactionId());
+          //cout << "timeout1.5" << endl;
+          successfulDoNotSendTimeOut.erase(toutMsg->getTransactionId());
 
 
          ttmsg->decapsulate();
@@ -1177,17 +1222,26 @@ void hostNode::handleTimeOutMessageShortestPath(routerMsg* ttmsg){
          delete ttmsg;
       }
       else{
+          //cout << "timeout1.6" << endl;
+          //cout << "route: ";
+          printVector(ttmsg->getRoute());
+          //cout << "hopCount: " << ttmsg->getHopCount() << endl;
+
          int nextNode = (ttmsg->getRoute())[ttmsg->getHopCount()+1];
+         //cout << "timeout1.61" << endl;
          CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),-1, nextNode);
          canceledTransactions.insert(ct);
          statNumTimedOut[destination] = statNumTimedOut[destination]  + 1;
+         //cout << "timeout1.62" << endl;
          forwardTimeOutMessage(ttmsg);
       }
    }
    else{ //is at the destination
+       //cout << "timeout1.7" << endl;
+       CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),(ttmsg->getRoute())[ttmsg->getHopCount()-1],-1);
 
-      CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),(ttmsg->getRoute())[ttmsg->getHopCount()-1],-1);
-      canceledTransactions.insert(ct);
+         canceledTransactions.insert(ct);
+
       ttmsg->decapsulate();
       delete toutMsg;
       delete ttmsg;
@@ -1628,8 +1682,16 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
 
 
    if (nodeToShortestPathsMap.count(destNode) == 0 ){
+       //cout << "start getKShortestRoutes" << endl;
         vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
+        //cout << "num paths from kShortestRoutes: " << kShortestRoutes.size() << endl;
+        for (auto p: kShortestRoutes){
+            printVector(p);
+        }
+        //cout << "destNode: " << destNode << endl;
+        //cout << "myIndex: " << myIndex() << endl;
         initializePriceProbes(kShortestRoutes, destNode);
+        //cout << "num paths after initializePriceProbes: " << nodeToShortestPathsMap[destNode].size() << endl;
         //TODO: change to a queue implementation
         scheduleAt(simTime() + _maxTravelTime, ttmsg);
         return;
@@ -1637,7 +1699,11 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
 
 
    int transactionId = transMsg->getTransactionId();
-   if(ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
+   //cout << "ttmsg->getHopCount(): " << ttmsg->getHopCount() << endl;
+   //cout << "ttmsg->getRoute(): ";
+   printVector(ttmsg->getRoute());
+
+   if(ttmsg->getRoute().size() > 0){ // are at last index of route
       int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
       //transaction arrival, need to increment nValue
       nodeToPaymentChannel[prevNode].nValue = nodeToPaymentChannel[prevNode].nValue + 1;
@@ -1645,6 +1711,7 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
       map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
       (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = transMsg->getAmount();
       int transactionId = transMsg->getTransactionId();
+      cout << "generatedAckMessage" << endl;
       routerMsg* newMsg =  generateAckMessage(ttmsg);
 
       if (_timeoutEnabled){
@@ -1658,6 +1725,7 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
          if (iter!=canceledTransactions.end()){
             canceledTransactions.erase(iter);
          }
+         return;
       }
       forwardAckMessage(newMsg);
       return;
@@ -1697,10 +1765,18 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
 
           //transaction cannot be sent on any of the paths, queue transaction
           destInfo->transWaitingToBeSent.push_back(ttmsg);
+          //cout << "transaction queued " << endl;
+          //cout << "destination node: " << destNode << endl;
+          //cout << "num paths:" << nodeToShortestPathsMap[destNode].size() << endl;
           for (auto p: nodeToShortestPathsMap[destNode]){
               PathInfo pInfo = p.second;
               if (p.second.isSendTimerSet == false){
-                  scheduleAt(pInfo.timeToNextSend, pInfo.triggerTransSendMsg);
+                  cout << "triggerTransSendMsg set for: " << pInfo.timeToNextSend << endl;
+                  simtime_t timeToNextSend;
+                  if (simTime()>timeToNextSend){
+                      timeToNextSend = simTime() + 0.5; //TODO: fix this constant
+                  }
+                  scheduleAt(timeToNextSend, pInfo.triggerTransSendMsg);
                   nodeToShortestPathsMap[destNode][p.first].isSendTimerSet = true;
               }
           }
@@ -1741,7 +1817,8 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
       vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
       if (_loggingEnabled) {
          cout << "source: " << transMsg->getSender() << ", dest: " << destNode << endl;
-         for (auto v: kShortestRoutes){
+
+          for (auto v: kShortestRoutes){
             cout << "route: ";
             printVector(v);
          }

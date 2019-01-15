@@ -20,3 +20,4 @@ double minVectorElemDouble(vector<double> v);
 double maxDouble(double x, double y);
 void updateMaxTravelTime(vector<int> route);
 void printChannels();
+void printVector(vector<int> v);

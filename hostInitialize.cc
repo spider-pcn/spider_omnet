@@ -2,6 +2,13 @@
 #define INITIALIZE_H
 #include "hostInitialize.h"
 
+void printVector(vector<int> v){
+   for (auto temp : v){
+      cout << temp << ", ";
+   }
+   cout << endl;
+}
+
 double minVectorElemDouble(vector<double> v){
    double min = v[0];
    for (double d: v){
