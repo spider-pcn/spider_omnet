@@ -159,7 +159,7 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
       p->lastUpdated = simTime();
       vector<double> pathBalances = pMsg->getPathBalances();
       int bottleneck = minVectorElemDouble(pathBalances);
-      p->bottleneck = bottleneck ;
+      p->bottleneck = bottleneck;
       p->pathBalances = pathBalances;
       if (_signalsEnabled) emit(nodeToShortestPathsMap[destNode][pathIdx].probeBackPerDestPerPathSignal,pathIdx);
 
@@ -201,7 +201,8 @@ void hostNode:: restartProbes(int destNode){
 }
 
 
-void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode){ //maybe less than k routes
+void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode){ 
+    //maybe less than k routes
 
    for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
       //map<int, map<int, PathInfo>> nodeToShortestPathsMap;
@@ -669,10 +670,18 @@ void hostNode::initialize()
       numTimedOutPerDestSignals.push_back(signal);
       statNumTimedOut.push_back(0);
 
-      //numtimedoutperdestatsender  signal
-      sprintf(signalName, "NumTimedOutPerDest_Sender(host node %d)", i);
+      //numPendingPerDest signal
+      sprintf(signalName, "numPendingPerDest_total(host node %d)", i);
       signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statistictemplate", "numTimedOutPerDestTemplate");
+      statisticTemplate = getProperties()->get("statisticTemplate", "numPendingPerDestTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      numPendingPerDestSignals.push_back(signal);
+
+      //numtimedoutperdestatsender  signal
+      sprintf(signalName, "numTimedOutAtSenderPerDest(host node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", 
+              "numTimedOutAtSenderPerDestTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       numTimedOutAtSenderSignals.push_back(signal);
       statNumTimedOutAtSender.push_back(0);
@@ -1354,6 +1363,7 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
 
             emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
             emit(numTimedOutAtSenderSignals[it], statNumTimedOutAtSender[it]);
+            emit(numPendingPerDestSignals[it], destNodeToNumTransPending[it]);
 
             int frac = ((100*statNumCompleted[it])/(maxTwoNum(statNumArrived[it],1)));
             emit(fracSuccessfulPerDestSignals[it],frac);
@@ -1821,6 +1831,8 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
       if (_loggingEnabled) cout << bottleneck << " (" << iter.second.lastUpdated<<"), ";
       pq.push(make_pair(bottleneck, key)); //automatically sorts with biggest first index-element
    }
+
+
    if (_loggingEnabled) cout << endl;
    double highestBal;
    double secHighestBal;
@@ -1828,7 +1840,7 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
    double amtToSend;
    int highestBalIdx;
 
-	 //Radhika TODO: need to walk over this code with Vibhaa if we encounter this case.
+   //Radhika TODO: need to walk over this code with Vibhaa if we encounter this case.
    while(pq.size()>0 && remainingAmt > SMALLEST_INDIVISIBLE_UNIT){
       highestBal = get<0>(pq.top());
       highestBalIdx = get<1>(pq.top());
@@ -1851,11 +1863,16 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
       remainingAmt = remainingAmt - amtToSend;
 
    }
-
+   
+   // send all of the remaining amount beyond the indivisible unit on one path
+   // the highest bal path as long as it has non zero balance
    if (remainingAmt > 0 && pq.size()>0 ) {
-      highestBalIdx = get<1>(pq.top());
-      pathMap[highestBalIdx] = pathMap[highestBalIdx] + remainingAmt;
-      remainingAmt = 0;
+       highestBal = get<0>(pq.top());
+       highestBalIdx = get<1>(pq.top());
+       if (highestBal >= 0) {
+           pathMap[highestBalIdx] = pathMap[highestBalIdx] + remainingAmt;
+           remainingAmt = 0;
+       }
    }
    else {
       cout << "PATHS NOT FOUND to " << destNode << "WHEN IT SHOULD HAVE BEEN";
@@ -1900,10 +1917,13 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
          routerMsg* waterMsg = generateWaterfillingTransactionMessage(amt, path, p.first, transMsg);
 
          if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], p.first);
-         //increment numAttempted per path
+         // increment numAttempted per path
          nodeToShortestPathsMap[destNode][p.first].statRateAttempted =
             nodeToShortestPathsMap[destNode][p.first].statRateAttempted + 1;
          handleTransactionMessage(waterMsg);
+         
+         // decrement balance after sending this out
+        nodeToShortestPathsMap[destNode][p.first].bottleneck -= amt;
       }
    }
 }
@@ -2108,6 +2128,12 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
          cout << "after K Shortest Routes" << endl;
       }
       initializeProbes(kShortestRoutes, destNode);
+
+      /* schedule more probes
+      for (auto i = 0; i < numProbes; i++) {
+          timeBetweenProbes = _maxTravelTime / _numOutstandingProbes;
+          scheduleAt(simTime + timeBetweenProbes, triggerNewProbesMsg);
+      }*/
       scheduleAt(simTime() + 1, ttmsg);
       return;
    }

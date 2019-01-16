@@ -49,6 +49,7 @@ class hostNode : public cSimpleModule
         vector<simsignal_t> numCompletedPerDestSignals = {};
         vector<simsignal_t> numArrivedPerDestSignals = {};
         vector<simsignal_t> numTimedOutPerDestSignals = {};
+        vector<simsignal_t> numPendingPerDestSignals = {};
         vector<simsignal_t> numTimedOutAtSenderSignals = {};
 
         //signal showing which path index was chosen for each transaction

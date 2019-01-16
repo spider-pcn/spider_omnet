@@ -41,6 +41,9 @@ void routerNode:: printNodeToPaymentChannel(){
 }
 
 void routerNode::forwardProbeMessage(routerMsg *msg){
+   int prevDest = msg->getRoute()[msg->getHopCount() - 1];
+   bool updateOnReverse = true;
+
    // Increment hop count.
    msg->setHopCount(msg->getHopCount()+1);
    //use hopCount to find next destination
@@ -48,7 +51,11 @@ void routerNode::forwardProbeMessage(routerMsg *msg){
 
    probeMsg *pMsg = check_and_cast<probeMsg *>(msg->getEncapsulatedPacket());
 
-   if (pMsg->getIsReversed() == false){
+   if (pMsg->getIsReversed() == true && updateOnReverse == true){
+      vector<double> *pathBalances = & ( pMsg->getPathBalances());
+      (*pathBalances).push_back(nodeToPaymentChannel[prevDest].balance);
+   } 
+   else if (pMsg->getIsReversed() == false && updateOnReverse == false) {
       vector<double> *pathBalances = & ( pMsg->getPathBalances());
       (*pathBalances).push_back(nodeToPaymentChannel[nextDest].balance);
    }
