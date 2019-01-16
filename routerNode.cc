@@ -53,11 +53,11 @@ void routerNode::forwardProbeMessage(routerMsg *msg){
 
    if (pMsg->getIsReversed() == true && updateOnReverse == true){
       vector<double> *pathBalances = & ( pMsg->getPathBalances());
-      (*pathBalances).push_back(nodeToPaymentChannel[prevDest].balance);
+      (*pathBalances).push_back(nodeToPaymentChannel[prevDest].balanceEWMA);
    } 
    else if (pMsg->getIsReversed() == false && updateOnReverse == false) {
       vector<double> *pathBalances = & ( pMsg->getPathBalances());
-      (*pathBalances).push_back(nodeToPaymentChannel[nextDest].balance);
+      (*pathBalances).push_back(nodeToPaymentChannel[nextDest].balanceEWMA);
    }
 
    send(msg, nodeToPaymentChannel[nextDest].gate);
@@ -111,6 +111,7 @@ void routerNode::initialize()
 
       //fill in balance field of nodeToPaymentChannel
       nodeToPaymentChannel[key].balance = _balances[make_tuple(myIndex(),key)];
+      nodeToPaymentChannel[key].balanceEWMA = nodeToPaymentChannel[key].balance;
 
       //initialize queuedTransUnits
       vector<tuple<int, double , routerMsg *, Id>> temp;
@@ -524,7 +525,12 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
 
             if (iterOutgoing != (*outgoingTransUnits).end()){
                double amount = iterOutgoing -> second;
-               nodeToPaymentChannel[nextNode].balance = nodeToPaymentChannel[nextNode].balance + amount;
+
+               double updatedBalance = nodeToPaymentChannel[nextNode].balance + amount;
+               nodeToPaymentChannel[nextNode].balance = updatedBalance; 
+               nodeToPaymentChannel[nextNode].balanceEWMA = 
+          (1 -_ewmaFactor) * nodeToPaymentChannel[nextNode].balanceEWMA + (_ewmaFactor) * updatedBalance;
+
                iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
 
             }
@@ -746,7 +752,10 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
 
    updateMsg *uMsg = check_and_cast<updateMsg *>(msg->getEncapsulatedPacket());
    //increment the in flight funds back
-   nodeToPaymentChannel[prevNode].balance =  nodeToPaymentChannel[prevNode].balance + uMsg->getAmount();
+   double newBalance = nodeToPaymentChannel[prevNode].balance + uMsg->getAmount();
+   nodeToPaymentChannel[prevNode].balance =  newBalance;       
+   nodeToPaymentChannel[prevNode].balanceEWMA = 
+          (1 -_ewmaFactor) * nodeToPaymentChannel[prevNode].balanceEWMA + (_ewmaFactor) * newBalance; 
 
    //remove transaction from incoming_trans_units
    map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
@@ -925,7 +934,10 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest)
 
       double amt = transMsg->getAmount();
       //cout << "processed amt: " << amt << endl;
-      nodeToPaymentChannel[nextDest].balance = nodeToPaymentChannel[nextDest].balance - amt;
+      double newBalance = nodeToPaymentChannel[nextDest].balance - amt;
+      nodeToPaymentChannel[nextDest].balance = newBalance;
+      nodeToPaymentChannel[nextDest].balanceEWMA = 
+          (1 -_ewmaFactor) * nodeToPaymentChannel[nextDest].balanceEWMA + (_ewmaFactor) * newBalance;
       //cout << "balance: " << nodeToPaymentChannel[nextDest].balance << endl;
 
       //int transId = transMsg->getTransactionId();

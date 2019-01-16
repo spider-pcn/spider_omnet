@@ -19,6 +19,7 @@ bool _waterfillingEnabled;
 bool _timeoutEnabled;
 bool _loggingEnabled;
 bool _signalsEnabled;
+double _ewmaFactor;
 
 //global parameters for price scheme
 bool _priceSchemeEnabled;
@@ -413,6 +414,7 @@ void hostNode::initialize()
          _kValue = par("numPathChoices");
       }
 
+      _ewmaFactor = 0.3; // EWMA factor for balance information on probes
       _maxTravelTime = 0.0; 
 
       setNumNodes(topologyFile_);
@@ -455,6 +457,7 @@ void hostNode::initialize()
 
       //fill in balance field of nodeToPaymentChannel
       nodeToPaymentChannel[key].balance = _balances[make_tuple(myIndex(),key)];
+      nodeToPaymentChannel[key].balanceEWMA = nodeToPaymentChannel[key].balance;
 
       //initialize queuedTransUnits
       vector<tuple<int, double , routerMsg *, Id>> temp;
@@ -1215,7 +1218,11 @@ void hostNode::handleClearStateMessage(routerMsg* ttmsg){
 
                double amount = iterOutgoing -> second;
                iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
-               nodeToPaymentChannel[nextNode].balance = nodeToPaymentChannel[nextNode].balance + amount;
+              
+               double updatedBalance = nodeToPaymentChannel[nextNode].balance + amount;
+               nodeToPaymentChannel[nextNode].balance = updatedBalance; 
+               nodeToPaymentChannel[nextNode].balanceEWMA = 
+          (1 -_ewmaFactor) * nodeToPaymentChannel[nextNode].balanceEWMA + (_ewmaFactor) * updatedBalance;
 
                iterOutgoing = find_if((*outgoingTransUnits).begin(),
                      (*outgoingTransUnits).end(),
@@ -1689,7 +1696,10 @@ void hostNode::handleUpdateMessage(routerMsg* msg){
 
    updateMsg *uMsg = check_and_cast<updateMsg *>(msg->getEncapsulatedPacket());
    //increment the in flight funds back
-   nodeToPaymentChannel[prevNode].balance =  nodeToPaymentChannel[prevNode].balance + uMsg->getAmount();
+   double newBalance = nodeToPaymentChannel[prevNode].balance + uMsg->getAmount();
+   nodeToPaymentChannel[prevNode].balance =  newBalance;       
+   nodeToPaymentChannel[prevNode].balanceEWMA = 
+          (1 -_ewmaFactor) * nodeToPaymentChannel[prevNode].balanceEWMA + (_ewmaFactor) * newBalance; 
 
    //remove transaction from incoming_trans_units
    map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
@@ -2355,7 +2365,11 @@ bool hostNode::forwardTransactionMessage(routerMsg *msg)
       //numSentPerChannel incremented every time (key,value) pair added to outgoing_trans_units map
       nodeToPaymentChannel[nextDest].statNumSent =  nodeToPaymentChannel[nextDest].statNumSent+1;
       int amt = transMsg->getAmount();
-      nodeToPaymentChannel[nextDest].balance = nodeToPaymentChannel[nextDest].balance - amt;
+
+      double newBalance = nodeToPaymentChannel[nextDest].balance - amt;
+      nodeToPaymentChannel[nextDest].balance = newBalance;
+      nodeToPaymentChannel[nextDest].balanceEWMA = 
+          (1 -_ewmaFactor) * nodeToPaymentChannel[nextDest].balanceEWMA + (_ewmaFactor) * newBalance;
 
       //int transId = transMsg->getTransactionId();
       if (_loggingEnabled) cout << "forwardTransactionMsg send: " << simTime() << endl;
