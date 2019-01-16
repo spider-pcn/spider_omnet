@@ -410,11 +410,12 @@ void hostNode::initialize()
       _tUpdate = 0.5;
       _priceSchemeEnabled = par("priceSchemeEnabled");
 
+      _ewmaFactor = 0.8; // EWMA factor for balance information on probes
+
       if (_waterfillingEnabled || _priceSchemeEnabled){
          _kValue = par("numPathChoices");
       }
 
-      _ewmaFactor = 0.3; // EWMA factor for balance information on probes
       _maxTravelTime = 0.0; 
 
       setNumNodes(topologyFile_);
@@ -1831,13 +1832,17 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
    int destNode = transMsg->getReceiver();
    double remainingAmt = transMsg->getAmount();
+   bool ewma = true;
 
    map<int, double> pathMap = {}; //key is pathIdx, double is amt
+   vector<double> bottleneckList;
+   
    priority_queue<pair<double,int>> pq;
    if (_loggingEnabled) cout << "bottleneck: ";
    for (auto iter: nodeToShortestPathsMap[destNode] ){
       int key = iter.first;
       double bottleneck = (iter.second).bottleneck;
+      bottleneckList.push_back(bottleneck);
       if (_loggingEnabled) cout << bottleneck << " (" << iter.second.lastUpdated<<"), ";
       pq.push(make_pair(bottleneck, key)); //automatically sorts with biggest first index-element
    }
@@ -1879,9 +1884,22 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
    if (remainingAmt > 0 && pq.size()>0 ) {
        highestBal = get<0>(pq.top());
        highestBalIdx = get<1>(pq.top());
+       vector<double> cumProbabilties;
+       
        if (highestBal >= 0) {
-           pathMap[highestBalIdx] = pathMap[highestBalIdx] + remainingAmt;
-           remainingAmt = 0;
+            if (ewma && highestBal > 0) {
+                std::default_random_engine generator;
+                std::discrete_distribution<int> d(std::begin(bottleneckList), std::end(bottleneckList));
+                int index = d(generator);
+
+                pathMap[index] = pathMap[index] + remainingAmt;
+                remainingAmt = 0;
+
+            }
+            else {
+                pathMap[highestBalIdx] = pathMap[highestBalIdx] + remainingAmt;
+                remainingAmt = 0;
+            }
        }
    }
    else {
