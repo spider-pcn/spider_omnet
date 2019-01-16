@@ -30,9 +30,18 @@ parser.add_argument('--queue_info',
 parser.add_argument('--timeouts',
         action='store_true',
         help='Plot timeout information for all source destination pairs')
+parser.add_argument('--timeouts_sender',
+        action='store_true',
+        help='Plot number of timeouts at the sender for all source destination pairs')
 parser.add_argument('--frac_completed',
         action='store_true',
         help='Plot fraction completed for all source destination pairs')
+parser.add_argument('--path',
+        action='store_true',
+        help='Plot path index used for all source destination pairs')
+parser.add_argument('--pending',
+        action='store_true',
+        help='Plot number of pending txns at a given point in time all source destination pairs')
 
 parser.add_argument('--save',
         type=str,
@@ -202,6 +211,7 @@ def plot_per_payment_channel_stats(args):
         if args.num_sent_per_channel:
             data_to_plot = aggregate_info_per_node(args.vec_file, "numSent", True)
             plot_relevant_stats(data_to_plot, pdf, "Number Sent")
+
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + args.save + "_per_channel_info.pdf"
     
 
@@ -223,6 +233,20 @@ def plot_per_src_dest_stats(args):
             attempted = aggregate_info_per_node(args.vec_file, "rateAttempted", False)
             data_to_plot = aggregate_frac_successful_info(successful, attempted)
             plot_relevant_stats(data_to_plot, pdf, "Fraction of successful txns in each window")
+
+        if args.path:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "pathPerTrans", False)
+            plot_relevant_stats(data_to_plot, pdf, "Path Per Transaction")
+
+        if args.timeouts_sender:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "numTimedOutAtSender", False)
+            plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Timed Out At Sender")
+
+        if args.pending:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "numPendingPerDest", False)
+            plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Pending To Given Destination")
+
+        
  
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + \
             args.save + "_per_src_dest_stats.pdf"

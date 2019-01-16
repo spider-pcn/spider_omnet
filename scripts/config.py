@@ -51,7 +51,7 @@ five_node_graph.add_edge(4, 0)
 # CONSTANTS
 SEED = 17
 SCALE_AMOUNT = 5
-MEAN_RATE = 10
+MEAN_RATE = 9
 CIRCULATION_STD_DEV = 2
 LARGE_BALANCE = 1000000000
 
@@ -87,4 +87,6 @@ INTERESTING_SIGNALS["numSent"] = ["numSentPerChannel"]
 INTERESTING_SIGNALS["rateCompleted"] = ["rateCompletedPerDest_Total"] 
 INTERESTING_SIGNALS["rateAttempted"] = ["rateAttemptedPerDest_Total"]
 INTERESTING_SIGNALS["numTimedOut"] = ["numTimedOutPerDest"]
-
+INTERESTING_SIGNALS["pathPerTrans"] = ["pathPerTransPerDest"]
+INTERESTING_SIGNALS["numTimedOutAtSender"] = ["numTimedOutAtSenderPerDest"]
+INTERESTING_SIGNALS["numPendingPerDest"] = ["numPendingPerDest"]
