@@ -76,7 +76,7 @@ class hostNode : public cSimpleModule
       virtual routerMsg *generateWaterfillingTransactionMessage(double amt, vector<int> path, int pathIndex, transactionMsg * transMsg);
       virtual routerMsg *generateWaterfillingTimeOutMessage( vector<int> path, int transactionId, int receiver);
       virtual routerMsg *generateTransactionMessage(TransUnit TransUnit);
-      virtual routerMsg *generateAckMessage(routerMsg *msg);
+      virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true);
           //generates ack message and destroys input parameter msg
       //virtual routerMsg *generateAckMessageFromTimeOutMsg(routerMsg *msg);
       virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount, int htlcIndex);

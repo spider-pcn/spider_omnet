@@ -798,15 +798,65 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
    (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = transMsg->getAmount();
 
    int nextNode = ttmsg->getRoute()[hopcount+1];
+
+
    q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
 
-   (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
-            ttmsg, make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())));
-   push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
 
-   processTransUnits(nextNode, *q);
+   if (_hasQueueCapacity && _queueCapacity<=(*q).size()){ //failed transaction, queue at capacity
+            routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
+            forwardAckMessage(failedAckMsg);
+        }
+        else{
+            (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
+                        ttmsg, make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())));
+            push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
+            processTransUnits(nextNode, *q);
+        }
 }
 
+routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //default is false
+   int transactionId;
+   double timeSent;
+   double amount;
+   int sender = (ttmsg->getRoute())[0];
+   int receiver = (ttmsg->getRoute())[(ttmsg->getRoute()).size() -1];
+   bool hasTimeOut;
+
+   transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+   transactionId = transMsg->getTransactionId();
+   timeSent = transMsg->getTimeSent();
+   amount = transMsg->getAmount();
+   hasTimeOut = transMsg->getHasTimeOut();
+   char msgname[MSGSIZE];
+
+   sprintf(msgname, "receiver-%d-to-sender-%d ackMsg", receiver, sender);
+   routerMsg *msg = new routerMsg(msgname);
+   ackMsg *aMsg = new ackMsg(msgname);
+   aMsg->setTransactionId(transactionId);
+   aMsg->setIsSuccess(isSuccess);
+   aMsg->setTimeSent(timeSent);
+   aMsg->setAmount(amount);
+   aMsg->setReceiver(transMsg->getReceiver());
+   aMsg->setHasTimeOut(hasTimeOut);
+   aMsg->setHtlcIndex(transMsg->getHtlcIndex());
+   aMsg->setPathIndex(transMsg->getPathIndex());
+   //no need to set secret;
+   vector<int> route = ttmsg->getRoute();
+      route.resize(ttmsg->getHopCount() + 1);
+      reverse(route.begin(), route.end());
+
+   msg->setRoute(route);
+   msg->setHopCount((route.size()-1) - ttmsg->getHopCount());
+   //need to reverse path from current hop number in case of partial failure
+   msg->setMessageType(ACK_MSG); //now an ack message
+   // remove encapsulated packet
+   ttmsg->decapsulate();
+   delete transMsg;
+   delete ttmsg;
+   msg->encapsulate(aMsg);
+   return msg;
+}
 
 
 /*

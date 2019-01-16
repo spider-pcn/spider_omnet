@@ -36,6 +36,10 @@ double _tUpdate; //for triggering price updates at routers
 double _tQuery; //for triggering price query probes at hosts
 double _alpha;
 
+//global parameters for fixed size queues
+bool _hasQueueCapacity;
+int _queueCapacity;
+
 #define MSGSIZE 100
 #define SMALLEST_INDIVISIBLE_UNIT 1
 
@@ -422,6 +426,8 @@ void hostNode::initialize()
       _kappa = 0.5;
       _tUpdate = 0.5;
       _priceSchemeEnabled = par("priceSchemeEnabled");
+      _hasQueueCapacity = false;
+      _queueCapacity = 5;
       
       // smooth waterfilling parameters
       _Tau = 10;
@@ -916,7 +922,7 @@ void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
       msgToSend->setHopCount(0);
       //generate time out message here, when path is decided
       routerMsg *toutMsg = generateTimeOutMessage(msgToSend);
-      forwardTransactionMessage(msgToSend);
+      handleTransactionMessage(msgToSend);
       scheduleAt(transMsg->getTimeSent() + transMsg->getTimeOut(), toutMsg );
 
       //Update the  “time when next transaction can be sent” to (“current time” +
@@ -1253,7 +1259,7 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
    else{
       scheduleAt(simTime()+_statRate, ttmsg);
    }
-
+   cout << "handleStat0" << endl;
    if (_signalsEnabled) {
       for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
 
@@ -1269,7 +1275,7 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
          nodeToPaymentChannel[node].statNumSent = 0;
       }
    }
-
+   cout << "handleStat1" << endl;
    for (auto it = 0; it<_numHostNodes; it++){ //iterate through all nodes in graph
       if (it != getIndex()){
          if (nodeToShortestPathsMap.count(it) > 0) {
@@ -1300,6 +1306,7 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
 
          if (_signalsEnabled) {
             emit(numArrivedPerDestSignals[it], statNumArrived[it]);
+
             emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
 
             emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
@@ -1310,6 +1317,7 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
             emit(fracSuccessfulPerDestSignals[it],frac);
 
          }
+         cout << "handleStat3" << endl;
 
       }//end if
    }//end for
@@ -1531,8 +1539,7 @@ void hostNode::handleAckMessage(routerMsg* ttmsg){
  * generateAckMessage - called only when a transactionMsg reaches end of its path, keeps routerMsg casing of msg
  *   and reuses it to send ackMsg in reversed order of route
  */
-routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg){ //default is false
-   bool isSuccess;
+routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //default is false
    int transactionId;
    double timeSent;
    double amount;
@@ -1544,7 +1551,6 @@ routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg){ //default is false
    transactionId = transMsg->getTransactionId();
    timeSent = transMsg->getTimeSent();
    amount = transMsg->getAmount();
-   isSuccess = true;
    hasTimeOut = transMsg->getHasTimeOut();
    char msgname[MSGSIZE];
 
@@ -1560,8 +1566,10 @@ routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg){ //default is false
    aMsg->setHtlcIndex(transMsg->getHtlcIndex());
    aMsg->setPathIndex(transMsg->getPathIndex());
    //no need to set secret;
-   vector<int> route=ttmsg->getRoute();
+   vector<int> route = ttmsg->getRoute();
+   route.resize(ttmsg->getHopCount() + 1);
    reverse(route.begin(), route.end());
+
    msg->setRoute(route);
    msg->setHopCount((route.size()-1) - ttmsg->getHopCount());
    //need to reverse path from current hop number in case of partial failure
@@ -2022,7 +2030,8 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
 
                //set transaction path
                ttmsg->setRoute(p.second.path);
-               forwardTransactionMessage(ttmsg);
+
+               handleTransactionMessage(ttmsg);
 
                //update "amount of transaction in flight"
                nodeToShortestPathsMap[destNode][p.first].sumOfTransUnitsInFlight =
@@ -2196,10 +2205,20 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
       int nextNode = ttmsg->getRoute()[hopcount+1];
       q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
       tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
-      (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
+
+      if (_hasQueueCapacity && _queueCapacity<=(*q).size()){ //failed transaction, queue at capacity
+          routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
+          forwardAckMessage(failedAckMsg);
+      }
+      else{
+          (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
                ttmsg, key));
-      push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
-      processTransUnits(nextNode, *q);
+          push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
+          processTransUnits(nextNode, *q);
+      }
+
+
+
    }
 }
 
