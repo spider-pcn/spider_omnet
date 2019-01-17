@@ -80,7 +80,7 @@ RECOGNIZED_OMNET_SIGNALS = ["numInQueuePerChannel",\
 # map of what field to parse for what plot
 INTERESTING_SIGNALS = dict()
 INTERESTING_SIGNALS["completion_rate_cdfs"] = ["rateCompletedPerDest",\
-        "rateAttemptedPerDest"]
+        "rateArrivedPerDest"]
 INTERESTING_SIGNALS["balance"] = ["balancePerChannel"]
 INTERESTING_SIGNALS["numInQueue"] = ["numInQueuePerChannel"]
 INTERESTING_SIGNALS["numSent"] = ["numSentPerChannel"]
@@ -90,3 +90,4 @@ INTERESTING_SIGNALS["numTimedOut"] = ["numTimedOutPerDest"]
 INTERESTING_SIGNALS["pathPerTrans"] = ["pathPerTransPerDest"]
 INTERESTING_SIGNALS["numTimedOutAtSender"] = ["numTimedOutAtSenderPerDest"]
 INTERESTING_SIGNALS["numPendingPerDest"] = ["numPendingPerDest"]
+INTERESTING_SIGNALS["probabilityPerDest"] = ["probabilityPerDest"]

@@ -42,6 +42,12 @@ parser.add_argument('--path',
 parser.add_argument('--pending',
         action='store_true',
         help='Plot number of pending txns at a given point in time all source destination pairs')
+parser.add_argument('--probabilities',
+        action='store_true',
+        help='Plot probabilities of picking path 0 at a given point in time all source destination pairs')
+parser.add_argument('--bottlenecks',
+        action='store_true',
+        help='Plot bottlenecks on different paths at a given point in time all source destination pairs')
 
 parser.add_argument('--save',
         type=str,
@@ -134,6 +140,32 @@ def aggregate_frac_successful_info(success, attempted):
         node_signal_info[router] = frac_successful
     
     return node_signal_info
+
+
+
+# aggregate bottleneck bandwidth information on a per path basis for every 
+# source destination pair
+# TODO: fix the plot stats to treat all of the paths as separate lines
+def aggregate_bottleneck_info(filename):
+    node_signal_info = dict()
+
+    for router, channel_info in success.items():
+        frac_successful = dict()
+        for partner, success_TS in channel_info.items():
+            frac_succ_TS = []
+            attempt_TS = attempted[router][partner]
+
+            for i, (time, num_succeeded) in enumerate(success_TS):
+                num_attempted = attempt_TS[i][1]
+                if num_attempted == 0:
+                    frac_succ_TS.append((time, 0))
+                else:
+                    frac_succ_TS.append((time, num_succeeded/float(num_attempted)))
+                frac_successful[partner] = frac_succ_TS
+        node_signal_info[router] = frac_successful
+    
+    return node_signal_info
+
 
 
 
@@ -245,6 +277,10 @@ def plot_per_src_dest_stats(args):
         if args.pending:
             data_to_plot = aggregate_info_per_node(args.vec_file, "numPendingPerDest", False)
             plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Pending To Given Destination")
+
+        if args.probabilities:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "probabilityPerDest", False)
+            plot_relevant_stats(data_to_plot, pdf, "Probability of picking path 0")
 
         
  
