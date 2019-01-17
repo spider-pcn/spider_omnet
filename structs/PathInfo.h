@@ -6,6 +6,7 @@ using namespace omnetpp;
 class PathInfo{
 public:
     vector<int> path = {};
+    double probability = -1;
     simtime_t lastUpdated = -1;
     double bottleneck = -1;
     vector<double> pathBalances = {};
@@ -23,6 +24,7 @@ public:
     simtime_t priceLastUpdated = 0;
     routerMsg * triggerTransSendMsg;
     bool isSendTimerSet = false;
+    bool isProbeOutstanding = false;
 
     //signals for price scheme per path
     simsignal_t rateToSendTransSignal;

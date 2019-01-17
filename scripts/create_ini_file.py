@@ -13,7 +13,7 @@ parser.add_argument('--signals-enabled', type=str, help='are signals enabled?', 
 parser.add_argument('--logging-enabled', type=str, help='is logging enabled?', dest='loggingEnabled', default='false')
 parser.add_argument('--timeout-clear-rate', type=str, help='rate of clearing data after timeouts', dest='timeoutClearRate', default='0.5')
 parser.add_argument('--timeout-enabled', type=str, help='are timeouts enabled?', dest='timeoutEnabled', default='true')
-parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, priceScheme, silentWhispers], else will default to waterfilling', dest='routingScheme', default='default')
+parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, LP, silentWhispers, smoothWaterfilling, priceScheme], else will default to waterfilling', dest='routingScheme', default='default')
 parser.add_argument('--num-path-choices', type=str, help='number of path choices', dest='numPathChoices', default='default')
 args = parser.parse_args()
 
@@ -21,18 +21,20 @@ args = parser.parse_args()
 
 configname = os.path.basename(args.network_name)
 
-if(args.routingScheme != 'default'):
+if args.routingScheme != 'default':
     configname = configname + "_" + args.routingScheme
 
 #arg parse might support a cleaner way to deal with this
-if(args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers']):
+if(args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
+        'smoothWaterfilling']):
     if(args.routingScheme != 'default'):
         print "******************"
-        print "WARNING: ill-specified routing scheme, defaulting to waterfilling, with no special config generated"
+        print "WARNING: ill-specified routing scheme, 
+        defaulting to waterfilling, with no special config generated"
         print "******************"
     args.routingScheme = 'waterfilling'
 
-if(args.numPathChoices != 'default'):
+if args.numPathChoices != 'default':
     configname = configname + "_" + args.numPathChoices
 else:   
     args.numPathChoices = '4'
@@ -50,10 +52,14 @@ f.write("**.loggingEnabled = " + args.loggingEnabled + "\n")
 f.write("**.timeoutClearRate = " + args.timeoutClearRate + "\n")
 f.write("**.timeoutEnabled = " + args.timeoutEnabled + "\n")
 f.write("**.numPathChoices = " + args.numPathChoices + "\n")
-if(args.routingScheme == 'waterfilling'):
+
+if args.routingScheme in ['waterfilling', 'smoothWaterfilling']:
     f.write("**.waterfillingEnabled = true\n")
-if(args.routingScheme == 'priceScheme'):
+if args.routingScheme == 'priceScheme':
     f.write("**.priceSchemeEnabled = true\n")
+if args.routingScheme == "smoothWaterfilling":
+    f.write("**.smoothWaterfillingEnabled = true\n")
+
 f.close()
 
 

@@ -16,6 +16,7 @@ simple hostNode
 
 		bool waterfillingEnabled = default(false);
 		bool priceSchemeEnabled = default(false);
+		bool smoothWaterfillingEnabled = default(false);
 		int numPathChoices = default(4);
 
 		
@@ -31,7 +32,10 @@ simple hostNode
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
 
 		@signal[numProcessedPerChannel*](type="long");  
-		@statisticTemplate[numProcessedPerChannelTemplate](record=vector, stats);   
+		@statisticTemplate[numProcessedPerChannelTemplate](record=vector, stats);  
+
+ 		@signal[probabilityPerDest*](type="double");  
+		@statisticTemplate[probabilityPerDestTemplate](record=vector, stats);  
 
 		@signal[numSentPerChannel*](type="long");  
 		@statisticTemplate[numSentPerChannelTemplate](record=vector, stats);   

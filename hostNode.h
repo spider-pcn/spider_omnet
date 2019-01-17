@@ -36,10 +36,12 @@ class hostNode : public cSimpleModule
         vector<int> statNumTimedOut = {};
         vector<int> statNumTimedOutAtSender = {};
         vector<int> statRateArrived = {};
-
+        vector<double> statProbabilities = {};
 
         //store shortest paths
-        map<int, vector<int>> destNodeToPath = {};       
+        map<int, vector<int>> destNodeToPath = {};
+        map<int, double> destNodeToLastMeasurementTime = {};
+
         //store k shortest paths in waterfilling
         map<int, map<int, PathInfo>> nodeToShortestPathsMap = {};       
         simsignal_t completionTimeSignal;
@@ -51,6 +53,7 @@ class hostNode : public cSimpleModule
         vector<simsignal_t> numTimedOutPerDestSignals = {};
         vector<simsignal_t> numPendingPerDestSignals = {};
         vector<simsignal_t> numTimedOutAtSenderSignals = {};
+        vector<simsignal_t> probabilityPerDestSignals = {};
 
         //signal showing which path index was chosen for each transaction
         vector<simsignal_t> pathPerTransPerDestSignals = {};       
@@ -127,6 +130,8 @@ class hostNode : public cSimpleModule
 
       //helper
       virtual bool printNodeToPaymentChannel();
+      virtual int updatePathProbabilities(vector<double> bottleneckBalances, int destNode);
+      virtual int sampleFromDistribution(vector<double> probabilities);
 };
 
 #endif

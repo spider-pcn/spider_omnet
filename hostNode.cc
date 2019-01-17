@@ -16,10 +16,17 @@ double _clearRate;
 int _kValue;
 double _simulationLength;
 bool _waterfillingEnabled;
+bool _smoothWaterfillingEnabled;
 bool _timeoutEnabled;
 bool _loggingEnabled;
 bool _signalsEnabled;
+
+// set to 1 to report exact instantaneous balances
 double _ewmaFactor;
+
+// parameters for smooth waterfilling
+double _Tau;
+double _Normalizer;
 
 //global parameters for price scheme
 bool _priceSchemeEnabled;
@@ -152,9 +159,13 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
    bool isReversed = pMsg->getIsReversed();
    int nextDest = ttmsg->getRoute()[ttmsg->getHopCount()+1];
    if (isReversed == true){ //store times into private map, delete message
+
+
+      
       int pathIdx = pMsg->getPathIndex();
       int destNode = pMsg->getReceiver();
-
+      nodeToShortestPathsMap[destNode][pathIdx].isProbeOutstanding = false;
+      
       PathInfo * p = &(nodeToShortestPathsMap[destNode][pathIdx]);
       assert(p->path == pMsg->getPath());
       p->lastUpdated = simTime();
@@ -162,6 +173,7 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
       int bottleneck = minVectorElemDouble(pathBalances);
       p->bottleneck = bottleneck;
       p->pathBalances = pathBalances;
+      
       if (_signalsEnabled) emit(nodeToShortestPathsMap[destNode][pathIdx].probeBackPerDestPerPathSignal,pathIdx);
 
       if (destNodeToNumTransPending[destNode] > 0){
@@ -173,6 +185,7 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
          pMsg->setIsReversed(false);
          vector<double> tempPathBal = {};
          pMsg->setPathBalances(tempPathBal);
+         nodeToShortestPathsMap[destNode][pathIdx].isProbeOutstanding = true;
          forwardProbeMessage(ttmsg);
       }
       else{
@@ -195,8 +208,12 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
 void hostNode:: restartProbes(int destNode){
 
    for (auto p: nodeToShortestPathsMap[destNode] ){
-      routerMsg * msg = generateProbeMessage(destNode, p.first, p.second.path);
-      forwardProbeMessage(msg);
+      PathInfo pathInformation = p.second;
+      if (pathInformation.isProbeOutstanding == false) {
+        nodeToShortestPathsMap[destNode][p.first].isProbeOutstanding = true;
+        routerMsg * msg = generateProbeMessage(destNode, p.first, p.second.path);
+        forwardProbeMessage(msg);
+      }
    }
 
 }
@@ -204,6 +221,7 @@ void hostNode:: restartProbes(int destNode){
 
 void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode){ 
     //maybe less than k routes
+    destNodeToLastMeasurementTime[destNode] = 0.0;
 
    for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
       //map<int, map<int, PathInfo>> nodeToShortestPathsMap;
@@ -211,6 +229,15 @@ void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode
       PathInfo temp = {};
       nodeToShortestPathsMap[destNode][pathIdx] = temp;
       nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
+      nodeToShortestPathsMap[destNode][pathIdx].probability = 1.0 / kShortestPaths.size();
+      /*if (pathIdx == 0) {
+        nodeToShortestPathsMap[destNode][pathIdx].probability = 0.8;
+        statProbabilities[destNode] = 0.8;
+      }
+      else {
+        nodeToShortestPathsMap[destNode][pathIdx].probability = 0.2;
+      }*/
+
 
       //initialize signals
       char signalName[64];
@@ -265,6 +292,7 @@ void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode
       nodeToShortestPathsMap[destNode][pathIdx].rateAttemptedPerDestPerPathSignal = signal;
 
       routerMsg * msg = generateProbeMessage(destNode, pathIdx, kShortestPaths[pathIdx]);
+      nodeToShortestPathsMap[destNode][pathIdx].isProbeOutstanding = true;
       forwardProbeMessage(msg);
    }
 }
@@ -402,6 +430,7 @@ void hostNode::initialize()
       _statRate = par("statRate");
       _clearRate = par("timeoutClearRate");
       _waterfillingEnabled = par("waterfillingEnabled");
+      _smoothWaterfillingEnabled = par("smoothWaterfillingEnabled");
       _timeoutEnabled = par("timeoutEnabled");
       _signalsEnabled = par("signalsEnabled");
       _loggingEnabled = par("loggingEnabled");
@@ -409,8 +438,12 @@ void hostNode::initialize()
       _kappa = 0.5;
       _tUpdate = 0.5;
       _priceSchemeEnabled = par("priceSchemeEnabled");
+      
+      // smooth waterfilling parameters
+      _Tau = 10;
+      _Normalizer = 100; // TODO: C from discussion with Mohammad)
 
-      _ewmaFactor = 0.8; // EWMA factor for balance information on probes
+      _ewmaFactor = 1; // EWMA factor for balance information on probes
 
       if (_waterfillingEnabled || _priceSchemeEnabled){
          _kValue = par("numPathChoices");
@@ -657,6 +690,14 @@ void hostNode::initialize()
       numArrivedPerDestSignals.push_back(signal);
 
       statNumArrived.push_back(0);
+
+      // probabilityPerDest signal
+      sprintf(signalName, "probabilityPerDest(host node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "probabilityPerDestTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      probabilityPerDestSignals.push_back(signal);
+      statProbabilities.push_back(0);
 
       //pathPerTransPerDest signal
       sprintf(signalName, "pathPerTransPerDest(host node %d)", i);
@@ -1364,6 +1405,8 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
          emit(rateCompletedPerDestSignals[it], statRateCompleted[it]);
          statRateCompleted[it] = 0;
 
+         emit(probabilityPerDestSignals[it], statProbabilities[it]);
+
 
          if (_signalsEnabled) {
             emit(numArrivedPerDestSignals[it], statNumArrived[it]);
@@ -1828,93 +1871,151 @@ routerMsg* hostNode::generateWaterfillingTimeOutMessage( vector<int> path, int t
 }
 
 
+// computes the updated path probabilities based on the current state of 
+// bottleneck link balances and returns the next path index to send the transaction 
+// on in accordance to the latest rate
+int hostNode::updatePathProbabilities(vector<double> bottleneckBalances, int destNode) {
+
+    double averageBottleneck = accumulate(bottleneckBalances.begin(), 
+            bottleneckBalances.end(), 0.0)/bottleneckBalances.size(); 
+                
+    double timeSinceLastTxn = simTime().dbl() - destNodeToLastMeasurementTime[destNode];
+    destNodeToLastMeasurementTime[destNode] = simTime().dbl();
+
+    // compute new porbabailities based on adjustment factor and expression
+    vector<double> probabilities;
+    int i = 0;
+    for (auto b : bottleneckBalances) {
+        probabilities.push_back(nodeToShortestPathsMap[destNode][i].probability + 
+            (1 - exp(-1 * timeSinceLastTxn/_Tau))*(b - averageBottleneck)/_Normalizer);
+        probabilities[i] = max(0.0, probabilities[i]);
+        i++;
+    }
+    double sumProbabilities = accumulate(probabilities.begin(), probabilities.end(), 0.0); 
+    
+    // normalize them to 1 and update the stored probabilities
+    for (i = 0; i < probabilities.size(); i++) {
+        probabilities[i] /= sumProbabilities;
+        nodeToShortestPathsMap[destNode][i].probability = probabilities[i];
+    }
+    return sampleFromDistribution(probabilities);
+}
+
+
+// samples a random number (index) of the passed in vector
+// based on the actual probabilities passed in
+int hostNode::sampleFromDistribution(vector<double> probabilities) {
+    vector<double> cumProbabilities { 0 };
+
+    double sumProbabilities = accumulate(probabilities.begin(), probabilities.end(), 0.0); 
+    assert(sumProbabilities < 1.0);
+    
+    // compute cumulative probabilities
+    for (int i = 0; i < probabilities.size(); i++) {
+        cumProbabilities.push_back(probabilities[i] + cumProbabilities[i]);
+    }
+
+    // generate the next index to send on based on these probabilities
+    double value  = (rand() / double(RAND_MAX));
+    int index;
+    for (int i = 1; i < cumProbabilities.size(); i++) {
+        if (value < cumProbabilities[i])
+            return i - 1;
+    }
+
+    // should never be reached
+    //assert(false);
+    return 0;
+}
+
+
+
 void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
    int destNode = transMsg->getReceiver();
    double remainingAmt = transMsg->getAmount();
-   bool ewma = true;
+   bool randomChoice = false;
 
    map<int, double> pathMap = {}; //key is pathIdx, double is amt
    vector<double> bottleneckList;
    
    priority_queue<pair<double,int>> pq;
-   if (_loggingEnabled) cout << "bottleneck: ";
+   if (_loggingEnabled) cout << "bottleneck for node " <<  getIndex();
+   
+   // fill up priority queue
    for (auto iter: nodeToShortestPathsMap[destNode] ){
       int key = iter.first;
       double bottleneck = (iter.second).bottleneck;
       bottleneckList.push_back(bottleneck);
-      if (_loggingEnabled) cout << bottleneck << " (" << iter.second.lastUpdated<<"), ";
+      if (_loggingEnabled) cout << bottleneck << " (" << key  << "," << iter.second.lastUpdated<<"), ";
       pq.push(make_pair(bottleneck, key)); //automatically sorts with biggest first index-element
    }
-
-
    if (_loggingEnabled) cout << endl;
+
+
    double highestBal;
    double secHighestBal;
    double diffToSend;
    double amtToSend;
    int highestBalIdx;
+   int numPaths = nodeToShortestPathsMap[destNode].size();
 
-   //Radhika TODO: need to walk over this code with Vibhaa if we encounter this case.
-   while(pq.size()>0 && remainingAmt > SMALLEST_INDIVISIBLE_UNIT){
-      highestBal = get<0>(pq.top());
-      highestBalIdx = get<1>(pq.top());
-      pq.pop();
-      if (pq.size()==0){
-         secHighestBal=0;
-      }
-      else{
-         secHighestBal = get<0>(pq.top());
-      }
-      diffToSend = highestBal - secHighestBal;
-
-      amtToSend = min(remainingAmt/(pathMap.size()+1),diffToSend);
-
-      for (auto p: pathMap){
-         pathMap[p.first] = p.second + amtToSend;
-         remainingAmt = remainingAmt - amtToSend;
-      }
-      pathMap[highestBalIdx] = amtToSend;
-      remainingAmt = remainingAmt - amtToSend;
-
-   }
-   
-   // send all of the remaining amount beyond the indivisible unit on one path
-   // the highest bal path as long as it has non zero balance
-   if (remainingAmt > 0 && pq.size()>0 ) {
-       highestBal = get<0>(pq.top());
-       highestBalIdx = get<1>(pq.top());
-       vector<double> cumProbabilties;
-       
-       if (highestBal >= 0) {
-            if (ewma && highestBal > 0) {
-                std::default_random_engine generator;
-                std::discrete_distribution<int> d(std::begin(bottleneckList), std::end(bottleneckList));
-                int index = d(generator);
-
-                pathMap[index] = pathMap[index] + remainingAmt;
-                remainingAmt = 0;
-
+    if (randomChoice) {
+       vector<double> probabilities (numPaths, 1.0/numPaths);
+       int pathIndex = sampleFromDistribution(probabilities);
+       pathMap[pathIndex] = pathMap[pathIndex] + remainingAmt;
+       remainingAmt = 0;
+    } 
+    else if (_smoothWaterfillingEnabled) {
+        highestBal = get<0>(pq.top());
+        if (highestBal > 0) {
+            int pathIndex = updatePathProbabilities(bottleneckList, destNode);
+            pathMap[pathIndex] = pathMap[pathIndex] + remainingAmt;
+            remainingAmt = 0;
+        }
+    }
+    else {
+          // normal waterfilling
+          while(pq.size()>0 && remainingAmt > SMALLEST_INDIVISIBLE_UNIT){
+            highestBal = get<0>(pq.top());
+            highestBalIdx = get<1>(pq.top());
+            pq.pop();
+            
+            if (pq.size()==0){
+             secHighestBal=0;
             }
+            else{
+             secHighestBal = get<0>(pq.top());
+            }
+            diffToSend = highestBal - secHighestBal;
+
+            amtToSend = min(remainingAmt/(pathMap.size()+1),diffToSend);
+
+            for (auto p: pathMap){
+                pathMap[p.first] = p.second + amtToSend;
+                remainingAmt = remainingAmt - amtToSend;
+            }
+            pathMap[highestBalIdx] = amtToSend;
+            remainingAmt = remainingAmt - amtToSend;
+         }
+   
+           // send all of the remaining amount beyond the indivisible unit on one path
+           // the highest bal path as long as it has non zero balance
+           if (remainingAmt > 0 && pq.size()>0 ) {
+               highestBal = get<0>(pq.top());
+               highestBalIdx = get<1>(pq.top());
+               
+               if (highestBal >= 0) {
+                    pathMap[highestBalIdx] = pathMap[highestBalIdx] + remainingAmt;
+                    remainingAmt = 0;
+                }
+            } 
             else {
-                pathMap[highestBalIdx] = pathMap[highestBalIdx] + remainingAmt;
-                remainingAmt = 0;
+               cout << "PATHS NOT FOUND to " << destNode << "WHEN IT SHOULD HAVE BEEN";
+                throw std::exception();
             }
        }
-   }
-   else {
-      cout << "PATHS NOT FOUND to " << destNode << "WHEN IT SHOULD HAVE BEEN";
-      throw std::exception();
-   }
-
-   // print how much was sent on each path
-   /*
-      for (auto p: pathMap){
-      cout << "index: "<< p.first << "; bottleneck: " << nodeToShortestPathsMap[destNode][p.first].bottleneck << "; ";
-      cout << "amtToSend: "<< p.second  << endl;
-      }
-      cout << endl;
-    */
+ 
 
     //Radhika: where is this check that if balance 0, don't send happening?
     // works as long as txn is sent on one path only
@@ -1925,7 +2026,8 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
    
    for (auto p: pathMap){
       if (p.second > 0){
-         tuple<int,int> key = make_tuple(transMsg->getTransactionId(),p.first); //key is (transactionId, pathIndex)
+         tuple<int,int> key = make_tuple(transMsg->getTransactionId(),p.first); 
+         //key is (transactionId, pathIndex)
 
          //update the data structure keeping track of how much sent and received on each path
          if (transPathToAckState.count(key) == 0){
@@ -2171,7 +2273,8 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
       //if all probes from destination are recent enough, send transaction on one or more paths.
       if (recent){ // we made sure all the probes are back
          destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode]-1;
-         if ((!_timeoutEnabled) || (simTime() < (transMsg->getTimeSent() + transMsg->getTimeOut()))) { //TODO: remove?
+         if ((!_timeoutEnabled) || (simTime() < (transMsg->getTimeSent() + transMsg->getTimeOut()))) { 
+             //TODO: remove?
             splitTransactionForWaterfilling(ttmsg);
             if (transMsg->getAmount()>0){
                destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode]+1;
@@ -2193,9 +2296,10 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
          }
          return;
       }
-      else{ //if not recent, reschedule transaction to arrive after 1sec. 
-         if (destNodeToNumTransPending[destNode] == 1){
-            restartProbes(destNode);
+
+      else{ //if not recent
+         if (destNodeToNumTransPending[destNode] > 0){
+             restartProbes(destNode);
          }
          scheduleAt(simTime() + 1, ttmsg);
          return;
