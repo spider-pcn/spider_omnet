@@ -34,8 +34,8 @@ simple hostNode
 		@signal[numProcessedPerChannel*](type="long");  
 		@statisticTemplate[numProcessedPerChannelTemplate](record=vector, stats);  
 
- 		@signal[probabilityPerDest*](type="double");  
-		@statisticTemplate[probabilityPerDestTemplate](record=vector, stats);  
+ 		@signal[probabilityPerDestPerPath*](type="double");  
+		@statisticTemplate[probabilityPerDestPerPathTemplate](record=vector, stats);  
 
 		@signal[numSentPerChannel*](type="long");  
 		@statisticTemplate[numSentPerChannelTemplate](record=vector, stats);   

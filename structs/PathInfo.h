@@ -11,6 +11,7 @@ public:
     double bottleneck = -1;
     vector<double> pathBalances = {};
     simsignal_t bottleneckPerDestPerPathSignal;
+    simsignal_t probabilityPerDestPerPathSignal;
     simsignal_t probeBackPerDestPerPathSignal;
     simsignal_t rateCompletedPerDestPerPathSignal;
     simsignal_t rateAttemptedPerDestPerPathSignal;

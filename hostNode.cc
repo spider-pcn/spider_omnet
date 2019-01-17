@@ -244,7 +244,7 @@ void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode
       simsignal_t signal;
       cProperty *statisticTemplate;
 
-      // numInQueuePerChannel signal
+      // bottleneckPerDest signal
       if (destNode<_numHostNodes){
          sprintf(signalName, "bottleneckPerDestPerPath_%d(host %d)", pathIdx, destNode);
       }
@@ -278,6 +278,19 @@ void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode
       statisticTemplate = getProperties()->get("statisticTemplate", "rateCompletedPerDestPerPathTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       nodeToShortestPathsMap[destNode][pathIdx].rateCompletedPerDestPerPathSignal = signal;
+
+      // probabilityPerDest signal
+      if (destNode<_numHostNodes){
+         sprintf(signalName, "probabilityPerDestPerPath_%d(host %d)", pathIdx, destNode);
+      }
+      else{
+         sprintf(signalName, "probabilityPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
+      }
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "probabilityPerDestPerPathTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      nodeToShortestPathsMap[destNode][pathIdx].probabilityPerDestPerPathSignal = signal;
+
 
       if (destNode<_numHostNodes){
          sprintf(signalName, "rateAttemptedPerDestPerPath_%d(host %d)", pathIdx, destNode);
@@ -690,14 +703,6 @@ void hostNode::initialize()
       numArrivedPerDestSignals.push_back(signal);
 
       statNumArrived.push_back(0);
-
-      // probabilityPerDest signal
-      sprintf(signalName, "probabilityPerDest(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "probabilityPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      probabilityPerDestSignals.push_back(signal);
-      statProbabilities.push_back(0);
 
       //pathPerTransPerDest signal
       sprintf(signalName, "pathPerTransPerDest(host node %d)", i);
@@ -1384,7 +1389,10 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
       if (it != getIndex()){
          if (nodeToShortestPathsMap.count(it) > 0) {
             for (auto p: nodeToShortestPathsMap[it]){
-               if (_signalsEnabled) emit(p.second.bottleneckPerDestPerPathSignal, p.second.bottleneck);
+               if (_signalsEnabled) {
+                   emit(p.second.bottleneckPerDestPerPathSignal, p.second.bottleneck);
+                   emit(p.second.probabilityPerDestPerPathSignal, p.second.probability);
+               }
 
                //emit rateCompleted per path
                emit(p.second.rateCompletedPerDestPerPathSignal, p.second.statRateCompleted);
@@ -1404,9 +1412,6 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
          
          emit(rateCompletedPerDestSignals[it], statRateCompleted[it]);
          statRateCompleted[it] = 0;
-
-         emit(probabilityPerDestSignals[it], statProbabilities[it]);
-
 
          if (_signalsEnabled) {
             emit(numArrivedPerDestSignals[it], statNumArrived[it]);
