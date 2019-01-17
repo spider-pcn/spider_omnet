@@ -49,7 +49,7 @@ do
     done
 
     #routing schemes where number of path choices matter
-    for routing_scheme in waterfilling #LP
+    for routing_scheme in waterfilling smoothWaterfilling #LP
     do
       for numPathChoices in 4
       do

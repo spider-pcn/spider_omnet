@@ -25,12 +25,12 @@ if args.routingScheme != 'default':
     configname = configname + "_" + args.routingScheme
 
 #arg parse might support a cleaner way to deal with this
-if(args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
-        'smoothWaterfilling']):
-    if(args.routingScheme != 'default'):
+if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
+        'smoothWaterfilling'] :
+    if args.routingScheme != 'default':
         print "******************"
-        print "WARNING: ill-specified routing scheme, 
-        defaulting to waterfilling, with no special config generated"
+        print "WARNING: ill-specified routing scheme, defaulting to waterfilling,",\
+            "with no special config generated"
         print "******************"
     args.routingScheme = 'waterfilling'
 
