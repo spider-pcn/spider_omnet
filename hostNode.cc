@@ -867,7 +867,7 @@ void hostNode::handleMessage(cMessage *msg)
    else if (ttmsg->getMessageType() == CLEAR_STATE_MSG){
       if (_loggingEnabled) cout<< "[HOST "<< myIndex() <<": RECEIVED CLEAR_STATE_MSG] " << msg->getName() << endl;
       if (_priceSchemeEnabled){
-         handleClearStateMessagePriceScheme(ttmsg); //clears the transactions queued in nodeToDestInfo
+         //handleClearStateMessagePriceScheme(ttmsg); //clears the transactions queued in nodeToDestInfo
          //TODO: need to write function
       }
       if (_waterfillingEnabled) {
@@ -933,10 +933,13 @@ void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
       transMsg->setPathIndex(pathIndex);
       msgToSend->setRoute(path);
       msgToSend->setHopCount(0);
+      if (_timeoutEnabled && transMsg->getHasTimeOut()){
       //generate time out message here, when path is decided
       routerMsg *toutMsg = generateTimeOutMessage(msgToSend);
-      handleTransactionMessage(msgToSend);
       scheduleAt(transMsg->getTimeSent() + transMsg->getTimeOut(), toutMsg );
+      }
+      handleTransactionMessage(msgToSend);
+
 
       //Update the  “time when next transaction can be sent” to (“current time” +
       //(“amount in the transaction $tu$ that is currently being sent” / “rate”)).
@@ -1797,8 +1800,9 @@ routerMsg* hostNode::generateWaterfillingTimeOutMessage( vector<int> path, int t
 // computes the updated path probabilities based on the current state of 
 // bottleneck link balances and returns the next path index to send the transaction 
 // on in accordance to the latest rate
-int hostNode::updatePathProbabilities(vector<double> bottleneckBalances, int destNode) {
 
+int hostNode::updatePathProbabilities(vector<double> bottleneckBalances, int destNode) {
+    /*
     double averageBottleneck = accumulate(bottleneckBalances.begin(), 
             bottleneckBalances.end(), 0.0)/bottleneckBalances.size(); 
                 
@@ -1822,12 +1826,16 @@ int hostNode::updatePathProbabilities(vector<double> bottleneckBalances, int des
         nodeToShortestPathsMap[destNode][i].probability = probabilities[i];
     }
     return sampleFromDistribution(probabilities);
+    */
+    return 0;
 }
 
 
 // samples a random number (index) of the passed in vector
 // based on the actual probabilities passed in
+
 int hostNode::sampleFromDistribution(vector<double> probabilities) {
+    /*
     vector<double> cumProbabilities { 0 };
 
     double sumProbabilities = accumulate(probabilities.begin(), probabilities.end(), 0.0); 
@@ -1848,6 +1856,8 @@ int hostNode::sampleFromDistribution(vector<double> probabilities) {
 
     // should never be reached
     //assert(false);
+
+     */
     return 0;
 }
 
