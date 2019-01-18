@@ -85,6 +85,13 @@ simple hostNode
 		@signal[rateAttemptedPerDestPerPath*](type="long"); 
 		@statisticTemplate[rateAttemptedPerDestPerPathTemplate](record=vector, stats);
 		
+		//has queue capacity specific signals
+		@signal[numFailedPerDest*](type="long");  
+		@statisticTemplate[numFailedPerDestTemplate](record=vector, stats);
+		
+		@signal[rateFailedPerDest*](type="long");  
+		@statisticTemplate[rateFailedPerDestTemplate](record=vector, stats);
+		
 		//price scheme payment channel specific signals
 		@signal[nValuePerChannel*](type="long"); 
 		@statisticTemplate[nValuePerChannelTemplate](record=vector, stats);

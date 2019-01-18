@@ -29,6 +29,9 @@ class hostNode : public cSimpleModule
         map<int, PaymentChannel> nodeToPaymentChannel;
         map<int, DestInfo> nodeToDestInfo; //one structure per destination;
               //TODO: incorporate the signals into nodeToDestInfo
+      vector<int> statNumFailed = {};
+      vector<int> statRateFailed = {};
+ 
         vector<int> statNumCompleted = {};
         vector<int> statNumArrived = {};
         vector<int> statRateCompleted = {};
@@ -55,6 +58,10 @@ class hostNode : public cSimpleModule
         vector<simsignal_t> numTimedOutAtSenderSignals = {};
         vector<simsignal_t> probabilityPerDestSignals = {};
 
+
+   vector<simsignal_t> rateFailedPerDestSignals = {};
+      vector<simsignal_t> numFailedPerDestSignals = {};
+
         //signal showing which path index was chosen for each transaction
         vector<simsignal_t> pathPerTransPerDestSignals = {};       
         vector<simsignal_t> fracSuccessfulPerDestSignals = {};
@@ -69,7 +76,6 @@ class hostNode : public cSimpleModule
         map<int, AckState> transToAmtLeftToComplete = {};
         int numCleared = 0;
         simsignal_t numClearedSignal;
-
 
    protected:
       virtual int myIndex(); //if host node, return getIndex(), if routerNode, return getIndex()+numHostNodes
