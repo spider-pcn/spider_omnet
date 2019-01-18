@@ -450,6 +450,7 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
       simtime_t msgArrivalTime = get<1>(*it);
       int prevNode = get<2>(*it);
       int nextNode = get<3>(*it);
+      int destNode = get<4>(*it);
 
       if (simTime() > (msgArrivalTime + _maxTravelTime)){ // we can process
          //fixed not deleting from the queue
@@ -693,7 +694,7 @@ void routerNode::handleTimeOutMessage(routerMsg* ttmsg){
    //cout << "nextNode:" << nextNode << endl;
    //cout << "nextHopCount:" << ttmsg->getHopCount()+1 << endl;
 
-   CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),prevNode, nextNode);
+   CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),prevNode, nextNode, toutMsg->getReceiver());
    canceledTransactions.insert(ct);
    forwardTimeOutMessage(ttmsg);
 
@@ -707,7 +708,7 @@ void routerNode::handleAckMessageTimeOut(routerMsg* ttmsg){
    int transactionId = aMsg->getTransactionId();
    auto iter = find_if(canceledTransactions.begin(),
          canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int>& p)
+         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
          { return get<0>(p) == transactionId; });
    if (iter!=canceledTransactions.end()){
       canceledTransactions.erase(iter);
@@ -816,7 +817,7 @@ bool routerNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
    int transactionId = transMsg->getTransactionId();
    auto iter = find_if(canceledTransactions.begin(),
          canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int>& p)
+         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
          { return get<0>(p) == transactionId; });
 
    if ( iter!=canceledTransactions.end() ){

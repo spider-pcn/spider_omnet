@@ -25,6 +25,7 @@ public:
     simtime_t priceLastUpdated = 0;
     routerMsg * triggerTransSendMsg;
     bool isSendTimerSet = false;
+    
     bool isProbeOutstanding = false;
 
     //signals for price scheme per path

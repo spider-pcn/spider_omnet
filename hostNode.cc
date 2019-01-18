@@ -209,11 +209,11 @@ void hostNode:: restartProbes(int destNode){
 
    for (auto p: nodeToShortestPathsMap[destNode] ){
       PathInfo pathInformation = p.second;
-      if (pathInformation.isProbeOutstanding == false) {
+      //if (pathInformation.isProbeOutstanding == false) {
         nodeToShortestPathsMap[destNode][p.first].isProbeOutstanding = true;
         routerMsg * msg = generateProbeMessage(destNode, p.first, p.second.path);
         forwardProbeMessage(msg);
-      }
+      //}
    }
 
 }
@@ -230,13 +230,12 @@ void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode
       nodeToShortestPathsMap[destNode][pathIdx] = temp;
       nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
       nodeToShortestPathsMap[destNode][pathIdx].probability = 1.0 / kShortestPaths.size();
-      /*if (pathIdx == 0) {
+      if (pathIdx == 0) {
         nodeToShortestPathsMap[destNode][pathIdx].probability = 0.8;
-        statProbabilities[destNode] = 0.8;
       }
       else {
         nodeToShortestPathsMap[destNode][pathIdx].probability = 0.2;
-      }*/
+      }
 
 
       //initialize signals
@@ -866,21 +865,21 @@ void hostNode::handleMessage(cMessage *msg)
       if (_loggingEnabled) cout<< "[HOST "<< myIndex() <<": RECEIVED TRANSACTION MSG]  "<< msg->getName() <<endl;
       // print_message(ttmsg);
       // print_private_values();
-      cout << "handleTrans1" << endl;
+      // cout << "handleTrans1" << endl;
       if (_timeoutEnabled && handleTransactionMessageTimeOut(ttmsg)){
          //note: handleTransactionMessageTimeOut(ttmsg) returns true if message was deleted
-         cout << "handleTrans2" << endl;
+         // cout << "handleTrans2" << endl;
          return;
       }
-      cout << "handleTrans3" << endl;
+      // cout << "handleTrans3" << endl;
       if (_waterfillingEnabled && (ttmsg->getRoute().size() == 0)){
-         cout << "handleTrans4" << endl;
+         // cout << "handleTrans4" << endl;
          handleTransactionMessageWaterfilling(ttmsg);
       }
       else if (_priceSchemeEnabled){
-         cout << "handleTrans5" << endl;
+         // cout << "handleTrans5" << endl;
          handleTransactionMessagePriceScheme(ttmsg);
-         cout << "handleTrans6" << endl;
+         // cout << "handleTrans6" << endl;
       }
       else{
          handleTransactionMessage(ttmsg);
@@ -933,6 +932,9 @@ void hostNode::handleMessage(cMessage *msg)
       if (_priceSchemeEnabled){
          handleClearStateMessagePriceScheme(ttmsg); //clears the transactions queued in nodeToDestInfo
          //TODO: need to write function
+      }
+      if (_waterfillingEnabled) {
+          handleClearStateMessageWaterfilling(ttmsg);
       }
 
       handleClearStateMessage(ttmsg);
@@ -1188,6 +1190,28 @@ routerMsg * hostNode::generatePriceUpdateMessage(double xLocal, int reciever){
 }
 
 
+void hostNode::handleClearStateMessageWaterfilling(routerMsg *ttsmg) {
+        for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); it++){
+            //iterate through all canceledTransactions
+            int transactionId = get<0>(*it);
+            simtime_t msgArrivalTime = get<1>(*it);
+            int prevNode = get<2>(*it);
+            int nextNode = get<3>(*it);
+            int destNode = get<4>(*it);
+
+            if (simTime() > (msgArrivalTime + _maxTravelTime)){
+              for (auto p : nodeToShortestPathsMap[destNode]) {
+                    int pathIndex = p.first;
+                    tuple<int,int> key = make_tuple(transactionId, pathIndex);
+                    if (transPathToAckState.count(key) != 0) {
+                        nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= 
+                        (transPathToAckState[key].amtSent - transPathToAckState[key].amtReceived);
+                        transPathToAckState.erase(key);
+                    }
+              }
+            }
+        }
+}
 
 
 
@@ -1204,6 +1228,8 @@ void hostNode::handleClearStateMessage(routerMsg* ttmsg){
       simtime_t msgArrivalTime = get<1>(*it);
       int prevNode = get<2>(*it);
       int nextNode = get<3>(*it);
+      int destNode = get<4>(*it);
+
 
       if (simTime() > (msgArrivalTime + _maxTravelTime)){ //we can process it
 
@@ -1472,22 +1498,18 @@ void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
 
          }
          else{
-
-
             routerMsg* waterTimeOutMsg = generateWaterfillingTimeOutMessage(
                   nodeToShortestPathsMap[destination][p.first].path, transactionId, destination);
 
 						// Radhika: what if a transaction on two different paths have same next hop?
             int nextNode = (waterTimeOutMsg->getRoute())[waterTimeOutMsg->getHopCount()+1];
-            CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),-1, nextNode);
+            CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),-1, nextNode, destination);
             canceledTransactions.insert(ct);
 
             statNumTimedOut[destination] = statNumTimedOut[destination]  + 1;
             forwardTimeOutMessage(waterTimeOutMsg);
 
-
          }
-         //TODO: HandleClearStateMessage to remove this key
       }
 
 
@@ -1495,7 +1517,8 @@ void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
    }
    else{
 
-      CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),(ttmsg->getRoute())[ttmsg->getHopCount()-1],-1);
+      CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),(ttmsg->getRoute())[ttmsg->getHopCount()-1],-1, 
+              toutMsg->getReceiver());
       canceledTransactions.insert(ct);
       //is at the destination
       ttmsg->decapsulate();
@@ -1533,12 +1556,12 @@ void hostNode::handleTimeOutMessageShortestPath(routerMsg* ttmsg){
       else{
          //cout << "timeout1.6" << endl;
          //cout << "route: ";
-         printVector(ttmsg->getRoute());
+         // printVector(ttmsg->getRoute());
          //cout << "hopCount: " << ttmsg->getHopCount() << endl;
 
          int nextNode = (ttmsg->getRoute())[ttmsg->getHopCount()+1];
          //cout << "timeout1.61" << endl;
-         CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),-1, nextNode);
+         CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),-1, nextNode, destination);
          canceledTransactions.insert(ct);
          statNumTimedOut[destination] = statNumTimedOut[destination]  + 1;
          //cout << "timeout1.62" << endl;
@@ -1547,7 +1570,8 @@ void hostNode::handleTimeOutMessageShortestPath(routerMsg* ttmsg){
    }
    else{ //is at the destination
       //cout << "timeout1.7" << endl;
-      CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),(ttmsg->getRoute())[ttmsg->getHopCount()-1],-1);
+      CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),(ttmsg->getRoute())[ttmsg->getHopCount()-1],-1, 
+              destination);
 
       canceledTransactions.insert(ct);
 
@@ -1565,7 +1589,7 @@ void hostNode::handleAckMessageTimeOut(routerMsg* ttmsg){
 	 //Radhika: what if there are multiple HTLC's per transaction? 
    auto iter = find_if(canceledTransactions.begin(),
          canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int>& p)
+         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
          { return get<0>(p) == transactionId; });
 
    if (iter!=canceledTransactions.end()){
@@ -1578,17 +1602,17 @@ void hostNode::handleAckMessageTimeOut(routerMsg* ttmsg){
       successfulDoNotSendTimeOut.insert(aMsg->getTransactionId());
 
    }
-   else{ //_waterfillingEnabled
+   /*else{ //_waterfillingEnabled
       //Radhika TODO: following should happen irrespective of timeouts?
       tuple<int,int> key = make_tuple(aMsg->getTransactionId(), aMsg->getPathIndex());
 
       transPathToAckState[key].amtReceived = transPathToAckState[key].amtReceived + aMsg->getAmount();
-      /*
+
          if (transPathToAckState[key].amtReceived == transPathToAckState[key].amtSent){
          transPathToAckState.erase(key);
          }
-       */
-   }
+    
+   }*/
 }
 
 void hostNode::handleAckMessageShortestPath(routerMsg* ttmsg){
@@ -1630,9 +1654,12 @@ void hostNode::handleAckMessageWaterfilling(routerMsg* ttmsg){
          transToAmtLeftToComplete.erase(aMsg->getTransactionId());
       }
 
-			//increment transaction amount ack on a path. 
+      //increment transaction amount ack on a path. 
       tuple<int,int> key = make_tuple(aMsg->getTransactionId(), aMsg->getPathIndex());
       transPathToAckState[key].amtReceived = transPathToAckState[key].amtReceived + aMsg->getAmount();
+
+      // decrement amtinflight on a path
+     nodeToShortestPathsMap[aMsg->getReceiver()][aMsg->getPathIndex()].sumOfTransUnitsInFlight -= aMsg->getAmount();
 			//Radhika: why is this commented out?
       /*
          if (transPathToAckState[key].amtReceived == transPathToAckState[key].amtSent){
@@ -1951,9 +1978,11 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
    for (auto iter: nodeToShortestPathsMap[destNode] ){
       int key = iter.first;
       double bottleneck = (iter.second).bottleneck;
+      double inflight = (iter.second).sumOfTransUnitsInFlight;
       bottleneckList.push_back(bottleneck);
       if (_loggingEnabled) cout << bottleneck << " (" << key  << "," << iter.second.lastUpdated<<"), ";
-      pq.push(make_pair(bottleneck, key)); //automatically sorts with biggest first index-element
+      
+      pq.push(make_pair(bottleneck - inflight, key)); //automatically sorts with biggest first index-element
    }
    if (_loggingEnabled) cout << endl;
 
@@ -1973,7 +2002,9 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
     } 
     else if (_smoothWaterfillingEnabled) {
         highestBal = get<0>(pq.top());
-        if (highestBal > 0) {
+
+        if (highestBal >= 0) {
+            // Vibhaa : >= 0 here gives slightly better results
             int pathIndex = updatePathProbabilities(bottleneckList, destNode);
             pathMap[pathIndex] = pathMap[pathIndex] + remainingAmt;
             remainingAmt = 0;
@@ -2010,7 +2041,7 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
                highestBal = get<0>(pq.top());
                highestBalIdx = get<1>(pq.top());
                
-               if (highestBal >= 0) {
+               if (highestBal > 0) {
                     pathMap[highestBalIdx] = pathMap[highestBalIdx] + remainingAmt;
                     remainingAmt = 0;
                 }
@@ -2057,8 +2088,9 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
             nodeToShortestPathsMap[destNode][p.first].statRateAttempted + 1;
          handleTransactionMessage(waterMsg);
          
-         // decrement balance after sending this out
-        nodeToShortestPathsMap[destNode][p.first].bottleneck -= amt;
+         // incrementInFlight balance
+         nodeToShortestPathsMap[destNode][p.first].sumOfTransUnitsInFlight += p.second;
+
       }
    }
 }
@@ -2072,7 +2104,7 @@ bool hostNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
 
    auto iter = find_if(canceledTransactions.begin(),
          canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int>& p)
+         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
          { return get<0>(p) == transactionId; });
 	 //Radhika: is the first condition needed? Isn't last condition enough??
    if ( iter!=canceledTransactions.end() || (transMsg->getHasTimeOut() && (simTime() > transMsg->getTimeSent() + transMsg->getTimeOut())) ){
@@ -2151,7 +2183,7 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
          //check if transactionId is in canceledTransaction set
          auto iter = find_if(canceledTransactions.begin(),
                canceledTransactions.end(),
-               [&transactionId](const tuple<int, simtime_t, int, int>& p)
+               [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
                { return get<0>(p) == transactionId; });
 
          if (iter!=canceledTransactions.end()){
@@ -2349,7 +2381,7 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
 				 //Radhika: what if we have multiple HTLC's per transaction id? Why is this check needed?
          auto iter = find_if(canceledTransactions.begin(),
                canceledTransactions.end(),
-               [&transactionId](const tuple<int, simtime_t, int, int>& p)
+               [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
                { return get<0>(p) == transactionId; });
 
          if (iter!=canceledTransactions.end()){

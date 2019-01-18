@@ -110,6 +110,8 @@ class hostNode : public cSimpleModule
       virtual void handleProbeMessage(routerMsg *msg);
       virtual void handleClearStateMessage(routerMsg *msg);
       virtual void handleClearStateMessagePriceScheme(routerMsg *msg);
+      virtual void handleClearStateMessageWaterfilling(routerMsg *msg);
+
       virtual void handleTriggerPriceUpdateMessage(routerMsg *msg);
       virtual void handlePriceUpdateMessage(routerMsg* ttmsg);
       virtual void handleTriggerPriceQueryMessage(routerMsg *msg);
