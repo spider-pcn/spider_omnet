@@ -1802,7 +1802,7 @@ routerMsg* hostNode::generateWaterfillingTimeOutMessage( vector<int> path, int t
 // on in accordance to the latest rate
 
 int hostNode::updatePathProbabilities(vector<double> bottleneckBalances, int destNode) {
-    /*
+
     double averageBottleneck = accumulate(bottleneckBalances.begin(), 
             bottleneckBalances.end(), 0.0)/bottleneckBalances.size(); 
                 
@@ -1826,8 +1826,7 @@ int hostNode::updatePathProbabilities(vector<double> bottleneckBalances, int des
         nodeToShortestPathsMap[destNode][i].probability = probabilities[i];
     }
     return sampleFromDistribution(probabilities);
-    */
-    return 0;
+
 }
 
 
@@ -1835,7 +1834,7 @@ int hostNode::updatePathProbabilities(vector<double> bottleneckBalances, int des
 // based on the actual probabilities passed in
 
 int hostNode::sampleFromDistribution(vector<double> probabilities) {
-    /*
+
     vector<double> cumProbabilities { 0 };
 
     double sumProbabilities = accumulate(probabilities.begin(), probabilities.end(), 0.0); 
@@ -1857,7 +1856,6 @@ int hostNode::sampleFromDistribution(vector<double> probabilities) {
     // should never be reached
     //assert(false);
 
-     */
     return 0;
 }
 
