@@ -426,7 +426,7 @@ void hostNode::initialize()
       _kappa = 0.5;
       _tUpdate = 0.5;
       _priceSchemeEnabled = par("priceSchemeEnabled");
-      _hasQueueCapacity = false;
+        _hasQueueCapacity = false;
       _queueCapacity = 5;
       
       // smooth waterfilling parameters
@@ -2038,7 +2038,9 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
    statNumArrived[destNode] = statNumArrived[destNode]+1;
    statRateArrived[destNode] = statRateArrived[destNode]+1;
 
-   destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] + 1;
+   if (simTime() == transMsg->getTimeSent()){
+       destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] + 1;
+   }
 
    if (nodeToShortestPathsMap.count(destNode) == 0 ){
       //cout << "start getKShortestRoutes" << endl;
@@ -2085,7 +2087,6 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
       //is a self-message/at hop count = 0
       int destNode = transMsg->getReceiver();
 
-      //add transaction to queue per destination
       DestInfo* destInfo = &(nodeToDestInfo[destNode]);
 
       //check if there are transactions queued up
@@ -2099,7 +2100,7 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
                //set transaction path
                ttmsg->setRoute(p.second.path);
 
-               handleTransactionMessage(ttmsg);
+               forwardTransactionMessage(ttmsg);
 
                //update "amount of transaction in flight"
                nodeToShortestPathsMap[destNode][p.first].sumOfTransUnitsInFlight =

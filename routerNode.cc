@@ -599,20 +599,20 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
       for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
 
          int node = it->first; //key
-         cout << "stat1" << endl;
+
          emit(nodeToPaymentChannel[node].numInQueuePerChannelSignal, (nodeToPaymentChannel[node].queuedTransUnits).size());
-         cout << "stat2" << endl;
+
          emit(nodeToPaymentChannel[node].balancePerChannelSignal, nodeToPaymentChannel[node].balance);
-         cout << "stat3" << endl;
+
          emit(nodeToPaymentChannel[node].numProcessedPerChannelSignal, nodeToPaymentChannel[node].statNumProcessed);
          nodeToPaymentChannel[node].statNumProcessed = 0;
-         cout << "stat4" << endl;
+
          emit(nodeToPaymentChannel[node].numSentPerChannelSignal, nodeToPaymentChannel[node].statNumSent);
          nodeToPaymentChannel[node].statNumSent = 0;
-         cout << "stat5" << endl;
+
       }
    }
-   cout << "stat6" << endl;
+
 
 }
 
