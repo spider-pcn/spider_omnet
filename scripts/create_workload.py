@@ -10,7 +10,7 @@ from config import *
 
 # generates the start and end nodes for a fixed set of topologies - hotnets/line/simple graph
 def generate_workload_standard(filename, payment_graph_topo, workload_type, total_time, \
-        exp_size, txn_size_mean, timeout_value, generate_json_also, circ_frac, std_workload=False):
+        exp_size, txn_size_mean, timeout_value, generate_json_also, circ_frac, std_workload=True):
     # by default ASSUMES NO END HOSTS
 
     # define start and end nodes and amounts
@@ -35,6 +35,12 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         amt_relative = [1,1]
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
         graph = simple_line_graph
+    elif payment_graph_topo == 'hardcoded_circ':
+        start_nodes = [0, 1, 2, 3, 4]
+        end_nodes = [1, 2, 3, 4, 0]
+        amt_relative = [MEAN_RATE] * 5
+        amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+        graph = five_node_graph
 
     # generate circulation instead if you need a circulation
     if not std_workload:
@@ -396,7 +402,7 @@ def dag_demand(node_list, mean, std_dev, gen_method="topological_sort"):
 # parse arguments
 parser = argparse.ArgumentParser(description="Create arbitrary txn workloads to run the omnet simulator on")
 parser.add_argument('--graph-topo', \
-        choices=['hotnets_topo', 'simple_line', 'simple_deadlock', 'custom'],\
+        choices=['hotnets_topo', 'simple_line', 'simple_deadlock', 'custom', 'hardcoded_circ'],\
         help='type of graph (Small world or scale free or custom topology)', default='simple_line')
 parser.add_argument('--payment-graph-dag-percentage', type=int,\
 	help='percentage of circulation to put in the payment graph', default=0)
@@ -439,7 +445,7 @@ np.random.seed(SEED)
 random.seed(SEED)
 if graph_topo != 'custom':
     generate_workload_standard(output_prefix, graph_topo, distribution, \
-            total_time, exp_size, txn_size_mean, time_out, generate_json_also, circ_frac)
+            total_time, exp_size, txn_size_mean, timeout_value, generate_json_also, circ_frac)
 elif topo_filename is None:
     raise Exception("Topology needed for custom file")
 else:

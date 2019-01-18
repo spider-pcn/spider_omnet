@@ -30,9 +30,24 @@ parser.add_argument('--queue_info',
 parser.add_argument('--timeouts',
         action='store_true',
         help='Plot timeout information for all source destination pairs')
+parser.add_argument('--timeouts_sender',
+        action='store_true',
+        help='Plot number of timeouts at the sender for all source destination pairs')
 parser.add_argument('--frac_completed',
         action='store_true',
         help='Plot fraction completed for all source destination pairs')
+parser.add_argument('--path',
+        action='store_true',
+        help='Plot path index used for all source destination pairs')
+parser.add_argument('--pending',
+        action='store_true',
+        help='Plot number of pending txns at a given point in time all source destination pairs')
+parser.add_argument('--probabilities',
+        action='store_true',
+        help='Plot probabilities of picking each path at a given point in time all source destination pairs')
+parser.add_argument('--bottlenecks',
+        action='store_true',
+        help='Plot bottlenecks on different paths at a given point in time all source destination pairs')
 
 parser.add_argument('--save',
         type=str,
@@ -46,7 +61,7 @@ args = parser.parse_args()
 # returns a dictionary of the necessary stats where key is a router node
 # and value is another dictionary where the key is the partner node 
 # and value is the time series of the signal_type recorded for this pair of nodes
-def aggregate_info_per_node(filename, signal_type, is_router):
+def aggregate_info_per_node(filename, signal_type, is_router, aggregate_per_path=False):
     node_signal_info = dict()
     all_timeseries, vec_id_to_info_map = parse_vec_file(filename, signal_type)
 
@@ -79,9 +94,17 @@ def aggregate_info_per_node(filename, signal_type, is_router):
         signal_values =  timeseries
         dest_node = vector_details[3]
 
-        cur_info = node_signal_info.get(src_node, dict())
-        cur_info[dest_node] = signal_values
-        node_signal_info[src_node] = cur_info
+        if aggregate_per_path:
+            path_id = int(signal_name.split("_")[1])
+            cur_info = node_signal_info.get(src_node, dict())
+            dest_info = cur_info.get(dest_node, dict())
+            dest_info[path_id] = signal_values
+            cur_info[dest_node] = dest_info
+            node_signal_info[src_node] = cur_info
+        else: 
+            cur_info = node_signal_info.get(src_node, dict())
+            cur_info[dest_node] = signal_values
+            node_signal_info[src_node] = cur_info
         
     return node_signal_info
 
@@ -128,9 +151,10 @@ def aggregate_frac_successful_info(success, attempted):
 
 
 
+
 # plots every router's signal_type info in a new pdf page
 # and add a router wealth plot separately
-def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False):
+def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per_path_info=False):
     color_opts = ['#fa9e9e', '#a4e0f9', '#57a882', '#ad62aa']
     router_wealth_info =[]
     
@@ -142,14 +166,31 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False):
         
         i = 0
         for channel, info in channel_info.items():
-            time = [t[0] for t in info]
-            values = [t[1] for t in info]
-            label_name = str(router) + "->" + str(channel)
-            plt.plot(time, values, label=label_name)
-            if compute_router_wealth:
-                channel_bal_timeseries.append((time, values))
-            i += 1
+            # plot one plot per src dest pair and multiple lines per path
+            if per_path_info:
+                for path, path_signals in info.items():
+                    time = [t[0] for t in path_signals]
+                    values = [t[1] for t in path_signals]
+                    label_name = str(path)
+                    plt.plot(time, values, label=label_name)
+                plt.title(signal_type + " " + str(router) + "->" + str(channel))
+                plt.xlabel("Time")
+                plt.ylabel(signal_type)
+                plt.legend()
+                pdf.savefig()  # saves the current figure into a pdf page
+                plt.close()
 
+            # one plot per src with multiple lines per dest
+            else:
+                time = [t[0] for t in info]
+                values = [t[1] for t in info]
+                label_name = str(router) + "->" + str(channel)
+                plt.plot(time, values, label=label_name)
+                if compute_router_wealth:
+                    channel_bal_timeseries.append((time, values))
+                i += 1
+
+        # aggregate info for all router's wealth
         if compute_router_wealth:
             router_wealth = []
             for i, time in enumerate(channel_bal_timeseries[0][0]):
@@ -159,13 +200,16 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False):
                 router_wealth.append(wealth)
             router_wealth_info.append((router,channel_bal_timeseries[0][0], router_wealth))
         
-        plt.title(signal_type + " for Router " + str(router))
-        plt.xlabel("Time")
-        plt.ylabel(signal_type)
-        plt.legend()
-        pdf.savefig()  # saves the current figure into a pdf page
-        plt.close()
+        # close plot after every router unless it is per path information
+        if not per_path_info:
+            plt.title(signal_type + " for Router " + str(router))
+            plt.xlabel("Time")
+            plt.ylabel(signal_type)
+            plt.legend()
+            pdf.savefig()  # saves the current figure into a pdf page
+            plt.close()
 
+    # one giant plot for all router's wealth
     if compute_router_wealth:
         for (r, time, wealth) in router_wealth_info:
             plt.plot(time, wealth, label=str(r))
@@ -202,6 +246,7 @@ def plot_per_payment_channel_stats(args):
         if args.num_sent_per_channel:
             data_to_plot = aggregate_info_per_node(args.vec_file, "numSent", True)
             plot_relevant_stats(data_to_plot, pdf, "Number Sent")
+
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + args.save + "_per_channel_info.pdf"
     
 
@@ -223,6 +268,28 @@ def plot_per_src_dest_stats(args):
             attempted = aggregate_info_per_node(args.vec_file, "rateAttempted", False)
             data_to_plot = aggregate_frac_successful_info(successful, attempted)
             plot_relevant_stats(data_to_plot, pdf, "Fraction of successful txns in each window")
+
+        if args.path:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "pathPerTrans", False)
+            plot_relevant_stats(data_to_plot, pdf, "Path Per Transaction")
+
+        if args.timeouts_sender:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "numTimedOutAtSender", False)
+            plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Timed Out At Sender")
+
+        if args.pending:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "numPendingPerDest", False)
+            plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Pending To Given Destination")
+
+        if args.probabilities:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "probabilityPerDest", False\
+                    aggregate_per_path=True)
+            plot_relevant_stats(data_to_plot, pdf, "Probability of picking paths", per_path_info=True)
+
+        if args.bottlenecks:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "bottleneckPerDest", False,\
+                     aggregate_per_path=True)
+            plot_relevant_stats(data_to_plot, pdf, "Bottleneck Balance", per_path_info=True)
  
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + \
             args.save + "_per_src_dest_stats.pdf"

@@ -9,6 +9,7 @@ public:
     //channel information
     cGate* gate;
     double balance;
+    double balanceEWMA;
     vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits; //make_heap in initialization
     map<Id, double> incomingTransUnits; //(key,value) := ((transactionId, htlcIndex), amount)
     map<Id, double> outgoingTransUnits;

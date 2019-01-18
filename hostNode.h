@@ -26,40 +26,63 @@ using namespace omnetpp;
 class hostNode : public cSimpleModule
 {
    private:
-     map<int, PaymentChannel> nodeToPaymentChannel;
-      map<int, DestInfo> nodeToDestInfo; //one structure per destination;
-          //TODO: incorporate the signals into nodeToDestInfo
-      vector<int> statNumCompleted = {};
-      vector<int> statNumAttempted = {};
-      vector<int> statRateCompleted = {};
-      vector<int> statRateAttempted = {};
-      vector<int> statNumTimedOut = {};
-      map<int, vector<int>> destNodeToPath = {}; //store shortest paths
-      map<int, map<int, PathInfo>> nodeToShortestPathsMap = {}; //store k shortest paths in waterfilling
-      simsignal_t completionTimeSignal;
-      vector<simsignal_t> rateCompletedPerDestSignals = {};
-      vector<simsignal_t> rateAttemptedPerDestSignals = {};
-      vector<simsignal_t> numCompletedPerDestSignals = {};
-      vector<simsignal_t> numAttemptedPerDestSignals = {};
-      vector<simsignal_t> numTimedOutPerDestSignals = {};
-      vector<simsignal_t> pathPerTransPerDestSignals = {}; //signal showing which path index was chosen for each transaction
-      vector<simsignal_t> fracSuccessfulPerDestSignals = {};
-      set<int> successfulDoNotSendTimeOut = {}; //set of transaction units WITH timeouts, that we already received acks for
-      set<CanceledTrans> canceledTransactions = {};
-      map<tuple<int,int>,AckState> transPathToAckState = {}; //key is (transactionId, routeIndex)
-      map<int, int> transactionIdToNumHtlc = {}; //allows us to calculate the htlcIndex number
-      map<int, int> destNodeToNumTransPending = {};
-      map<int, AckState> transToAmtLeftToComplete = {};
-      int numCleared = 0;
-      simsignal_t numClearedSignal;
+        map<int, PaymentChannel> nodeToPaymentChannel;
+        map<int, DestInfo> nodeToDestInfo; //one structure per destination;
+              //TODO: incorporate the signals into nodeToDestInfo
+      vector<int> statNumFailed = {};
+      vector<int> statRateFailed = {};
+ 
+        vector<int> statNumCompleted = {};
+        vector<int> statNumArrived = {};
+        vector<int> statRateCompleted = {};
+        vector<int> statRateAttempted = {};
+        vector<int> statNumTimedOut = {};
+        vector<int> statNumTimedOutAtSender = {};
+        vector<int> statRateArrived = {};
+        vector<double> statProbabilities = {};
 
+        //store shortest paths
+        map<int, vector<int>> destNodeToPath = {};
+        map<int, double> destNodeToLastMeasurementTime = {};
+
+        //store k shortest paths in waterfilling
+        map<int, map<int, PathInfo>> nodeToShortestPathsMap = {};       
+        simsignal_t completionTimeSignal;
+        vector<simsignal_t> rateCompletedPerDestSignals = {};
+        vector<simsignal_t> rateAttemptedPerDestSignals = {};
+        vector<simsignal_t> rateArrivedPerDestSignals = {};
+        vector<simsignal_t> numCompletedPerDestSignals = {};
+        vector<simsignal_t> numArrivedPerDestSignals = {};
+        vector<simsignal_t> numTimedOutPerDestSignals = {};
+        vector<simsignal_t> numPendingPerDestSignals = {};
+        vector<simsignal_t> numTimedOutAtSenderSignals = {};
+        vector<simsignal_t> probabilityPerDestSignals = {};
+
+
+   vector<simsignal_t> rateFailedPerDestSignals = {};
+      vector<simsignal_t> numFailedPerDestSignals = {};
+
+        //signal showing which path index was chosen for each transaction
+        vector<simsignal_t> pathPerTransPerDestSignals = {};       
+        vector<simsignal_t> fracSuccessfulPerDestSignals = {};
+
+        //set of transaction units WITH timeouts, that we already received acks for
+        set<int> successfulDoNotSendTimeOut = {};       
+        set<CanceledTrans> canceledTransactions = {};
+
+        map<tuple<int,int>,AckState> transPathToAckState = {}; //key is (transactionId, routeIndex)
+        map<int, int> transactionIdToNumHtlc = {}; //allows us to calculate the htlcIndex number
+        map<int, int> destNodeToNumTransPending = {};
+        map<int, AckState> transToAmtLeftToComplete = {};
+        int numCleared = 0;
+        simsignal_t numClearedSignal;
 
    protected:
       virtual int myIndex(); //if host node, return getIndex(), if routerNode, return getIndex()+numHostNodes
       virtual routerMsg *generateWaterfillingTransactionMessage(double amt, vector<int> path, int pathIndex, transactionMsg * transMsg);
       virtual routerMsg *generateWaterfillingTimeOutMessage( vector<int> path, int transactionId, int receiver);
       virtual routerMsg *generateTransactionMessage(TransUnit TransUnit);
-      virtual routerMsg *generateAckMessage(routerMsg *msg);
+      virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true);
           //generates ack message and destroys input parameter msg
       //virtual routerMsg *generateAckMessageFromTimeOutMsg(routerMsg *msg);
       virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount, int htlcIndex);
@@ -92,6 +115,9 @@ class hostNode : public cSimpleModule
       virtual void handleStatMessagePriceScheme(routerMsg *msg);
       virtual void handleProbeMessage(routerMsg *msg);
       virtual void handleClearStateMessage(routerMsg *msg);
+      virtual void handleClearStateMessagePriceScheme(routerMsg *msg);
+      virtual void handleClearStateMessageWaterfilling(routerMsg *msg);
+
       virtual void handleTriggerPriceUpdateMessage(routerMsg *msg);
       virtual void handlePriceUpdateMessage(routerMsg* ttmsg);
       virtual void handleTriggerPriceQueryMessage(routerMsg *msg);
@@ -112,6 +138,8 @@ class hostNode : public cSimpleModule
 
       //helper
       virtual bool printNodeToPaymentChannel();
+      virtual int updatePathProbabilities(vector<double> bottleneckBalances, int destNode);
+      virtual int sampleFromDistribution(vector<double> probabilities);
 };
 
 #endif

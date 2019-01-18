@@ -22,7 +22,7 @@ mkdir -p ${PATH_NAME}
 
 # generate the files
 #for (( i=0; i<${arraylength}; i++ ));
-array=( 7 16 25 26 27 28 )
+array=( 3 ) # 7 16 )
 for i in "${array[@]}"
 do 
     # generate the graph first to ned file

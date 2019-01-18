@@ -45,19 +45,20 @@ def compute_avg_path_completion_rates(filename, shortest=True):
         src_dest_pair = (vector_details[0], vector_details[3])
 
         signal_name = vector_details[2]
-        '''if "Path" in signal_name:
+        if "Path" in signal_name:
             continue
-        path_id = 0'''
+        path_id = 0
 
-        if "Path" not in signal_name and not shortest:
+        '''if "Path" not in signal_name and not shortest:
             continue
         elif not shortest:
             path_id = int(signal_name.split("_")[1])
         else:
-            path_id = 0
+            path_id = 0'''
         signal_values = [t[1] for t in timeseries]
 
-        if "rateAttempted" in signal_name:
+
+        if "rateArrived" in signal_name:
             cur_info = avg_rate_attempted.get(src_dest_pair, dict())
             cur_info[path_id] = np.average(np.array(signal_values))
             avg_rate_attempted[src_dest_pair] = cur_info
@@ -84,7 +85,7 @@ def compute_avg_path_completion_rates(filename, shortest=True):
     overall_success = total_completed/float(total_attempted)
     print filename, ": "
     print "Average across source destinations: ", np.average(np.array(completion_fractions))
-    print "Overall success rate: ", total_completed, total_attempted
+    print "Overall success rate: ", total_completed, float(total_attempted)
     return overall_success, completion_fractions
 
 
@@ -100,7 +101,7 @@ def plot_completion_rate_cdf(args):
     for i in range(len(args.vec_files)):
         scale = 1
         # returns all the data points for the completion rates for individual paths to every source dest pair
-        overall_succ, res = compute_avg_path_completion_rates(args.vec_files[i], "wf" not in args.vec_files)
+        overall_succ, res = compute_avg_path_completion_rates(args.vec_files[i], "waterfilling" not in args.vec_files[i])
         keys = sorted(res)
         ys = np.linspace(0.1, 1.0, 100)
         

@@ -16,6 +16,7 @@ simple hostNode
 
 		bool waterfillingEnabled = default(false);
 		bool priceSchemeEnabled = default(false);
+		bool smoothWaterfillingEnabled = default(false);
 		int numPathChoices = default(4);
 
 		
@@ -31,7 +32,10 @@ simple hostNode
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
 
 		@signal[numProcessedPerChannel*](type="long");  
-		@statisticTemplate[numProcessedPerChannelTemplate](record=vector, stats);   
+		@statisticTemplate[numProcessedPerChannelTemplate](record=vector, stats);  
+
+ 		@signal[probabilityPerDestPerPath*](type="double");  
+		@statisticTemplate[probabilityPerDestPerPathTemplate](record=vector, stats);  
 
 		@signal[numSentPerChannel*](type="long");  
 		@statisticTemplate[numSentPerChannelTemplate](record=vector, stats);   
@@ -41,7 +45,10 @@ simple hostNode
 		
 		@signal[numCompletedPerDest*](type="long");  
 		@statisticTemplate[numCompletedPerDestTemplate](record=vector, stats);   
-		
+
+		@signal[numPendingPerDest*](type="long");  
+		@statisticTemplate[numPendingPerDestTemplate](record=vector, stats);  
+	
 		@signal[fracSuccessfulPerDest*](type="long");  
 		@statisticTemplate[fracSuccessfulPerDestTemplate](record=vector, stats);   
 		
@@ -50,12 +57,18 @@ simple hostNode
 		
 		@signal[numTimedOutPerDest*](type="long");  
 		@statisticTemplate[numTimedOutPerDestTemplate](record=vector, stats);
-		
-		@signal[rateAttemptedPerDest*](type="long"); 
+
+		@signal[numTimedOutAtSenderPerDest*](type="long");  
+		@statisticTemplate[numTimedOutAtSenderPerDestTemplate](record=vector, stats);
+	
+        	@signal[rateAttemptedPerDest*](type="long"); 
 		@statisticTemplate[rateAttemptedPerDestTemplate](record=vector, stats);   
 		
-		@signal[numAttemptedPerDest*](type="long"); 
-		@statisticTemplate[numAttemptedPerDestTemplate](record=vector, stats);   
+                @signal[rateArrivedPerDest*](type="long"); 
+		@statisticTemplate[rateArrivedPerDestTemplate](record=vector, stats);  
+	
+		@signal[numArrivedPerDest*](type="long"); 
+		@statisticTemplate[numArrivedPerDestTemplate](record=vector, stats);   
 
 		@signal[balancePerChannel*](type="long"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
@@ -71,6 +84,13 @@ simple hostNode
 		
 		@signal[rateAttemptedPerDestPerPath*](type="long"); 
 		@statisticTemplate[rateAttemptedPerDestPerPathTemplate](record=vector, stats);
+		
+		//has queue capacity specific signals
+		@signal[numFailedPerDest*](type="long");  
+		@statisticTemplate[numFailedPerDestTemplate](record=vector, stats);
+		
+		@signal[rateFailedPerDest*](type="long");  
+		@statisticTemplate[rateFailedPerDestTemplate](record=vector, stats);
 		
 		//price scheme payment channel specific signals
 		@signal[nValuePerChannel*](type="long"); 

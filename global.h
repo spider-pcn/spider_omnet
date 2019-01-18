@@ -58,4 +58,8 @@ extern double _alpha; //parameter for rate updates
 
 extern bool _signalsEnabled;
 extern bool _loggingEnabled;
+extern double _ewmaFactor;
+
+extern bool _hasQueueCapacity;
+extern int _queueCapacity;
 
