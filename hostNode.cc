@@ -1328,19 +1328,12 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
 
          if (_signalsEnabled) {
             emit(numArrivedPerDestSignals[it], statNumArrived[it]);
-         if (false && _hasQueueCapacity){
+         if (_hasQueueCapacity){
 
                     emit(numFailedPerDestSignals[it], statNumFailed[it]);
 
                     emit(rateFailedPerDestSignals[it], statRateFailed[it]);
                  }
-
-
-
-         if (_signalsEnabled) {
-
-
-
 
             emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
 
@@ -1642,7 +1635,7 @@ routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //de
 
     //no need to set secret;
    vector<int> route = ttmsg->getRoute();
-   route.resize(ttmsg->getHopCount() + 1);
+   //route.resize(ttmsg->getHopCount() + 1); //don't resize, might mess up destination
    reverse(route.begin(), route.end());
 
    msg->setRoute(route);

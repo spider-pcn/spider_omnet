@@ -834,7 +834,7 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
    }
 }
 
-routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //default is false
+routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //default is true
    int transactionId;
    double timeSent;
    double amount;
@@ -863,7 +863,7 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //
 
       //no need to set secret;
      vector<int> route = ttmsg->getRoute();
-     route.resize(ttmsg->getHopCount() + 1);
+     //route.resize(ttmsg->getHopCount() + 1); //don't resize, might mess up destination
      reverse(route.begin(), route.end());
 
      msg->setRoute(route);
