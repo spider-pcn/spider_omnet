@@ -49,7 +49,7 @@ simple hostNode
 		@signal[numPendingPerDest*](type="long");  
 		@statisticTemplate[numPendingPerDestTemplate](record=vector, stats);  
 	
-		@signal[fracSuccessfulPerDest*](type="long");  
+		@signal[fracSuccessfulPerDest*](type="double");  
 		@statisticTemplate[fracSuccessfulPerDestTemplate](record=vector, stats);   
 		
 		@signal[pathPerTransPerDest*](type="long");  
@@ -96,30 +96,30 @@ simple hostNode
 		@signal[nValuePerChannel*](type="long"); 
 		@statisticTemplate[nValuePerChannelTemplate](record=vector, stats);
 		
-		@signal[xLocalPerChannel*](type="long"); 
+		@signal[xLocalPerChannel*](type="double"); 
 		@statisticTemplate[xLocalPerChannelTemplate](record=vector, stats);
 
-		@signal[lambdaPerChannel*](type="long"); 
+		@signal[lambdaPerChannel*](type="double"); 
 		@statisticTemplate[lambdaPerChannelTemplate](record=vector, stats);
 		
-		@signal[muLocalPerChannel*](type="long"); 
+		@signal[muLocalPerChannel*](type="double"); 
 		@statisticTemplate[muLocalPerChannelTemplate](record=vector, stats);
 		
-		@signal[muRemotePerChannel*](type="long"); 
+		@signal[muRemotePerChannel*](type="double"); 
 		@statisticTemplate[muRemotePerChannelTemplate](record=vector, stats);
 		
 		//price scheme path specific signals
-		@signal[rateToSendTransPerPath*](type="long"); 
+		@signal[rateToSendTransPerPath*](type="double"); 
 		@statisticTemplate[rateToSendTransPerPathTemplate](record=vector, stats);
 		
-		@signal[timeToNextSendPerPath*](type="long"); 
+		@signal[timeToNextSendPerPath*](type="simtime_t"); 
 		@statisticTemplate[timeToNextSendPerPathTemplate](record=vector, stats);
 		
-		@signal[sumOfTransUnitsInFlightPerPath*](type="long"); 
+		@signal[sumOfTransUnitsInFlightPerPath*](type="double"); 
 		@statisticTemplate[sumOfTransUnitsInFlightPerPathTemplate](record=vector, stats);
 		
-		@signal[priceLastUpdatedPerPath*](type="long"); 
-		@statisticTemplate[priceLastUpdatedPerPathTemplate](record=vector, stats);
+		@signal[priceLastSeenPerPath*](type="double"); 
+		@statisticTemplate[priceLastSeenPerPathTemplate](record=vector, stats);
 		
 		@signal[isSendTimerSetPerPath*](type="long"); 
 		@statisticTemplate[isSendTimerSetPerPathTemplate](record=vector, stats);
