@@ -940,24 +940,7 @@ void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
       nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
       transactionMsg *transMsg = check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
      
-     // remove cancelled txns 
-      while(msgToSend != NULL && _timeoutEnabled && simTime() > transMsg->getTimeSent() + transMsg->getTimeOut()){
-         if (getIndex() == 1) 
-            cout << "timing out at sender transaction" << transMsg->getTransactionId() << endl;
-         msgToSend->decapsulate();
-         delete msgToSend;
-         delete transMsg;
-
-         if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {
-             msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
-             nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
-             transMsg = check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
-         }
-         else 
-             msgToSend = NULL;
-      }
-     
-      // if there is a txn to send send it
+      // if there is a txn to send send it considering time outs from this point onwards
       if (msgToSend != NULL) {
           //Send the transaction $tu$ along the corresponding path.
           transMsg->setPathIndex(pathIndex);
@@ -975,7 +958,7 @@ void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
           //generate time out message here, when path is decided
           if (_timeoutEnabled) {
             routerMsg *toutMsg = generateTimeOutMessage(msgToSend);
-            scheduleAt(transMsg->getTimeSent() + transMsg->getTimeOut(), toutMsg );
+            scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
           }
 
           forwardTransactionMessage(msgToSend);
@@ -1036,7 +1019,7 @@ void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
    else{ //is back at sender
       double demand;
       if (myIndex() == 0)
-          demand = 100;
+          demand = 50;
       else
           demand = 250;
 
@@ -2162,7 +2145,7 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
                 //generate time out message here, when path is decided
                 if (_timeoutEnabled) {
                  routerMsg *toutMsg = generateTimeOutMessage(ttmsg);
-                 scheduleAt(transMsg->getTimeSent() + transMsg->getTimeOut(), toutMsg );
+                 scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
                 }
 
                forwardTransactionMessage(ttmsg);
