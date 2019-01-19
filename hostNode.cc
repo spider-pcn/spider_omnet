@@ -1589,8 +1589,14 @@ void hostNode::handleAckMessageWaterfilling(routerMsg* ttmsg){
  */
 void hostNode::handleAckMessage(routerMsg* ttmsg){
 
+    // this method can only be called at the sender of a transaction
+    // so there's no need to check incoming trans units unlike routers 
+    // assert that this is the sender @Vibhaa
+
    //generate updateMsg
+   // this is previous node on the ack path, so next node on the forward path
    int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
+
    //note: prevNode is nextNode in original route (is only prev in ack reversed route)
    //remove transaction from outgoing_trans_unit
    map<Id, double> *outgoingTransUnits = &(nodeToPaymentChannel[prevNode].outgoingTransUnits);

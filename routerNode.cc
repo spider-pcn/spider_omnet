@@ -684,10 +684,10 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
       //increment payment back to outgoing channel
       nodeToPaymentChannel[prevNode].balance = nodeToPaymentChannel[prevNode].balance + aMsg->getAmount();
 
+      // this is nextNode on the ack path and so prev node in the forward path or rather
+      // node sending you mayments
       int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
-
       map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[nextNode].incomingTransUnits);
-
       (*incomingTransUnits).erase(make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex()));
 
    }
