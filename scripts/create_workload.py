@@ -117,24 +117,24 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
         # load the data
         amt_dist = np.load(KAGGLE_AMT_DIST_FILENAME)
         time_dist = np.load(KAGGLE_TIME_DIST_FILENAME)
-        num_amts = amt_dist.shape[1]
-        num_times = time_dist.shape[1]
+        num_amts = amt_dist.item().get('p').size
+        num_times = time_dist.item().get('p').size
         # transaction sizes drawn from kaggle data, as is inter-transaction time
         for k in range(len(start_nodes)):
             current_time = 0.0
             while current_time < total_time:
                 # draw an index according to the amount pmf
                 txn_idx = np.random.choice(num_amts, 1, \
-                                           p=amt_dist[0])[0]
+                                           p=amt_dist.item().get('p'))[0]
                 # map the index to a tx amount
-                txn_size = amt_dist[1][txn_idx]
+                txn_size = amt_dist.item().get('bins')[txn_idx]
                 outfile.write(str(txn_size) + " " + str(current_time + start_time) + " " + str(start_nodes[k]) + \
                         " " + str(end_nodes[k]) + " 0 " + str(timeout_value) + "\n")
                 # draw an index according to the time pmf
                 time_idx = np.random.choice(num_times, 1, \
-                                            p=time_dist[0])[0]
+                                            p=time_dist.item().get('p'))[0]
                 # map index to an inter-tx time
-                time_incr = time_dist[1][time_idx]
+                time_incr = time_dist.item().get('bins')[time_idx]
                 current_time = current_time + time_incr
 
     outfile.close()
