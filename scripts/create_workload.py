@@ -81,7 +81,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
 # write the given set of txns denotes by start_node -> end_node with absolute_amts as passed in
 # to a separate workload file
 # workload file of form
-# [amount] [timeSent] [sender] [receiver] [priorityClass]
+# [amount] [timeSent] [sender] [receiver] [priorityClass] [timeout_value]
 # write to file - assume no priority for now
 # transaction sizes are either constant or exponentially distributed around their mean
 def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
