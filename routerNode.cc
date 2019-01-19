@@ -113,6 +113,13 @@ void routerNode::initialize()
       nodeToPaymentChannel[key].balance = _balances[make_tuple(myIndex(),key)];
       nodeToPaymentChannel[key].balanceEWMA = nodeToPaymentChannel[key].balance;
 
+
+      // TODO: fix @Vibhaa
+      nodeToPaymentChannel[key].totalCapacity = 2 * nodeToPaymentChannel[key].balance;
+      nodeToPaymentChannel[key].lambda = 0;
+      nodeToPaymentChannel[key].muLocal = 0;
+      nodeToPaymentChannel[key].muRemote = 0;
+
       //initialize queuedTransUnits
       vector<tuple<int, double , routerMsg *, Id>> temp;
       make_heap(temp.begin(), temp.end(), sortPriorityThenAmtFunction);
@@ -368,7 +375,7 @@ void routerNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
    }
 
    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all canceledTransactions
-      nodeToPaymentChannel[it->first].xLocal =   nodeToPaymentChannel[it->first].nValue / _tUpdate;
+      nodeToPaymentChannel[it->first].xLocal =  nodeToPaymentChannel[it->first].nValue / _tUpdate;
       nodeToPaymentChannel[it->first].nValue = 0;
       routerMsg * priceUpdateMsg = generatePriceUpdateMessage(nodeToPaymentChannel[it->first].xLocal, it->first);
       sendUpdateMessage(priceUpdateMsg);
@@ -657,11 +664,14 @@ void routerNode::handleAckMessageTimeOut(routerMsg* ttmsg){
    if (iter!=canceledTransactions.end()){
       canceledTransactions.erase(iter);
    }
+
+
 }
 
 void routerNode::handleAckMessage(routerMsg* ttmsg){
    //generate updateMsg
    int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
+   int nextNode = ttmsg->getRoute()[ttmsg->getHopCount() + 1];
 
    //remove transaction from outgoing_trans_unit
    map<Id, double> *outgoingTransUnits = &(nodeToPaymentChannel[prevNode].outgoingTransUnits);
@@ -792,8 +802,8 @@ void routerNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){ //increm
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
 
    //not a self-message, add to incoming_trans_units
-   int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
-   nodeToPaymentChannel[prevNode].nValue = nodeToPaymentChannel[prevNode].nValue + 1;
+   int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
+   nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + 1;
 
 }
 
