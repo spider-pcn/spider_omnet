@@ -114,20 +114,27 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
                 current_time = current_time + time_incr 
 
     elif distribution == 'kaggle':
-        sys.path.append('./data')
-        import kaggle
+        # load the data
+        amt_dist = np.load(KAGGLE_AMT_DIST_FILENAME)
+        time_dist = np.load(KAGGLE_TIME_DIST_FILENAME)
+        num_amts = amt_dist.shape[1]
+        num_times = time_dist.shape[1]
         # transaction sizes drawn from kaggle data, as is inter-transaction time
         for k in range(len(start_nodes)):
             current_time = 0.0
             while current_time < total_time:
-                txn_idx = np.random.choice(kaggle.num_bins, 1, \
-                                           p=kaggle.amount_dist)[0]
-                txn_size = kaggle.amount_bins[txn_idx]
+                # draw an index according to the amount pmf
+                txn_idx = np.random.choice(num_amts, 1, \
+                                           p=amt_dist[0])[0]
+                # map the index to a tx amount
+                txn_size = amt_dist[1][txn_idx]
                 outfile.write(str(txn_size) + " " + str(current_time + start_time) + " " + str(start_nodes[k]) + \
                         " " + str(end_nodes[k]) + " 0 " + str(timeout_value) + "\n")
-                time_idx = np.random.choice(kaggle.num_times, 1, \
-                                            p=kaggle.time_dist)[0]
-                time_incr = kaggle.time_bins[time_idx]
+                # draw an index according to the time pmf
+                time_idx = np.random.choice(num_times, 1, \
+                                            p=time_dist[0])[0]
+                # map index to an inter-tx time
+                time_incr = time_dist[1][time_idx]
                 current_time = current_time + time_incr
 
     outfile.close()

@@ -47,6 +47,11 @@ five_node_graph.add_edge(2, 3)
 five_node_graph.add_edge(3, 4)
 five_node_graph.add_edge(4, 0)
 
+# Filenames for Kaggle data
+KAGGLE_PATH = './data/'
+KAGGLE_AMT_DIST_FILENAME = KAGGLE_PATH + 'amt_dist.npy'
+KAGGLE_TIME_DIST_FILENAME = KAGGLE_PATH + 'time_dist.npy'
+
 
 # CONSTANTS
 SEED = 17
