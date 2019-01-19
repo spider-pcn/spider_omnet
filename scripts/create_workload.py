@@ -62,10 +62,10 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
                 for key in set(demand_dict_circ) | set(demand_dict_dag) } 
 
 
-    	for i, j in demand_dict.keys():
+        for i, j in demand_dict.keys():
             start_nodes.append(i)
-    	    end_nodes.append(j)
-    	    amt_relative.append(demand_dict[i, j])
+            end_nodes.append(j)
+            amt_relative.append(demand_dict[i, j])
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
 
@@ -112,6 +112,23 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
                         " " + str(end_nodes[k]) + " 0 " + str(timeout_value) + "\n")
                 time_incr = np.random.exponential(beta)
                 current_time = current_time + time_incr 
+
+    elif distribution == 'kaggle':
+        sys.path.append('./data')
+        import kaggle
+        # transaction sizes drawn from kaggle data, as is inter-transaction time
+        for k in range(len(start_nodes)):
+            current_time = 0.0
+            while current_time < total_time:
+                txn_idx = np.random.choice(kaggle.num_bins, 1, \
+                                           p=kaggle.amount_dist)[0]
+                txn_size = kaggle.amount_bins[txn_idx]
+                outfile.write(str(txn_size) + " " + str(current_time + start_time) + " " + str(start_nodes[k]) + \
+                        " " + str(end_nodes[k]) + " 0 " + str(timeout_value) + "\n")
+                time_idx = np.random.choice(kaggle.num_times, 1, \
+                                            p=kaggle.time_dist)[0]
+                time_incr = kaggle.time_bins[time_idx]
+                current_time = current_time + time_incr
 
     outfile.close()
 
@@ -316,45 +333,44 @@ def parse_topo(topo_filename):
 # with average total demand at a node equal to 'mean', and a 
 # perturbation of 'std_dev' 
 def circ_demand(node_list, mean, std_dev):
-        print "MEAN DEMAND", mean
+    print "MEAN DEMAND", mean
 
-	assert type(mean) is int
-	assert type(std_dev) is int
+    assert type(mean) is int
+    assert type(std_dev) is int
 
-	demand_dict = {}
-        
-        num_nodes = len(node_list)
+    demand_dict = {}
+    num_nodes = len(node_list)
 
-	""" sum of 'mean' number of random permutation matrices """
-	""" note any permutation matrix is a circulation demand """
-        """ matrix indices are shifted by number of nodes to account """
-	for i in range(mean):
-		perm = np.random.permutation(node_list)
-		for j, k in enumerate(perm):
-			if (j, k) in demand_dict.keys():
-				demand_dict[j, k] += 1
-			else:
-				demand_dict[j, k] = 1
+    """ sum of 'mean' number of random permutation matrices """
+    """ note any permutation matrix is a circulation demand """
+    """ matrix indices are shifted by number of nodes to account """
+    for i in range(mean):
+        perm = np.random.permutation(node_list)
+        for j, k in enumerate(perm):
+            if (j, k) in demand_dict.keys():
+                demand_dict[j, k] += 1
+            else:
+                demand_dict[j, k] = 1
 
-	""" add 'std_dev' number of additional cycles to the demand """
-	for i in range(std_dev):
-		cycle_len = np.random.choice(range(1, num_nodes+1))
-		cycle = np.random.choice(node_list, cycle_len)
-		cycle = set(cycle)
-		cycle = list(cycle)
-		cycle.append(cycle[0])
-		for j in range(len(cycle[:-1])):
-			if (cycle[j], cycle[j+1]) in demand_dict.keys():
-				demand_dict[cycle[j], cycle[j+1]] += 1
-			else:
-				demand_dict[cycle[j], cycle[j+1]] = 1			
+    """ add 'std_dev' number of additional cycles to the demand """
+    for i in range(std_dev):
+        cycle_len = np.random.choice(range(1, num_nodes+1))
+        cycle = np.random.choice(node_list, cycle_len)
+        cycle = set(cycle)
+        cycle = list(cycle)
+        cycle.append(cycle[0])
+        for j in range(len(cycle[:-1])):
+            if (cycle[j], cycle[j+1]) in demand_dict.keys():
+                demand_dict[cycle[j], cycle[j+1]] += 1
+            else:
+                demand_dict[cycle[j], cycle[j+1]] = 1			
 
-	""" remove diagonal entries of demand matrix """
-	for (i, j) in demand_dict.keys():
-		if i == j:
-			del demand_dict[i, j]
+    """ remove diagonal entries of demand matrix """
+    for (i, j) in demand_dict.keys():
+        if i == j:
+            del demand_dict[i, j]
 
-	return demand_dict
+    return demand_dict
 
 # generate dag for node ids mentioned in node_list,
 # with average total demand out of a node equal to 'mean', and a 
@@ -410,7 +426,7 @@ parser.add_argument('--topo-filename', dest='topo_filename', type=str, \
         help='name of topology file to generate worklooad for')
 parser.add_argument('output_file_prefix', type=str, help='name of the output workload file', \
         default='simple_workload.txt')
-parser.add_argument('interval_distribution', choices=['uniform', 'poisson'],\
+parser.add_argument('interval_distribution', choices=['uniform', 'poisson','kaggle'],\
         help='time between transactions is determine by this', default='poisson')
 parser.add_argument('--experiment-time', dest='total_time', type=int, \
         help='time to generate txns for', default=30)
