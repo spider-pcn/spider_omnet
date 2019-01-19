@@ -1034,13 +1034,21 @@ void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
       forwardMessage(ttmsg);
    }
    else{ //is back at sender
+      double demand;
+      if (myIndex() == 0)
+          demand = 50;
+      else
+          demand = 250;
+
       double zValue = pqMsg->getZValue();
       int destNode = ttmsg->getRoute()[0];
       int routeIndex = pqMsg->getPathIndex();
       double oldRate = nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans;
       nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans =
          maxDouble(oldRate + _alpha*(1-zValue), 0);
-
+      nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans =
+         min(nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans, demand);
+      
       nodeToShortestPathsMap[destNode][routeIndex].priceLastSeen = zValue;
       //delete both messages
       ttmsg->decapsulate();
