@@ -92,7 +92,7 @@ INTERESTING_SIGNALS["rateToSendTrans"] = ["rateToSendTransPerPath"]
 INTERESTING_SIGNALS["priceLastSeen"] = ["priceLastSeenPerPath"]
 
 
-for signal in ["numPending", "probability", "bottleneck", "pathPerTrans", "numTimedOut",\
+for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", "numTimedOut",\
         "numTimedOutAtSender"]:
     INTERESTING_SIGNALS[signal] = signal + "PerDest"
 

@@ -709,6 +709,13 @@ void hostNode::initialize()
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       numPendingPerDestSignals.push_back(signal);
 
+      //numWaitingInSenderQueue signal
+      sprintf(signalName, "numWaitingPerDest_total(host node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "numWaitingPerDestTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      numWaitingPerDestSignals.push_back(signal);
+
       //numtimedoutperdestatsender  signal
       sprintf(signalName, "numTimedOutAtSenderPerDest(host node %d)", i);
       signal = registerSignal(signalName);
@@ -934,8 +941,9 @@ void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
       transactionMsg *transMsg = check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
      
      // remove cancelled txns 
-      while(msgToSend != NULL && simTime() > transMsg->getTimeSent() + transMsg->getTimeOut()){
-
+      while(msgToSend != NULL && _timeoutEnabled && simTime() > transMsg->getTimeSent() + transMsg->getTimeOut()){
+         if (getIndex() == 1) 
+            cout << "timing out at sender transaction" << transMsg->getTransactionId() << endl;
          msgToSend->decapsulate();
          delete msgToSend;
          delete transMsg;
@@ -1374,6 +1382,7 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
             emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
             emit(numTimedOutAtSenderSignals[it], statNumTimedOutAtSender[it]);
             emit(numPendingPerDestSignals[it], destNodeToNumTransPending[it]);
+            emit(numWaitingPerDestSignals[it], nodeToDestInfo[it].transWaitingToBeSent.size()); 
 
             int frac = ((100*statNumCompleted[it])/(maxTwoNum(statNumArrived[it],1)));
             emit(fracSuccessfulPerDestSignals[it],frac);
@@ -1524,7 +1533,6 @@ void hostNode::handleAckMessageShortestPath(routerMsg* ttmsg){
       statRateFailed[destNode] = statRateFailed[destNode]+1;
    }
    else{
-
       statNumCompleted[destNode] = statNumCompleted[destNode]+1;
       statRateCompleted[destNode] = statRateCompleted[destNode]+1;
    }
@@ -2051,8 +2059,10 @@ bool hostNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
          canceledTransactions.end(),
          [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
          { return get<0>(p) == transactionId; });
-   //Radhika: is the first condition needed? Isn't last condition enough??
-   if ( iter!=canceledTransactions.end() || (transMsg->getHasTimeOut() && (simTime() > transMsg->getTimeSent() + transMsg->getTimeOut())) ){
+
+   //Radhika: is the first condition needed? Isn't last condition enough?
+   // Vibhaa got rid of the last condition
+   if ( iter!=canceledTransactions.end() ){
        if (getIndex() == transMsg->getSender()) {
           statNumTimedOutAtSender[transMsg->getReceiver()] = 
               statNumTimedOutAtSender[transMsg->getReceiver()] + 1;

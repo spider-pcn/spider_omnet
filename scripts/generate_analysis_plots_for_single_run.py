@@ -39,9 +39,9 @@ parser.add_argument('--frac_completed',
 parser.add_argument('--path',
         action='store_true',
         help='Plot path index used for all source destination pairs')
-parser.add_argument('--pending',
+parser.add_argument('--waiting',
         action='store_true',
-        help='Plot number of pending txns at a given point in time all source destination pairs')
+        help='Plot number of waiting txns at a the sender at a point in time all source destination pairs')
 parser.add_argument('--probabilities',
         action='store_true',
         help='Plot probabilities of picking each path at a given point in time all source destination pairs')
@@ -318,9 +318,9 @@ def plot_per_src_dest_stats(args):
             data_to_plot = aggregate_info_per_node(args.vec_file, "numTimedOutAtSender", False)
             plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Timed Out At Sender")
 
-        if args.pending:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "numPending", False)
-            plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Pending To Given Destination")
+        if args.waiting:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "numWaiting", False)
+            plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Waiting at sender To Given Destination")
 
         if args.probabilities:
             data_to_plot = aggregate_info_per_node(args.vec_file, "probability", False, True)

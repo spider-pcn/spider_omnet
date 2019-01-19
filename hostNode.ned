@@ -47,7 +47,10 @@ simple hostNode
 		@statisticTemplate[numCompletedPerDestTemplate](record=vector, stats);   
 
 		@signal[numPendingPerDest*](type="long");  
-		@statisticTemplate[numPendingPerDestTemplate](record=vector, stats);  
+		@statisticTemplate[numPendingPerDestTemplate](record=vector, stats); 
+
+ 		@signal[numWaitingPerDest*](type="long");  
+		@statisticTemplate[numWaitingPerDestTemplate](record=vector, stats);  
 	
 		@signal[fracSuccessfulPerDest*](type="double");  
 		@statisticTemplate[fracSuccessfulPerDestTemplate](record=vector, stats);   

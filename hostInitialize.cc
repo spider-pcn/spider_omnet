@@ -737,11 +737,13 @@ void generateTransUnitList(string workloadFile){
          int receiver = stoi(data[3]);
          int priorityClass = stoi(data[4]);
          double timeOut=-1;
-         double hasTimeOut = false;
-         if (data.size()>5){
-            hasTimeOut = true;
+         double hasTimeOut = _timeoutEnabled;
+         if (data.size()>5 && _timeoutEnabled){
             timeOut = stoi(data[5]);
             //cout << "timeOut: " << timeOut << endl;
+         }
+         else if (_timeoutEnabled) {
+             timeOut = 5.0;
          }
 
          // instantiate all the transUnits that need to be sent
