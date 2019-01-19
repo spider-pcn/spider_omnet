@@ -1036,7 +1036,7 @@ void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
    else{ //is back at sender
       double demand;
       if (myIndex() == 0)
-          demand = 50;
+          demand = 100;
       else
           demand = 250;
 
@@ -1068,8 +1068,9 @@ void hostNode::handlePriceUpdateMessage(routerMsg* ttmsg){
    double oldLambda = nodeToPaymentChannel[sender].lambda;
    double oldMuLocal = nodeToPaymentChannel[sender].muLocal;
    double oldMuRemote = nodeToPaymentChannel[sender].muRemote;
+   double delta = 5 *_maxTravelTime / 6.0;
 
-   nodeToPaymentChannel[sender].lambda = maxDouble(oldLambda + _eta*(xLocal + xRemote - (cValue/_maxTravelTime)),0);
+   nodeToPaymentChannel[sender].lambda = maxDouble(oldLambda + _eta*(xLocal + xRemote - (cValue/delta)),0);
    nodeToPaymentChannel[sender].muLocal = maxDouble(oldMuLocal + _kappa*(xLocal - xRemote) , 0);
    nodeToPaymentChannel[sender].muRemote = maxDouble(oldMuRemote + _kappa*(xRemote - xLocal) , 0);
 

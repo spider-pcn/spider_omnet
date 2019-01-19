@@ -1,15 +1,15 @@
 #!/bin/bash
 PATH_NAME="benchmarks/circulations/"
 
-prefix=("two_node" "three_node" "four_node" "five_node") #"sw_40_routers" "sf_40_routers")
+prefix=("two_node") # "three_node" "four_node" "five_node") #"sw_40_routers" "sf_40_routers")
     #"sw_400_routers" "sf_400_routers")
     #"sw_1000_routers" "sf_1000_routers")
 
 arraylength=${#prefix[@]}
 
 #general parameters that do not affect config names
-simulationLength=1000.0
-statCollectionRate=1
+simulationLength=6000.0
+statCollectionRate=0.5
 timeoutClearRate=1
 timeoutEnabled=false
 signalsEnabled=true
@@ -27,29 +27,29 @@ do
     network=${prefix[i]}_circ_net
 
     #routing schemes where number of path choices doesn't matter
-    for routing_scheme in shortestPath #silentWhispers
-    do
-      # create the ini file with specified parameters
-      python scripts/create_ini_file.py \
-              --network-name $network\
-              --topo-filename ${topofile}\
-              --workload-filename ${workload}_workload.txt\
-              --ini-filename $inifile\
-              --signals-enabled $signalsEnabled\
-              --logging-enabled $loggingEnabled\
-              --simulation-length $simulationLength\
-              --stat-collection-rate $statCollectionRate\
-              --timeout-clear-rate $timeoutClearRate\
-              --timeout-enabled $timeoutEnabled\
-              --routing-scheme ${routing_scheme}
-
-
-      # run the omnetexecutable with the right parameters
-      ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme} -n ${PATH_NAME}
-    done
-
+#    for routing_scheme in shortestPath #silentWhispers
+#    do
+#      # create the ini file with specified parameters
+#      python scripts/create_ini_file.py \
+#              --network-name $network\
+#              --topo-filename ${topofile}\
+#              --workload-filename ${workload}_workload.txt\
+#              --ini-filename $inifile\
+#              --signals-enabled $signalsEnabled\
+#              --logging-enabled $loggingEnabled\
+#              --simulation-length $simulationLength\
+#              --stat-collection-rate $statCollectionRate\
+#              --timeout-clear-rate $timeoutClearRate\
+#              --timeout-enabled $timeoutEnabled\
+#              --routing-scheme ${routing_scheme}
+#
+#
+#      # run the omnetexecutable with the right parameters
+#      ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme} -n ${PATH_NAME}
+#    done
+#
     #routing schemes where number of path choices matter
-    for routing_scheme in waterfilling #smoothWaterfilling #LP
+    for routing_scheme in priceScheme #waterfilling #smoothWaterfilling #LP
     do
       for numPathChoices in 4
       do
