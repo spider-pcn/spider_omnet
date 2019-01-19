@@ -487,8 +487,9 @@ void hostNode::initialize()
       nodeToPaymentChannel[key].balance = _balances[make_tuple(myIndex(),key)];
       nodeToPaymentChannel[key].balanceEWMA = nodeToPaymentChannel[key].balance;
 
-      // TODO: fix @Vibhaa
-      nodeToPaymentChannel[key].totalCapacity = 2 * nodeToPaymentChannel[key].balance;
+      // intialize capacity and other price variables
+      double balanceOpp =  _balances[make_tuple(key, myIndex())];
+      nodeToPaymentChannel[key].totalCapacity = nodeToPaymentChannel[key].balance + balanceOpp;
       nodeToPaymentChannel[key].lambda = 0;
       nodeToPaymentChannel[key].muLocal = 0;
       nodeToPaymentChannel[key].muRemote = 0;

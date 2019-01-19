@@ -1,17 +1,17 @@
 #!/bin/bash
 PATH_NAME="benchmarks/circulations/"
 
-prefix=("sw_40_routers" "sf_40_routers")
+prefix=("two_node" "three_node" "four_node" "five_node") #"sw_40_routers" "sf_40_routers")
     #"sw_400_routers" "sf_400_routers")
     #"sw_1000_routers" "sf_1000_routers")
 
 arraylength=${#prefix[@]}
 
 #general parameters that do not affect config names
-simulationLength=300.0
-statCollectionRate=2
-timeoutClearRate=0.5
-timeoutEnabled=true
+simulationLength=1000.0
+statCollectionRate=1
+timeoutClearRate=1
+timeoutEnabled=false
 signalsEnabled=true
 loggingEnabled=false
 
@@ -49,7 +49,7 @@ do
     done
 
     #routing schemes where number of path choices matter
-    for routing_scheme in waterfilling smoothWaterfilling #LP
+    for routing_scheme in waterfilling #smoothWaterfilling #LP
     do
       for numPathChoices in 4
       do

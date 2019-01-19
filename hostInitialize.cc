@@ -651,45 +651,6 @@ void setNumNodes(string topologyFile){
  *      [node1] [node2] [1->2 delay] [2->1 delay] [balance at node1 end] [balance at node2 end]
  */
 void generateChannelsBalancesMap(string topologyFile) {
-   //TEMPORARILY - hardcode _channels map
-   /*
-    vector<pair<int,int>> tempVector0 = {};
-   tempVector0.push_back(make_pair(2,30));
-   _channels[0] = tempVector0;
-
-   vector<pair<int,int>> tempVector1 = {};
-   tempVector1.push_back(make_pair(4,30));
-   _channels[1] = tempVector1;
-
-
-   vector<pair<int,int>> tempVector2 = {};
-   tempVector2.push_back(make_pair(0,30));
-   tempVector2.push_back(make_pair(3,30));
-   _channels[2] = tempVector2;
-
-
-   vector<pair<int,int>> tempVector3 = {};
-   tempVector3.push_back(make_pair(2,30));
-   tempVector3.push_back(make_pair(4,30));
-   _channels[3] = tempVector3;
-
-
-   vector<pair<int,int>> tempVector4 = {};
-   tempVector4.push_back(make_pair(3,30));
-   tempVector4.push_back(make_pair(1,30));
-   _channels[4] = tempVector4;
-
-   //TEMPORARILY - hardcode balances map
-   for (auto start: _channels){
-      for (auto end: _channels[start.first]){
-
-         _balances[make_tuple(start.first , get<0>(end))] = 100 ;
-      }
-   }
-   return;
-   */
-
-
    string line;
    ifstream myfile (topologyFile);
    if (myfile.is_open())
