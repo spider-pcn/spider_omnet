@@ -48,6 +48,25 @@ parser.add_argument('--probabilities',
 parser.add_argument('--bottlenecks',
         action='store_true',
         help='Plot bottlenecks on different paths at a given point in time all source destination pairs')
+parser.add_argument('--lambda_val',
+        action='store_true',
+        help='Plot the per channel capacity related price when price based scheme is used')
+parser.add_argument('--mu_local',
+        action='store_true',
+        help='Plot the per imbalance related price when price based scheme is used')
+parser.add_argument('--mu_remote',
+        action='store_true',
+        help='Plot the imbalance related price at the remote end')
+parser.add_argument('--x_local',
+        action='store_true',
+        help='Plot the per channel rate of sending related price when price based scheme is used')
+parser.add_argument('--rate_to_send',
+        action='store_true',
+        help='Plot the per channel rate to send when price based scheme is used')
+parser.add_argument('--price',
+        action='store_true',
+        help='Plot the per channel price to send when price based scheme is used')
+
 
 parser.add_argument('--save',
         type=str,
@@ -61,7 +80,7 @@ args = parser.parse_args()
 # returns a dictionary of the necessary stats where key is a router node
 # and value is another dictionary where the key is the partner node 
 # and value is the time series of the signal_type recorded for this pair of nodes
-def aggregate_info_per_node(filename, signal_type, is_router, aggregate_per_path=False):
+def aggregate_info_per_node(filename, signal_type, is_router, aggregate_per_path=False, is_both=False):
     node_signal_info = dict()
     all_timeseries, vec_id_to_info_map = parse_vec_file(filename, signal_type)
 
@@ -72,27 +91,32 @@ def aggregate_info_per_node(filename, signal_type, is_router, aggregate_per_path
         src_node = vector_details[0]
         src_node_type = vector_details[1]
         dest_node_type = vector_details[4]
-
-        if signal_type is "balance":
+        dest_node = vector_details[3]
+        
+        '''if signal_type is "balance":
             if (src_node_type == "router" and dest_node_type == "host") or \
                     (src_node_type == "host" and dest_node_type == "router"):
                         for t in timeseries:
-                            if t[1] == 0:
-                                print "End host " + str(src_node) + " hitting zero at time " + str(t[0])
+                            if t[1] == "0":
+                                print "End host " + str(src_node) + " hitting zero at time " + str(t[0])'''
 
+        if is_both:
+            if src_node_type == "host":
+                src_node = 2 + src_node
+            elif dest_node_type == "host":
+                dest_node = 2 + dest_node
+        else:
+            if is_router and (src_node_type != "router" or dest_node_type != "router"):
+                continue
 
-        if is_router and (src_node_type != "router" or dest_node_type != "router"):
-            continue
-
-        if not is_router and (src_node_type != "host" or dest_node_type != "host"):
-            continue
+            if not is_router and (src_node_type != "host" or dest_node_type != "host"):
+                continue
 
         signal_name = vector_details[2]
         if signal_type not in signal_name:
             continue
 
         signal_values =  timeseries
-        dest_node = vector_details[3]
 
         if aggregate_per_path:
             path_id = int(signal_name.split("_")[1])
@@ -247,6 +271,23 @@ def plot_per_payment_channel_stats(args):
             data_to_plot = aggregate_info_per_node(args.vec_file, "numSent", True)
             plot_relevant_stats(data_to_plot, pdf, "Number Sent")
 
+        if args.lambda_val:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "lambda", True, is_both=True)
+            plot_relevant_stats(data_to_plot, pdf, "Lambda")
+        
+        if args.mu_local:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "muLocal", True, is_both=True)
+            plot_relevant_stats(data_to_plot, pdf, "Mu Local")
+        
+        if args.mu_remote:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "muRemote", True, is_both=True)
+            plot_relevant_stats(data_to_plot, pdf, "Mu Remote")
+        
+        if args.x_local:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "xLocal", True, is_both=True)
+            plot_relevant_stats(data_to_plot, pdf, "xLocal")
+
+
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + args.save + "_per_channel_info.pdf"
     
 
@@ -265,7 +306,7 @@ def plot_per_src_dest_stats(args):
         
         if args.frac_completed: 
             successful = aggregate_info_per_node(args.vec_file, "rateCompleted", False)
-            attempted = aggregate_info_per_node(args.vec_file, "rateAttempted", False)
+            attempted = aggregate_info_per_node(args.vec_file, "rateArrived", False)
             data_to_plot = aggregate_frac_successful_info(successful, attempted)
             plot_relevant_stats(data_to_plot, pdf, "Fraction of successful txns in each window")
 
@@ -278,18 +319,25 @@ def plot_per_src_dest_stats(args):
             plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Timed Out At Sender")
 
         if args.pending:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "numPendingPerDest", False)
+            data_to_plot = aggregate_info_per_node(args.vec_file, "numPending", False)
             plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Pending To Given Destination")
 
         if args.probabilities:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "probabilityPerDest", False\
-                    aggregate_per_path=True)
+            data_to_plot = aggregate_info_per_node(args.vec_file, "probability", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Probability of picking paths", per_path_info=True)
 
         if args.bottlenecks:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "bottleneckPerDest", False,\
-                     aggregate_per_path=True)
+            data_to_plot = aggregate_info_per_node(args.vec_file, "bottleneck", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Bottleneck Balance", per_path_info=True)
+
+        if args.rate_to_send:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "rateToSendTrans", False, True)
+            plot_relevant_stats(data_to_plot, pdf, "Rate to send per path", per_path_info=True)
+
+        if args.price:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "priceLastSeen", False, True)
+            plot_relevant_stats(data_to_plot, pdf, "Price per path", per_path_info=True)
+
  
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + \
             args.save + "_per_src_dest_stats.pdf"

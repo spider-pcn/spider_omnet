@@ -19,10 +19,10 @@ public:
     int statRateAttempted = 0;
 
     //additional parameters for price scheme
-    double rateToSendTrans = 0;
+    double rateToSendTrans = 1;
     simtime_t timeToNextSend = 0;
     double sumOfTransUnitsInFlight = 0;
-    simtime_t priceLastUpdated = 0;
+    simtime_t priceLastSeen = 0;
     routerMsg * triggerTransSendMsg;
     bool isSendTimerSet = false;
     
@@ -32,7 +32,7 @@ public:
     simsignal_t rateToSendTransSignal;
     simsignal_t timeToNextSendSignal;
     simsignal_t sumOfTransUnitsInFlightSignal;
-    simsignal_t priceLastUpdatedSignal;
+    simsignal_t priceLastSeenSignal;
     simsignal_t isSendTimerSetSignal;
 
 

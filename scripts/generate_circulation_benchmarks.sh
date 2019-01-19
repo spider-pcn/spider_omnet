@@ -22,7 +22,7 @@ mkdir -p ${PATH_NAME}
 
 # generate the files
 #for (( i=0; i<${arraylength}; i++ ));
-array=( 3 ) # 7 16 )
+array=( 0 1 2 3) # 7 16 )
 for i in "${array[@]}"
 do 
     # generate the graph first to ned file
@@ -60,7 +60,7 @@ do
             --num-nodes ${num_nodes[i]}\
             --balance-per-channel $balance\
             --separate-end-hosts\
-            --delay-per-channel 30\
+            --delay-per-channel 1\
             #--randomize-start-bal
 
 
@@ -69,7 +69,7 @@ do
             --graph-topo custom\
             --payment-graph-dag-percentage 0\
             --topo-filename $topofile\
-            --experiment-time 300\
+            --experiment-time 1000\
             --balance-per-channel $balance\
             --generate-json-also\
             --timeout-value 5

@@ -113,6 +113,14 @@ void routerNode::initialize()
       nodeToPaymentChannel[key].balance = _balances[make_tuple(myIndex(),key)];
       nodeToPaymentChannel[key].balanceEWMA = nodeToPaymentChannel[key].balance;
 
+
+      // initialize total capacity and other price variables
+      double balanceOpp =  _balances[make_tuple(key, myIndex())];
+      nodeToPaymentChannel[key].totalCapacity = nodeToPaymentChannel[key].balance + balanceOpp;
+      nodeToPaymentChannel[key].lambda = 0;
+      nodeToPaymentChannel[key].muLocal = 0;
+      nodeToPaymentChannel[key].muRemote = 0;
+
       //initialize queuedTransUnits
       vector<tuple<int, double , routerMsg *, Id>> temp;
       make_heap(temp.begin(), temp.end(), sortPriorityThenAmtFunction);
@@ -368,7 +376,7 @@ void routerNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
    }
 
    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all canceledTransactions
-      nodeToPaymentChannel[it->first].xLocal =   nodeToPaymentChannel[it->first].nValue / _tUpdate;
+      nodeToPaymentChannel[it->first].xLocal =  nodeToPaymentChannel[it->first].nValue / _tUpdate;
       nodeToPaymentChannel[it->first].nValue = 0;
       routerMsg * priceUpdateMsg = generatePriceUpdateMessage(nodeToPaymentChannel[it->first].xLocal, it->first);
       sendUpdateMessage(priceUpdateMsg);
@@ -657,11 +665,14 @@ void routerNode::handleAckMessageTimeOut(routerMsg* ttmsg){
    if (iter!=canceledTransactions.end()){
       canceledTransactions.erase(iter);
    }
+
+
 }
 
 void routerNode::handleAckMessage(routerMsg* ttmsg){
    //generate updateMsg
    int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
+   int nextNode = ttmsg->getRoute()[ttmsg->getHopCount() + 1];
 
    //remove transaction from outgoing_trans_unit
    map<Id, double> *outgoingTransUnits = &(nodeToPaymentChannel[prevNode].outgoingTransUnits);
@@ -673,10 +684,10 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
       //increment payment back to outgoing channel
       nodeToPaymentChannel[prevNode].balance = nodeToPaymentChannel[prevNode].balance + aMsg->getAmount();
 
+      // this is nextNode on the ack path and so prev node in the forward path or rather
+      // node sending you mayments
       int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
-
       map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[nextNode].incomingTransUnits);
-
       (*incomingTransUnits).erase(make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex()));
 
    }
@@ -792,8 +803,8 @@ void routerNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){ //increm
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
 
    //not a self-message, add to incoming_trans_units
-   int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
-   nodeToPaymentChannel[prevNode].nValue = nodeToPaymentChannel[prevNode].nValue + 1;
+   int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
+   nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + 1;
 
 }
 
