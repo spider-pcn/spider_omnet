@@ -36,7 +36,7 @@ do
           --balance \
           --queue_info --timeouts --frac_completed \
           --inflight --path --timeouts_sender \
-          --pending --bottlenecks
+          --waiting --bottlenecks
     done
 
     #routing schemes where number of path choices matter
@@ -52,7 +52,7 @@ do
               --balance \
               --queue_info --timeouts --frac_completed \
               --inflight --path --timeouts_sender \
-              --pending --bottlenecks
+              --waiting --bottlenecks
         done
     done
 done

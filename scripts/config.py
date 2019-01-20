@@ -91,9 +91,11 @@ INTERESTING_SIGNALS["rateArrived"] = ["rateArrivedPerDest_Total"]
 INTERESTING_SIGNALS["rateToSendTrans"] = ["rateToSendTransPerPath"]
 INTERESTING_SIGNALS["priceLastSeen"] = ["priceLastSeenPerPath"]
 
+# DO NOT CHANGE THIS: PAINFULLY HARDCODED TO NOT INTERFERE WITH numTimedOutAtSender
+INTERESTING_SIGNALS["numTimedOutPerDest"] = ["numTimedOutPerDest"]
 
-for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", "numTimedOut",\
-        "numTimedOutAtSender"]:
+for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", "numTimedOutAtSender", \
+        "fracSuccessful"]:
     INTERESTING_SIGNALS[signal] = signal + "PerDest"
 
 for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "numSent", "muRemote"]:

@@ -1237,6 +1237,10 @@ void hostNode::handleClearStateMessage(routerMsg* ttmsg){
             }
          }
          it = canceledTransactions.erase(it);
+
+         // we've actually canceleld the transaction and didn't receive an ack or anything
+         statNumTimedOut[destNode] = statNumTimedOut[destNode]  + 1;
+
       }
       else{
          it++;
@@ -1431,7 +1435,6 @@ void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
             CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),-1, nextNode, destination);
             canceledTransactions.insert(ct);
 
-            statNumTimedOut[destination] = statNumTimedOut[destination]  + 1;
             forwardTimeOutMessage(waterTimeOutMsg);
          }
       }
@@ -1455,6 +1458,8 @@ void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
 void hostNode::handleTimeOutMessageShortestPath(routerMsg* ttmsg){
    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
    int destination = toutMsg->getReceiver();
+
+
    if ((ttmsg->getHopCount())==0){ //is at the sender
       if (successfulDoNotSendTimeOut.count(toutMsg->getTransactionId())>0){ //already received ack for it, do not send out
          successfulDoNotSendTimeOut.erase(toutMsg->getTransactionId());
@@ -1467,7 +1472,6 @@ void hostNode::handleTimeOutMessageShortestPath(routerMsg* ttmsg){
          int nextNode = (ttmsg->getRoute())[ttmsg->getHopCount()+1];
          CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),-1, nextNode, destination);
          canceledTransactions.insert(ct);
-         statNumTimedOut[destination] = statNumTimedOut[destination]  + 1;
          forwardTimeOutMessage(ttmsg);
       }
    }
@@ -2054,10 +2058,14 @@ bool hostNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
 
    //Radhika: is the first condition needed? Isn't last condition enough?
    // Vibhaa got rid of the last condition
+   //
+   // this will never get hit i think
    if ( iter!=canceledTransactions.end() ){
        if (getIndex() == transMsg->getSender()) {
           statNumTimedOutAtSender[transMsg->getReceiver()] = 
               statNumTimedOutAtSender[transMsg->getReceiver()] + 1;
+
+
        }
 
       //delete yourself
@@ -2099,7 +2107,6 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
    if (transMsg->getReceiver() == getIndex()) { 
       int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
 
-      if (getIndex() == 0) cout << "generating ack message at time " << simTime() << endl;
       map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
       (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = transMsg->getAmount();
       int transactionId = transMsg->getTransactionId();
@@ -2255,6 +2262,8 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
          }
          //don't send transaction if it has timed out.
          else{
+            statNumTimedOut[destNode] += 1;
+            statNumTimedOutAtSender[destNode] += 1; 
             ttmsg->decapsulate();
             delete transMsg;
             delete ttmsg;

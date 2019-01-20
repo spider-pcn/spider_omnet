@@ -36,6 +36,9 @@ parser.add_argument('--timeouts_sender',
 parser.add_argument('--frac_completed',
         action='store_true',
         help='Plot fraction completed for all source destination pairs')
+parser.add_argument('--frac_completed_window',
+        action='store_true',
+        help='Plot fraction completed for all source destination pairs in every window')
 parser.add_argument('--path',
         action='store_true',
         help='Plot path index used for all source destination pairs')
@@ -301,14 +304,18 @@ def plot_per_src_dest_stats(args):
 
     with PdfPages(args.save + "_per_src_dest_stats.pdf") as pdf:
         if args.timeouts: 
-            data_to_plot = aggregate_info_per_node(args.vec_file, "numTimedOut", False)
+            data_to_plot = aggregate_info_per_node(args.vec_file, "numTimedOutPerDest", False)
             plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Timed Out")
         
-        if args.frac_completed: 
+        if args.frac_completed_window: 
             successful = aggregate_info_per_node(args.vec_file, "rateCompleted", False)
             attempted = aggregate_info_per_node(args.vec_file, "rateArrived", False)
             data_to_plot = aggregate_frac_successful_info(successful, attempted)
             plot_relevant_stats(data_to_plot, pdf, "Fraction of successful txns in each window")
+
+        if args.frac_completed:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "fracSuccessful", False)
+            plot_relevant_stats(data_to_plot, pdf, "Fraction of successful txns")
 
         if args.path:
             data_to_plot = aggregate_info_per_node(args.vec_file, "pathPerTrans", False)
