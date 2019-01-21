@@ -141,6 +141,8 @@ class hostNode : public cSimpleModule
       virtual bool printNodeToPaymentChannel();
       virtual int updatePathProbabilities(vector<double> bottleneckBalances, int destNode);
       virtual int sampleFromDistribution(vector<double> probabilities);
+      virtual bool ratesFeasible(vector<PathRateTuple> actualRates, double demand);
+      virtual vector<PathRateTuple> computeProjection(vector<PathRateTuple> recommendedRates, double demand);
 };
 
 #endif

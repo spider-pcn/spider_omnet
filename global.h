@@ -26,6 +26,7 @@
 #include "structs/CanceledTrans.h"
 #include "structs/AckState.h"
 #include "structs/DestInfo.h"
+#include "structs/PathRateTuple.h"
 
 #define MSGSIZE 100
 using namespace std;
