@@ -63,4 +63,5 @@ extern double _ewmaFactor;
 
 extern bool _hasQueueCapacity;
 extern int _queueCapacity;
+extern double _epsilon;
 

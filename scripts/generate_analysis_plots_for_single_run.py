@@ -69,6 +69,9 @@ parser.add_argument('--rate_to_send',
 parser.add_argument('--price',
         action='store_true',
         help='Plot the per channel price to send when price based scheme is used')
+parser.add_argument('--demand',
+        action='store_true',
+        help='Plot the per dest estimated demand when price based scheme is used')
 
 
 parser.add_argument('--save',
@@ -103,17 +106,21 @@ def aggregate_info_per_node(filename, signal_type, is_router, aggregate_per_path
                             if t[1] == "0":
                                 print "End host " + str(src_node) + " hitting zero at time " + str(t[0])'''
 
-        if is_both:
+            
+        '''if is_both:
             if src_node_type == "host":
                 src_node = 2 + src_node
             elif dest_node_type == "host":
-                dest_node = 2 + dest_node
-        else:
-            if is_router and (src_node_type != "router" or dest_node_type != "router"):
-                continue
+                dest_node = 2 + dest_node'''
+        #else:
+        if is_router and (src_node_type != "router" or dest_node_type != "router"):
+            continue
 
-            if not is_router and (src_node_type != "host" or dest_node_type != "host"):
-                continue
+        if not is_router and (src_node_type != "host" or dest_node_type != "host"):
+            continue
+            '''elif not is_router:
+                src_node = src_node + 2
+                dest_node = dest_node + 2'''
 
         signal_name = vector_details[2]
         if signal_type not in signal_name:
@@ -275,19 +282,19 @@ def plot_per_payment_channel_stats(args):
             plot_relevant_stats(data_to_plot, pdf, "Number Sent")
 
         if args.lambda_val:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "lambda", True, is_both=True)
+            data_to_plot = aggregate_info_per_node(args.vec_file, "lambda", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "Lambda")
         
         if args.mu_local:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "muLocal", True, is_both=True)
+            data_to_plot = aggregate_info_per_node(args.vec_file, "muLocal", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "Mu Local")
         
         if args.mu_remote:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "muRemote", True, is_both=True)
+            data_to_plot = aggregate_info_per_node(args.vec_file, "muRemote", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "Mu Remote")
         
         if args.x_local:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "xLocal", True, is_both=True)
+            data_to_plot = aggregate_info_per_node(args.vec_file, "xLocal", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "xLocal")
 
 
@@ -344,6 +351,10 @@ def plot_per_src_dest_stats(args):
         if args.price:
             data_to_plot = aggregate_info_per_node(args.vec_file, "priceLastSeen", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Price per path", per_path_info=True)
+
+        if args.demand:
+            data_to_plot = aggregate_info_per_node(args.vec_file, "demandEstimate", False)
+            plot_relevant_stats(data_to_plot, pdf, "Demand Estimate per Path")
 
  
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + \

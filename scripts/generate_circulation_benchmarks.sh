@@ -22,7 +22,7 @@ mkdir -p ${PATH_NAME}
 
 # generate the files
 #for (( i=0; i<${arraylength}; i++ ));
-array=( 0 1 2 3) # 7 16 )
+array=( 3 ) # 7 16 )
 for i in "${array[@]}"
 do 
     # generate the graph first to ned file
@@ -60,16 +60,16 @@ do
             --num-nodes ${num_nodes[i]}\
             --balance-per-channel $balance\
             --separate-end-hosts\
-            --delay-per-channel 1\
+            --delay-per-channel 10\
             #--randomize-start-bal
 
 
     # create transactions corresponding to this experiment run
     $PYTHON create_workload.py $workload poisson\
-            --graph-topo custom\
+            --graph-topo hardcoded_circ \
             --payment-graph-dag-percentage 0\
             --topo-filename $topofile\
-            --experiment-time 1000\
+            --experiment-time 9000 \
             --balance-per-channel $balance\
             --generate-json-also\
             --timeout-value 5

@@ -61,6 +61,9 @@ simple hostNode
 		@signal[numTimedOutPerDest*](type="long");  
 		@statisticTemplate[numTimedOutPerDestTemplate](record=vector, stats);
 
+		@signal[demandEstimatePerDest*](type="double");  
+		@statisticTemplate[demandEstimatePerDestTemplate](record=vector, stats);
+
 		@signal[numTimedOutAtSenderPerDest*](type="long");  
 		@statisticTemplate[numTimedOutAtSenderPerDestTemplate](record=vector, stats);
 	

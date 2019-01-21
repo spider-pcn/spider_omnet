@@ -1,17 +1,17 @@
 #!/bin/bash
 PATH_NAME="benchmarks/circulations/"
 
-prefix=("two_node") # "three_node" "four_node" "five_node") #"sw_40_routers" "sf_40_routers")
+prefix=("five_node") # "three_node" "four_node" "five_node") #"sw_40_routers" "sf_40_routers")
     #"sw_400_routers" "sf_400_routers")
     #"sw_1000_routers" "sf_1000_routers")
 
 arraylength=${#prefix[@]}
 
 #general parameters that do not affect config names
-simulationLength=6000.0
-statCollectionRate=0.5
+simulationLength=9000.0
+statCollectionRate=25
 timeoutClearRate=1
-timeoutEnabled=false
+timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
 

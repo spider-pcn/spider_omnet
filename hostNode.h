@@ -58,6 +58,7 @@ class hostNode : public cSimpleModule
         vector<simsignal_t> numWaitingPerDestSignals = {};
         vector<simsignal_t> numTimedOutAtSenderSignals = {};
         vector<simsignal_t> probabilityPerDestSignals = {};
+        vector<simsignal_t> demandEstimatePerDestSignals = {};
 
 
    vector<simsignal_t> rateFailedPerDestSignals = {};

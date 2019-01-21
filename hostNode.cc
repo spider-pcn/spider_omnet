@@ -38,6 +38,8 @@ double _alpha;
 double _gamma;
 double _zeta;
 
+double _epsilon; // for all precision errors
+
 //global parameters for fixed size queues
 bool _hasQueueCapacity;
 int _queueCapacity;
@@ -216,17 +218,14 @@ void hostNode:: restartProbes(int destNode){
 // check if all the provided rates are non-negative and also verify
 // that their sum is less than the demand, return false otherwise
 bool hostNode::ratesFeasible(vector<PathRateTuple> actualRates, double demand) {
-    //cout << "checking feasibility "; 
     double sumRates = 0;
     for (auto a : actualRates) {
         double rate = get<1>(a);
-        // cout << rate << " ";
-        if (rate < 0)
+        if (rate < (0 - _epsilon))
             return false;
         sumRates += rate;
     }
-    //cout << endl << "sum is " << sumRates << endl;
-    return (sumRates <= demand);
+    return (sumRates <= (demand + _epsilon));
 }
 
 // computes the projection of the given recommended rates onto the demand d_ij per source
@@ -236,7 +235,7 @@ vector<PathRateTuple> hostNode::computeProjection(vector<PathRateTuple> recommen
     };
 
     auto nuFeasible = [](double nu, double nuLeft, double nuRight) {
-            return (nu >= 0 && nu >= nuLeft && nu <= nuRight);
+            return (nu >= -_epsilon && nu >= (nuLeft - _epsilon)  && nu <= (nuRight + _epsilon));
     };
 
 
@@ -250,9 +249,8 @@ vector<PathRateTuple> hostNode::computeProjection(vector<PathRateTuple> recommen
         zeroRates.push_back(make_tuple(i, 0.0));
     }
 
-
     // if everything is negative (aka the largest is negative), just return 0s
-    if (get<1>(recommendedRates[recommendedRates.size() - 1]) < 0){
+    if (get<1>(recommendedRates[recommendedRates.size() - 1]) < 0 + _epsilon){
         return zeroRates;
     }
 
@@ -288,15 +286,11 @@ vector<PathRateTuple> hostNode::computeProjection(vector<PathRateTuple> recommen
         nuLeft = nuRight; 
         nuRight = 2*get<1>(recommendedRates[i]);
 
-        //cout << "nuRight: " << nuRight << "nuLeft: " << nuLeft << endl;
-
         // find sum of all elements that are to the right of nuRight
         double sumOfRightElements = 0.0;
         for (int j = i; j < recommendedRates.size(); j++)
             sumOfRightElements += get<1>(recommendedRates[j]);     
         nu = (sumOfRightElements - demand) * 2.0/(recommendedRates.size() - i);
-
-        //cout << "computed nu: " << nu << endl;
 
         // given this nu, compute the actual rates for those elements to the right of nuRight
         for (auto p : recommendedRates) {
@@ -542,9 +536,11 @@ void hostNode::initialize()
       _kappa = 0.01;
       _tUpdate = 0.5;
       _tQuery = 0.5;
-      _alpha = 0.01;
+      _alpha = 0.0025;
       _gamma = 0.2; // ewma factor to compute per path rates
       _zeta = 0.001; // ewma for d_ij every source dest demand
+
+      _epsilon = pow(1, -10);
       
       // smooth waterfilling parameters
       _Tau = 10;
@@ -812,6 +808,13 @@ void hostNode::initialize()
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       numTimedOutPerDestSignals.push_back(signal);
       statNumTimedOut.push_back(0);
+
+      // demandPerDest signal
+      sprintf(signalName, "demandEstimatePerDest(host node %d)", i);
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "demandEstimatePerDestTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      demandEstimatePerDestSignals.push_back(signal);
 
       //numPendingPerDest signal
       sprintf(signalName, "numPendingPerDest_total(host node %d)", i);
@@ -1132,10 +1135,6 @@ void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
    }
    else{ //is back at sender
       double demand;
-      if (myIndex() == 0)
-          demand = 50;
-      else
-          demand = 250;
 
       double zValue = pqMsg->getZValue();
       int destNode = ttmsg->getRoute()[0];
@@ -1185,7 +1184,7 @@ void hostNode::handlePriceUpdateMessage(routerMsg* ttmsg){
    double oldLambda = nodeToPaymentChannel[sender].lambda;
    double oldMuLocal = nodeToPaymentChannel[sender].muLocal;
    double oldMuRemote = nodeToPaymentChannel[sender].muRemote;
-   double delta = 5 *_maxTravelTime / 6.0;
+   double delta = _maxTravelTime;
 
    nodeToPaymentChannel[sender].lambda = maxDouble(oldLambda + _eta*(xLocal + xRemote - (cValue/delta)),0);
    nodeToPaymentChannel[sender].muLocal = maxDouble(oldMuLocal + _kappa*(xLocal - xRemote) , 0);
@@ -1524,12 +1523,12 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
                     emit(numFailedPerDestSignals[it], statNumFailed[it]);
 
                     emit(rateFailedPerDestSignals[it], statRateFailed[it]);
-                 }
+           }
 
             emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
-
             emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
             emit(numTimedOutAtSenderSignals[it], statNumTimedOutAtSender[it]);
+            emit(demandEstimatePerDestSignals[it], nodeToDestInfo[it].demand); 
             emit(numPendingPerDestSignals[it], destNodeToNumTransPending[it]);
             emit(numWaitingPerDestSignals[it], nodeToDestInfo[it].transWaitingToBeSent.size()); 
 
