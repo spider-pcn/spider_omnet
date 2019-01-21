@@ -1140,143 +1140,33 @@ void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
       double zValue = pqMsg->getZValue();
       int destNode = ttmsg->getRoute()[0];
       int routeIndex = pqMsg->getPathIndex();
+
+      nodeToShortestPathsMap[destNode][routeIndex].priceLastSeen = zValue;
       //double oldRate = nodeToShortestPathsMap[destNode][routeIndex].xPath;
       double oldRate = nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans;
       nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans =
          maxDouble(oldRate + _alpha*(1-zValue), 0);
-      nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans =
-        min(nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans, nodeToDestInfo[destNode].demand);
-      
-      nodeToShortestPathsMap[destNode][routeIndex].priceLastSeen = zValue;
 
-      // compute projection of the latest rates across all paths
-      double dummyDemand = 1;
-      PathRateTuple demand1 (0, 1.5);
-      PathRateTuple demand2 (0, -1);
-      PathRateTuple demand3 (0, 0.5);
-      PathRateTuple demand4 (0, 1);
-      PathRateTuple demand5 (0, 0);
-      vector<PathRateTuple> dummyRates1 {demand1};
-      vector<PathRateTuple> dummyRates2 {demand2};
-      vector<PathRateTuple> dummyRates3 {demand3};
-      vector<PathRateTuple> dummyRates4 {demand4};
-      vector<PathRateTuple> dummyRates5 {demand5};
+      // compute the projection of this new rate along with old rates
+      vector<PathRateTuple> pathRateTuples;
+      for (auto p : nodeToShortestPathsMap[destNode]) {
+          int pathIndex = p.first;
+          double rate = p.second.rateToSendTrans;
 
-
-      vector<vector<PathRateTuple>> listOfDummyRates {dummyRates1, dummyRates2, dummyRates3, dummyRates4, 
-          dummyRates5};
-
-      if (getIndex() == 0) {
-          cout << "Doing everything once for single demand" << endl;
-          for (auto dummyRates : listOfDummyRates ) {
-               cout << "Original {";
-                for (auto p : dummyRates) {
-                    cout << "(" <<  get<0>(p) << "," << get<1>(p) << "),";
-                }
-                cout << "}" << endl << "Projected : {";
-                vector<PathRateTuple> actualRates = computeProjection(dummyRates, dummyDemand);
-                for (auto p : actualRates) {
-                   cout << "(" <<  get<0>(p) << "," << get<1>(p) << "),";
-                }
-                cout << "}"<< endl;
-          }
+          PathRateTuple newTuple = make_tuple(pathIndex, rate);
+          pathRateTuples.push_back(newTuple);
       }
+      vector<PathRateTuple> projectedRates = 
+          computeProjection(pathRateTuples, nodeToDestInfo[destNode].demand);
 
+      // reassign all path's rates to the projected rates and make sure it is atleast one for every path
+      for (auto p : projectedRates) {
+          int pathIndex = get<0>(p);
+          double rate = get<1>(p);
 
-      listOfDummyRates = {};
-      vector<tuple<double, double>> demandTuples {
-          make_tuple(-1, -1), 
-          make_tuple(1, 1), 
-          make_tuple(1, -1), 
-          make_tuple(1, 1), 
-          make_tuple(0, 0), 
-          make_tuple(1, 0), 
-          make_tuple(0, 1), 
-          make_tuple(0.25, 0.25), 
-          make_tuple(0.5, 0.5), 
-          make_tuple(2, 0), 
-          make_tuple(0, 2)};
-      for (int i = 0; i < demandTuples.size(); i++) {
-          vector<PathRateTuple> dummyRate {};
-          PathRateTuple temp_tuple = make_tuple(0, get<0>(demandTuples[i]));
-          dummyRate.push_back(temp_tuple);
-          temp_tuple = make_tuple(1, get<1>(demandTuples[i]));
-          dummyRate.push_back(temp_tuple);
-
-          listOfDummyRates.push_back(dummyRate);
+          nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans = maxDouble(rate, 1.0);
       }
-
-      if (getIndex() == 0) {
-          cout << "Doing everything once for pair demands" << endl;
-          for (auto dummyRates : listOfDummyRates ) {
-               cout << "Original {";
-                for (auto p : dummyRates) {
-                    cout << "(" <<  get<0>(p) << "," << get<1>(p) << "),";
-                }
-                cout << "}" << endl << "Projected : {";
-                vector<PathRateTuple> actualRates = computeProjection(dummyRates, dummyDemand);
-                for (auto p : actualRates) {
-                   cout << "(" <<  get<0>(p) << "," << get<1>(p) << "),";
-                }
-                cout << "}"<< endl;
-          }
-      }
-
-      listOfDummyRates = {};
-      vector<tuple<double, double, double>> demandTriplets {
-          make_tuple(-1, -1, -1), 
-          make_tuple(0.5, 0.5, -1), 
-          make_tuple(-1, 0.5, 0.5), 
-          make_tuple(0.5, -1, 0.5), 
-          make_tuple(1, 1, 1), 
-          make_tuple(1.0/6, 1.0/6, 1.0/6), 
-          make_tuple(0, 0, 1), 
-          make_tuple(0, 1, 0), 
-          make_tuple(1, 0, 0), 
-          make_tuple(-1, -1, 0.5), 
-          make_tuple(0.5, -1, -1),
-          make_tuple(-1, 0.5, -1), 
-          make_tuple(2, 0, 0), 
-          make_tuple(0, 2, 0), 
-          make_tuple(0, 0, 2), 
-          make_tuple(1, 1, 0),
-          make_tuple(1, 0, 1), 
-          make_tuple(0, 1, 1),
-
-      };
-      for (int i = 0; i < demandTriplets.size(); i++) {
-          vector<PathRateTuple> dummyRate {};
-          PathRateTuple temp_tuple = make_tuple(0, get<0>(demandTriplets[i]));
-          dummyRate.push_back(temp_tuple);
-          temp_tuple = make_tuple(1, get<1>(demandTriplets[i]));
-          dummyRate.push_back(temp_tuple);
-          temp_tuple = make_tuple(2, get<2>(demandTriplets[i]));
-          dummyRate.push_back(temp_tuple);
-
-          listOfDummyRates.push_back(dummyRate);
-      }
-
-      if (getIndex() == 0) {
-          cout << "Doing everything once for triplet demands" << endl;
-          for (auto dummyRates : listOfDummyRates ) {
-               cout << "Original {";
-                for (auto p : dummyRates) {
-                    cout << "(" <<  get<0>(p) << "," << get<1>(p) << "),";
-                }
-                cout << "}" << endl << "Projected : {";
-                vector<PathRateTuple> actualRates = computeProjection(dummyRates, dummyDemand);
-                for (auto p : actualRates) {
-                   cout << "(" <<  get<0>(p) << "," << get<1>(p) << "),";
-                }
-                cout << "}"<< endl;
-          }
-      }
-
-
-
-
-
-
+            
       //delete both messages
       ttmsg->decapsulate();
       delete pqMsg;
