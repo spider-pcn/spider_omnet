@@ -13,14 +13,25 @@ void routerNode::deleteMessagesInQueues(){
       int key = iter->first;
 
       for (auto temp = (nodeToPaymentChannel[key].queuedTransUnits).begin();
-            temp!= (nodeToPaymentChannel[key].queuedTransUnits).end(); temp++){
+            temp!= (nodeToPaymentChannel[key].queuedTransUnits).end(); ){
          routerMsg * rMsg = get<2>(*temp);
          auto tMsg = rMsg->getEncapsulatedPacket();
          rMsg->decapsulate();
          delete tMsg;
          delete rMsg;
+         temp = (nodeToPaymentChannel[key].queuedTransUnits).erase(temp);
       }
    }
+
+   //check queue sizes after deletion:
+   /*
+   cout << "myIndex: " << myIndex();
+   for (auto iter = nodeToPaymentChannel.begin(); iter!=nodeToPaymentChannel.end(); iter++){
+        int key = iter->first;
+        cout << " (" << key << ": size " << nodeToPaymentChannel[key].queuedTransUnits.size() << ")" ;
+     }
+   cout << endl;
+   */
 }
 
 void routerNode:: printNodeToPaymentChannel(){
@@ -263,8 +274,16 @@ void routerNode::initialize()
 
 void routerNode::handleMessage(cMessage *msg)
 {
+    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
+    if (simTime() > _simulationLength){
+        auto encapMsg = (ttmsg->getEncapsulatedPacket());
+           ttmsg->decapsulate();
+           delete ttmsg;
+           delete encapMsg;
+           return;
+    }
 
-   routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
+
    if (ttmsg->getMessageType()==ACK_MSG){ //preprocessor constants defined in routerMsg_m.h
       if (_loggingEnabled) cout << "[ROUTER "<< myIndex() <<": RECEIVED ACK MSG]"<< msg->getName() << endl;
       if (_timeoutEnabled){
@@ -329,6 +348,10 @@ void routerNode::handleMessage(cMessage *msg)
       if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
    }
 
+}
+
+void routerNode::finish(){
+    deleteMessagesInQueues();
 }
 
 void routerNode::handlePriceQueryMessage(routerMsg* ttmsg){
@@ -448,6 +471,11 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                { return (get<0>(get<3>(p)) == transactionId); });
          while (iterQueue != (*queuedTransUnits).end()){
 
+             routerMsg * rMsg = get<2>(*iterQueue);
+                    auto tMsg = rMsg->getEncapsulatedPacket();
+                    rMsg->decapsulate();
+                    delete tMsg;
+                    delete rMsg;
             iterQueue =   (*queuedTransUnits).erase(iterQueue);
 
             iterQueue = find_if((*queuedTransUnits).begin(),

@@ -101,6 +101,7 @@ class hostNode : public cSimpleModule
 
       virtual void splitTransactionForWaterfilling(routerMsg * ttMsg);
       virtual void initialize() override;
+      virtual void finish() override;
       virtual void handleMessage(cMessage *msg) override;
       virtual void handleTransactionMessage(routerMsg *msg);
       virtual bool handleTransactionMessageTimeOut(routerMsg *msg); //returns true if message was deleted

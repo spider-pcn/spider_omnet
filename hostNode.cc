@@ -57,14 +57,25 @@ void hostNode::deleteMessagesInQueues(){
    for (auto iter = nodeToPaymentChannel.begin(); iter!=nodeToPaymentChannel.end(); iter++){
       int key = iter->first;
       for (auto temp = (nodeToPaymentChannel[key].queuedTransUnits).begin();
-            temp!= (nodeToPaymentChannel[key].queuedTransUnits).end(); temp++){
+            temp!= (nodeToPaymentChannel[key].queuedTransUnits).end(); ){
          routerMsg * rMsg = get<2>(*temp);
          auto tMsg = rMsg->getEncapsulatedPacket();
          rMsg->decapsulate();
          delete tMsg;
          delete rMsg;
+         temp = (nodeToPaymentChannel[key].queuedTransUnits).erase(temp);
       }
    }
+
+   //check queue sizes after deletion:
+   /*
+   cout << "myIndex: " << myIndex();
+   for (auto iter = nodeToPaymentChannel.begin(); iter!=nodeToPaymentChannel.end(); iter++){
+        int key = iter->first;
+        cout << " (" << key << ": size " << nodeToPaymentChannel[key].queuedTransUnits.size() << ")" ;
+     }
+   cout << endl;
+    */
 }
 
 
@@ -912,6 +923,13 @@ void hostNode::handleMessage(cMessage *msg)
    
    //Radhika TODO: figure out what's happening here.
    if (simTime() > _simulationLength){
+       auto encapMsg = (ttmsg->getEncapsulatedPacket());
+          ttmsg->decapsulate();
+          delete ttmsg;
+          delete encapMsg;
+          return;
+
+
       int splitTrans = 0;
       for (auto p: transactionIdToNumHtlc){
          if (p.second>1) splitTrans++;
@@ -921,7 +939,7 @@ void hostNode::handleMessage(cMessage *msg)
          cout << "number greater than 1: " << splitTrans << endl;
       }
       cout << "maxTravelTime:" << _maxTravelTime << endl;
-      endSimulation();
+      //endSimulation();
 
 
    }
@@ -1336,6 +1354,11 @@ void hostNode::handleClearStateMessage(routerMsg* ttmsg){
                   [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
                   { return (get<0>(get<3>(p)) == transactionId); });
             while (iterQueue != (*queuedTransUnits).end()){
+                routerMsg * rMsg = get<2>(*iterQueue);
+                       auto tMsg = rMsg->getEncapsulatedPacket();
+                       rMsg->decapsulate();
+                       delete tMsg;
+                       delete rMsg;
                iterQueue =   (*queuedTransUnits).erase(iterQueue);
 
 
@@ -1462,10 +1485,14 @@ void hostNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
    } // end if (_loggingEnabled)
 }
 
+void hostNode::finish(){
+    deleteMessagesInQueues();
+}
+
 void hostNode::handleStatMessage(routerMsg* ttmsg){
    if (simTime() > _simulationLength){
       delete ttmsg;
-      deleteMessagesInQueues();
+
    }
    else{
       scheduleAt(simTime()+_statRate, ttmsg);
@@ -2261,7 +2288,7 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
    }
 
    int transactionId = transMsg->getTransactionId();
-   if (transMsg->getReceiver() == getIndex()) { 
+   if (transMsg->getReceiver() == myIndex()) {
       int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
 
       map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
@@ -2284,7 +2311,7 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
       forwardAckMessage(newMsg);
       return;
    }
-   else if (transMsg->getSender() == getIndex()) {
+   else if (transMsg->getSender() == myIndex()) {
     // Vibhaa : Fix this to use self-message
       //is a self-message/at hop count = 0
       int destNode = transMsg->getReceiver();
@@ -2506,9 +2533,6 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
          push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
          processTransUnits(nextNode, *q);
       }
-
-
-
    }
 }
 
@@ -2550,7 +2574,7 @@ routerMsg *hostNode::generateTransactionMessage(TransUnit unit)
    msg->setHtlcIndex(0);
    msg->setHasTimeOut(unit.hasTimeOut);
    msg->setTimeOut(unit.timeOut);
-   sprintf(msgname, "tic-%d-to-%d routerMsg", unit.sender, unit.receiver);
+   sprintf(msgname, "tic-%d-to-%d router-transaction-Msg", unit.sender, unit.receiver);
    routerMsg *rMsg = new routerMsg(msgname);
    if (destNodeToPath.count(unit.receiver) == 0){ //compute route and add to memoization table
       vector<int> route = getRoute(unit.sender,unit.receiver);

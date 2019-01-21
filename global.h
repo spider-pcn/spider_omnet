@@ -15,6 +15,7 @@
 #include "transactionSendMsg_m.h"
 #include <iostream>
 #include <algorithm>
+#include <numeric>
 #include <string>
 #include <sstream>
 #include <deque>
