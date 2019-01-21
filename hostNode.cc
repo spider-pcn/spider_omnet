@@ -35,6 +35,8 @@ double _kappa; //for price computation
 double _tUpdate; //for triggering price updates at routers
 double _tQuery; //for triggering price query probes at hosts
 double _alpha;
+double _gamma;
+double _zeta;
 
 //global parameters for fixed size queues
 bool _hasQueueCapacity;
@@ -434,6 +436,8 @@ void hostNode::initialize()
       _tUpdate = 0.5;
       _tQuery = 0.5;
       _alpha = 0.01;
+      _gamma = 0.2; // ewma factor to compute per path rates
+      _zeta = 0.001; // ewma for d_ij every source dest demand
       
       // smooth waterfilling parameters
       _Tau = 10;
@@ -951,6 +955,9 @@ void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
           int nextNode = path[1];
           nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + 1;
 
+          // increment number of units sent to a particular destination on a particular path
+          nodeToShortestPathsMap[destNode][pathIndex].nValue += 1;
+
           // increment amount in inflght on this path
           nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight =
                     nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight + transMsg->getAmount();
@@ -1030,7 +1037,7 @@ void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
       nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans =
          maxDouble(oldRate + _alpha*(1-zValue), 0);
       nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans =
-         min(nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans, demand);
+        min(nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans, nodeToDestInfo[destNode].demand);
       
       nodeToShortestPathsMap[destNode][routeIndex].priceLastSeen = zValue;
       //delete both messages
@@ -1064,7 +1071,7 @@ void hostNode::handleTriggerPriceQueryMessage(routerMsg* ttmsg){
       delete ttmsg;
    }
    else{
-      scheduleAt(simTime()+_tUpdate, ttmsg);
+      scheduleAt(simTime()+_tQuery, ttmsg);
    }
 
    for (auto it = destNodeToNumTransPending.begin(); it!=destNodeToNumTransPending.end(); it++){
@@ -1109,6 +1116,25 @@ void hostNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
       }
       routerMsg * priceUpdateMsg = generatePriceUpdateMessage(nodeToPaymentChannel[it->first].xLocal, it->first);
       sendUpdateMessage(priceUpdateMsg);
+   }
+
+   // also update the xPath for a given destination and path to use for your next rate computation
+   for ( auto it = nodeToShortestPathsMap.begin(); it != nodeToShortestPathsMap.end(); it++ ) {
+       int destNode = it->first;
+       for (auto p : nodeToShortestPathsMap[destNode]) {
+          int pathIndex = p.first;
+          double latestRate = nodeToShortestPathsMap[destNode][pathIndex].nValue / _tUpdate;
+          double oldRate = nodeToShortestPathsMap[destNode][pathIndex].xPath;
+
+          nodeToShortestPathsMap[destNode][pathIndex].nValue = 0; 
+          nodeToShortestPathsMap[destNode][pathIndex].xPath = (1 - _gamma) * oldRate + _gamma * latestRate; 
+       }
+
+
+       DestInfo* destInfo = &(nodeToDestInfo[destNode]);
+       double newDemand = destInfo->transSinceLastInterval/_tUpdate;
+       destInfo->demand = (1 - _zeta) * destInfo->demand + _zeta * newDemand;
+       destInfo->transSinceLastInterval = 0;
    }
 }
 
@@ -1548,6 +1574,7 @@ void hostNode::handleAckMessagePriceScheme(routerMsg* ttmsg){
    }
 
    nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= aMsg->getAmount();
+   destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] - 1;
 
 }
 
@@ -1578,7 +1605,9 @@ void hostNode::handleAckMessageWaterfilling(routerMsg* ttmsg){
       transPathToAckState[key].amtReceived = transPathToAckState[key].amtReceived + aMsg->getAmount();
 
       // decrement amtinflight on a path
-     nodeToShortestPathsMap[aMsg->getReceiver()][aMsg->getPathIndex()].sumOfTransUnitsInFlight -= aMsg->getAmount();
+     int destNode = aMsg->getReceiver();
+     nodeToShortestPathsMap[destNode][aMsg->getPathIndex()].sumOfTransUnitsInFlight -= aMsg->getAmount();
+    destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] - 1;
 			//Radhika: why is this commented out?
       /*
          if (transPathToAckState[key].amtReceived == transPathToAckState[key].amtSent){
@@ -2091,8 +2120,10 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
    statNumArrived[destNode] = statNumArrived[destNode]+1;
    statRateArrived[destNode] = statRateArrived[destNode]+1;
 
+   // first time seeing this transaction so add to d_ij computation
    if (simTime() == transMsg->getTimeSent()){
        destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] + 1;
+       nodeToDestInfo[destNode].transSinceLastInterval += 1;
    }
 
    if (nodeToShortestPathsMap.count(destNode) == 0 && getIndex() == transMsg->getSender()){
@@ -2148,6 +2179,9 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
                int nextNode = p.second.path[1];
                 //transaction being sent out, need to increment nValue
                nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + 1;
+
+                // increment number of units sent to a particular destination on a particular path
+                nodeToShortestPathsMap[destNode][pathIndex].nValue += 1;
                
                 //generate time out message here, when path is decided
                 if (_timeoutEnabled) {
@@ -2246,12 +2280,12 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
 
       //if all probes from destination are recent enough, send transaction on one or more paths.
       if (recent){ // we made sure all the probes are back
-         destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode]-1;
+         // destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode]-1;
          if ((!_timeoutEnabled) || (simTime() < (transMsg->getTimeSent() + transMsg->getTimeOut()))) { 
              //TODO: remove?
             splitTransactionForWaterfilling(ttmsg);
             if (transMsg->getAmount()>0){
-               destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode]+1;
+               // destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode]+1;
                scheduleAt(simTime() + 1, ttmsg);
             }
             else{

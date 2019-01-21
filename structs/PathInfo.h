@@ -25,6 +25,10 @@ public:
     simtime_t priceLastSeen = 0;
     routerMsg * triggerTransSendMsg;
     bool isSendTimerSet = false;
+
+    // number and rate of txns sent to a particular destination on this path
+    double nValue = 0;
+    double xPath = 1;
     
     bool isProbeOutstanding = false;
 
