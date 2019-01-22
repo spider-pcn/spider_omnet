@@ -28,17 +28,21 @@ simple routerNode
 		@signal[nValuePerChannel*](type="long"); 
 		@statisticTemplate[nValuePerChannelTemplate](record=vector, stats);
 		
-		@signal[xLocalPerChannel*](type="long"); 
+		@signal[xLocalPerChannel*](type="double"); 
 		@statisticTemplate[xLocalPerChannelTemplate](record=vector, stats);
 
-		@signal[lambdaPerChannel*](type="long"); 
+		@signal[lambdaPerChannel*](type="double"); 
 		@statisticTemplate[lambdaPerChannelTemplate](record=vector, stats);
 		
-		@signal[muLocalPerChannel*](type="long"); 
+		@signal[muLocalPerChannel*](type="double"); 
 		@statisticTemplate[muLocalPerChannelTemplate](record=vector, stats);
 		
-		@signal[muRemotePerChannel*](type="long"); 
+		@signal[muRemotePerChannel*](type="double"); 
 		@statisticTemplate[muRemotePerChannelTemplate](record=vector, stats);
+    		
+                @signal[numInflightPerChannel*](type="long"); 
+		@statisticTemplate[numInflightPerChannelTemplate](record=vector, stats);
+
 
 	gates:
 		input in[];

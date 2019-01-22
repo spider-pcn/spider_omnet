@@ -98,5 +98,5 @@ for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", "numTi
         "fracSuccessful", "demandEstimate"]:
     INTERESTING_SIGNALS[signal] = signal + "PerDest"
 
-for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "numSent", "muRemote"]:
+for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "numSent", "muRemote", "numInflight"]:
     INTERESTING_SIGNALS[signal] = signal + "PerChannel"

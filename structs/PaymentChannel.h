@@ -37,5 +37,6 @@ public:
     simsignal_t numProcessedPerChannelSignal;
     simsignal_t balancePerChannelSignal;
     simsignal_t numSentPerChannelSignal;
+    simsignal_t numInflightPerChannelSignal;
 
 };

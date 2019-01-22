@@ -255,6 +255,21 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
         plt.close()
 
 
+# see if infligh plus balance was ever more than capacity
+def find_problem(balance_timeseries, inflight_timeseries) :
+    for router, channel_info in balance_timeseries.items():
+            for channel, info in channel_info.items():
+                for i, (time, value) in enumerate(info):
+                    my_balance = value
+                    remote_balance = balance_timeseries[channel][router][i][1]
+                    inflight = inflight_timeseries[channel][router][i][1]
+                    # num inflight might be a little inconsistent depending on clear state
+                    # but others should tally up
+                    if my_balance + remote_balance > ROUTER_CAPACITY:
+                        print " problem at router", router, "with ", channel,   " at time " , time
+                        print my_balance, remote_balance, inflight
+        
+
 
 # plot per router channel information on a per router basis depending on the type of signal wanted
 def plot_per_payment_channel_stats(args):
@@ -268,9 +283,13 @@ def plot_per_payment_channel_stats(args):
             data_to_plot = aggregate_info_per_node(args.vec_file, "balance", True)
             plot_relevant_stats(data_to_plot, pdf, "Balance", compute_router_wealth=True)
 
-            if args.inflight:
+            inflight = aggregate_info_per_node(args.vec_file, "numInflight", True)
+            plot_relevant_stats(inflight, pdf, "Inflight funds")
+            find_problem(data_to_plot, inflight)
+
+            '''if args.inflight:
                 inflight_data_to_plot = aggregate_inflight_info(data_to_plot)
-                plot_relevant_stats(inflight_data_to_plot, pdf, "Inflight Funds")
+                plot_relevant_stats(inflight_data_to_plot, pdf, "Inflight Funds")'''
 
             
         if args.queue_info:

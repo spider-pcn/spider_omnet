@@ -142,7 +142,7 @@ void hostNode::forwardProbeMessage(routerMsg *msg){
 
    if (pMsg->getIsReversed() == false){
       vector<double> *pathBalances = & ( pMsg->getPathBalances());
-      (*pathBalances).push_back(nodeToPaymentChannel[nextDest].balance);
+      (*pathBalances).push_back(nodeToPaymentChannel[nextDest].balanceEWMA);
    }
    if (_loggingEnabled) cout << "forwardProbeMsg send:" << simTime() << endl;
    send(msg, nodeToPaymentChannel[nextDest].gate);
@@ -545,13 +545,13 @@ void hostNode::initialize()
       // price scheme parameters
       _eta = 0.01;
       _kappa = 0.01;
-      _tUpdate = 0.5;
-      _tQuery = 0.5;
-      _alpha = 0.0025;
+      _tUpdate = 0.8;
+      _tQuery = 0.8;
+      _alpha = 0.01;
       _gamma = 0.2; // ewma factor to compute per path rates
       _zeta = 0.001; // ewma for d_ij every source dest demand
 
-      _epsilon = pow(1, -10);
+      _epsilon = pow(1, -6);
       
       // smooth waterfilling parameters
       _Tau = 10;
@@ -1104,6 +1104,11 @@ void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
 
           forwardTransactionMessage(msgToSend);
 
+          // update the number attempted to this destination and on this path
+          nodeToShortestPathsMap[destNode][pathIndex].statRateAttempted =
+                nodeToShortestPathsMap[destNode][pathIndex].statRateAttempted + 1;
+          statRateAttempted[destNode] += 1;
+
           //Update the  “time when next transaction can be sent” to (“current time” +
           //(“amount in the transaction $tu$ that is currently being sent” / “rate”)).
           double rateToSendTrans = nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans;
@@ -1644,7 +1649,6 @@ void hostNode::handleTimeOutMessageShortestPath(routerMsg* ttmsg){
    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
    int destination = toutMsg->getReceiver();
 
-
    if ((ttmsg->getHopCount())==0){ //is at the sender
       if (successfulDoNotSendTimeOut.count(toutMsg->getTransactionId())>0){ //already received ack for it, do not send out
          successfulDoNotSendTimeOut.erase(toutMsg->getTransactionId());
@@ -1730,6 +1734,7 @@ void hostNode::handleAckMessagePriceScheme(routerMsg* ttmsg){
    else{
       statNumCompleted[destNode] = statNumCompleted[destNode]+1;
       statRateCompleted[destNode] = statRateCompleted[destNode]+1;
+      nodeToShortestPathsMap[destNode][pathIndex].statRateCompleted += 1;
    }
 
    nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= aMsg->getAmount();
@@ -1767,7 +1772,9 @@ void hostNode::handleAckMessageWaterfilling(routerMsg* ttmsg){
      int destNode = aMsg->getReceiver();
      nodeToShortestPathsMap[destNode][aMsg->getPathIndex()].sumOfTransUnitsInFlight -= aMsg->getAmount();
     destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] - 1;
-			//Radhika: why is this commented out?
+			
+   
+    //Radhika: why is this commented out?
       /*
          if (transPathToAckState[key].amtReceived == transPathToAckState[key].amtSent){
          transPathToAckState.erase(key);
@@ -2276,13 +2283,15 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
    int destNode = transMsg->getReceiver();
    int nextNode = ttmsg->getRoute()[hopcount+1];
 
-   statNumArrived[destNode] = statNumArrived[destNode]+1;
-   statRateArrived[destNode] = statRateArrived[destNode]+1;
+
 
    // first time seeing this transaction so add to d_ij computation
+   // count the txn for accounting also
    if (simTime() == transMsg->getTimeSent()){
        destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] + 1;
        nodeToDestInfo[destNode].transSinceLastInterval += 1;
+       statNumArrived[destNode] = statNumArrived[destNode]+1;
+       statRateArrived[destNode] = statRateArrived[destNode]+1;
    }
 
    if (nodeToShortestPathsMap.count(destNode) == 0 && getIndex() == transMsg->getSender()){
@@ -2349,6 +2358,11 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
                 }
 
                forwardTransactionMessage(ttmsg);
+
+               // update number attempted to this destination and on this path
+              nodeToShortestPathsMap[destNode][p.first].statRateAttempted =
+                nodeToShortestPathsMap[destNode][p.first].statRateAttempted + 1;
+              statRateAttempted[destNode] += 1;
                
                //update "amount of transaction in flight"
                nodeToShortestPathsMap[destNode][p.first].sumOfTransUnitsInFlight =
@@ -2486,10 +2500,8 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
    vector<tuple<int, double , routerMsg *, Id>> *q;
 
    int destination = transMsg->getReceiver();
-
-   if (!_waterfillingEnabled){
-       // in waterfilling message can be received multiple times, so only update when simTime == transTime
-      statNumArrived[destination] = statNumArrived[destination] + 1;
+   if (!_waterfillingEnabled && !_priceSchemeEnabled){
+       // in waterfilling and price scheme message can be received multiple times, so only update when simTime == transTime
       statRateArrived[destination] = statRateArrived[destination] + 1;
       statRateAttempted[destination] = statRateAttempted[destination] + 1;
    }
