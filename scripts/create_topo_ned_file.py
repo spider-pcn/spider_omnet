@@ -106,7 +106,7 @@ def generate_graph(size, graph_type):
     if graph_type == 'random':
         G = nx.dense_gnm_random_graph(size, size * 5,seed=SEED)
     elif graph_type == 'small_world':
-        G = nx.watts_strogatz_graph(size, size/8, 0.25, seed=SEED)
+        G = nx.watts_strogatz_graph(size, 8, 0.25, seed=SEED)
     elif graph_type == 'scale_free':
         G = nx.barabasi_albert_graph(size, 8, seed=SEED)
     elif graph_type == 'tree':

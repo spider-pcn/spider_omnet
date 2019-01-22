@@ -67,6 +67,20 @@ void hostNode::deleteMessagesInQueues(){
       }
    }
 
+   // remove any waiting transactions too
+    for (auto iter = nodeToDestInfo.begin(); iter!=nodeToDestInfo.end(); iter++){
+      int dest = iter->first;
+      while ((nodeToDestInfo[dest].transWaitingToBeSent).size() > 0) {
+         routerMsg * rMsg = nodeToDestInfo[dest].transWaitingToBeSent.front();
+         auto tMsg = rMsg->getEncapsulatedPacket();
+         rMsg->decapsulate();
+         delete tMsg;
+         delete rMsg;
+         nodeToDestInfo[dest].transWaitingToBeSent.pop_front();
+      }
+   }
+
+
    //check queue sizes after deletion:
    /*
    cout << "myIndex: " << myIndex();
@@ -545,9 +559,9 @@ void hostNode::initialize()
       // price scheme parameters
       _eta = 0.01;
       _kappa = 0.01;
-      _tUpdate = 0.8;
-      _tQuery = 0.8;
-      _alpha = 0.01;
+      _tUpdate = 0.5;
+      _tQuery = 0.5;
+      _alpha = 0.0025;
       _gamma = 0.2; // ewma factor to compute per path rates
       _zeta = 0.001; // ewma for d_ij every source dest demand
 
@@ -858,31 +872,8 @@ void hostNode::initialize()
       fracSuccessfulPerDestSignals.push_back(signal);
    }
 
-   //implementing timeSent parameter, send all msgs at beginning
-   while(!_transUnitList[myIndex()].empty()) {
-
-      TransUnit j = _transUnitList[myIndex()].top();
-      double timeSent = j.timeSent;
-
-			//cout << timeSent << " " << j.sender << " " << j.receiver << endl;
-
-      routerMsg *msg = generateTransactionMessage(j); //TODO: flag to whether to calculate path
-
-      if (_waterfillingEnabled || _priceSchemeEnabled){
-         vector<int> blankPath = {};
-         //Radhika TODO: maybe no need to compute path to begin with?
-         msg->setRoute(blankPath);
-      }
-
-      scheduleAt(timeSent, msg);
-
-      if (_timeoutEnabled && !_priceSchemeEnabled && j.hasTimeOut){
-         routerMsg *toutMsg = generateTimeOutMessage(msg);
-         scheduleAt(timeSent + j.timeOut, toutMsg );
-      }
-      _transUnitList[myIndex()].pop();
-   }
-
+    // generate first transaction
+   generateNextTransaction();
    //cout << "[host id] " << myIndex() << ": finished creating trans messages." << endl;
 
    //get stat message
@@ -901,6 +892,32 @@ void hostNode::initialize()
       routerMsg *triggerPriceQueryMsg = generateTriggerPriceQueryMessage();
       scheduleAt(simTime() + _tQuery, triggerPriceQueryMsg );
    }
+}
+
+void hostNode::generateNextTransaction() {
+      if (_transUnitList[myIndex()].empty())
+          return;
+      TransUnit j = _transUnitList[myIndex()].top();
+
+      double timeSent = j.timeSent;
+
+      // cout << timeSent << " " << j.sender << " " << j.receiver << endl;
+
+      routerMsg *msg = generateTransactionMessage(j); //TODO: flag to whether to calculate path
+
+      if (_waterfillingEnabled || _priceSchemeEnabled){
+         vector<int> blankPath = {};
+         //Radhika TODO: maybe no need to compute path to begin with?
+         msg->setRoute(blankPath);
+      }
+
+      scheduleAt(timeSent, msg);
+
+      if (_timeoutEnabled && !_priceSchemeEnabled && j.hasTimeOut){
+         routerMsg *toutMsg = generateTimeOutMessage(msg);
+         scheduleAt(timeSent + j.timeOut, toutMsg );
+      }
+      _transUnitList[myIndex()].pop();
 }
 
 routerMsg *hostNode::generateTriggerPriceQueryMessage(){
@@ -971,6 +988,12 @@ void hostNode::handleMessage(cMessage *msg)
    }
    else if(ttmsg->getMessageType()==TRANSACTION_MSG){
       if (_loggingEnabled) cout<< "[HOST "<< myIndex() <<": RECEIVED TRANSACTION MSG]  "<< msg->getName() <<endl;
+
+      transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+      if (transMsg->isSelfMessage() && simTime() == transMsg->getTimeSent()) {
+          // new transaction so generate the next one
+          generateNextTransaction();
+      }
 
       if (_timeoutEnabled && handleTransactionMessageTimeOut(ttmsg)){
          return;
@@ -1221,6 +1244,11 @@ void hostNode::handlePriceUpdateMessage(routerMsg* ttmsg){
    nodeToPaymentChannel[sender].lambda = maxDouble(oldLambda + _eta*(xLocal + xRemote - (cValue/delta)),0);
    nodeToPaymentChannel[sender].muLocal = maxDouble(oldMuLocal + _kappa*(xLocal - xRemote) , 0);
    nodeToPaymentChannel[sender].muRemote = maxDouble(oldMuRemote + _kappa*(xRemote - xLocal) , 0);
+
+    //delete both messages
+    ttmsg->decapsulate();
+    delete puMsg;
+    delete ttmsg;
 
 }
 

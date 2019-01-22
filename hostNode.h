@@ -145,6 +145,7 @@ class hostNode : public cSimpleModule
       virtual int sampleFromDistribution(vector<double> probabilities);
       virtual bool ratesFeasible(vector<PathRateTuple> actualRates, double demand);
       virtual vector<PathRateTuple> computeProjection(vector<PathRateTuple> recommendedRates, double demand);
+      virtual void generateNextTransaction();
 };
 
 #endif
