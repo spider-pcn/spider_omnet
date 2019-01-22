@@ -1,9 +1,8 @@
-
-
 #include <stdio.h>
 #include <string.h>
 #include <omnetpp.h>
 #include <vector>
+#include <queue>
 #include "routerMsg_m.h"
 #include "transactionMsg_m.h"
 #include "ackMsg_m.h"
@@ -32,8 +31,16 @@
 #define MSGSIZE 100
 using namespace std;
 
+struct LaterTransUnit
+{
+  bool operator()(const TransUnit& lhs, const TransUnit& rhs) const
+  {
+    return lhs.timeSent > rhs.timeSent;
+  }
+};
+
 //global parameters
-extern map<int, vector<TransUnit>> _transUnitList;
+extern map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
 extern int _numNodes;
 //number of nodes in network
 extern int _numRouterNodes;

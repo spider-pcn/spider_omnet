@@ -3,7 +3,7 @@
 #include "hostInitialize.h"
 
 //global parameters
-map<int, vector<TransUnit>> _transUnitList; //list of all transUnits
+map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
 int _numNodes;
 int _numRouterNodes;
 int _numHostNodes;
@@ -859,10 +859,13 @@ void hostNode::initialize()
    }
 
    //implementing timeSent parameter, send all msgs at beginning
-   for (int i=0; i<(int)(_transUnitList[myIndex()].size()); i++) {
+   while(!_transUnitList[myIndex()].empty()) {
 
-      TransUnit j = _transUnitList[myIndex()][i];
+      TransUnit j = _transUnitList[myIndex()].top();
       double timeSent = j.timeSent;
+
+			//cout << timeSent << " " << j.sender << " " << j.receiver << endl;
+
       routerMsg *msg = generateTransactionMessage(j); //TODO: flag to whether to calculate path
 
       if (_waterfillingEnabled || _priceSchemeEnabled){
@@ -877,7 +880,10 @@ void hostNode::initialize()
          routerMsg *toutMsg = generateTimeOutMessage(msg);
          scheduleAt(timeSent + j.timeOut, toutMsg );
       }
+      _transUnitList[myIndex()].pop();
    }
+
+   //cout << "[host id] " << myIndex() << ": finished creating trans messages." << endl;
 
    //get stat message
    routerMsg *statMsg = generateStatMessage();
@@ -2480,6 +2486,7 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
    vector<tuple<int, double , routerMsg *, Id>> *q;
 
    int destination = transMsg->getReceiver();
+
    if (!_waterfillingEnabled){
        // in waterfilling message can be received multiple times, so only update when simTime == transTime
       statNumArrived[destination] = statNumArrived[destination] + 1;
@@ -2518,6 +2525,9 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
       //is a self-message/at hop count = 0
       int destNode = transMsg->getReceiver();
       int nextNode = ttmsg->getRoute()[hopcount+1];
+
+	 		//cout << "Transaction arrived: " << simTime() << " " << myIndex() << " " << destNode	<< endl;
+
       q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
       tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
 

@@ -749,10 +749,12 @@ void generateTransUnitList(string workloadFile){
          // instantiate all the transUnits that need to be sent
          TransUnit tempTU = TransUnit(amount, timeSent, sender, receiver, priorityClass, hasTimeOut, timeOut);
 
-         // add all the transUnits into global per-sender map
-         _transUnitList[sender].push_back(tempTU);
+         // push the transUnit into a priority queue indexed by the sender, 
+         _transUnitList[sender].push(tempTU);
 
       }
+   		//cout << "finished generateTransUnitList" << endl;
+		
       myfile.close();
    }
 
