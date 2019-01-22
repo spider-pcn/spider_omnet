@@ -1102,6 +1102,9 @@ void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
             scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
           }
 
+          // cannot be cancelled at this point
+          // // TODO: should you be calling handle Transaction Message or pushing into a queue for the node to payment 
+          // channel ? all other schemes call handleTransactionMessage
           forwardTransactionMessage(msgToSend);
 
           // update the number attempted to this destination and on this path
@@ -1804,9 +1807,9 @@ void hostNode::handleAckMessage(routerMsg* ttmsg){
    (*outgoingTransUnits).erase(make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex()));
    if (aMsg->getIsSuccess() == false){
       //increment payment back to outgoing channel
-
-       nodeToPaymentChannel[prevNode].balance = nodeToPaymentChannel[prevNode].balance + aMsg->getAmount();
-
+      // unless I'm the node where it failed
+      if (aMsg->getFailedHopNum() != myIndex())
+        nodeToPaymentChannel[prevNode].balance = nodeToPaymentChannel[prevNode].balance + aMsg->getAmount();
 
       //removing transaction from incoming_trans_units is not necessary because no node after this one
       if (ttmsg->getHopCount() < ttmsg->getRoute().size()-1){
@@ -2356,7 +2359,9 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
                  routerMsg *toutMsg = generateTimeOutMessage(ttmsg);
                  scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
                 }
-
+                
+            // @Vibhaa: should this be calling handleTransactionMessage because there might be queues to this payment channel
+            // doesn't happen typically at the end host but still
                forwardTransactionMessage(ttmsg);
 
                // update number attempted to this destination and on this path
@@ -2543,13 +2548,22 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg){
       q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
       tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
 
-      if (_hasQueueCapacity && _queueCapacity <= (*q).size()){ //failed transaction, queue at capacity
-
+      if (_hasQueueCapacity && _queueCapacity == 0) {
+          if (forwardTransactionMessage(ttmsg) == false) {
+              // if there isn't balance, because cancelled txn case will never be hit
+              // TODO: make this and forward txn message cleaner
+              // maybe just clean out queue when a timeout arrives as opposed to after clear state
+             routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
+             handleAckMessage(failedAckMsg);
+          }
+      }
+      else if (_hasQueueCapacity && (*q).size() >= _queueCapacity){ 
+          //failed transaction, queue at capacity and others are queued so don't send this transaction even
          routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
          handleAckMessage(failedAckMsg);
       }
       else{
-
+          // add to queue and process in order of queue
          (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
                   ttmsg, key));
          push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
@@ -2655,7 +2669,22 @@ bool hostNode::forwardTransactionMessage(routerMsg *msg)
    if (nodeToPaymentChannel[nextDest].balance <= 0 || transMsg->getAmount() >nodeToPaymentChannel[nextDest].balance){
       return false;
    }
+
    else{
+
+      // check if txn has been cancelled and if so return without doing anything to move on to the next transaction
+      // TODO: this case won't be hit for price scheme because you check before calling this function even
+      int transactionId = transMsg->getTransactionId();
+      auto iter = find_if(canceledTransactions.begin(),
+           canceledTransactions.end(),
+           [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
+           { return get<0>(p) == transactionId; });
+
+      // can potentially erase info?
+      if (iter != canceledTransactions.end()) {
+         return true;
+      }
+
       // Increment hop count.
       msg->setHopCount(msg->getHopCount()+1);
       //use hopCount to find next destination

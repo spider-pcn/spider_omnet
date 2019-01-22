@@ -731,11 +731,13 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
    (*outgoingTransUnits).erase(make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex()));
 
    if (aMsg->getIsSuccess() == false){
-      //increment payment back to outgoing channel
-      double updatedBalance = nodeToPaymentChannel[prevNode].balance + aMsg->getAmount();
-      nodeToPaymentChannel[prevNode].balanceEWMA = 
-          (1 -_ewmaFactor) * nodeToPaymentChannel[prevNode].balanceEWMA + (_ewmaFactor) * updatedBalance; 
-      nodeToPaymentChannel[prevNode].balance = updatedBalance;
+      if (aMsg->getFailedHopNum() != myIndex()) {
+          //increment payment back to outgoing channel
+          double updatedBalance = nodeToPaymentChannel[prevNode].balance + aMsg->getAmount();
+          nodeToPaymentChannel[prevNode].balanceEWMA = 
+              (1 -_ewmaFactor) * nodeToPaymentChannel[prevNode].balanceEWMA + (_ewmaFactor) * updatedBalance; 
+          nodeToPaymentChannel[prevNode].balance = updatedBalance;
+      }
 
       // this is nextNode on the ack path and so prev node in the forward path or rather
       // node sending you mayments
@@ -881,9 +883,17 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
 
    q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
 
-
-   if (_hasQueueCapacity && _queueCapacity<=(*q).size()){ //failed transaction, queue at capacity
-
+    if (_hasQueueCapacity && _queueCapacity == 0) {
+       if (forwardTransactionMessage(ttmsg, nextNode) == false) {
+          // if there isn't balance, because cancelled txn case will never be hit
+          // TODO: make this and forward txn message cleaner
+          // maybe just clean out queue when a timeout arrives as opposed to after clear state
+         routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
+         handleAckMessage(failedAckMsg);
+      }
+    }
+    else if (_hasQueueCapacity && _queueCapacity<=(*q).size()){ 
+        //failed transaction, queue at capacity, others are in queue so no point trying this txn
       routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
       handleAckMessage(failedAckMsg);
    }
@@ -961,6 +971,8 @@ void routerNode:: processTransUnits(int dest, vector<tuple<int, double , routerM
  *  forwardTransactionMessage - given a message representing a TransUnit, increments hopCount, finds next destination,
  *      adjusts (decrements) channel balance, sends message to next node on route
  */
+
+// call this dest nextnode
 bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest)
 {
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
