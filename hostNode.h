@@ -139,6 +139,11 @@ class hostNode : public cSimpleModule
       virtual void restartProbes(int destNode);
       virtual void deleteMessagesInQueues();
 
+      //landmark routing
+      virtual void handleTransactionMessageLandmarkRouting(routerMsg *msg);
+      virtual void initializePathInfoLandmarkRouting(vector<vector<int>> kShortestRoutes, int  destNode);
+      virtual void initializeLandmarkRoutingProbes();
+
       //helper
       virtual bool printNodeToPaymentChannel();
       virtual int updatePathProbabilities(vector<double> bottleneckBalances, int destNode);

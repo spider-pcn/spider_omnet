@@ -918,6 +918,15 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //
    int receiver = (ttmsg->getRoute())[(ttmsg->getRoute()).size() -1];
    bool hasTimeOut;
 
+   cout << "isSuccess:" << isSuccess << endl;
+   cout << "router - myIndex: " << myIndex() << endl;
+   int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
+   cout << "nextNode: " << nextNode << endl;
+   cout << "outgoing balance:" << nodeToPaymentChannel[nextNode].balance;
+
+   printVector(ttmsg->getRoute());
+
+
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
    transactionId = transMsg->getTransactionId();
    timeSent = transMsg->getTimeSent();
@@ -964,7 +973,7 @@ void routerNode:: processTransUnits(int dest, vector<tuple<int, double , routerM
    bool successful = true;
 
    while((int)q.size()>0 && successful){
-      successful = forwardTransactionMessage(get<2>(q.back()), dest);
+      successful = forwardTransactionMessage(get<2>(q.back()));
       if (successful){
          q.pop_back();
       }
@@ -984,7 +993,7 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest)
 
    int nextDest = msg->getRoute()[msg->getHopCount()+1];
 
-   if (nodeToPaymentChannel[dest].balance <= 0 || transMsg->getAmount() > nodeToPaymentChannel[dest].balance){
+   if (nodeToPaymentChannel[nextDest].balance <= 0 || transMsg->getAmount() > nodeToPaymentChannel[nextDest].balance){
       return false;
    } 
    else {

@@ -56,6 +56,9 @@ extern bool _waterfillingEnabled;
 extern bool _timeoutEnabled;
 extern int _kValue; //for k shortest paths
 extern double _simulationLength;
+extern bool _landmarkRoutingEnabled;
+
+extern vector<tuple<int,int>> _landmarksWithConnectivityList;//pair: (number of edges, node number)
 
 // for silentWhispers
 extern vector<int> _landmarks;
@@ -76,4 +79,6 @@ extern double _ewmaFactor;
 extern bool _hasQueueCapacity;
 extern int _queueCapacity;
 extern double _epsilon;
+
+
 

@@ -20,6 +20,9 @@ bool _smoothWaterfillingEnabled;
 bool _timeoutEnabled;
 bool _loggingEnabled;
 bool _signalsEnabled;
+bool _landmarkRoutingEnabled;
+
+vector<tuple<int,int>> _landmarksWithConnectivityList = {};
 
 // set of landmarks for landmark routing
 vector<int> _landmarks;
@@ -546,15 +549,23 @@ void hostNode::initialize()
       _simulationLength = par("simulationLength");
       _statRate = par("statRate");
       _clearRate = par("timeoutClearRate");
-      _waterfillingEnabled = par("waterfillingEnabled");
-      _smoothWaterfillingEnabled = par("smoothWaterfillingEnabled");
-      _timeoutEnabled = par("timeoutEnabled");
-      _signalsEnabled = par("signalsEnabled");
-      _loggingEnabled = par("loggingEnabled");
-      _priceSchemeEnabled = par("priceSchemeEnabled");
-        _hasQueueCapacity = false;
-      _queueCapacity = 5;
+      _waterfillingEnabled = false;//par("waterfillingEnabled");
+      _smoothWaterfillingEnabled = false;//par("smoothWaterfillingEnabled");
+      _timeoutEnabled = false; //par("timeoutEnabled");
+      _signalsEnabled = true; //par("signalsEnabled");
+      _loggingEnabled = false;//par("loggingEnabled");
+      _priceSchemeEnabled = false;//par("priceSchemeEnabled");
+
+        _hasQueueCapacity = true;
+      _queueCapacity = 0;
       
+      _landmarkRoutingEnabled = false;
+      if (_landmarkRoutingEnabled){
+          _hasQueueCapacity = true;
+          _queueCapacity = 0;
+          _timeoutEnabled = false;
+      }
+
       // price scheme parameters
       _eta = 0.02;
       _kappa = 0.02;
@@ -573,7 +584,7 @@ void hostNode::initialize()
 
       _ewmaFactor = 1; // EWMA factor for balance information on probes
 
-      if (_waterfillingEnabled || _priceSchemeEnabled){
+      if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled){
          _kValue = par("numPathChoices");
       }
       _maxTravelTime = 0.0; 
@@ -1002,7 +1013,9 @@ void hostNode::handleMessage(cMessage *msg)
       if (_waterfillingEnabled && (ttmsg->getRoute().size() == 0)){
          handleTransactionMessageWaterfilling(ttmsg);
       }
-
+      else if (_landmarkRoutingEnabled){
+          handleTransactionMessageLandmarkRouting(ttmsg);
+      }
       else if (_priceSchemeEnabled){
          handleTransactionMessagePriceScheme(ttmsg);
       }
@@ -1744,11 +1757,14 @@ void hostNode::handleAckMessageTimeOut(routerMsg* ttmsg){
 void hostNode::handleAckMessageShortestPath(routerMsg* ttmsg){
    int destNode = ttmsg->getRoute()[0]; //destination of origin TransUnit job
    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
+   cout << "handleAckMessage" << endl;
    if (aMsg->getIsSuccess()==false){
+       cout << "failed" << endl;
       statNumFailed[destNode] = statNumFailed[destNode]+1;
       statRateFailed[destNode] = statRateFailed[destNode]+1;
    }
    else{
+       cout << "message succeeded" << endl;
       statNumCompleted[destNode] = statNumCompleted[destNode]+1;
       statRateCompleted[destNode] = statRateCompleted[destNode]+1;
    }
@@ -1875,7 +1891,7 @@ void hostNode::handleAckMessage(routerMsg* ttmsg){
  * generateAckMessage - called only when a transactionMsg reaches end of its path, keeps routerMsg casing of msg
  *   and reuses it to send ackMsg in reversed order of route
  */
-routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //default is false
+routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //default is true
    int transactionId;
    double timeSent;
    double amount;
@@ -1883,12 +1899,25 @@ routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //de
    int receiver = (ttmsg->getRoute())[(ttmsg->getRoute()).size() -1];
    bool hasTimeOut;
 
+
+   cout << "isSuccess:" << isSuccess << endl;
+    cout << "host - myIndex: " << myIndex() << endl;
+    int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
+    cout << "nextNode: " << nextNode << endl;
+    cout << "outgoing balance:" << nodeToPaymentChannel[nextNode].balance << endl;
+
+    printVector(ttmsg->getRoute());
+
+
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
    transactionId = transMsg->getTransactionId();
    timeSent = transMsg->getTimeSent();
    amount = transMsg->getAmount();
    hasTimeOut = transMsg->getHasTimeOut();
    char msgname[MSGSIZE];
+
+
+
 
    sprintf(msgname, "receiver-%d-to-sender-%d ackMsg", receiver, sender);
    routerMsg *msg = new routerMsg(msgname);
@@ -2521,6 +2550,83 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
    }
 }
 
+
+void hostNode::initializePathInfoLandmarkRouting(vector<vector<int>> kShortestRoutes, int  destNode){ //initialize PathInfo struct: including signals
+    //TODO: need to write function
+    return;
+}
+void hostNode::initializeLandmarkRoutingProbes(){
+    //TODO: need to write function and adjust parameters
+    return;
+}
+
+void hostNode::handleTransactionMessageLandmarkRouting(routerMsg* ttmsg){
+   transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+
+   int hopcount = ttmsg->getHopCount();
+   vector<tuple<int, double , routerMsg *, Id>> *q;
+
+   int destNode = transMsg->getReceiver();
+   int destination = destNode;
+
+   if (ttmsg->getRoute().size() == 0){ //route not yet set, first time we're seeing it
+       // in waterfilling message can be received multiple times, so only update when simTime == transTime
+      statNumArrived[destination] = statNumArrived[destination] + 1;
+      statRateArrived[destination] = statRateArrived[destination] + 1;
+      statRateAttempted[destination] = statRateAttempted[destination] + 1;
+
+      //If destination seen for first time, compute K shortest paths and initialize probes.
+        if (nodeToShortestPathsMap.count(destNode) == 0 ){
+           vector<vector<int>> kShortestRoutes = getKShortestRoutesLandmarkRouting(transMsg->getSender(),destNode, _kValue);
+           initializePathInfoLandmarkRouting(kShortestRoutes, destNode); //initialize PathInfo struct: including signals
+        }
+           initializeLandmarkRoutingProbes(); //parameters: ttmsg, destNode
+
+   }
+   else if(ttmsg->getRoute().size() > 0 && ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
+      int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
+      map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+      (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = transMsg->getAmount();
+      int transactionId = transMsg->getTransactionId();
+      routerMsg* newMsg =  generateAckMessage(ttmsg);
+
+      forwardAckMessage(newMsg);
+      return;
+   }
+   else if(ttmsg->getRoute().size() > 0 && ttmsg->getHopCount() == 0){
+
+      //is a self-message/at hop count = 0
+      int destNode = transMsg->getReceiver();
+      int nextNode = ttmsg->getRoute()[hopcount+1];
+      q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
+      tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
+
+      if (_hasQueueCapacity && _queueCapacity <= (*q).size()){ //failed transaction, queue at capacity
+          if (forwardTransactionMessage(ttmsg) == false){ //attempt to send - important if queue size is 0
+              cout << "failed to send" << endl;
+              routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
+                      handleAckMessage(failedAckMsg);
+          }
+          else{
+              cout << "successfully sent" << endl;
+          }
+      }
+      else{
+
+         (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
+                  ttmsg, key));
+         push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
+         processTransUnits(nextNode, *q);
+      }
+   }
+   else{
+       cout << "should never be here in handleTransactionMessageLandmarkRouting" << endl;
+   }
+}
+
+
+
+
 /* handleTransactionMessage - checks if message has arrived
  *      1. has arrived - turn transactionMsg into ackMsg, forward ackMsg
  *      2. has not arrived - add to appropriate job queue q, process q as
@@ -2695,6 +2801,8 @@ bool hostNode::forwardTransactionMessage(routerMsg *msg)
    int transactionId = transMsg->getTransactionId();
 
    if (nodeToPaymentChannel[nextDest].balance <= 0 || transMsg->getAmount() >nodeToPaymentChannel[nextDest].balance){
+       cout << "transMsg->getAmount():" <<  transMsg->getAmount() << endl;
+       cout << "nodeToPaymentChannel[nextDest].balance:" << nodeToPaymentChannel[nextDest].balance << endl;
       return false;
    }
 
