@@ -27,6 +27,7 @@
 #include "structs/AckState.h"
 #include "structs/DestInfo.h"
 #include "structs/PathRateTuple.h"
+#include "structs/ProbeInfo.h"
 
 #define MSGSIZE 100
 using namespace std;

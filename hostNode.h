@@ -26,6 +26,7 @@ using namespace omnetpp;
 class hostNode : public cSimpleModule
 {
    private:
+    map<int, ProbeInfo> transactionIdToProbeInfoMap = {}; //used only for landmark routing
         map<int, PaymentChannel> nodeToPaymentChannel;
         map<int, DestInfo> nodeToDestInfo; //one structure per destination;
               //TODO: incorporate the signals into nodeToDestInfo
@@ -117,6 +118,7 @@ class hostNode : public cSimpleModule
       virtual void handleStatMessage(routerMsg *msg);
       virtual void handleStatMessagePriceScheme(routerMsg *msg);
       virtual void handleProbeMessage(routerMsg *msg);
+      virtual void handleProbeMessageLandmarkRouting(routerMsg *msg);
       virtual void handleClearStateMessage(routerMsg *msg);
       //virtual void handleClearStateMessagePriceScheme(routerMsg *msg);
       virtual void handleClearStateMessageWaterfilling(routerMsg *msg);
@@ -142,7 +144,7 @@ class hostNode : public cSimpleModule
       //landmark routing
       virtual void handleTransactionMessageLandmarkRouting(routerMsg *msg);
       virtual void initializePathInfoLandmarkRouting(vector<vector<int>> kShortestRoutes, int  destNode);
-      virtual void initializeLandmarkRoutingProbes();
+      virtual void initializeLandmarkRoutingProbes(routerMsg * msg, int transactionId, int destNode);
 
       //helper
       virtual bool printNodeToPaymentChannel();

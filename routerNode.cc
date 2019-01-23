@@ -918,13 +918,7 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //
    int receiver = (ttmsg->getRoute())[(ttmsg->getRoute()).size() -1];
    bool hasTimeOut;
 
-   cout << "isSuccess:" << isSuccess << endl;
-   cout << "router - myIndex: " << myIndex() << endl;
    int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
-   cout << "nextNode: " << nextNode << endl;
-   cout << "outgoing balance:" << nodeToPaymentChannel[nextNode].balance;
-
-   printVector(ttmsg->getRoute());
 
 
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
@@ -973,7 +967,7 @@ void routerNode:: processTransUnits(int dest, vector<tuple<int, double , routerM
    bool successful = true;
 
    while((int)q.size()>0 && successful){
-      successful = forwardTransactionMessage(get<2>(q.back()));
+      successful = forwardTransactionMessage(get<2>(q.back()), dest);
       if (successful){
          q.pop_back();
       }

@@ -15,6 +15,7 @@ bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, Id> &a,
       const tuple<int,double, routerMsg*, Id> &b);
 map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> channels, vector<int> route);
 vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k);
+vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, int k);
 vector<int> dijkstraInputGraph(int src,  int dest, map<int, vector<pair<int,int>>> channels);
 double minVectorElemDouble(vector<double> v);
 double maxDouble(double x, double y);

@@ -33,4 +33,5 @@ packet probeMsg
     bool isReversed = false;
     DoubleVector pathBalances;
     IntVector path;
+    int transactionId; //used only for landmark routing
 }

@@ -176,6 +176,63 @@ void printVectorDouble(vector<double> v){
    cout << endl;
 }
 
+
+void hostNode::handleProbeMessageLandmarkRouting(routerMsg* ttmsg){
+   probeMsg *pMsg = check_and_cast<probeMsg *>(ttmsg->getEncapsulatedPacket());
+   if (simTime()> _simulationLength ){
+      ttmsg->decapsulate();
+      delete pMsg;
+      delete ttmsg;
+      return;
+   }
+
+   bool isReversed = pMsg->getIsReversed();
+   int nextDest = ttmsg->getRoute()[ttmsg->getHopCount()+1];
+   if (isReversed == true){ //store times into private map, delete message
+
+
+
+      int pathIdx = pMsg->getPathIndex();
+      int destNode = pMsg->getReceiver();
+      int transactionId = pMsg->getTransactionId();
+      transactionIdToProbeInfoMap[transactionId].probeReturnTimes[pathIdx] = simTime();
+      double bottleneck = minVectorElemDouble(pathBalances);
+      transactionIdToProbeInfoMap[transactionId].probeBottlenecks[pathIdx] = bottleneck;
+
+      //check to see if all probes are back
+      if (transactionIdToProbeInfoMap[transactionId].probeReturnTimes.count(-1) == 0){ //all back
+          //forwardTransactionMessage(transactionIdToProbeInfoMap[transactionId].messageToSend);
+          //set path for transaction using vibhaa's function
+          int numPathsPossible = 0;
+          for (auto bottleneck: transactionIdToProbeInfoMap[transactionId].probeBottlenecks){
+              if (bottleneck > 0){
+                  numPathsPossible++;
+              }
+          }
+
+          //TODO: KATHY left off
+
+          //call handleTransactionMessage() <--- will increment num attempted statistics appropriately
+
+
+      }
+      ttmsg->decapsulate();
+           delete pMsg;
+           delete ttmsg;
+
+   }
+   else{ //reverse and send message again
+      pMsg->setIsReversed(true);
+      ttmsg->setHopCount(0);
+      vector<int> route = ttmsg->getRoute();
+      reverse(route.begin(), route.end());
+      ttmsg->setRoute(route);
+      forwardProbeMessage(ttmsg);
+   }
+}
+
+
+
 void hostNode::handleProbeMessage(routerMsg* ttmsg){
    probeMsg *pMsg = check_and_cast<probeMsg *>(ttmsg->getEncapsulatedPacket());
    if (simTime()> _simulationLength ){
@@ -199,7 +256,7 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
       assert(p->path == pMsg->getPath());
       p->lastUpdated = simTime();
       vector<double> pathBalances = pMsg->getPathBalances();
-      int bottleneck = minVectorElemDouble(pathBalances);
+      double bottleneck = minVectorElemDouble(pathBalances);
       p->bottleneck = bottleneck;
       p->pathBalances = pathBalances;
       
@@ -559,7 +616,7 @@ void hostNode::initialize()
         _hasQueueCapacity = true;
       _queueCapacity = 0;
       
-      _landmarkRoutingEnabled = false;
+      _landmarkRoutingEnabled = true;
       if (_landmarkRoutingEnabled){
           _hasQueueCapacity = true;
           _queueCapacity = 0;
@@ -916,7 +973,7 @@ void hostNode::generateNextTransaction() {
 
       routerMsg *msg = generateTransactionMessage(j); //TODO: flag to whether to calculate path
 
-      if (_waterfillingEnabled || _priceSchemeEnabled){
+      if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled){
          vector<int> blankPath = {};
          //Radhika TODO: maybe no need to compute path to begin with?
          msg->setRoute(blankPath);
@@ -1056,7 +1113,12 @@ void hostNode::handleMessage(cMessage *msg)
    }
    else if (ttmsg->getMessageType() == PROBE_MSG){
       if (_loggingEnabled) cout<< "[HOST "<< myIndex() <<": RECEIVED PROBE_MSG] "<< msg->getName() << endl;
-      handleProbeMessage(ttmsg);
+      if (_landmarkRoutingEnabled){
+          handleProbeMessageLandmarkRouting(ttmsg);
+      }
+      else{
+          handleProbeMessage(ttmsg);
+      }
       if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
    }
    else if (ttmsg->getMessageType() == CLEAR_STATE_MSG){
@@ -1757,14 +1819,14 @@ void hostNode::handleAckMessageTimeOut(routerMsg* ttmsg){
 void hostNode::handleAckMessageShortestPath(routerMsg* ttmsg){
    int destNode = ttmsg->getRoute()[0]; //destination of origin TransUnit job
    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
-   cout << "handleAckMessage" << endl;
+
    if (aMsg->getIsSuccess()==false){
-       cout << "failed" << endl;
+
       statNumFailed[destNode] = statNumFailed[destNode]+1;
       statRateFailed[destNode] = statRateFailed[destNode]+1;
    }
    else{
-       cout << "message succeeded" << endl;
+
       statNumCompleted[destNode] = statNumCompleted[destNode]+1;
       statRateCompleted[destNode] = statRateCompleted[destNode]+1;
    }
@@ -1900,13 +1962,9 @@ routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //de
    bool hasTimeOut;
 
 
-   cout << "isSuccess:" << isSuccess << endl;
-    cout << "host - myIndex: " << myIndex() << endl;
-    int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
-    cout << "nextNode: " << nextNode << endl;
-    cout << "outgoing balance:" << nodeToPaymentChannel[nextNode].balance << endl;
 
-    printVector(ttmsg->getRoute());
+    int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
+
 
 
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
@@ -2551,12 +2609,127 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
 }
 
 
-void hostNode::initializePathInfoLandmarkRouting(vector<vector<int>> kShortestRoutes, int  destNode){ //initialize PathInfo struct: including signals
-    //TODO: need to write function
+void hostNode::initializePathInfoLandmarkRouting(vector<vector<int>> kShortestPaths, int  destNode){ //initialize PathInfo struct: including signals
+    //print all the vectors
+    cout << "route start: " << endl;
+    for (auto r: kShortestPaths){
+        for (auto i : r) cout << i << ", ";
+        cout << endl;
+    }
+
+    //maybe less than k routes
+      destNodeToLastMeasurementTime[destNode] = 0.0;
+
+     for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
+        //map<int, map<int, PathInfo>> nodeToShortestPathsMap;
+        //Radhika TODO: PathInfo can be a struct and need not be a class.
+        PathInfo temp = {};
+        nodeToShortestPathsMap[destNode][pathIdx] = temp;
+        nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
+        nodeToShortestPathsMap[destNode][pathIdx].probability = 1.0 / kShortestPaths.size();
+        if (pathIdx == 0) {
+          nodeToShortestPathsMap[destNode][pathIdx].probability = 0.8;
+        }
+        else {
+          nodeToShortestPathsMap[destNode][pathIdx].probability = 0.2;
+        }
+
+        /* NOTE: indexing each path from source -> dest doesn't make sense anymore
+         (should be by landmark, and a landmark is skipped if no route exists)
+        //initialize signals
+        char signalName[64];
+        simsignal_t signal;
+        cProperty *statisticTemplate;
+
+        // bottleneckPerDest signal
+        if (destNode<_numHostNodes){
+           sprintf(signalName, "bottleneckPerDestPerPath_%d(host %d)", pathIdx, destNode);
+        }
+        else{
+           sprintf(signalName, "bottleneckPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
+        }
+        signal = registerSignal(signalName);
+        statisticTemplate = getProperties()->get("statisticTemplate", "bottleneckPerDestPerPathTemplate");
+        getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+        nodeToShortestPathsMap[destNode][pathIdx].bottleneckPerDestPerPathSignal = signal;
+
+        if (destNode<_numHostNodes){
+           sprintf(signalName, "probeBackPerDestPerPath_%d(host %d)", pathIdx, destNode);
+        }
+        else{
+           sprintf(signalName, "probeBackPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
+        }
+        signal = registerSignal(signalName);
+        statisticTemplate = getProperties()->get("statisticTemplate", "probeBackPerDestPerPathTemplate");
+        getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+        nodeToShortestPathsMap[destNode][pathIdx].probeBackPerDestPerPathSignal = signal;
+
+        if (destNode<_numHostNodes){
+           sprintf(signalName, "rateCompletedPerDestPerPath_%d(host %d)", pathIdx, destNode);
+        }
+        else{
+           sprintf(signalName, "rateCompletedPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
+        }
+
+        signal = registerSignal(signalName);
+        statisticTemplate = getProperties()->get("statisticTemplate", "rateCompletedPerDestPerPathTemplate");
+        getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+        nodeToShortestPathsMap[destNode][pathIdx].rateCompletedPerDestPerPathSignal = signal;
+
+        // probabilityPerDest signal
+        if (destNode<_numHostNodes){
+           sprintf(signalName, "probabilityPerDestPerPath_%d(host %d)", pathIdx, destNode);
+        }
+        else{
+           sprintf(signalName, "probabilityPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
+        }
+        signal = registerSignal(signalName);
+        statisticTemplate = getProperties()->get("statisticTemplate", "probabilityPerDestPerPathTemplate");
+        getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+        nodeToShortestPathsMap[destNode][pathIdx].probabilityPerDestPerPathSignal = signal;
+
+
+        if (destNode<_numHostNodes){
+           sprintf(signalName, "rateAttemptedPerDestPerPath_%d(host %d)", pathIdx, destNode);
+        }
+        else{
+           sprintf(signalName, "rateAttemptedPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
+        }
+
+        signal = registerSignal(signalName);
+        statisticTemplate = getProperties()->get("statisticTemplate", "rateAttemptedPerDestPerPathTemplate");
+        getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+        nodeToShortestPathsMap[destNode][pathIdx].rateAttemptedPerDestPerPathSignal = signal;
+
+        routerMsg * msg = generateProbeMessage(destNode, pathIdx, kShortestPaths[pathIdx]);
+        nodeToShortestPathsMap[destNode][pathIdx].isProbeOutstanding = true;
+        forwardProbeMessage(msg);
+        */
+     }
     return;
 }
-void hostNode::initializeLandmarkRoutingProbes(){
-    //TODO: need to write function and adjust parameters
+
+
+void hostNode::initializeLandmarkRoutingProbes(routerMsg * msg, int transactionId, int destNode){
+
+    ProbeInfo probeInfoTemp =  {};
+    probeInfoTemp.messageToSend = msg; //message to send out once all probes return
+    probeInfoTemp.probeReturnTimes = {}; //probeReturnTimes[0] is return time of first probe
+
+    for (auto pTemp: nodeToShortestPathsMap[destNode]){
+        PathInfo pInfo = pTemp.second;
+        vector<int> path = pInfo.path;
+        routerMsg * rMsg = generateProbeMessage(destNode , pTemp.first, path);
+        //set the transactionId in the generated message
+        probeMsg *pMsg = check_and_cast<probeMsg *>(rMsg->getEncapsulatedPacket());
+        pMsg->setTransactionId(transactionId);
+        forwardProbeMessage(rMsg);
+        probeInfoTemp.probeReturnTimes.push_back(-1);
+        probeInfoTemp.probeBottlenecks.push_back(-1);
+
+
+    }
+    transactionIdToProbeInfoMap[transactionId] = probeInfoTemp;
     return;
 }
 
@@ -2568,8 +2741,9 @@ void hostNode::handleTransactionMessageLandmarkRouting(routerMsg* ttmsg){
 
    int destNode = transMsg->getReceiver();
    int destination = destNode;
-
+   cout << "landmark1" << endl;
    if (ttmsg->getRoute().size() == 0){ //route not yet set, first time we're seeing it
+       cout << "landmark2" << endl;
        // in waterfilling message can be received multiple times, so only update when simTime == transTime
       statNumArrived[destination] = statNumArrived[destination] + 1;
       statRateArrived[destination] = statRateArrived[destination] + 1;
@@ -2577,10 +2751,13 @@ void hostNode::handleTransactionMessageLandmarkRouting(routerMsg* ttmsg){
 
       //If destination seen for first time, compute K shortest paths and initialize probes.
         if (nodeToShortestPathsMap.count(destNode) == 0 ){
+            cout << "landmark3" << endl;
+            cout << "calculate new routes" << endl;
            vector<vector<int>> kShortestRoutes = getKShortestRoutesLandmarkRouting(transMsg->getSender(),destNode, _kValue);
            initializePathInfoLandmarkRouting(kShortestRoutes, destNode); //initialize PathInfo struct: including signals
         }
-           initializeLandmarkRoutingProbes(); //parameters: ttmsg, destNode
+        cout << "landmark4" << endl;
+           initializeLandmarkRoutingProbes(ttmsg, transMsg->getTransactionId(), destNode ); //parameters: routerMsg* ttmsg, int destNode
 
    }
    else if(ttmsg->getRoute().size() > 0 && ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
@@ -2603,12 +2780,12 @@ void hostNode::handleTransactionMessageLandmarkRouting(routerMsg* ttmsg){
 
       if (_hasQueueCapacity && _queueCapacity <= (*q).size()){ //failed transaction, queue at capacity
           if (forwardTransactionMessage(ttmsg) == false){ //attempt to send - important if queue size is 0
-              cout << "failed to send" << endl;
+
               routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
                       handleAckMessage(failedAckMsg);
           }
           else{
-              cout << "successfully sent" << endl;
+
           }
       }
       else{

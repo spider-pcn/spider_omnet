@@ -134,19 +134,35 @@ int minInt(int x, int y){
 }
 
 vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, int k){
+    vector<vector<int>> kRoutes = {};
+
     int numPaths = minInt(_landmarksWithConnectivityList.size(), k);
+    //cout << "_landmarksWithConnectivityList size: " <<  _landmarksWithConnectivityList.size() << endl;
+    //cout << "k:" << k << endl;
+    //cout << "numPaths:" << numPaths << endl;
     for (int i=0; i< numPaths; i++){
         int landmark = get<1>(_landmarksWithConnectivityList[i]);
-        cout << "sender: " << sender << "; landmark: " << landmark << "; receiver: " << receiver << endl;
+        //cout << "sender: " << sender << "; landmark: " << landmark << "; receiver: " << receiver << endl;
         vector<int> pathSenderToLandmark = breadthFirstSearch(sender, landmark); //use breadth first search
-        cout << "pathSenderToLandmark: ";
+        //cout << "pathSenderToLandmark: ";
         printVector(pathSenderToLandmark);
         vector<int> pathLandmarkToReceiver = breadthFirstSearch(landmark, receiver); //use breadth first search
-        cout << "pathLandmarkToReceiver: ";
+        //cout << "pathLandmarkToReceiver: ";
         printVector(pathLandmarkToReceiver);
 
+        if (pathSenderToLandmark.size()<2 || pathLandmarkToReceiver.size()<2){
+            numPaths++;
+            continue;
+        }
+        else{
+            pathSenderToLandmark.insert(pathSenderToLandmark.end(), pathLandmarkToReceiver.begin() + 1, pathLandmarkToReceiver.end() );
+            //cout << "final route" << endl;
+            printVector(pathSenderToLandmark);
+            kRoutes.push_back(pathSenderToLandmark);
+        }
+
     }
-    return {};
+    return kRoutes;
 }
 
 

@@ -7,6 +7,7 @@ class DestInfo{
 public:
     deque<routerMsg *> transWaitingToBeSent = {};
     
+
     // units are txns per second
     double demand = 0;
 

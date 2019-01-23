@@ -37,6 +37,7 @@ typedef std::map<int, double> IntMap;
  *     bool isReversed = false;
  *     DoubleVector pathBalances;
  *     IntVector path;
+ *     int transactionId; //used only for landmark routing
  * }
  * </pre>
  */
@@ -49,6 +50,7 @@ class probeMsg : public ::omnetpp::cPacket
     bool isReversed;
     DoubleVector pathBalances;
     IntVector path;
+    int transactionId;
 
   private:
     void copy(const probeMsg& other);
@@ -81,6 +83,8 @@ class probeMsg : public ::omnetpp::cPacket
     virtual IntVector& getPath();
     virtual const IntVector& getPath() const {return const_cast<probeMsg*>(this)->getPath();}
     virtual void setPath(const IntVector& path);
+    virtual int getTransactionId() const;
+    virtual void setTransactionId(int transactionId);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const probeMsg& obj) {obj.parsimPack(b);}
