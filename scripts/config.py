@@ -95,9 +95,19 @@ INTERESTING_SIGNALS["priceLastSeen"] = ["priceLastSeenPerPath"]
 # DO NOT CHANGE THIS: PAINFULLY HARDCODED TO NOT INTERFERE WITH numTimedOutAtSender
 INTERESTING_SIGNALS["numTimedOutPerDest"] = ["numTimedOutPerDest"]
 
-for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", "numTimedOutAtSender", \
+per_dest_list = []
+for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", \
         "fracSuccessful", "demandEstimate"]:
     INTERESTING_SIGNALS[signal] = signal + "PerDest"
+    per_dest_list.append(signal + "PerDest")
+per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", \
+        "rateToSendTransPerPath", "priceLastSeenPerPath", "numTimedOutPerDest"])
 
+per_channel_list = []
 for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "numSent", "muRemote", "numInflight"]:
     INTERESTING_SIGNALS[signal] = signal + "PerChannel"
+    per_channel_list.append(signal + "PerChannel")
+
+INTERESTING_SIGNALS["per_src_dest_plot"] = per_dest_list
+INTERESTING_SIGNALS["per_channel_plot"] = per_channel_list
+

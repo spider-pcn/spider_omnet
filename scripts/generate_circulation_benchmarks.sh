@@ -60,13 +60,13 @@ do
             --num-nodes ${num_nodes[i]}\
             --balance-per-channel $balance\
             --separate-end-hosts\
-            --delay-per-channel 10\
+            --delay-per-channel 30\
             #--randomize-start-bal
 
 
     # create transactions corresponding to this experiment run
     $PYTHON create_workload.py $workload poisson\
-            --graph-topo hardcoded_circ \
+            --graph-topo custom \
             --payment-graph-dag-percentage 0\
             --topo-filename $topofile\
             --experiment-time 9000 \

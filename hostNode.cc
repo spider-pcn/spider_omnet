@@ -40,6 +40,7 @@ double _tQuery; //for triggering price query probes at hosts
 double _alpha;
 double _gamma;
 double _zeta;
+double _minPriceRate;
 
 double _epsilon; // for all precision errors
 
@@ -436,6 +437,7 @@ void hostNode::initializePriceProbes(vector<vector<int>> kShortestPaths, int des
       nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
       routerMsg * triggerTransSendMsg = generateTriggerTransactionSendMessage(kShortestPaths[pathIdx], pathIdx, destNode);
       nodeToShortestPathsMap[destNode][pathIdx].triggerTransSendMsg = triggerTransSendMsg;
+      nodeToShortestPathsMap[destNode][pathIdx].rateToSendTrans = _minPriceRate;
 
       //initialize signals
       char signalName[64];
@@ -554,13 +556,14 @@ void hostNode::initialize()
       _queueCapacity = 5;
       
       // price scheme parameters
-      _eta = 0.01;
-      _kappa = 0.01;
-      _tUpdate = 0.5;
-      _tQuery = 0.5;
-      _alpha = 0.0025;
+      _eta = 0.02;
+      _kappa = 0.02;
+      _tUpdate = 0.8;
+      _tQuery = 0.8;
+      _alpha = 0.02;
       _gamma = 0.2; // ewma factor to compute per path rates
       _zeta = 0.001; // ewma for d_ij every source dest demand
+      _minPriceRate = 1;
 
       _epsilon = pow(1, -6);
       
@@ -1215,7 +1218,7 @@ void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
           int pathIndex = get<0>(p);
           double rate = get<1>(p);
 
-          nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans = maxDouble(rate, 1.0);
+          nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans = maxDouble(rate, _minPriceRate);
       }
             
       //delete both messages

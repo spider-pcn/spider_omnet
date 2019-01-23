@@ -86,9 +86,9 @@ args = parser.parse_args()
 # returns a dictionary of the necessary stats where key is a router node
 # and value is another dictionary where the key is the partner node 
 # and value is the time series of the signal_type recorded for this pair of nodes
-def aggregate_info_per_node(filename, signal_type, is_router, aggregate_per_path=False, is_both=False):
+def aggregate_info_per_node(all_timeseries, vec_id_to_info_map, signal_type, is_router, aggregate_per_path=False, is_both=False):
     node_signal_info = dict()
-    all_timeseries, vec_id_to_info_map = parse_vec_file(filename, signal_type)
+   #all_timeseries, vec_id_to_info_map = parse_vec_file(filename, signal_type)
 
     # aggregate information on a per router node basis
     # and then on a per channel basis for that router node
@@ -279,11 +279,12 @@ def plot_per_payment_channel_stats(args):
     data_to_plot = dict()
 
     with PdfPages(args.save + "_per_channel_info.pdf") as pdf:
+        all_timeseries, vec_id_to_info_map = parse_vec_file(args.vec_file, "per_channel_plot")
         if args.balance: 
-            data_to_plot = aggregate_info_per_node(args.vec_file, "balance", True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "balance", True)
             plot_relevant_stats(data_to_plot, pdf, "Balance", compute_router_wealth=True)
 
-            inflight = aggregate_info_per_node(args.vec_file, "numInflight", True)
+            inflight = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numInflight", True)
             plot_relevant_stats(inflight, pdf, "Inflight funds")
             find_problem(data_to_plot, inflight)
 
@@ -293,27 +294,27 @@ def plot_per_payment_channel_stats(args):
 
             
         if args.queue_info:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "numInQueue", True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numInQueue", True)
             plot_relevant_stats(data_to_plot, pdf, "Number in Queue")
 
         if args.num_sent_per_channel:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "numSent", True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numSent", True)
             plot_relevant_stats(data_to_plot, pdf, "Number Sent")
 
         if args.lambda_val:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "lambda", True, is_both=False)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "lambda", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "Lambda")
         
         if args.mu_local:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "muLocal", True, is_both=False)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "muLocal", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "Mu Local")
         
         if args.mu_remote:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "muRemote", True, is_both=False)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "muRemote", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "Mu Remote")
         
         if args.x_local:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "xLocal", True, is_both=False)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "xLocal", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "xLocal")
 
 
@@ -329,50 +330,52 @@ def plot_per_src_dest_stats(args):
     data_to_plot = dict()
 
     with PdfPages(args.save + "_per_src_dest_stats.pdf") as pdf:
+        all_timeseries, vec_id_to_info_map = parse_vec_file(args.vec_file, "per_src_dest_plot")
+ 
         if args.timeouts: 
-            data_to_plot = aggregate_info_per_node(args.vec_file, "numTimedOutPerDest", False)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map,  "numTimedOutPerDest", False)
             plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Timed Out")
         
         if args.frac_completed_window: 
-            successful = aggregate_info_per_node(args.vec_file, "rateCompleted", False)
-            attempted = aggregate_info_per_node(args.vec_file, "rateArrived", False)
+            successful = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateCompleted", False)
+            attempted = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateArrived", False)
             data_to_plot = aggregate_frac_successful_info(successful, attempted)
             plot_relevant_stats(data_to_plot, pdf, "Fraction of successful txns in each window")
 
         if args.frac_completed:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "fracSuccessful", False)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "fracSuccessful", False)
             plot_relevant_stats(data_to_plot, pdf, "Fraction of successful txns")
 
         if args.path:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "pathPerTrans", False)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "pathPerTrans", False)
             plot_relevant_stats(data_to_plot, pdf, "Path Per Transaction")
 
         if args.timeouts_sender:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "numTimedOutAtSender", False)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numTimedOutAtSender", False)
             plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Timed Out At Sender")
 
         if args.waiting:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "numWaiting", False)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numWaiting", False)
             plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Waiting at sender To Given Destination")
 
         if args.probabilities:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "probability", False, True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "probability", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Probability of picking paths", per_path_info=True)
 
         if args.bottlenecks:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "bottleneck", False, True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "bottleneck", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Bottleneck Balance", per_path_info=True)
 
         if args.rate_to_send:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "rateToSendTrans", False, True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateToSendTrans", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Rate to send per path", per_path_info=True)
 
         if args.price:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "priceLastSeen", False, True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "priceLastSeen", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Price per path", per_path_info=True)
 
         if args.demand:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "demandEstimate", False)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "demandEstimate", False)
             plot_relevant_stats(data_to_plot, pdf, "Demand Estimate per Path")
 
  
