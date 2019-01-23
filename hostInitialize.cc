@@ -596,11 +596,17 @@ void setNumNodes(string topologyFile){
    int maxHostNode = -1;
    int maxRouterNode = -1;
    string line;
+   int lineNum = 0;
    ifstream myfile (topologyFile);
    if (myfile.is_open())
    {
       while ( getline (myfile,line) )
       {
+          lineNum++;
+          // skip landmark line
+          if (lineNum == 1) {
+              continue;
+          }
          vector<string> data = split(line, ' ');
          //generate channels - adjacency map
 
@@ -653,11 +659,28 @@ void setNumNodes(string topologyFile){
 void generateChannelsBalancesMap(string topologyFile) {
    string line;
    ifstream myfile (topologyFile);
+   int lineNum = 0;
    if (myfile.is_open())
    {
       while ( getline (myfile,line) )
       {
+         lineNum++;
          vector<string> data = split(line, ' ');
+
+        // parse all the landmarks from the first line
+         if (lineNum == 1) {
+             for (auto node : data) {
+                char nodeType = node.back();
+                int nodeNum = stoi((node).substr(0,node.size()-1)); 
+
+                if (nodeType == 'r') {
+                    nodeNum = nodeNum + _numHostNodes;
+                }
+                _landmarks.push_back(nodeNum);
+             }
+             // don't do anything else
+             continue;
+         }
 
          //generate _channels - adjacency map
          char node1type = data[0].back();

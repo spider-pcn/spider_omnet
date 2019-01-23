@@ -73,6 +73,7 @@ LND_FILE_PATH = "../lnd_data/"
 ''' OMNET SPECIFIC STUFF '''
 # maximum number of paths to consider or plot data for
 MAX_K = 4
+NUM_LANDMARKS = MAX_K
 
 # List of recognized and parsable omnet signals
 RECOGNIZED_OMNET_SIGNALS = ["numInQueuePerChannel",\

@@ -21,6 +21,9 @@ bool _timeoutEnabled;
 bool _loggingEnabled;
 bool _signalsEnabled;
 
+// set of landmarks for landmark routing
+vector<int> _landmarks;
+
 // set to 1 to report exact instantaneous balances
 double _ewmaFactor;
 
@@ -351,12 +354,6 @@ void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode
       nodeToShortestPathsMap[destNode][pathIdx] = temp;
       nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
       nodeToShortestPathsMap[destNode][pathIdx].probability = 1.0 / kShortestPaths.size();
-      if (pathIdx == 0) {
-        nodeToShortestPathsMap[destNode][pathIdx].probability = 0.8;
-      }
-      else {
-        nodeToShortestPathsMap[destNode][pathIdx].probability = 0.2;
-      }
 
 
       //initialize signals

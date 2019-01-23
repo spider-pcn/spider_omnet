@@ -314,8 +314,15 @@ def parse_topo(topo_filename):
     router_graph = nx.Graph()
     end_host_map = dict()
 
+    line_num = 0
     with open(topo_filename) as topo_file:
         for line in topo_file:
+            line_num += 1
+
+            # landmark line
+            if line_num == 1:
+                continue
+
             if line == '\n':
                 continue
             n1 = parse_node(line.split()[0])

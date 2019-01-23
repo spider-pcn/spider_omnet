@@ -398,7 +398,7 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
    double oldLambda = nodeToPaymentChannel[sender].lambda;
    double oldMuLocal = nodeToPaymentChannel[sender].muLocal;
    double oldMuRemote = nodeToPaymentChannel[sender].muRemote;
-   double delta = 5 * _maxTravelTime/ 6.0;
+   double delta =  _maxTravelTime;
 
    nodeToPaymentChannel[sender].lambda = maxDouble(oldLambda + _eta*(xLocal + xRemote - (cValue/delta)),0);
    nodeToPaymentChannel[sender].muLocal = maxDouble(oldMuLocal + _kappa*(xLocal - xRemote) , 0);

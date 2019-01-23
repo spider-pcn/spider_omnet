@@ -57,6 +57,9 @@ extern bool _timeoutEnabled;
 extern int _kValue; //for k shortest paths
 extern double _simulationLength;
 
+// for silentWhispers
+extern vector<int> _landmarks;
+
 //parameters for price scheme
 extern bool _priceSchemeEnabled;
 extern double _eta; //for price computation
