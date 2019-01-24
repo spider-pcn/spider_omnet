@@ -145,19 +145,21 @@ vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, 
         //cout << "sender: " << sender << "; landmark: " << landmark << "; receiver: " << receiver << endl;
         vector<int> pathSenderToLandmark = breadthFirstSearch(sender, landmark); //use breadth first search
         //cout << "pathSenderToLandmark: ";
-        printVector(pathSenderToLandmark);
+        //printVector(pathSenderToLandmark);
         vector<int> pathLandmarkToReceiver = breadthFirstSearch(landmark, receiver); //use breadth first search
         //cout << "pathLandmarkToReceiver: ";
-        printVector(pathLandmarkToReceiver);
+        //printVector(pathLandmarkToReceiver);
 
-        if (pathSenderToLandmark.size()<2 || pathLandmarkToReceiver.size()<2){
+        if ((pathSenderToLandmark.size()<2 || pathLandmarkToReceiver.size()<2) && numPaths < _landmarksWithConnectivityList.size()){
+
             numPaths++;
             continue;
+
         }
         else{
             pathSenderToLandmark.insert(pathSenderToLandmark.end(), pathLandmarkToReceiver.begin() + 1, pathLandmarkToReceiver.end() );
             //cout << "final route" << endl;
-            printVector(pathSenderToLandmark);
+            //printVector(pathSenderToLandmark);
             kRoutes.push_back(pathSenderToLandmark);
         }
 
@@ -720,6 +722,7 @@ void generateChannelsBalancesMap(string topologyFile) {
                     nodeNum = nodeNum + _numHostNodes;
                 }
                 _landmarks.push_back(nodeNum);
+                _landmarksWithConnectivityList.push_back(make_tuple(_channels[nodeNum].size(), nodeNum));
              }
              // don't do anything else
              continue;
@@ -777,88 +780,7 @@ void generateChannelsBalancesMap(string topologyFile) {
       }
 
       myfile.close();
-
-
-      if (_landmarkRoutingEnabled){ //process last line as set of landmarks
-          for (auto d: data){
-              char nodeType = d.back();
-              int node;
-              if (nodeType != 'r'){
-                  cout << "landmark is not a router node!" << endl;
-              }
-              else{
-                  //get connectivity of the number
-                  node = stoi((d).substr(0,d.size()-1));
-                  node = node + _numHostNodes; //get in appropriate range for router nodes
-                  int connectivity = _channels[node].size();
-                  cout << "node number:" << node << endl;
-                  cout << "connectivity: " << connectivity << endl;
-                  _landmarksWithConnectivityList.push_back(make_tuple(connectivity, node));
-
-              }
-          }
-          //sort _landmarksWithConnectivityList
-          sort(_landmarksWithConnectivityList.begin(), _landmarksWithConnectivityList.end(), sortHighToLowConnectivity);
-          if (_loggingEnabled){ //print sorted list
-          for (auto p: _landmarksWithConnectivityList){
-              int connect = get<0>(p);
-              int node = get<1>(p);
-              cout << "(" << connect << " , " << node << ") ";
-          }
-          cout << endl;
-          }
-
-      }
-      else{  //process last line normally
-          //generate _channels - adjacency map
-                 char node1type = data[0].back();
-                 char node2type = data[1].back();
-
-                 if (_loggingEnabled) {
-                    cout <<"node2type: " << node2type << endl;
-                    cout <<"node1type: " << node1type << endl;
-                    cout << "data size" << data.size() << endl;
-                 }
-
-                 int node1 = stoi((data[0]).substr(0,data[0].size()-1)); //
-                 if (node1type == 'r'){
-                     node1 = node1 + _numHostNodes;
-                 }
-
-                 int node2 = stoi(data[1].substr(0,data[1].size()-1)); //
-                 if (node2type == 'r'){
-                              node2 = node2 + _numHostNodes;
-                 }
-
-
-                 int delay1to2 = stoi(data[2]);
-                 int delay2to1 = stoi(data[3]);
-                 if (_channels.count(node1)==0){ //node 1 is not in map
-                    vector<pair<int,int>> tempVector = {};
-                    tempVector.push_back(make_pair(node2,delay1to2));
-                    _channels[node1] = tempVector;
-                 }
-                 else{ //(node1 is in map)
-                    _channels[node1].push_back(make_pair(node2,delay1to2));
-                 }
-
-                 if (_channels.count(node2)==0){ //node 1 is not in map
-                    vector<pair<int,int>> tempVector = {make_pair(node1,delay2to1)};
-                    _channels[node2] = tempVector;
-                 }
-                 else{ //(node1 is in map)
-                    _channels[node2].push_back(make_pair(node1, delay2to1));
-                 }
-
-
-                 //generate _balances map
-                 double balance1 = stod( data[4]);
-                 double balance2 = stod( data[5]);
-                 _balances[make_tuple(node1,node2)] = balance1;
-                 _balances[make_tuple(node2,node1)] = balance2;
-
-      }
-
+      sort ( _landmarksWithConnectivityList.begin(),  _landmarksWithConnectivityList.end(), sortHighToLowConnectivity);
    }
 
    else cout << "Unable to open file " << topologyFile << endl;

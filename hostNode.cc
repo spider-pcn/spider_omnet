@@ -196,11 +196,15 @@ void hostNode::handleProbeMessageLandmarkRouting(routerMsg* ttmsg){
       int destNode = pMsg->getReceiver();
       int transactionId = pMsg->getTransactionId();
       transactionIdToProbeInfoMap[transactionId].probeReturnTimes[pathIdx] = simTime();
-      double bottleneck = minVectorElemDouble(pathBalances);
+      transactionIdToProbeInfoMap[transactionId].numProbesWaiting = transactionIdToProbeInfoMap[transactionId].numProbesWaiting- 1;
+      double bottleneck = minVectorElemDouble(pMsg->getPathBalances());
       transactionIdToProbeInfoMap[transactionId].probeBottlenecks[pathIdx] = bottleneck;
 
       //check to see if all probes are back
-      if (transactionIdToProbeInfoMap[transactionId].probeReturnTimes.count(-1) == 0){ //all back
+      //cout << "transactionId: " << pMsg->getTransactionId();
+      //cout << "numProbesWaiting: " <<  transactionIdToProbeInfoMap[transactionId].numProbesWaiting << endl;
+
+      if (transactionIdToProbeInfoMap[transactionId].numProbesWaiting == 0){ //all back
           //forwardTransactionMessage(transactionIdToProbeInfoMap[transactionId].messageToSend);
           //set path for transaction using vibhaa's function
           int numPathsPossible = 0;
@@ -209,6 +213,29 @@ void hostNode::handleProbeMessageLandmarkRouting(routerMsg* ttmsg){
                   numPathsPossible++;
               }
           }
+
+           //  virtual int sampleFromDistribution(vector<double> probabilities);
+
+
+          vector<double> probabilities;
+          //construct thing to sample from
+          for (auto bottleneck: transactionIdToProbeInfoMap[transactionId].probeBottlenecks){
+               if (bottleneck > 0){
+                   probabilities.push_back(1/numPathsPossible);
+
+                }
+               else{
+                   probabilities.push_back(0);
+               }
+           }
+
+          int indexToUse = sampleFromDistribution(probabilities); //TODO: check that this returns the INDEX (so starts at 0)
+          transactionMsg *transMsg = check_and_cast<transactionMsg *>(transactionIdToProbeInfoMap[transactionId].messageToSend->getEncapsulatedPacket());
+          //cout << "sent transaction on path: ";
+          //printVector(nodeToShortestPathsMap[transMsg->getReceiver()][indexToUse].path);
+
+          transactionIdToProbeInfoMap[transactionId].messageToSend->setRoute(nodeToShortestPathsMap[transMsg->getReceiver()][indexToUse].path);
+          handleTransactionMessage(transactionIdToProbeInfoMap[transactionId].messageToSend);
 
           //TODO: KATHY left off
 
@@ -606,17 +633,17 @@ void hostNode::initialize()
       _simulationLength = par("simulationLength");
       _statRate = par("statRate");
       _clearRate = par("timeoutClearRate");
-      _waterfillingEnabled = false;//par("waterfillingEnabled");
-      _smoothWaterfillingEnabled = false;//par("smoothWaterfillingEnabled");
-      _timeoutEnabled = false; //par("timeoutEnabled");
-      _signalsEnabled = true; //par("signalsEnabled");
-      _loggingEnabled = false;//par("loggingEnabled");
-      _priceSchemeEnabled = false;//par("priceSchemeEnabled");
+      _waterfillingEnabled = par("waterfillingEnabled");
+      _smoothWaterfillingEnabled = par("smoothWaterfillingEnabled");
+      _timeoutEnabled = par("timeoutEnabled");
+      _signalsEnabled = par("signalsEnabled");
+      _loggingEnabled = par("loggingEnabled");
+      _priceSchemeEnabled = par("priceSchemeEnabled");
 
         _hasQueueCapacity = true;
       _queueCapacity = 0;
       
-      _landmarkRoutingEnabled = true;
+      _landmarkRoutingEnabled = false;
       if (_landmarkRoutingEnabled){
           _hasQueueCapacity = true;
           _queueCapacity = 0;
@@ -652,6 +679,12 @@ void hostNode::initialize()
       //create "channels" map - from topology file
       //create "balances" map - from topology file
       generateChannelsBalancesMap(topologyFile_);
+      /*
+      cout << "landmarks: ";
+      for (auto l: _landmarks)
+          cout << l << ", "
+      cout << endl;
+      */
    }
 
 
@@ -1820,13 +1853,14 @@ void hostNode::handleAckMessageShortestPath(routerMsg* ttmsg){
    int destNode = ttmsg->getRoute()[0]; //destination of origin TransUnit job
    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
 
+   //cout << "ackMessage received " << endl;
    if (aMsg->getIsSuccess()==false){
-
+       //cout << "ack failure" << endl;
       statNumFailed[destNode] = statNumFailed[destNode]+1;
       statRateFailed[destNode] = statRateFailed[destNode]+1;
    }
    else{
-
+       //cout << "ack success" << endl;
       statNumCompleted[destNode] = statNumCompleted[destNode]+1;
       statRateCompleted[destNode] = statRateCompleted[destNode]+1;
    }
@@ -2611,19 +2645,23 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
 
 void hostNode::initializePathInfoLandmarkRouting(vector<vector<int>> kShortestPaths, int  destNode){ //initialize PathInfo struct: including signals
     //print all the vectors
+    /*
     cout << "route start: " << endl;
     for (auto r: kShortestPaths){
         for (auto i : r) cout << i << ", ";
         cout << endl;
     }
+    */
 
     //maybe less than k routes
       destNodeToLastMeasurementTime[destNode] = 0.0;
-
+      nodeToShortestPathsMap[destNode] = {};
      for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
         //map<int, map<int, PathInfo>> nodeToShortestPathsMap;
         //Radhika TODO: PathInfo can be a struct and need not be a class.
+
         PathInfo temp = {};
+
         nodeToShortestPathsMap[destNode][pathIdx] = temp;
         nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
         nodeToShortestPathsMap[destNode][pathIdx].probability = 1.0 / kShortestPaths.size();
@@ -2724,11 +2762,13 @@ void hostNode::initializeLandmarkRoutingProbes(routerMsg * msg, int transactionI
         probeMsg *pMsg = check_and_cast<probeMsg *>(rMsg->getEncapsulatedPacket());
         pMsg->setTransactionId(transactionId);
         forwardProbeMessage(rMsg);
+
         probeInfoTemp.probeReturnTimes.push_back(-1);
         probeInfoTemp.probeBottlenecks.push_back(-1);
 
 
     }
+    probeInfoTemp.numProbesWaiting = nodeToShortestPathsMap[destNode].size();
     transactionIdToProbeInfoMap[transactionId] = probeInfoTemp;
     return;
 }
@@ -2741,9 +2781,9 @@ void hostNode::handleTransactionMessageLandmarkRouting(routerMsg* ttmsg){
 
    int destNode = transMsg->getReceiver();
    int destination = destNode;
-   cout << "landmark1" << endl;
+
    if (ttmsg->getRoute().size() == 0){ //route not yet set, first time we're seeing it
-       cout << "landmark2" << endl;
+
        // in waterfilling message can be received multiple times, so only update when simTime == transTime
       statNumArrived[destination] = statNumArrived[destination] + 1;
       statRateArrived[destination] = statRateArrived[destination] + 1;
@@ -2751,12 +2791,12 @@ void hostNode::handleTransactionMessageLandmarkRouting(routerMsg* ttmsg){
 
       //If destination seen for first time, compute K shortest paths and initialize probes.
         if (nodeToShortestPathsMap.count(destNode) == 0 ){
-            cout << "landmark3" << endl;
-            cout << "calculate new routes" << endl;
+
+            //cout << "calculate new routes" << endl;
            vector<vector<int>> kShortestRoutes = getKShortestRoutesLandmarkRouting(transMsg->getSender(),destNode, _kValue);
            initializePathInfoLandmarkRouting(kShortestRoutes, destNode); //initialize PathInfo struct: including signals
         }
-        cout << "landmark4" << endl;
+
            initializeLandmarkRoutingProbes(ttmsg, transMsg->getTransactionId(), destNode ); //parameters: routerMsg* ttmsg, int destNode
 
    }
