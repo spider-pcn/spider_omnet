@@ -237,9 +237,7 @@ void hostNode::handleProbeMessageLandmarkRouting(routerMsg* ttmsg){
           transactionIdToProbeInfoMap[transactionId].messageToSend->setRoute(nodeToShortestPathsMap[transMsg->getReceiver()][indexToUse].path);
           handleTransactionMessage(transactionIdToProbeInfoMap[transactionId].messageToSend);
 
-          //TODO: KATHY left off
-
-          //call handleTransactionMessage() <--- will increment num attempted statistics appropriately
+          transactionIdToProbeInfoMap.erase(transactionId);
 
 
       }
