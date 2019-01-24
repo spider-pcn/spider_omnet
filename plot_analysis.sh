@@ -3,19 +3,20 @@ PATH_NAME="benchmarks/circulations/"
 GRAPH_PATH="scripts/figures/"
 
 #prefix=("two_node" "three_node" "four_node" "five_node") 
-prefix=("sw_40_routers") #"sf_40_routers")
+prefix=("sw_sparse_40_routers") #"sf_40_routers")
     #"sw_400_routers" "sf_400_routers")
     #"sw_1000_routers" "sf_1000_routers")
 
 arraylength=${#prefix[@]}
 
 #general parameters that do not affect config names
-simulationLength=1000
+simulationLength=4000
 statCollectionRate=1
 timeoutClearRate=1
 timeoutEnabled=true
 payment_graph_type=circ
 delay=30ms
+routing_scheme_list=("priceScheme")
 
 
 for (( i=0; i<${arraylength}; i++));
@@ -28,34 +29,38 @@ do
     #routing schemes where number of path choices doesn't matter
     for routing_scheme in shortestPath #silentWhispers
     do
-        vec_file_path=${vec_file_prefix}${routing_scheme}-#0.vec
-
-        python scripts/generate_analysis_plots_for_single_run.py \
-          --vec_file ${vec_file_path} \
-          --save ${graph_op_prefix}${routing_scheme} \
-          --balance \
-          --queue_info --timeouts --frac_completed \
-          --inflight --path --timeouts_sender \
-          --waiting --bottlenecks
-    done
-
-    #routing schemes where number of path choices matter
-    for routing_scheme in priceScheme #waterfilling smoothWaterfilling priceScheme
-    do
-      for numPathChoices in 4
-        do
-            vec_file_path=${vec_file_prefix}${routing_scheme}_${numPathChoices}-#0.vec
+        if [[ " ${routing_scheme_list[*]} " == *"$routing_scheme"* ]]; then
+            vec_file_path=${vec_file_prefix}${routing_scheme}-#0.vec
 
             python scripts/generate_analysis_plots_for_single_run.py \
               --vec_file ${vec_file_path} \
               --save ${graph_op_prefix}${routing_scheme} \
               --balance \
               --queue_info --timeouts --frac_completed \
-              --frac_completed_window \
               --inflight --path --timeouts_sender \
-              --waiting --bottlenecks --probabilities \
-              --mu_local --lambda --x_local \
-              --rate_to_send --price --mu_remote --demand 
+              --waiting --bottlenecks
+        fi
+    done
+
+   #routing schemes where number of path choices matter
+    for routing_scheme in waterfilling smoothWaterfilling priceScheme
+    do
+      for numPathChoices in 4
+        do
+            if [[ " ${routing_scheme_list[*]} " == *"$routing_scheme"* ]]; then
+                vec_file_path=${vec_file_prefix}${routing_scheme}_${numPathChoices}-#0.vec
+
+                python scripts/generate_analysis_plots_for_single_run.py \
+                  --vec_file ${vec_file_path} \
+                  --save ${graph_op_prefix}${routing_scheme}_double \
+                  --balance \
+                  --queue_info --timeouts --frac_completed \
+                  --frac_completed_window \
+                  --inflight --path --timeouts_sender \
+                  --waiting --bottlenecks --probabilities \
+                  --mu_local --lambda --x_local \
+                  --rate_to_send --price --mu_remote --demand
+            fi
           done
     done
 done

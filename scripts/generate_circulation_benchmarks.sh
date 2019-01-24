@@ -2,7 +2,7 @@
 PATH_NAME="../benchmarks/circulations/"
 
 num_nodes=("2" "3" "4" "5" "10" "0" "0" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
-    "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30")
+    "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
 
 balance=100
 
@@ -14,7 +14,7 @@ prefix=("two_node" "three_node" "four_node" "five_node" \
     "sf_40_routers" "sf_60_routers" "sf_80_routers"  \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
-    "random_30_routers")
+    "random_30_routers" "sw_sparse_40_routers")
 
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
@@ -22,7 +22,7 @@ mkdir -p ${PATH_NAME}
 
 # generate the files
 #for (( i=0; i<${arraylength}; i++ ));
-array=( 3 ) # 7 16 )
+array=( 3 7 16 29)
 for i in "${array[@]}"
 do 
     # generate the graph first to ned file
@@ -69,7 +69,7 @@ do
             --graph-topo custom \
             --payment-graph-dag-percentage 0\
             --topo-filename $topofile\
-            --experiment-time 9000 \
+            --experiment-time 4000 \
             --balance-per-channel $balance\
             --generate-json-also\
             --timeout-value 5

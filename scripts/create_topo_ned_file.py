@@ -115,8 +115,12 @@ def generate_graph(size, graph_type):
         G = nx.dense_gnm_random_graph(size, size * 5,seed=SEED)
     elif graph_type == 'small_world':
         G = nx.watts_strogatz_graph(size, 8, 0.25, seed=SEED)
+    elif graph_type == 'small_world_sparse':
+        G = nx.watts_strogatz_graph(size, size/8, 0.25, seed=SEED)
     elif graph_type == 'scale_free':
         G = nx.barabasi_albert_graph(size, 8, seed=SEED)
+    elif graph_type == 'scale_free_sparse':
+        G = nx.barabasi_albert_graph(size, size/8, seed=SEED)
     elif graph_type == 'tree':
         G = nx.random_tree(size, seed=SEED)
 
@@ -228,6 +232,8 @@ if args.num_nodes <= 5 and args.graph_type == 'simple_topologies':
     else:
         G = five_node_graph
 elif args.graph_type in ['small_world', 'scale_free', 'tree', 'random']:
+    if "sparse" in args.topo_filename:
+        args.graph_type = args.graph_type + "_sparse"
     G = generate_graph(args.num_nodes, args.graph_type)
 elif args.graph_type == 'hotnets_topo':
     G = hotnets_topo_graph
