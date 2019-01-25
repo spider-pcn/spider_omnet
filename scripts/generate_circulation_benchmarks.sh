@@ -47,6 +47,12 @@ do
     else
         graph_type="simple_topologies"
     fi
+    
+    if [ ${prefix[i]:0:3} == "two" ]; then
+        delay="120"
+    else
+        delay="30"
+    fi
 
     echo $network
     echo $topofile
@@ -60,7 +66,7 @@ do
             --num-nodes ${num_nodes[i]}\
             --balance-per-channel $balance\
             --separate-end-hosts\
-            --delay-per-channel 30\
+            --delay-per-channel $delay\
             #--randomize-start-bal
 
 

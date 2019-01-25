@@ -30,7 +30,7 @@ fmts = ['r--o', 'b-^']
 
 def compute_avg_path_completion_rates(filename, shortest=True):
     completion_fractions = []
-    all_timeseries, vec_id_to_info_map = parse_vec_file(filename, "completion_rate_cdfs")
+    all_timeseries, vec_id_to_info_map, parameters = parse_vec_file(filename, "completion_rate_cdfs")
 
     # dictionary of src dest pairs to a map denoting the attempting rate or completion rate on each of
     # MAX_K paths each identified by path id

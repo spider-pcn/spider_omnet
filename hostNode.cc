@@ -1644,6 +1644,7 @@ void hostNode::finish(){
         recordScalar("max travel time", _maxTravelTime);
         recordScalar("delta", _delta);
         recordScalar("average delay", _avgDelay/1000.0);
+        recordScalar("epsilon", _epsilon);
     }
 }
 

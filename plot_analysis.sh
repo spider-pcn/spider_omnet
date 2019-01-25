@@ -3,7 +3,7 @@ PATH_NAME="benchmarks/circulations/"
 GRAPH_PATH="scripts/figures/"
 
 #prefix=("two_node" "three_node" "four_node" "five_node") 
-prefix=("sw_sparse_40_routers") #"sf_40_routers")
+prefix=("two_node_imbalance" "two_node_capacity") #"sw_sparse_40_routers" "sf_40_routers")
     #"sw_400_routers" "sf_400_routers")
     #"sw_1000_routers" "sf_1000_routers")
 
@@ -31,9 +31,12 @@ do
     do
         if [[ " ${routing_scheme_list[*]} " == *"$routing_scheme"* ]]; then
             vec_file_path=${vec_file_prefix}${routing_scheme}-#0.vec
+            sca_file_path=${vec_file_prefix}${routing_scheme}-#0.sca
+
 
             python scripts/generate_analysis_plots_for_single_run.py \
               --vec_file ${vec_file_path} \
+              --sca_file ${sca_file_path} \
               --save ${graph_op_prefix}${routing_scheme} \
               --balance \
               --queue_info --timeouts --frac_completed \
@@ -49,10 +52,13 @@ do
         do
             if [[ " ${routing_scheme_list[*]} " == *"$routing_scheme"* ]]; then
                 vec_file_path=${vec_file_prefix}${routing_scheme}_${numPathChoices}-#0.vec
+                sca_file_path=${vec_file_prefix}${routing_scheme}_${numPathChoices}-#0.sca
+
 
                 python scripts/generate_analysis_plots_for_single_run.py \
                   --vec_file ${vec_file_path} \
-                  --save ${graph_op_prefix}${routing_scheme}_double \
+                  --sca_file ${sca_file_path} \
+                  --save ${graph_op_prefix}${routing_scheme}_final \
                   --balance \
                   --queue_info --timeouts --frac_completed \
                   --frac_completed_window \

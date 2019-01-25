@@ -6,6 +6,7 @@ import os
 import json
 import numpy as np
 from parse_vec_files import *
+from parse_sca_files import *
 from matplotlib.backends.backend_pdf import PdfPages
 from cycler import cycler
 from config import *
@@ -15,6 +16,10 @@ parser.add_argument('--vec_file',
         type=str,
         required=True,
         help='Single vector file for a particular run using the omnet simulator')
+parser.add_argument('--sca_file',
+        type=str,
+        required=True,
+        help='Single scalar file for a particular run using the omnet simulator')
 parser.add_argument('--balance',
         action='store_true',
         help='Plot balance information for all routers')
@@ -261,18 +266,21 @@ def find_problem(balance_timeseries, inflight_timeseries) :
             for channel, info in channel_info.items():
                 for i, (time, value) in enumerate(info):
                     my_balance = value
-                    remote_balance = balance_timeseries[channel][router][i][1]
-                    inflight = inflight_timeseries[channel][router][i][1]
-                    # num inflight might be a little inconsistent depending on clear state
-                    # but others should tally up
-                    if my_balance + remote_balance > ROUTER_CAPACITY:
-                        print " problem at router", router, "with ", channel,   " at time " , time
-                        print my_balance, remote_balance, inflight
+                    try:
+                        remote_balance = balance_timeseries[channel][router][i][1]
+                        inflight = inflight_timeseries[channel][router][i][1]
+                        # num inflight might be a little inconsistent depending on clear state
+                        # but others should tally up
+                        if my_balance + remote_balance > ROUTER_CAPACITY:
+                            print " problem at router", router, "with ", channel,   " at time " , time
+                            print my_balance, remote_balance, inflight
+                    except:
+                        print channel, router, i
         
 
 
 # plot per router channel information on a per router basis depending on the type of signal wanted
-def plot_per_payment_channel_stats(args):
+def plot_per_payment_channel_stats(args, text_to_add):
     color_opts = ['#fa9e9e', '#a4e0f9', '#57a882', '#ad62aa']
     dims = plt.rcParams["figure.figsize"]
     plt.rcParams["figure.figsize"] = dims
@@ -283,6 +291,10 @@ def plot_per_payment_channel_stats(args):
         firstPage = plt.figure()
         firstPage.clf()
         txt = 'Parameters:\n' + parameters
+        txt += str(text_to_add[0]) + "\n"
+        txt += "Completion over arrival " + str(text_to_add[1]) + "\n"
+        txt += "Completion over attempted " + str(text_to_add[2]) + "\n"
+
         firstPage.text(0.5, 0, txt, transform=firstPage.transFigure, ha="center")
         pdf.savefig()
         plt.close()
@@ -330,7 +342,7 @@ def plot_per_payment_channel_stats(args):
 
 
 # plot per router channel information on a per router basis depending on the type of signal wanted
-def plot_per_src_dest_stats(args):
+def plot_per_src_dest_stats(args, text_to_add):
     color_opts = ['#fa9e9e', '#a4e0f9', '#57a882', '#ad62aa']
     dims = plt.rcParams["figure.figsize"]
     plt.rcParams["figure.figsize"] = dims
@@ -342,6 +354,10 @@ def plot_per_src_dest_stats(args):
         firstPage = plt.figure()
         firstPage.clf()
         txt = 'Parameters:\n' + parameters
+        txt += text_to_add[0] + "\n"
+        txt += "Completion over arrival " + str(text_to_add[1]) + "\n"
+        txt += "Completion over attempted " + str(text_to_add[2]) + "\n"
+
         firstPage.text(0.5, 0, txt, transform=firstPage.transFigure, ha="center")
         pdf.savefig()
         plt.close()
@@ -406,6 +422,7 @@ def main():
     plt.rc('xtick', labelsize=32)    # fontsize of the tick labels
     plt.rc('ytick', labelsize=32)    # fontsize of the tick labels
     plt.rc('legend', fontsize=34)    # legend fontsize'''
-    plot_per_payment_channel_stats(args)
-    plot_per_src_dest_stats(args)
+    text_to_add = parse_sca_files(args.sca_file)
+    plot_per_payment_channel_stats(args, text_to_add)
+    plot_per_src_dest_stats(args, text_to_add)
 main()

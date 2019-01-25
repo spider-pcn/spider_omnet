@@ -1,7 +1,7 @@
 #!/bin/bash
 PATH_NAME="benchmarks/circulations/"
 
-prefix=("sw_sparse_40_routers") # "sw_40_routers" "sf_40_routers")
+prefix=("two_node_imbalance" "two_node_capacity" ) #"sw_sparse_40_routers") # "sw_40_routers" "sf_40_routers")
     #"sw_400_routers" "sf_400_routers")
     #"sw_1000_routers" "sf_1000_routers")
 
@@ -16,9 +16,9 @@ signalsEnabled=true
 loggingEnabled=false
 routing_scheme_list=("priceScheme") #smoothWaterfilling" "waterfilling")
 
-eta=0.01
-alpha=0.01
-kappa=0.01
+eta=0.02
+alpha=0.02
+kappa=0.02
 updateQueryTime=0.8
 minPriceRate=0.25
 zeta=0.01
@@ -107,6 +107,5 @@ do
         fi
       done 
     done
-    wait
 done
-
+wait
