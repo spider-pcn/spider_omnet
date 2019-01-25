@@ -43,6 +43,8 @@ double _tQuery; //for triggering price query probes at hosts
 double _alpha;
 double _gamma;
 double _zeta;
+double _delta;
+double _avgDelay;
 double _minPriceRate;
 
 double _epsilon; // for all precision errors
@@ -670,7 +672,8 @@ void hostNode::initialize()
       if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled){
          _kValue = par("numPathChoices");
       }
-      _maxTravelTime = 0.0; 
+      _maxTravelTime = 0.0;
+     _delta = 0.01; // to avoid divide by zero 
       setNumNodes(topologyFile_);
       // add all the TransUnits into global list
       generateTransUnitList(workloadFile_);
@@ -1346,9 +1349,8 @@ void hostNode::handlePriceUpdateMessage(routerMsg* ttmsg){
    double oldLambda = nodeToPaymentChannel[sender].lambda;
    double oldMuLocal = nodeToPaymentChannel[sender].muLocal;
    double oldMuRemote = nodeToPaymentChannel[sender].muRemote;
-   double delta = _maxTravelTime;
 
-   nodeToPaymentChannel[sender].lambda = maxDouble(oldLambda + _eta*(xLocal + xRemote - (cValue/delta)),0);
+   nodeToPaymentChannel[sender].lambda = maxDouble(oldLambda + _eta*(xLocal + xRemote - (cValue/_delta)),0);
    nodeToPaymentChannel[sender].muLocal = maxDouble(oldMuLocal + _kappa*(xLocal - xRemote) , 0);
    nodeToPaymentChannel[sender].muRemote = maxDouble(oldMuRemote + _kappa*(xRemote - xLocal) , 0);
 
@@ -1636,6 +1638,13 @@ void hostNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
 
 void hostNode::finish(){
     deleteMessagesInQueues();
+    if (myIndex() == 0) {
+        // can be done on a per node basis also if need be
+        // all in seconds
+        recordScalar("max travel time", _maxTravelTime);
+        recordScalar("delta", _delta);
+        recordScalar("average delay", _avgDelay/1000.0);
+    }
 }
 
 void hostNode::handleStatMessage(routerMsg* ttmsg){

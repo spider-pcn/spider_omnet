@@ -1,14 +1,14 @@
 #!/bin/bash
 PATH_NAME="../benchmarks/circulations/"
 
-num_nodes=("2" "3" "4" "5" "10" "0" "0" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
+num_nodes=("2" "2" "3" "4" "5" "10" "0" "0" "10" "20" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
     "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
 
 balance=100
 
-prefix=("two_node" "three_node" "four_node" "five_node" \
+prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node" \
     "hotnets" "lnd_dec4_2018" "lnd_dec28_2018" \
-    "sw_40_routers" "sw_60_routers" "sw_80_routers"  \
+    "sw_10_routers" "sw_20_routers" "sw_40_routers" "sw_60_routers" "sw_80_routers"  \
     "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
     "sw_800_routers" "sw_1000_routers"\
     "sf_40_routers" "sf_60_routers" "sf_80_routers"  \

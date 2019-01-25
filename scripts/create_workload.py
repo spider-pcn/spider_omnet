@@ -277,8 +277,14 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
 
         return
 
-    #demand_dict[0, 1] = 2 * MEAN_RATE
-    # demand_dict[1, 0] = 5 * MEAN_RATE
+    if "two_node_imbalance" in filename:
+        demand_dict[0, 1] = MEAN_RATE
+        demand_dict[1, 0] = 5 * MEAN_RATE
+        print demand_dict
+    elif "two_node_capacity" in filename:
+        demand_dict[0, 1] = 2 * MEAN_RATE
+        demand_dict[1, 0] = 5 * MEAN_RATE
+        print demand_dict
 
     for i, j in demand_dict.keys():
     	start_nodes.append(end_host_map[i])

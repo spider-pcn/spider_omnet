@@ -72,6 +72,8 @@ extern double _tUpdate; //for triggering price updates at routers
 extern double _tQuery; //for triggering price query probes
 extern double _alpha; //parameter for rate updates
 extern double _minPriceRate; // minimum rate to assign to all nodes when computing projections and such
+extern double _delta; // round trip propagation delay
+extern double _avgDelay;
 
 extern bool _signalsEnabled;
 extern bool _loggingEnabled;

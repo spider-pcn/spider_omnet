@@ -125,6 +125,8 @@ void updateMaxTravelTime(vector<int> route){
         _maxTravelTime = maxTime;
     }
 
+    _delta = _maxTravelTime;
+
     return;
 }
 
@@ -705,7 +707,9 @@ void generateChannelsBalancesMap(string topologyFile) {
    string line;
    ifstream myfile (topologyFile);
    int lineNum = 0;
-  if (myfile.is_open())
+   int numEdges = 0;
+   double sumDelays = 0.0;
+   if (myfile.is_open())
    {
 
       while ( getline (myfile,line) )
@@ -767,6 +771,8 @@ void generateChannelsBalancesMap(string topologyFile) {
          else{ //(node1 is in map)
             _channels[node2].push_back(make_pair(node1, delay2to1));
          }
+         sumDelays += delay1to2 + delay2to1;
+         numEdges += 2;
 
 
          //generate _balances map
@@ -781,9 +787,10 @@ void generateChannelsBalancesMap(string topologyFile) {
 
       myfile.close();
       sort ( _landmarksWithConnectivityList.begin(),  _landmarksWithConnectivityList.end(), sortHighToLowConnectivity);
+      _avgDelay = sumDelays/numEdges;
    }
-
-   else cout << "Unable to open file " << topologyFile << endl;
+   else 
+       cout << "Unable to open file " << topologyFile << endl;
 
    cout << "finished generateChannelsBalancesMap" << endl;
    return;
