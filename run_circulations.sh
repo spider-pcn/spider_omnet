@@ -14,7 +14,17 @@ timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-routing_scheme_list=("priceScheme") #"smoothWaterfilling")
+routing_scheme_list=("priceScheme") #smoothWaterfilling" "waterfilling")
+
+eta=0.01
+alpha=0.01
+kappa=0.01
+updateQueryTime=0.8
+minPriceRate=0.25
+zeta=0.01
+
+tau=10
+normalizer=100
 
 cp hostNode.ned ${PATH_NAME}
 cp routerNode.ned ${PATH_NAME}
@@ -77,7 +87,15 @@ do
                     --timeout-clear-rate $timeoutClearRate\
                     --timeout-enabled $timeoutEnabled\
                     --routing-scheme ${routing_scheme}\
-                    --num-path-choices ${numPathChoices}
+                    --num-path-choices ${numPathChoices}\
+                    --zeta $zeta\
+                    --alpha $alpha\
+                    --eta $eta\
+                    --kappa $kappa\
+                    --update-query-time $updateQueryTime\
+                    --min-rate $minPriceRate\
+                    --tau $tau\
+                    --normalizer $normalizer
 
 
             # run the omnetexecutable with the right parameters

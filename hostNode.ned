@@ -19,6 +19,16 @@ simple hostNode
 		bool smoothWaterfillingEnabled = default(false);
 		int numPathChoices = default(4);
 
+                double alpha = default(0.01);
+                double kappa = default(0.01);
+                double eta = default(0.01);
+                double zeta = default(0.01);
+                double minRate = default(0.25);
+                double updateQueryTime = default(0.8);
+
+                double tau = default(10);
+                double normalizer = default(100);
+
 		
 		@signal[completionTime](type="long"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 

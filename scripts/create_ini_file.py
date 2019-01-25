@@ -8,13 +8,33 @@ parser.add_argument('--topo-filename', type=str, help='name of intermediate outp
 parser.add_argument('--network-name', type=str, help='name of the output ned filename', default='simpleNet')
 parser.add_argument('--ini-filename', type=str, help='name of ini file', default='omnetpp.ini')
 parser.add_argument('--simulation-length', type=str, help='duration of simulation in seconds', dest='simulationLength', default='30.0')
-parser.add_argument('--stat-collection-rate', type=str, help='rate of collecting stats', dest='statRate', default='0.2')
+parser.add_argument('--stat-collection-rate', type=str, help='rate of collecting stats', dest='statRate', \
+        default='0.2')
 parser.add_argument('--signals-enabled', type=str, help='are signals enabled?', dest='signalsEnabled', default='false')
 parser.add_argument('--logging-enabled', type=str, help='is logging enabled?', dest='loggingEnabled', default='false')
 parser.add_argument('--timeout-clear-rate', type=str, help='rate of clearing data after timeouts', dest='timeoutClearRate', default='0.5')
 parser.add_argument('--timeout-enabled', type=str, help='are timeouts enabled?', dest='timeoutEnabled', default='true')
 parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, LP, silentWhispers, smoothWaterfilling, priceScheme], else will default to waterfilling', dest='routingScheme', default='default')
 parser.add_argument('--num-path-choices', type=str, help='number of path choices', dest='numPathChoices', default='default')
+
+# price based scheme parameters
+parser.add_argument('--eta', type=float, help='step size for mu', dest='eta', default=0.01)
+parser.add_argument('--kappa', type=float, help='step size for lambda', dest='kappa', default=0.01)
+parser.add_argument('--alpha', type=float, help='step size for rate', dest='alpha', default=0.01)
+parser.add_argument('--update-query-time', type=float, help='time of update and query', \
+        dest='updateQueryTime', default=0.8)
+
+parser.add_argument('--zeta', type=float, help='ewma factor for demand', dest='zeta', default=0.01)
+parser.add_argument('--min-rate', type=float, help='minimum rate when rate is too small in price scheme', \
+        dest='minRate', default=0.25)
+
+# smooth waterfilling arguments
+parser.add_argument('--tau', type=float, help='time unit factor in smooth waterfillin', \
+        dest='tau', default=10)
+parser.add_argument('--normalizer', type=float, help='C in probability update', dest='normalizer', \
+        default=100)
+
+
 args = parser.parse_args()
 
 
@@ -53,12 +73,22 @@ f.write("**.timeoutClearRate = " + args.timeoutClearRate + "\n")
 f.write("**.timeoutEnabled = " + args.timeoutEnabled + "\n")
 f.write("**.numPathChoices = " + args.numPathChoices + "\n")
 
+
 if args.routingScheme in ['waterfilling', 'smoothWaterfilling']:
     f.write("**.waterfillingEnabled = true\n")
 if args.routingScheme == 'priceScheme':
     f.write("**.priceSchemeEnabled = true\n")
+    f.write("**.eta = " + str(args.eta) + "\n")
+    f.write("**.kappa = " + str(args.kappa) + "\n")
+    f.write("**.alpha = " + str(args.alpha) + "\n")
+    f.write("**.zeta = " + str(args.zeta) + "\n")
+    f.write("**.updateQueryTime = " + str(args.updateQueryTime) + "\n")
+    f.write("**.minRate = " + str(args.minRate) + "\n")
+
 if args.routingScheme == "smoothWaterfilling":
     f.write("**.smoothWaterfillingEnabled = true\n")
+    f.write("**.tau = " + str(args.tau) + "\n")
+    f.write("**.normalizer = " + str(args.normalizer) + "\n")
 
 f.close()
 

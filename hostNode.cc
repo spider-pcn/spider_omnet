@@ -349,7 +349,7 @@ vector<PathRateTuple> hostNode::computeProjection(vector<PathRateTuple> recommen
     };
 
     auto nuFeasible = [](double nu, double nuLeft, double nuRight) {
-            return (nu >= -_epsilon && nu >= (nuLeft - _epsilon)  && nu <= (nuRight + _epsilon));
+            return (nu >= -1 * _epsilon && nu >= (nuLeft - _epsilon)  && nu <= (nuRight + _epsilon));
     };
 
 
@@ -649,20 +649,21 @@ void hostNode::initialize()
       }
 
       // price scheme parameters
-      _eta = 0.02;
-      _kappa = 0.02;
-      _tUpdate = 0.8;
-      _tQuery = 0.8;
-      _alpha = 0.02;
+      _eta = par("eta");
+      _kappa = par("kappa");
+      _tUpdate = par("updateQueryTime");
+      _tQuery = par("updateQueryTime");
+      _alpha = par("alpha");
       _gamma = 0.2; // ewma factor to compute per path rates
-      _zeta = 0.001; // ewma for d_ij every source dest demand
-      _minPriceRate = 1;
+      _zeta = par("zeta"); // ewma for d_ij every source dest demand
+      _minPriceRate = par("minRate");
 
-      _epsilon = pow(1, -6);
+      _epsilon = pow(10, -6);
+      cout << "epsilon" << _epsilon << endl;
       
       // smooth waterfilling parameters
-      _Tau = 10;
-      _Normalizer = 100; // TODO: C from discussion with Mohammad)
+      _Tau = par("tau");
+      _Normalizer = par("normalizer"); // TODO: C from discussion with Mohammad)
 
       _ewmaFactor = 1; // EWMA factor for balance information on probes
 
@@ -1304,15 +1305,15 @@ void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
       nodeToShortestPathsMap[destNode][routeIndex].priceLastSeen = zValue;
       //double oldRate = nodeToShortestPathsMap[destNode][routeIndex].xPath;
       double oldRate = nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans;
-      nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans =
-         maxDouble(oldRate + _alpha*(1-zValue), 0);
+      nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans = oldRate + _alpha*(1-zValue);
+
 
       // compute the projection of this new rate along with old rates
       vector<PathRateTuple> pathRateTuples;
       for (auto p : nodeToShortestPathsMap[destNode]) {
           int pathIndex = p.first;
           double rate = p.second.rateToSendTrans;
-
+            
           PathRateTuple newTuple = make_tuple(pathIndex, rate);
           pathRateTuples.push_back(newTuple);
       }

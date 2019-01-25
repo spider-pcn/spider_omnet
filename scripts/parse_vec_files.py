@@ -53,8 +53,12 @@ def parse_vec_file(filename, plot_type):
     vec_id_map = dict()
     timeseries = dict()
     last_vec_id = -1 
+    parameters = ""
+
     with open(filename) as f:
         for line in f:
+            if line.startswith("param"):
+                parameters += (line.split("**")[1])
             if line.startswith("vector"):
                 vec_id, vec_info = parse_vec_declaration(line)
                 vec_id_map[vec_id] = vec_info
@@ -72,7 +76,7 @@ def parse_vec_file(filename, plot_type):
                             cur_timeseries.append(data[1])
                             timeseries[data[0]] = cur_timeseries
 
-    return timeseries, vec_id_map
+    return timeseries, vec_id_map, parameters
 
 
 # check if this field is actually one of the fields we want to process

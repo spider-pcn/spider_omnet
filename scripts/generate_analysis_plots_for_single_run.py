@@ -279,7 +279,14 @@ def plot_per_payment_channel_stats(args):
     data_to_plot = dict()
 
     with PdfPages(args.save + "_per_channel_info.pdf") as pdf:
-        all_timeseries, vec_id_to_info_map = parse_vec_file(args.vec_file, "per_channel_plot")
+        all_timeseries, vec_id_to_info_map, parameters = parse_vec_file(args.vec_file, "per_channel_plot")
+        firstPage = plt.figure()
+        firstPage.clf()
+        txt = 'Parameters:\n' + parameters
+        firstPage.text(0.5, 0, txt, transform=firstPage.transFigure, ha="center")
+        pdf.savefig()
+        plt.close()
+
         if args.balance: 
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "balance", True)
             plot_relevant_stats(data_to_plot, pdf, "Balance", compute_router_wealth=True)
@@ -330,8 +337,15 @@ def plot_per_src_dest_stats(args):
     data_to_plot = dict()
 
     with PdfPages(args.save + "_per_src_dest_stats.pdf") as pdf:
-        all_timeseries, vec_id_to_info_map = parse_vec_file(args.vec_file, "per_src_dest_plot")
+        all_timeseries, vec_id_to_info_map, parameters = parse_vec_file(args.vec_file, "per_src_dest_plot")
  
+        firstPage = plt.figure()
+        firstPage.clf()
+        txt = 'Parameters:\n' + parameters
+        firstPage.text(0.5, 0, txt, transform=firstPage.transFigure, ha="center")
+        pdf.savefig()
+        plt.close()
+        
         if args.timeouts: 
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map,  "numTimedOutPerDest", False)
             plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Timed Out")

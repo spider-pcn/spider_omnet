@@ -11,7 +11,7 @@ arraylength=${#prefix[@]}
 
 #general parameters that do not affect config names
 simulationLength=4000
-statCollectionRate=1
+statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
 payment_graph_type=circ
