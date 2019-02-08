@@ -399,9 +399,48 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
    double oldMuLocal = nodeToPaymentChannel[sender].muLocal;
    double oldMuRemote = nodeToPaymentChannel[sender].muRemote;
 
-   nodeToPaymentChannel[sender].lambda = maxDouble(oldLambda + _eta*(xLocal + xRemote - (cValue/_delta)),0);
-   nodeToPaymentChannel[sender].muLocal = maxDouble(oldMuLocal + _kappa*(xLocal - xRemote) , 0);
-   nodeToPaymentChannel[sender].muRemote = maxDouble(oldMuRemote + _kappa*(xRemote - xLocal) , 0);
+    // Nesterov's gradient descent equation
+    // and other speeding up mechanisms
+    double newLambda = 0.0;
+    double newMuLocal = 0.0;
+    double newMuRemote = 0.0;
+    if (_nesterov) {
+        double yLambda = nodeToPaymentChannel[sender].yLambda;
+        double yMuLocal = nodeToPaymentChannel[sender].yMuLocal;
+        double yMuRemote = nodeToPaymentChannel[sender].yMuRemote;
+
+        double yLambdaNew = oldLambda + _eta*(xLocal + xRemote - (cValue/_delta));
+        newLambda = yLambdaNew + _rhoLambda*(yLambdaNew - yLambda); 
+        nodeToPaymentChannel[sender].yLambda = yLambdaNew;
+
+        double yMuLocalNew = oldMuLocal + _kappa*(xLocal - xRemote);
+        newMuLocal = yMuLocalNew + _rhoMu*(yMuLocalNew - yMuLocal);
+        nodeToPaymentChannel[sender].yMuLocal = yMuLocalNew;
+
+        double yMuRemoteNew = oldMuRemote + _kappa*(xRemote - xLocal);
+        newMuRemote = yMuRemoteNew + _rhoMu*(yMuRemoteNew - yMuRemote);
+        nodeToPaymentChannel[sender].yMuRemote = yMuRemoteNew;
+    } 
+    else if (_secondOrderOptimization) {
+        double lastLambdaGrad = nodeToPaymentChannel[sender].lastLambdaGrad;
+        double newLambdaGrad = xLocal + xRemote - (cValue/_delta);
+        newLambda = oldLambda +  _eta*newLambdaGrad + _rhoLambda*(newLambdaGrad - lastLambdaGrad);
+        nodeToPaymentChannel[sender].lastLambdaGrad = newLambdaGrad;
+
+        double lastMuLocalGrad = nodeToPaymentChannel[sender].lastMuLocalGrad;
+        double newMuLocalGrad = xLocal - xRemote;
+        newMuLocal = oldMuLocal + _kappa*newMuLocalGrad + _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
+        newMuRemote = oldMuRemote - _kappa*newMuLocalGrad - _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
+    } 
+    else {
+        newLambda = oldLambda +  _eta*(xLocal + xRemote - (cValue/_delta));
+        newMuLocal = oldMuLocal + _kappa*(xLocal - xRemote);
+        newMuRemote = oldMuRemote + _kappa*(xRemote - xLocal); 
+    }
+
+   nodeToPaymentChannel[sender].lambda = maxDouble(newLambda, 0);
+   nodeToPaymentChannel[sender].muLocal = maxDouble(newMuLocal, 0);
+   nodeToPaymentChannel[sender].muRemote = maxDouble(newMuRemote, 0);
 
     //delete both messages
     ttmsg->decapsulate();

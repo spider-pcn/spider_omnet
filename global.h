@@ -66,6 +66,11 @@ extern vector<int> _landmarks;
 
 //parameters for price scheme
 extern bool _priceSchemeEnabled;
+
+extern double _rho; // for nesterov computation
+extern double _rhoLambda; // and accelerated Gradients
+extern double _rhoMu;
+
 extern double _eta; //for price computation
 extern double _kappa; //for price computation
 extern double _tUpdate; //for triggering price updates at routers
@@ -84,4 +89,6 @@ extern int _queueCapacity;
 extern double _epsilon;
 
 
+extern bool _nesterov;
+extern bool _secondOrderOptimization;
 

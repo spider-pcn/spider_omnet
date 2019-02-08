@@ -153,6 +153,7 @@ class hostNode : public cSimpleModule
       virtual bool ratesFeasible(vector<PathRateTuple> actualRates, double demand);
       virtual vector<PathRateTuple> computeProjection(vector<PathRateTuple> recommendedRates, double demand);
       virtual void generateNextTransaction();
+      virtual void updateTimers(int destNode, int pathIndex, double newRate);
 };
 
 #endif

@@ -21,6 +21,7 @@ parser.add_argument('--num-path-choices', type=str, help='number of path choices
 parser.add_argument('--eta', type=float, help='step size for mu', dest='eta', default=0.01)
 parser.add_argument('--kappa', type=float, help='step size for lambda', dest='kappa', default=0.01)
 parser.add_argument('--alpha', type=float, help='step size for rate', dest='alpha', default=0.01)
+parser.add_argument('--rho', type=float, help='nesterov or accelerated gradient parameter', dest='rho', default=0.05)
 parser.add_argument('--update-query-time', type=float, help='time of update and query', \
         dest='updateQueryTime', default=0.8)
 
@@ -84,6 +85,8 @@ if args.routingScheme == 'priceScheme':
     f.write("**.zeta = " + str(args.zeta) + "\n")
     f.write("**.updateQueryTime = " + str(args.updateQueryTime) + "\n")
     f.write("**.minRate = " + str(args.minRate) + "\n")
+    f.write("**.rhoValue = " + str(args.rho) + "\n")
+
 
 if args.routingScheme == "smoothWaterfilling":
     f.write("**.smoothWaterfillingEnabled = true\n")

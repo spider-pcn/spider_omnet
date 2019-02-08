@@ -6,7 +6,7 @@ num_nodes=("2" "2" "3" "4" "5" "10" "0" "0" "10" "20" "40" "60" "80" "100" "200"
 
 balance=100
 
-prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node" \
+prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
     "hotnets" "lnd_dec4_2018" "lnd_dec28_2018" \
     "sw_10_routers" "sw_20_routers" "sw_40_routers" "sw_60_routers" "sw_80_routers"  \
     "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
@@ -31,6 +31,7 @@ do
     topofile="${PATH_NAME}${prefix[i]}_topo.txt"
     workload="${PATH_NAME}$workloadname"
     inifile="${PATH_NAME}${workloadname}_default.ini"
+    payment_graph_topo="custom"
 
     if [ ${prefix[i]:0:2} == "sw" ]; then
         graph_type="small_world"
@@ -54,6 +55,10 @@ do
         delay="30"
     fi
 
+    if [ ${prefix[i]:0:4} == "five" ]; then
+        payment_graph_topo="hardcoded_circ"
+    fi
+
     echo $network
     echo $topofile
     echo $inifile
@@ -72,10 +77,10 @@ do
 
     # create transactions corresponding to this experiment run
     $PYTHON create_workload.py $workload poisson\
-            --graph-topo custom \
+            --graph-topo $payment_graph_topo \
             --payment-graph-dag-percentage 0\
             --topo-filename $topofile\
-            --experiment-time 4000 \
+            --experiment-time 8000 \
             --balance-per-channel $balance\
             --generate-json-also\
             --timeout-value 5

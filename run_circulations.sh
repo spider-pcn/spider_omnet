@@ -17,11 +17,12 @@ loggingEnabled=false
 routing_scheme_list=("priceScheme") #smoothWaterfilling" "waterfilling")
 
 eta=0.02
-alpha=0.02
+alpha=0.05
 kappa=0.02
 updateQueryTime=0.8
 minPriceRate=0.25
 zeta=0.01
+rho=0.05
 
 tau=10
 normalizer=100
@@ -92,6 +93,7 @@ do
                     --alpha $alpha\
                     --eta $eta\
                     --kappa $kappa\
+                    --rho $rho\
                     --update-query-time $updateQueryTime\
                     --min-rate $minPriceRate\
                     --tau $tau\

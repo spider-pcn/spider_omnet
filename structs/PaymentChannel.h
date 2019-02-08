@@ -20,8 +20,15 @@ public:
     double xLocal; //Transaction arrival rate ($x_local$)
     double totalCapacity; //Total channel capacity ($C$)
     double lambda; //Price due to load ($\lambda$)
+    double lastLambdaGrad = 0; // for accelerated gradient descent
+    double yLambda; // Nesterov's equation y
+
     double muLocal; //Price due to channel imbalance at my end  ($\mu_{local}$)
+    double lastMuLocalGrad = 0; // for accelerated gradient descent
+    double yMuLocal; // Nesterov's equation y
+
     double muRemote; //Price due to imbalance at the other end of the channel ($\mu_{remote}$)
+    double yMuRemote; // Nesterov's equation y
 
     //statistics for price scheme per payment channel
     simsignal_t nValueSignal;
