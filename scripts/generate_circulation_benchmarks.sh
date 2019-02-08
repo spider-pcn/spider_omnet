@@ -20,9 +20,10 @@ arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_NAME}
 
-# generate the files
-#for (( i=0; i<${arraylength}; i++ ));
-array=( 3 7 16 29)
+# TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
+# adjust experiment time as needed
+#array=( 0 1 4 5 8 19 32)
+array=( 4 )
 for i in "${array[@]}"
 do 
     # generate the graph first to ned file
@@ -70,7 +71,7 @@ do
             --topo-filename $topofile\
             --num-nodes ${num_nodes[i]}\
             --balance-per-channel $balance\
-            --separate-end-hosts\
+            --separate-end-hosts \
             --delay-per-channel $delay\
             #--randomize-start-bal
 

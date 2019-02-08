@@ -1,5 +1,5 @@
 #!/bin/bash
-PATH_NAME="benchmarks/circulations/"
+PATH_NAME="benchmarks/"
 GRAPH_PATH="scripts/figures/"
 
 #prefix=("two_node" "three_node" "four_node" "five_node") 
@@ -10,13 +10,20 @@ prefix=("two_node_imbalance" "two_node_capacity") #"sw_sparse_40_routers" "sf_40
 arraylength=${#prefix[@]}
 
 #general parameters that do not affect config names
-simulationLength=4000
+simulationLength=1000
 statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
-payment_graph_type=circ
+
+payment_graph_type=circ # or dagx where x is the percentage of dag
+if [ "$payment_graph_type" = "circ" ]; then 
+    PATH_NAME=${PATH_NAME}circulations/ 
+else 
+    PATH_NAME=${PATH_NAME}${payment_graph_type}
+fi
+
 delay=30ms
-routing_scheme_list=("priceScheme")
+routing_scheme_list=("smoothWaterfilling" "waterfilling" "shortestPath")
 
 
 for (( i=0; i<${arraylength}; i++));
