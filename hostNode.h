@@ -26,6 +26,7 @@ using namespace omnetpp;
 class hostNode : public cSimpleModule
 {
    private:
+    map<int, ProbeInfo> transactionIdToProbeInfoMap = {}; //used only for landmark routing
         map<int, PaymentChannel> nodeToPaymentChannel;
         map<int, DestInfo> nodeToDestInfo; //one structure per destination;
               //TODO: incorporate the signals into nodeToDestInfo
@@ -54,9 +55,11 @@ class hostNode : public cSimpleModule
         vector<simsignal_t> numCompletedPerDestSignals = {};
         vector<simsignal_t> numArrivedPerDestSignals = {};
         vector<simsignal_t> numTimedOutPerDestSignals = {};
-        vector<simsignal_t> numPendingPerDestSignals = {};
+        vector<simsignal_t> numPendingPerDestSignals = {};       
+        vector<simsignal_t> numWaitingPerDestSignals = {};
         vector<simsignal_t> numTimedOutAtSenderSignals = {};
         vector<simsignal_t> probabilityPerDestSignals = {};
+        vector<simsignal_t> demandEstimatePerDestSignals = {};
 
 
    vector<simsignal_t> rateFailedPerDestSignals = {};
@@ -99,6 +102,7 @@ class hostNode : public cSimpleModule
 
       virtual void splitTransactionForWaterfilling(routerMsg * ttMsg);
       virtual void initialize() override;
+      virtual void finish() override;
       virtual void handleMessage(cMessage *msg) override;
       virtual void handleTransactionMessage(routerMsg *msg);
       virtual bool handleTransactionMessageTimeOut(routerMsg *msg); //returns true if message was deleted
@@ -114,6 +118,7 @@ class hostNode : public cSimpleModule
       virtual void handleStatMessage(routerMsg *msg);
       virtual void handleStatMessagePriceScheme(routerMsg *msg);
       virtual void handleProbeMessage(routerMsg *msg);
+      virtual void handleProbeMessageLandmarkRouting(routerMsg *msg);
       virtual void handleClearStateMessage(routerMsg *msg);
       //virtual void handleClearStateMessagePriceScheme(routerMsg *msg);
       virtual void handleClearStateMessageWaterfilling(routerMsg *msg);
@@ -136,10 +141,19 @@ class hostNode : public cSimpleModule
       virtual void restartProbes(int destNode);
       virtual void deleteMessagesInQueues();
 
+      //landmark routing
+      virtual void handleTransactionMessageLandmarkRouting(routerMsg *msg);
+      virtual void initializePathInfoLandmarkRouting(vector<vector<int>> kShortestRoutes, int  destNode);
+      virtual void initializeLandmarkRoutingProbes(routerMsg * msg, int transactionId, int destNode);
+
       //helper
       virtual bool printNodeToPaymentChannel();
       virtual int updatePathProbabilities(vector<double> bottleneckBalances, int destNode);
       virtual int sampleFromDistribution(vector<double> probabilities);
+      virtual bool ratesFeasible(vector<PathRateTuple> actualRates, double demand);
+      virtual vector<PathRateTuple> computeProjection(vector<PathRateTuple> recommendedRates, double demand);
+      virtual void generateNextTransaction();
+      virtual void updateTimers(int destNode, int pathIndex, double newRate);
 };
 
 #endif

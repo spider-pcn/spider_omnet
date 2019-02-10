@@ -6,4 +6,11 @@ using namespace omnetpp;
 class DestInfo{
 public:
     deque<routerMsg *> transWaitingToBeSent = {};
+    
+
+    // units are txns per second
+    double demand = 0;
+
+    // number of transactions since the last interval
+    double transSinceLastInterval = 0;
 };

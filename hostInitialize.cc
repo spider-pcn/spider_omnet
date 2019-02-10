@@ -125,10 +125,49 @@ void updateMaxTravelTime(vector<int> route){
         _maxTravelTime = maxTime;
     }
 
+    _delta = _maxTravelTime;
+
     return;
 }
 
+int minInt(int x, int y){
+    if (x< y) return x;
+    return y;
+}
 
+vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, int k){
+    vector<vector<int>> kRoutes = {};
+
+    int numPaths = minInt(_landmarksWithConnectivityList.size(), k);
+    //cout << "_landmarksWithConnectivityList size: " <<  _landmarksWithConnectivityList.size() << endl;
+    //cout << "k:" << k << endl;
+    //cout << "numPaths:" << numPaths << endl;
+    for (int i=0; i< numPaths; i++){
+        int landmark = get<1>(_landmarksWithConnectivityList[i]);
+        //cout << "sender: " << sender << "; landmark: " << landmark << "; receiver: " << receiver << endl;
+        vector<int> pathSenderToLandmark = breadthFirstSearch(sender, landmark); //use breadth first search
+        //cout << "pathSenderToLandmark: ";
+        //printVector(pathSenderToLandmark);
+        vector<int> pathLandmarkToReceiver = breadthFirstSearch(landmark, receiver); //use breadth first search
+        //cout << "pathLandmarkToReceiver: ";
+        //printVector(pathLandmarkToReceiver);
+
+        if ((pathSenderToLandmark.size()<2 || pathLandmarkToReceiver.size()<2) && numPaths < _landmarksWithConnectivityList.size()){
+
+            numPaths++;
+            continue;
+
+        }
+        else{
+            pathSenderToLandmark.insert(pathSenderToLandmark.end(), pathLandmarkToReceiver.begin() + 1, pathLandmarkToReceiver.end() );
+            //cout << "final route" << endl;
+            //printVector(pathSenderToLandmark);
+            kRoutes.push_back(pathSenderToLandmark);
+        }
+
+    }
+    return kRoutes;
+}
 
 
 
@@ -577,7 +616,7 @@ vector<int> breadthFirstSearch(int sender, int receiver){
          } //end if (!visitedNodes[_channels[lastNode][i]])
       }//end for (i)
    }//end while
-   vector<int> empty;
+   vector<int> empty = {};
    return empty;
 }
 
@@ -596,11 +635,17 @@ void setNumNodes(string topologyFile){
    int maxHostNode = -1;
    int maxRouterNode = -1;
    string line;
+   int lineNum = 0;
    ifstream myfile (topologyFile);
    if (myfile.is_open())
    {
       while ( getline (myfile,line) )
       {
+          lineNum++;
+          // skip landmark line
+          if (lineNum == 1) {
+              continue;
+          }
          vector<string> data = split(line, ' ');
          //generate channels - adjacency map
 
@@ -645,6 +690,14 @@ void setNumNodes(string topologyFile){
 }
 
 
+bool sortHighToLowConnectivity(tuple<int,int> x, tuple<int,int> y){
+    if (get<0>(x) > get<0>(y)) return true;
+    else if (get<0>(x) < get<0>(y)) return false;
+    else
+           return get<1>(x) < get<1>(y);
+}
+
+
 /* generate_channels_balances_map - reads from file and constructs adjacency list of graph topology (channels), and hash map
  *      of directed edges to initial balances, modifies global maps in place
  *      each line of file is of form
@@ -653,11 +706,31 @@ void setNumNodes(string topologyFile){
 void generateChannelsBalancesMap(string topologyFile) {
    string line;
    ifstream myfile (topologyFile);
+   int lineNum = 0;
+   int numEdges = 0;
+   double sumDelays = 0.0;
    if (myfile.is_open())
    {
+
       while ( getline (myfile,line) )
       {
+         lineNum++;
          vector<string> data = split(line, ' ');
+       // parse all the landmarks from the first line
+         if (lineNum == 1) {
+             for (auto node : data) {
+                char nodeType = node.back();
+                int nodeNum = stoi((node).substr(0,node.size()-1)); 
+
+                if (nodeType == 'r') {
+                    nodeNum = nodeNum + _numHostNodes;
+                }
+                _landmarks.push_back(nodeNum);
+                _landmarksWithConnectivityList.push_back(make_tuple(_channels[nodeNum].size(), nodeNum));
+             }
+             // don't do anything else
+             continue;
+         }
 
          //generate _channels - adjacency map
          char node1type = data[0].back();
@@ -698,6 +771,8 @@ void generateChannelsBalancesMap(string topologyFile) {
          else{ //(node1 is in map)
             _channels[node2].push_back(make_pair(node1, delay2to1));
          }
+         sumDelays += delay1to2 + delay2to1;
+         numEdges += 2;
 
 
          //generate _balances map
@@ -705,11 +780,17 @@ void generateChannelsBalancesMap(string topologyFile) {
          double balance2 = stod( data[5]);
          _balances[make_tuple(node1,node2)] = balance1;
          _balances[make_tuple(node2,node1)] = balance2;
-      }
-      myfile.close();
-   }
 
-   else cout << "Unable to open file " << topologyFile << endl;
+
+         data = split(line, ' ');
+      }
+
+      myfile.close();
+      sort ( _landmarksWithConnectivityList.begin(),  _landmarksWithConnectivityList.end(), sortHighToLowConnectivity);
+      _avgDelay = sumDelays/numEdges;
+   }
+   else 
+       cout << "Unable to open file " << topologyFile << endl;
 
    cout << "finished generateChannelsBalancesMap" << endl;
    return;
@@ -737,20 +818,24 @@ void generateTransUnitList(string workloadFile){
          int receiver = stoi(data[3]);
          int priorityClass = stoi(data[4]);
          double timeOut=-1;
-         double hasTimeOut = false;
-         if (data.size()>5){
-            hasTimeOut = true;
+         double hasTimeOut = _timeoutEnabled;
+         if (data.size()>5 && _timeoutEnabled){
             timeOut = stoi(data[5]);
             //cout << "timeOut: " << timeOut << endl;
+         }
+         else if (_timeoutEnabled) {
+             timeOut = 5.0;
          }
 
          // instantiate all the transUnits that need to be sent
          TransUnit tempTU = TransUnit(amount, timeSent, sender, receiver, priorityClass, hasTimeOut, timeOut);
 
-         // add all the transUnits into global per-sender map
-         _transUnitList[sender].push_back(tempTU);
+         // push the transUnit into a priority queue indexed by the sender, 
+         _transUnitList[sender].push(tempTU);
 
       }
+   		//cout << "finished generateTransUnitList" << endl;
+		
       myfile.close();
    }
 

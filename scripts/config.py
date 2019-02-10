@@ -54,13 +54,13 @@ KAGGLE_TIME_DIST_FILENAME = KAGGLE_PATH + 'time_dist.npy'
 
 
 # CONSTANTS
-SEED = 17
+SEED = 23
 SCALE_AMOUNT = 5
 MEAN_RATE = 10
 CIRCULATION_STD_DEV = 2
 LARGE_BALANCE = 1000000000
 
-EC2_INSTANCE_ADDRESS="ec2-107-21-70-81.compute-1.amazonaws.com"
+EC2_INSTANCE_ADDRESS="ec2-52-87-250-35.compute-1.amazonaws.com"
 PORT_NUMBER=8000
 
 # json parameters for lnd testbed
@@ -73,6 +73,7 @@ LND_FILE_PATH = "../lnd_data/"
 ''' OMNET SPECIFIC STUFF '''
 # maximum number of paths to consider or plot data for
 MAX_K = 4
+NUM_LANDMARKS = MAX_K
 
 # List of recognized and parsable omnet signals
 RECOGNIZED_OMNET_SIGNALS = ["numInQueuePerChannel",\
@@ -91,10 +92,22 @@ INTERESTING_SIGNALS["rateArrived"] = ["rateArrivedPerDest_Total"]
 INTERESTING_SIGNALS["rateToSendTrans"] = ["rateToSendTransPerPath"]
 INTERESTING_SIGNALS["priceLastSeen"] = ["priceLastSeenPerPath"]
 
+# DO NOT CHANGE THIS: PAINFULLY HARDCODED TO NOT INTERFERE WITH numTimedOutAtSender
+INTERESTING_SIGNALS["numTimedOutPerDest"] = ["numTimedOutPerDest"]
 
-for signal in ["numPending", "probability", "bottleneck", "pathPerTrans", "numTimedOut",\
-        "numTimedOutAtSender"]:
+per_dest_list = []
+for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", \
+        "fracSuccessful", "demandEstimate"]:
     INTERESTING_SIGNALS[signal] = signal + "PerDest"
+    per_dest_list.append(signal + "PerDest")
+per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", \
+        "rateToSendTransPerPath", "priceLastSeenPerPath", "numTimedOutPerDest"])
 
-for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "numSent", "muRemote"]:
+per_channel_list = []
+for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "numSent", "muRemote", "numInflight"]:
     INTERESTING_SIGNALS[signal] = signal + "PerChannel"
+    per_channel_list.append(signal + "PerChannel")
+
+INTERESTING_SIGNALS["per_src_dest_plot"] = per_dest_list
+INTERESTING_SIGNALS["per_channel_plot"] = per_channel_list
+

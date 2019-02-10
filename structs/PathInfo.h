@@ -20,11 +20,20 @@ public:
 
     //additional parameters for price scheme
     double rateToSendTrans = 1;
+    double yRateToSendTrans = 1;
     simtime_t timeToNextSend = 0;
     double sumOfTransUnitsInFlight = 0;
-    simtime_t priceLastSeen = 0;
+    double priceLastSeen = 0;
     routerMsg * triggerTransSendMsg;
+    simtime_t lastSendTime = 0;
+    simtime_t lastRateUpdateTime = 0;
+    double lastTransSize = 0.0;
+    double amtAllowedToSend = 0.0;
     bool isSendTimerSet = false;
+
+    // number and rate of txns sent to a particular destination on this path
+    double nValue = 0;
+    double xPath = 1;
     
     bool isProbeOutstanding = false;
 

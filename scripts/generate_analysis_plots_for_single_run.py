@@ -6,6 +6,7 @@ import os
 import json
 import numpy as np
 from parse_vec_files import *
+from parse_sca_files import *
 from matplotlib.backends.backend_pdf import PdfPages
 from cycler import cycler
 from config import *
@@ -15,6 +16,10 @@ parser.add_argument('--vec_file',
         type=str,
         required=True,
         help='Single vector file for a particular run using the omnet simulator')
+parser.add_argument('--sca_file',
+        type=str,
+        required=True,
+        help='Single scalar file for a particular run using the omnet simulator')
 parser.add_argument('--balance',
         action='store_true',
         help='Plot balance information for all routers')
@@ -36,12 +41,15 @@ parser.add_argument('--timeouts_sender',
 parser.add_argument('--frac_completed',
         action='store_true',
         help='Plot fraction completed for all source destination pairs')
+parser.add_argument('--frac_completed_window',
+        action='store_true',
+        help='Plot fraction completed for all source destination pairs in every window')
 parser.add_argument('--path',
         action='store_true',
         help='Plot path index used for all source destination pairs')
-parser.add_argument('--pending',
+parser.add_argument('--waiting',
         action='store_true',
-        help='Plot number of pending txns at a given point in time all source destination pairs')
+        help='Plot number of waiting txns at a the sender at a point in time all source destination pairs')
 parser.add_argument('--probabilities',
         action='store_true',
         help='Plot probabilities of picking each path at a given point in time all source destination pairs')
@@ -66,6 +74,9 @@ parser.add_argument('--rate_to_send',
 parser.add_argument('--price',
         action='store_true',
         help='Plot the per channel price to send when price based scheme is used')
+parser.add_argument('--demand',
+        action='store_true',
+        help='Plot the per dest estimated demand when price based scheme is used')
 
 
 parser.add_argument('--save',
@@ -80,9 +91,9 @@ args = parser.parse_args()
 # returns a dictionary of the necessary stats where key is a router node
 # and value is another dictionary where the key is the partner node 
 # and value is the time series of the signal_type recorded for this pair of nodes
-def aggregate_info_per_node(filename, signal_type, is_router, aggregate_per_path=False, is_both=False):
+def aggregate_info_per_node(all_timeseries, vec_id_to_info_map, signal_type, is_router, aggregate_per_path=False, is_both=False):
     node_signal_info = dict()
-    all_timeseries, vec_id_to_info_map = parse_vec_file(filename, signal_type)
+   #all_timeseries, vec_id_to_info_map = parse_vec_file(filename, signal_type)
 
     # aggregate information on a per router node basis
     # and then on a per channel basis for that router node
@@ -100,17 +111,21 @@ def aggregate_info_per_node(filename, signal_type, is_router, aggregate_per_path
                             if t[1] == "0":
                                 print "End host " + str(src_node) + " hitting zero at time " + str(t[0])'''
 
-        if is_both:
+            
+        '''if is_both:
             if src_node_type == "host":
                 src_node = 2 + src_node
             elif dest_node_type == "host":
-                dest_node = 2 + dest_node
-        else:
-            if is_router and (src_node_type != "router" or dest_node_type != "router"):
-                continue
+                dest_node = 2 + dest_node'''
+        #else:
+        if is_router and (src_node_type != "router" or dest_node_type != "router"):
+            continue
 
-            if not is_router and (src_node_type != "host" or dest_node_type != "host"):
-                continue
+        if not is_router and (src_node_type != "host" or dest_node_type != "host"):
+            continue
+            '''elif not is_router:
+                src_node = src_node + 2
+                dest_node = dest_node + 2'''
 
         signal_name = vector_details[2]
         if signal_type not in signal_name:
@@ -245,46 +260,80 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
         plt.close()
 
 
+# see if infligh plus balance was ever more than capacity
+def find_problem(balance_timeseries, inflight_timeseries) :
+    for router, channel_info in balance_timeseries.items():
+            for channel, info in channel_info.items():
+                for i, (time, value) in enumerate(info):
+                    my_balance = value
+                    try:
+                        remote_balance = balance_timeseries[channel][router][i][1]
+                        inflight = inflight_timeseries[channel][router][i][1]
+                        # num inflight might be a little inconsistent depending on clear state
+                        # but others should tally up
+                        if my_balance + remote_balance > ROUTER_CAPACITY:
+                            print " problem at router", router, "with ", channel,   " at time " , time
+                            print my_balance, remote_balance, inflight
+                    except:
+                        print channel, router, i
+        
+
 
 # plot per router channel information on a per router basis depending on the type of signal wanted
-def plot_per_payment_channel_stats(args):
+def plot_per_payment_channel_stats(args, text_to_add):
     color_opts = ['#fa9e9e', '#a4e0f9', '#57a882', '#ad62aa']
     dims = plt.rcParams["figure.figsize"]
     plt.rcParams["figure.figsize"] = dims
     data_to_plot = dict()
 
     with PdfPages(args.save + "_per_channel_info.pdf") as pdf:
+        all_timeseries, vec_id_to_info_map, parameters = parse_vec_file(args.vec_file, "per_channel_plot")
+        firstPage = plt.figure()
+        firstPage.clf()
+        txt = 'Parameters:\n' + parameters
+        txt += str(text_to_add[0]) + "\n"
+        txt += "Completion over arrival " + str(text_to_add[1]) + "\n"
+        txt += "Completion over attempted " + str(text_to_add[2]) + "\n"
+
+        firstPage.text(0.5, 0, txt, transform=firstPage.transFigure, ha="center")
+        pdf.savefig()
+        plt.close()
+
         if args.balance: 
-            data_to_plot = aggregate_info_per_node(args.vec_file, "balance", True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "balance", True)
             plot_relevant_stats(data_to_plot, pdf, "Balance", compute_router_wealth=True)
 
-            if args.inflight:
+            inflight = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numInflight", True)
+            plot_relevant_stats(inflight, pdf, "Inflight funds")
+            find_problem(data_to_plot, inflight)
+
+            '''if args.inflight:
                 inflight_data_to_plot = aggregate_inflight_info(data_to_plot)
-                plot_relevant_stats(inflight_data_to_plot, pdf, "Inflight Funds")
+                plot_relevant_stats(inflight_data_to_plot, pdf, "Inflight Funds")'''
 
             
         if args.queue_info:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "numInQueue", True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numInQueue", True)
             plot_relevant_stats(data_to_plot, pdf, "Number in Queue")
 
         if args.num_sent_per_channel:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "numSent", True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numSent", True)
             plot_relevant_stats(data_to_plot, pdf, "Number Sent")
 
         if args.lambda_val:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "lambda", True, is_both=True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "lambda", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "Lambda")
         
         if args.mu_local:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "muLocal", True, is_both=True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "muLocal", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "Mu Local")
         
         if args.mu_remote:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "muRemote", True, is_both=True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "muRemote", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "Mu Remote")
         
         if args.x_local:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "xLocal", True, is_both=True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "xLocal", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "xLocal")
 
 
@@ -293,50 +342,71 @@ def plot_per_payment_channel_stats(args):
 
 
 # plot per router channel information on a per router basis depending on the type of signal wanted
-def plot_per_src_dest_stats(args):
+def plot_per_src_dest_stats(args, text_to_add):
     color_opts = ['#fa9e9e', '#a4e0f9', '#57a882', '#ad62aa']
     dims = plt.rcParams["figure.figsize"]
     plt.rcParams["figure.figsize"] = dims
     data_to_plot = dict()
 
     with PdfPages(args.save + "_per_src_dest_stats.pdf") as pdf:
+        all_timeseries, vec_id_to_info_map, parameters = parse_vec_file(args.vec_file, "per_src_dest_plot")
+ 
+        firstPage = plt.figure()
+        firstPage.clf()
+        txt = 'Parameters:\n' + parameters
+        txt += text_to_add[0] + "\n"
+        txt += "Completion over arrival " + str(text_to_add[1]) + "\n"
+        txt += "Completion over attempted " + str(text_to_add[2]) + "\n"
+
+        firstPage.text(0.5, 0, txt, transform=firstPage.transFigure, ha="center")
+        pdf.savefig()
+        plt.close()
+        
         if args.timeouts: 
-            data_to_plot = aggregate_info_per_node(args.vec_file, "numTimedOut", False)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map,  "numTimedOutPerDest", False)
             plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Timed Out")
         
-        if args.frac_completed: 
-            successful = aggregate_info_per_node(args.vec_file, "rateCompleted", False)
-            attempted = aggregate_info_per_node(args.vec_file, "rateArrived", False)
+        if args.frac_completed_window: 
+            successful = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateCompleted", False)
+            attempted = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateArrived", False)
             data_to_plot = aggregate_frac_successful_info(successful, attempted)
             plot_relevant_stats(data_to_plot, pdf, "Fraction of successful txns in each window")
 
+        if args.frac_completed:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "fracSuccessful", False)
+            plot_relevant_stats(data_to_plot, pdf, "Fraction of successful txns")
+
         if args.path:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "pathPerTrans", False)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "pathPerTrans", False)
             plot_relevant_stats(data_to_plot, pdf, "Path Per Transaction")
 
         if args.timeouts_sender:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "numTimedOutAtSender", False)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numTimedOutAtSender", False)
             plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Timed Out At Sender")
 
-        if args.pending:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "numPending", False)
-            plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Pending To Given Destination")
+        if args.waiting:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numWaiting", False)
+            plot_relevant_stats(data_to_plot, pdf, "Number of Transactions Waiting at sender To Given Destination")
 
         if args.probabilities:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "probability", False, True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "probability", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Probability of picking paths", per_path_info=True)
 
         if args.bottlenecks:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "bottleneck", False, True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "bottleneck", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Bottleneck Balance", per_path_info=True)
 
         if args.rate_to_send:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "rateToSendTrans", False, True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateToSendTrans", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Rate to send per path", per_path_info=True)
 
         if args.price:
-            data_to_plot = aggregate_info_per_node(args.vec_file, "priceLastSeen", False, True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "priceLastSeen", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Price per path", per_path_info=True)
+
+        if args.demand:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "demandEstimate", False)
+            plot_relevant_stats(data_to_plot, pdf, "Demand Estimate per Path")
 
  
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + \
@@ -352,6 +422,7 @@ def main():
     plt.rc('xtick', labelsize=32)    # fontsize of the tick labels
     plt.rc('ytick', labelsize=32)    # fontsize of the tick labels
     plt.rc('legend', fontsize=34)    # legend fontsize'''
-    plot_per_payment_channel_stats(args)
-    plot_per_src_dest_stats(args)
+    text_to_add = parse_sca_files(args.sca_file)
+    plot_per_payment_channel_stats(args, text_to_add)
+    plot_per_src_dest_stats(args, text_to_add)
 main()

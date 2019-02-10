@@ -19,6 +19,17 @@ simple hostNode
 		bool smoothWaterfillingEnabled = default(false);
 		int numPathChoices = default(4);
 
+                double alpha = default(0.01);
+                double kappa = default(0.01);
+                double eta = default(0.01);
+                double zeta = default(0.01);
+                double rhoValue = default(0.05);
+                double minRate = default(0.25);
+                double updateQueryTime = default(0.8);
+
+                double tau = default(10);
+                double normalizer = default(100);
+
 		
 		@signal[completionTime](type="long"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 
@@ -47,7 +58,10 @@ simple hostNode
 		@statisticTemplate[numCompletedPerDestTemplate](record=vector, stats);   
 
 		@signal[numPendingPerDest*](type="long");  
-		@statisticTemplate[numPendingPerDestTemplate](record=vector, stats);  
+		@statisticTemplate[numPendingPerDestTemplate](record=vector, stats); 
+
+ 		@signal[numWaitingPerDest*](type="long");  
+		@statisticTemplate[numWaitingPerDestTemplate](record=vector, stats);  
 	
 		@signal[fracSuccessfulPerDest*](type="double");  
 		@statisticTemplate[fracSuccessfulPerDestTemplate](record=vector, stats);   
@@ -57,6 +71,9 @@ simple hostNode
 		
 		@signal[numTimedOutPerDest*](type="long");  
 		@statisticTemplate[numTimedOutPerDestTemplate](record=vector, stats);
+
+		@signal[demandEstimatePerDest*](type="double");  
+		@statisticTemplate[demandEstimatePerDestTemplate](record=vector, stats);
 
 		@signal[numTimedOutAtSenderPerDest*](type="long");  
 		@statisticTemplate[numTimedOutAtSenderPerDestTemplate](record=vector, stats);

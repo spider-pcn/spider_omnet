@@ -22,6 +22,7 @@ packet ackMsg
  	int pathIndex; 
  	double timeSent;
  	bool isSuccess; //status, true for success, false for failure
+        int failedHopNum;
     string secret=""; 
     double amount;
     bool hasTimeOut;

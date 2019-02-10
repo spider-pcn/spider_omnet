@@ -7,6 +7,7 @@ import re
 import os
 import math
 import random
+import numpy as np
 
 def parse_node_name(node_name, max_router, max_host):
     try:
@@ -43,7 +44,14 @@ def write_ned_file(topo_filename, output_filename, network_name):
     max_val = -1 #used to find number of nodes, assume nodes start at 0 and number consecutively
     max_router = -1
     max_host = -1
+    line_num = 0
     for line in topo_file:
+        line_num += 1
+
+        # landmark line
+        if line_num == 1:
+            continue
+
         if line == "\n":
             continue
 
@@ -106,9 +114,13 @@ def generate_graph(size, graph_type):
     if graph_type == 'random':
         G = nx.dense_gnm_random_graph(size, size * 5,seed=SEED)
     elif graph_type == 'small_world':
+        G = nx.watts_strogatz_graph(size, 8, 0.25, seed=SEED)
+    elif graph_type == 'small_world_sparse':
         G = nx.watts_strogatz_graph(size, size/8, 0.25, seed=SEED)
     elif graph_type == 'scale_free':
         G = nx.barabasi_albert_graph(size, 8, seed=SEED)
+    elif graph_type == 'scale_free_sparse':
+        G = nx.barabasi_albert_graph(size, size/8, seed=SEED)
     elif graph_type == 'tree':
         G = nx.random_tree(size, seed=SEED)
 
@@ -127,6 +139,7 @@ def generate_graph(size, graph_type):
 
 # print the output in the desired format for write_ned_file to read
 # generate extra end host nodes if need be
+# make the first line list of landmarks for this topology
 def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts,\
         randomize_bal=False):
     f1 = open(output_filename, "w+")
@@ -135,6 +148,36 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
     if (separate_end_hosts == False):
         offset = 0
 
+    nodes_sorted_by_degree = sorted(G.degree, key=lambda x: x[1], reverse=True)
+
+    # generate landmarks based on degree
+    i = 0
+    landmarks, current_list = [], []
+    max_degree = -1
+    while len(landmarks) < NUM_LANDMARKS and i < len(nodes_sorted_by_degree):
+        num_remaining = NUM_LANDMARKS - len(landmarks)
+        if nodes_sorted_by_degree[i][1] == max_degree:
+            current_list.append(nodes_sorted_by_degree[i][0])
+        else:
+            spaced_indices = np.round(np.linspace(0, len(current_list)-1, \
+                    min(num_remaining, len(current_list)))).astype(int)
+            if max_degree != -1:
+                landmarks.extend([current_list[x] for x in spaced_indices])
+            current_list = [nodes_sorted_by_degree[i][0]]
+            max_degree = nodes_sorted_by_degree[i][1]
+        i += 1
+    if len(landmarks) < NUM_LANDMARKS:
+        spaced_indices = np.round(np.linspace(0, len(current_list)-1, \
+                    min(num_remaining, len(current_list)))).astype(int)
+        landmarks.extend([current_list[x] for x in spaced_indices])
+
+     
+    # make the first line the landmarks and make them all router nodes
+    for l in landmarks[:NUM_LANDMARKS]:
+        f1.write(str(l) + "r ")
+    f1.write("\n")
+
+    # write rest of topology
     for e in G.edges():
 
         f1.write(str(e[0]) + "r " + str(e[1]) +  "r ")
@@ -189,6 +232,8 @@ if args.num_nodes <= 5 and args.graph_type == 'simple_topologies':
     else:
         G = five_node_graph
 elif args.graph_type in ['small_world', 'scale_free', 'tree', 'random']:
+    if "sparse" in args.topo_filename:
+        args.graph_type = args.graph_type + "_sparse"
     G = generate_graph(args.num_nodes, args.graph_type)
 elif args.graph_type == 'hotnets_topo':
     G = hotnets_topo_graph

@@ -255,7 +255,6 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         demand_dict = dict()
         demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
             for key in set(demand_dict_circ) | set(demand_dict_dag) } 
-        print demand_dict
         for i, j in demand_dict.keys():
     	    start_nodes.append(end_host_map[i])
     	    end_nodes.append(end_host_map[j])
@@ -278,15 +277,20 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
 
         return
 
-    #demand_dict[0, 1] = MEAN_RATE
-    #demand_dict[1, 0] = 5 * MEAN_RATE
+    if "two_node_imbalance" in filename:
+        demand_dict[0, 1] = MEAN_RATE
+        demand_dict[1, 0] = 5 * MEAN_RATE
+        print demand_dict
+    elif "two_node_capacity" in filename:
+        demand_dict[0, 1] = 2 * MEAN_RATE
+        demand_dict[1, 0] = 5 * MEAN_RATE
+        print demand_dict
 
     for i, j in demand_dict.keys():
     	start_nodes.append(end_host_map[i])
     	end_nodes.append(end_host_map[j])
     	amt_relative.append(demand_dict[i, j])	
     amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
-    print start_nodes, end_nodes, amt_absolute
 
     print "generated workload" 
 
@@ -316,8 +320,15 @@ def parse_topo(topo_filename):
     router_graph = nx.Graph()
     end_host_map = dict()
 
+    line_num = 0
     with open(topo_filename) as topo_file:
         for line in topo_file:
+            line_num += 1
+
+            # landmark line
+            if line_num == 1:
+                continue
+
             if line == '\n':
                 continue
             n1 = parse_node(line.split()[0])

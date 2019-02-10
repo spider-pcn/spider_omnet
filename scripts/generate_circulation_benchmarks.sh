@@ -1,28 +1,29 @@
 #!/bin/bash
 PATH_NAME="../benchmarks/circulations/"
 
-num_nodes=("2" "3" "4" "5" "10" "0" "0" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
-    "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30")
+num_nodes=("2" "2" "3" "4" "5" "10" "0" "0" "10" "20" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
+    "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
 
 balance=100
 
-prefix=("two_node" "three_node" "four_node" "five_node" \
+prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
     "hotnets" "lnd_dec4_2018" "lnd_dec28_2018" \
-    "sw_40_routers" "sw_60_routers" "sw_80_routers"  \
+    "sw_10_routers" "sw_20_routers" "sw_40_routers" "sw_60_routers" "sw_80_routers"  \
     "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
     "sw_800_routers" "sw_1000_routers"\
     "sf_40_routers" "sf_60_routers" "sf_80_routers"  \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
-    "random_30_routers")
+    "random_30_routers" "sw_sparse_40_routers")
 
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_NAME}
 
-# generate the files
-#for (( i=0; i<${arraylength}; i++ ));
-array=( 0 1 2 3) # 7 16 )
+# TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
+# adjust experiment time as needed
+#array=( 0 1 4 5 8 19 32)
+array=( 4 )
 for i in "${array[@]}"
 do 
     # generate the graph first to ned file
@@ -31,6 +32,7 @@ do
     topofile="${PATH_NAME}${prefix[i]}_topo.txt"
     workload="${PATH_NAME}$workloadname"
     inifile="${PATH_NAME}${workloadname}_default.ini"
+    payment_graph_topo="custom"
 
     if [ ${prefix[i]:0:2} == "sw" ]; then
         graph_type="small_world"
@@ -47,6 +49,16 @@ do
     else
         graph_type="simple_topologies"
     fi
+    
+    if [ ${prefix[i]:0:3} == "two" ]; then
+        delay="120"
+    else
+        delay="30"
+    fi
+
+    if [ ${prefix[i]:0:4} == "five" ]; then
+        payment_graph_topo="hardcoded_circ"
+    fi
 
     echo $network
     echo $topofile
@@ -59,17 +71,17 @@ do
             --topo-filename $topofile\
             --num-nodes ${num_nodes[i]}\
             --balance-per-channel $balance\
-            --separate-end-hosts\
-            --delay-per-channel 1\
+            --separate-end-hosts \
+            --delay-per-channel $delay\
             #--randomize-start-bal
 
 
     # create transactions corresponding to this experiment run
     $PYTHON create_workload.py $workload poisson\
-            --graph-topo custom\
+            --graph-topo $payment_graph_topo \
             --payment-graph-dag-percentage 0\
             --topo-filename $topofile\
-            --experiment-time 1000\
+            --experiment-time 8000 \
             --balance-per-channel $balance\
             --generate-json-also\
             --timeout-value 5

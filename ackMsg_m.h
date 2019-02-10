@@ -29,6 +29,7 @@
  *     int pathIndex;
  *     double timeSent;
  *     bool isSuccess; //status, true for success, false for failure
+ *     int failedHopNum;
  *     string secret = "";
  *     double amount;
  *     bool hasTimeOut;
@@ -44,6 +45,7 @@ class ackMsg : public ::omnetpp::cPacket
     int pathIndex;
     double timeSent;
     bool isSuccess;
+    int failedHopNum;
     ::omnetpp::opp_string secret;
     double amount;
     bool hasTimeOut;
@@ -77,6 +79,8 @@ class ackMsg : public ::omnetpp::cPacket
     virtual void setTimeSent(double timeSent);
     virtual bool getIsSuccess() const;
     virtual void setIsSuccess(bool isSuccess);
+    virtual int getFailedHopNum() const;
+    virtual void setFailedHopNum(int failedHopNum);
     virtual const char * getSecret() const;
     virtual void setSecret(const char * secret);
     virtual double getAmount() const;

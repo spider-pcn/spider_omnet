@@ -185,6 +185,7 @@ probeMsg::probeMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
     this->sender = 0;
     this->receiver = 0;
     this->isReversed = false;
+    this->transactionId = 0;
 }
 
 probeMsg::probeMsg(const probeMsg& other) : ::omnetpp::cPacket(other)
@@ -212,6 +213,7 @@ void probeMsg::copy(const probeMsg& other)
     this->isReversed = other.isReversed;
     this->pathBalances = other.pathBalances;
     this->path = other.path;
+    this->transactionId = other.transactionId;
 }
 
 void probeMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -223,6 +225,7 @@ void probeMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->isReversed);
     doParsimPacking(b,this->pathBalances);
     doParsimPacking(b,this->path);
+    doParsimPacking(b,this->transactionId);
 }
 
 void probeMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -234,6 +237,7 @@ void probeMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->isReversed);
     doParsimUnpacking(b,this->pathBalances);
     doParsimUnpacking(b,this->path);
+    doParsimUnpacking(b,this->transactionId);
 }
 
 int probeMsg::getPathIndex() const
@@ -294,6 +298,16 @@ IntVector& probeMsg::getPath()
 void probeMsg::setPath(const IntVector& path)
 {
     this->path = path;
+}
+
+int probeMsg::getTransactionId() const
+{
+    return this->transactionId;
+}
+
+void probeMsg::setTransactionId(int transactionId)
+{
+    this->transactionId = transactionId;
 }
 
 class probeMsgDescriptor : public omnetpp::cClassDescriptor
@@ -361,7 +375,7 @@ const char *probeMsgDescriptor::getProperty(const char *propertyname) const
 int probeMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 6+basedesc->getFieldCount() : 6;
+    return basedesc ? 7+basedesc->getFieldCount() : 7;
 }
 
 unsigned int probeMsgDescriptor::getFieldTypeFlags(int field) const
@@ -379,8 +393,9 @@ unsigned int probeMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISCOMPOUND,
         FD_ISCOMPOUND,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<6) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<7) ? fieldTypeFlags[field] : 0;
 }
 
 const char *probeMsgDescriptor::getFieldName(int field) const
@@ -398,8 +413,9 @@ const char *probeMsgDescriptor::getFieldName(int field) const
         "isReversed",
         "pathBalances",
         "path",
+        "transactionId",
     };
-    return (field>=0 && field<6) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<7) ? fieldNames[field] : nullptr;
 }
 
 int probeMsgDescriptor::findField(const char *fieldName) const
@@ -412,6 +428,7 @@ int probeMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='i' && strcmp(fieldName, "isReversed")==0) return base+3;
     if (fieldName[0]=='p' && strcmp(fieldName, "pathBalances")==0) return base+4;
     if (fieldName[0]=='p' && strcmp(fieldName, "path")==0) return base+5;
+    if (fieldName[0]=='t' && strcmp(fieldName, "transactionId")==0) return base+6;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -430,8 +447,9 @@ const char *probeMsgDescriptor::getFieldTypeString(int field) const
         "bool",
         "DoubleVector",
         "IntVector",
+        "int",
     };
-    return (field>=0 && field<6) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<7) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **probeMsgDescriptor::getFieldPropertyNames(int field) const
@@ -504,6 +522,7 @@ std::string probeMsgDescriptor::getFieldValueAsString(void *object, int field, i
         case 3: return bool2string(pp->getIsReversed());
         case 4: {std::stringstream out; out << pp->getPathBalances(); return out.str();}
         case 5: {std::stringstream out; out << pp->getPath(); return out.str();}
+        case 6: return long2string(pp->getTransactionId());
         default: return "";
     }
 }
@@ -522,6 +541,7 @@ bool probeMsgDescriptor::setFieldValueAsString(void *object, int field, int i, c
         case 1: pp->setSender(string2long(value)); return true;
         case 2: pp->setReceiver(string2long(value)); return true;
         case 3: pp->setIsReversed(string2bool(value)); return true;
+        case 6: pp->setTransactionId(string2long(value)); return true;
         default: return false;
     }
 }
