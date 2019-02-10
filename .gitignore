@@ -7,8 +7,8 @@ spiderNet
 *.vec
 *.sca
 *.vci
-<<<<<<< HEAD
 *.pyc
+<<<<<<< HEAD
 =======
 out
 >>>>>>> water-filling-timeouts
