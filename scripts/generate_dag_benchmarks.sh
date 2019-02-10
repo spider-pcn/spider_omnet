@@ -17,7 +17,7 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
     "random_30_routers" "sw_sparse_40_routers")
 
-dag_percent=("1" "5" "25")
+dag_percent=("0" "5" "25")
 
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
@@ -87,7 +87,7 @@ do
                 --experiment-time 1000\
                 --balance-per-channel $balance\
                 --generate-json-also\
-                --timeout_value 5
+                --timeout-value 5
 
         # create the ini file
         $PYTHON create_ini_file.py \
