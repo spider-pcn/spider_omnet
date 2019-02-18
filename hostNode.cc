@@ -22,6 +22,7 @@ bool _loggingEnabled;
 bool _signalsEnabled;
 bool _landmarkRoutingEnabled;
 vector<tuple<int,int>> _landmarksWithConnectivityList = {};
+double _tokenBucketCapacity = 1.0;
 
 bool _reschedulingEnabled;
 
@@ -669,7 +670,7 @@ void hostNode::initialize()
       _tUpdate = par("updateQueryTime");
       _tQuery = par("updateQueryTime");
       _alpha = par("alpha");
-      _gamma = 0.2; // ewma factor to compute per path rates
+      _gamma = 1; // ewma factor to compute per path rates
       _zeta = par("zeta"); // ewma for d_ij every source dest demand
       _minPriceRate = par("minRate");
       _rho = _rhoLambda = _rhoMu = par("rhoValue");
@@ -1238,6 +1239,7 @@ void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
 
           // increment number of units sent to a particular destination on a particular path
           nodeToShortestPathsMap[destNode][pathIndex].nValue += 1;
+          if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
 
           // increment amount in inflght and other info on last transaction on this path
           nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight =
@@ -1333,7 +1335,7 @@ void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
       int destNode = ttmsg->getRoute()[0];
       int routeIndex = pqMsg->getPathIndex();
 
-      double oldRate = nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans;
+      double oldRate = nodeToShortestPathsMap[destNode][routeIndex].rateSentOnPath;
 
       // Nesterov's gradient descent equation
       // and other speeding up mechanisms
@@ -1343,15 +1345,14 @@ void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
           double yNew = oldRate + _alpha*(1 - zValue);
           nodeToShortestPathsMap[destNode][routeIndex].yRateToSendTrans = yNew;
           preProjectionRate = yNew + _rho*(yNew - yPrev);
-      } else if (_secondOrderOptimization) {
-          preProjectionRate = oldRate + _alpha*(1 - zValue) + 
-              _rho*(nodeToShortestPathsMap[destNode][routeIndex].priceLastSeen - zValue);
       } else {
           preProjectionRate  = oldRate + _alpha*(1-zValue);
       }
       nodeToShortestPathsMap[destNode][routeIndex].priceLastSeen = zValue;
+      nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans = 
+          maxDouble(preProjectionRate, _minPriceRate);
 
-      // compute the projection of this new rate along with old rates
+      /* compute the projection of this new rate along with old rates
       vector<PathRateTuple> pathRateTuples;
       for (auto p : nodeToShortestPathsMap[destNode]) {
           int pathIndex = p.first;
@@ -1365,8 +1366,8 @@ void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
           PathRateTuple newTuple = make_tuple(pathIndex, rate);
           pathRateTuples.push_back(newTuple);
       }
-      vector<PathRateTuple> projectedRates = 
-          computeProjection(pathRateTuples, nodeToDestInfo[destNode].demand);
+      vector<PathRateTuple> projectedRates = pathRateTuples;
+          //computeProjection(pathRateTuples, nodeToDestInfo[destNode].demand);
 
       // reassign all path's rates to the projected rates and make sure it is atleast minPriceRate for every path
       for (auto p : projectedRates) {
@@ -1378,7 +1379,7 @@ void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
           }
           else
               nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans = maxDouble(newRate, _minPriceRate);
-      }
+      }*/
             
       //delete both messages
       ttmsg->decapsulate();
@@ -1399,6 +1400,8 @@ void hostNode::updateTimers(int destNode, int pathIndex, double newRate) {
       simtime_t lastUpdateTime = nodeToShortestPathsMap[destNode][pathIndex].lastRateUpdateTime; 
       simtime_t timeForThisRate = min(simTime() - lastUpdateTime, simTime() - lastSendTime);
       nodeToShortestPathsMap[destNode][pathIndex].amtAllowedToSend += oldRate * timeForThisRate.dbl();
+      nodeToShortestPathsMap[destNode][pathIndex].amtAllowedToSend = min(_tokenBucketCapacity,
+              nodeToShortestPathsMap[destNode][pathIndex].amtAllowedToSend);
 
       // update the rate
       nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans = newRate;
@@ -1461,6 +1464,7 @@ void hostNode::handlePriceUpdateMessage(routerMsg* ttmsg){
         double newMuLocalGrad = xLocal - xRemote;
         newMuLocal = oldMuLocal + _kappa*newMuLocalGrad + _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
         newMuRemote = oldMuRemote - _kappa*newMuLocalGrad - _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
+        nodeToPaymentChannel[sender].lastMuLocalGrad = newMuLocalGrad;
     } 
     else {
         newLambda = oldLambda +  _eta*(xLocal + xRemote - (cValue/_delta));
@@ -1531,16 +1535,16 @@ void hostNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
       sendUpdateMessage(priceUpdateMsg);
    }
 
-   // also update the xPath for a given destination and path to use for your next rate computation
+   // also update the rateSent for a given destination and path to use for your next rate computation
    for ( auto it = nodeToShortestPathsMap.begin(); it != nodeToShortestPathsMap.end(); it++ ) {
        int destNode = it->first;
        for (auto p : nodeToShortestPathsMap[destNode]) {
           int pathIndex = p.first;
           double latestRate = nodeToShortestPathsMap[destNode][pathIndex].nValue / _tUpdate;
-          double oldRate = nodeToShortestPathsMap[destNode][pathIndex].xPath;
-
           nodeToShortestPathsMap[destNode][pathIndex].nValue = 0; 
-          nodeToShortestPathsMap[destNode][pathIndex].xPath = (1 - _gamma) * oldRate + _gamma * latestRate; 
+
+          double oldRate = nodeToShortestPathsMap[destNode][pathIndex].rateSentOnPath; 
+          nodeToShortestPathsMap[destNode][pathIndex].rateSentOnPath = (1 - _gamma) *oldRate + _gamma * latestRate; 
        }
 
 
@@ -2617,13 +2621,13 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
          //for each of the k paths for that destination
          for (auto p: nodeToShortestPathsMap[destNode]){
             int pathIndex = p.first;
+            PathInfo second = nodeToShortestPathsMap[destNode][pathIndex];
 
-            if (p.second.rateToSendTrans > 0 && simTime() > p.second.timeToNextSend){
-
+            if (second.rateToSendTrans > 0 && simTime() > second.timeToNextSend){
                //set transaction path and update inflight on path
-               ttmsg->setRoute(p.second.path);
+               ttmsg->setRoute(second.path);
 
-               int nextNode = p.second.path[1];
+               int nextNode = second.path[1];
                 //transaction being sent out, need to increment nValue
                nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + 1;
 
@@ -2641,13 +2645,13 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
                forwardTransactionMessage(ttmsg);
 
                // update number attempted to this destination and on this path
-              nodeToShortestPathsMap[destNode][p.first].statRateAttempted =
-                nodeToShortestPathsMap[destNode][p.first].statRateAttempted + 1;
+              nodeToShortestPathsMap[destNode][pathIndex].statRateAttempted =
+                nodeToShortestPathsMap[destNode][pathIndex].statRateAttempted + 1;
               statRateAttempted[destNode] += 1;
                
                //update "amount of transaction in flight" and other state regarding last transaction to this destination
-               nodeToShortestPathsMap[destNode][p.first].sumOfTransUnitsInFlight =
-                  nodeToShortestPathsMap[destNode][p.first].sumOfTransUnitsInFlight + transMsg->getAmount();
+               nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight =
+                  nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight + transMsg->getAmount();
                nodeToShortestPathsMap[destNode][pathIndex].lastTransSize = transMsg->getAmount();
                nodeToShortestPathsMap[destNode][pathIndex].lastSendTime = simTime();
                nodeToShortestPathsMap[destNode][pathIndex].amtAllowedToSend = 
@@ -2656,9 +2660,11 @@ void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
 
 
                //update the "time when the next transaction can be sent
-               double rateToUse = max(p.second.rateToSendTrans, _epsilon);
+               double rateToUse = max(second.rateToSendTrans, _epsilon);
                simtime_t newTimeToNextSend =  simTime() + max(transMsg->getAmount()/rateToUse, _epsilon);
-               nodeToShortestPathsMap[destNode][p.first].timeToNextSend = newTimeToNextSend;
+               nodeToShortestPathsMap[destNode][pathIndex].timeToNextSend = newTimeToNextSend;
+                
+               if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
 
                return;
             }

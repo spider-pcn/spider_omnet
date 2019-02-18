@@ -77,7 +77,7 @@ do
 
 
     # create transactions corresponding to this experiment run
-    $PYTHON create_workload.py $workload poisson\
+    $PYTHON create_workload.py $workload poisson \
             --graph-topo $payment_graph_topo \
             --payment-graph-dag-percentage 0\
             --topo-filename $topofile\

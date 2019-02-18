@@ -60,7 +60,7 @@ MEAN_RATE = 10
 CIRCULATION_STD_DEV = 2
 LARGE_BALANCE = 1000000000
 
-EC2_INSTANCE_ADDRESS="ec2-52-87-250-35.compute-1.amazonaws.com"
+EC2_INSTANCE_ADDRESS="ec2-18-213-2-219.compute-1.amazonaws.com"
 PORT_NUMBER=8000
 
 # json parameters for lnd testbed

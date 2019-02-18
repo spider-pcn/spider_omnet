@@ -293,6 +293,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
     print "generated workload" 
+    print demand_dict
 
     if generate_json_also:
         generate_json_files(filename + '.json', whole_graph, inside_graph, start_nodes, end_nodes, amt_absolute)

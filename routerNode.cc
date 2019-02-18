@@ -431,6 +431,7 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
         double newMuLocalGrad = xLocal - xRemote;
         newMuLocal = oldMuLocal + _kappa*newMuLocalGrad + _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
         newMuRemote = oldMuRemote - _kappa*newMuLocalGrad - _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
+        nodeToPaymentChannel[sender].lastMuLocalGrad = newMuLocalGrad;
     } 
     else {
         newLambda = oldLambda +  _eta*(xLocal + xRemote - (cValue/_delta));

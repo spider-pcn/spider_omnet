@@ -211,11 +211,13 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                     time = [t[0] for t in path_signals]
                     values = [t[1] for t in path_signals]
                     label_name = str(path)
-                    plt.plot(time, values, label=label_name)
+                    plt.plot(time, values, \
+                            label=label_name + "(" + str(np.average(values[80:])) + ")")
                 plt.title(signal_type + " " + str(router) + "->" + str(channel))
                 plt.xlabel("Time")
                 plt.ylabel(signal_type)
                 plt.legend()
+                plt.grid()
                 pdf.savefig()  # saves the current figure into a pdf page
                 plt.close()
 
@@ -224,7 +226,8 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                 time = [t[0] for t in info]
                 values = [t[1] for t in info]
                 label_name = str(router) + "->" + str(channel)
-                plt.plot(time, values, label=label_name)
+                plt.plot(time, values, label=label_name + \
+                        "(" + str(np.average(values[80:])) + ")")
                 if compute_router_wealth:
                     channel_bal_timeseries.append((time, values))
                 i += 1
@@ -245,6 +248,7 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
             plt.xlabel("Time")
             plt.ylabel(signal_type)
             plt.legend()
+            plt.grid()
             pdf.savefig()  # saves the current figure into a pdf page
             plt.close()
 
@@ -256,6 +260,7 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
         plt.xlabel("Time")
         plt.ylabel("Router Wealth")
         plt.legend()
+        plt.grid()
         pdf.savefig()  # saves the current figure into a pdf page
         plt.close()
 

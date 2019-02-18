@@ -17,9 +17,9 @@ loggingEnabled=false
 routing_scheme_list=("priceScheme") #smoothWaterfilling" "waterfilling")
 
 eta=0.02
-alpha=0.05
+alpha=0.1
 kappa=0.02
-updateQueryTime=0.8
+updateQueryTime=1.5
 minPriceRate=0.25
 zeta=0.01
 rho=0.05
