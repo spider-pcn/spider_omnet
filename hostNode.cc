@@ -11,49 +11,22 @@ double _maxTravelTime;
 map<int, vector<pair<int,int>>> _channels; //adjacency list format of graph edges of network
 map<tuple<int,int>,double> _balances;
 //map of balances for each edge; key = <int,int> is <source, destination>
+
 double _statRate;
 double _clearRate;
 int _kValue;
 double _simulationLength;
+
 bool _waterfillingEnabled;
 bool _smoothWaterfillingEnabled;
 bool _timeoutEnabled;
 bool _loggingEnabled;
 bool _signalsEnabled;
+bool _priceSchemeEnabled;
 bool _landmarkRoutingEnabled;
 vector<tuple<int,int>> _landmarksWithConnectivityList = {};
-double _tokenBucketCapacity = 1.0;
 
-bool _reschedulingEnabled;
 
-bool _nesterov;
-bool _secondOrderOptimization;
-
-// set of landmarks for landmark routing
-vector<int> _landmarks;
-
-// set to 1 to report exact instantaneous balances
-double _ewmaFactor;
-
-// parameters for smooth waterfilling
-double _Tau;
-double _Normalizer;
-
-//global parameters for price scheme
-bool _priceSchemeEnabled;
-double _eta; //for price computation
-double _kappa; //for price computation
-double _tUpdate; //for triggering price updates at routers
-double _tQuery; //for triggering price query probes at hosts
-double _alpha;
-double _gamma;
-double _zeta;
-double _delta;
-double _avgDelay;
-double _minPriceRate;
-double _rhoLambda;
-double _rhoMu;
-double _rho;
 
 double _epsilon; // for all precision errors
 
@@ -70,957 +43,63 @@ int hostNode::myIndex(){
    return getIndex();
 }
 
-void hostNode::deleteMessagesInQueues(){
-   for (auto iter = nodeToPaymentChannel.begin(); iter!=nodeToPaymentChannel.end(); iter++){
-      int key = iter->first;
-      for (auto temp = (nodeToPaymentChannel[key].queuedTransUnits).begin();
-            temp!= (nodeToPaymentChannel[key].queuedTransUnits).end(); ){
-         routerMsg * rMsg = get<2>(*temp);
-         auto tMsg = rMsg->getEncapsulatedPacket();
-         rMsg->decapsulate();
-         delete tMsg;
-         delete rMsg;
-         temp = (nodeToPaymentChannel[key].queuedTransUnits).erase(temp);
-      }
-   }
-
-   // remove any waiting transactions too
-    for (auto iter = nodeToDestInfo.begin(); iter!=nodeToDestInfo.end(); iter++){
-      int dest = iter->first;
-      while ((nodeToDestInfo[dest].transWaitingToBeSent).size() > 0) {
-         routerMsg * rMsg = nodeToDestInfo[dest].transWaitingToBeSent.front();
-         auto tMsg = rMsg->getEncapsulatedPacket();
-         rMsg->decapsulate();
-         delete tMsg;
-         delete rMsg;
-         nodeToDestInfo[dest].transWaitingToBeSent.pop_front();
-      }
-   }
 
 
-   //check queue sizes after deletion:
-   /*
-   cout << "myIndex: " << myIndex();
-   for (auto iter = nodeToPaymentChannel.begin(); iter!=nodeToPaymentChannel.end(); iter++){
-        int key = iter->first;
-        cout << " (" << key << ": size " << nodeToPaymentChannel[key].queuedTransUnits.size() << ")" ;
-     }
-   cout << endl;
-    */
-}
-
-
-routerMsg * hostNode::generatePriceQueryMessage(vector<int> path, int pathIdx){
-   int destNode = path[path.size()-1];
-   char msgname[MSGSIZE];
-   sprintf(msgname, "tic-%d-to-%d priceQueryMsg [idx %d]", myIndex(), destNode, pathIdx);
-   priceQueryMsg *pqMsg = new priceQueryMsg(msgname);
-   pqMsg->setPathIndex(pathIdx);
-   pqMsg->setIsReversed(false);
-   pqMsg->setZValue(0);
-
-   sprintf(msgname, "tic-%d-to-%d router-priceQueryMsg [idx %d]", myIndex(), destNode, pathIdx);
-   routerMsg *rMsg = new routerMsg(msgname);
-   rMsg->setRoute(path);
-
-   rMsg->setHopCount(0);
-   rMsg->setMessageType(PRICE_QUERY_MSG);
-
-   rMsg->encapsulate(pqMsg);
-   return rMsg;
-}
-
-routerMsg * hostNode::generateProbeMessage(int destNode, int pathIdx, vector<int> path){
-   char msgname[MSGSIZE];
-   sprintf(msgname, "tic-%d-to-%d probeMsg [idx %d]", myIndex(), destNode, pathIdx);
-   probeMsg *pMsg = new probeMsg(msgname);
-   pMsg->setSender(myIndex());
-   pMsg->setPathIndex(pathIdx);
-   pMsg->setReceiver(destNode);
-   pMsg->setIsReversed(false);
-   vector<double> pathBalances;
-   pMsg->setPathBalances(pathBalances);
-   pMsg->setPath(path);
-
-   sprintf(msgname, "tic-%d-to-%d router-probeMsg [idx %d]", myIndex(), destNode, pathIdx);
-   routerMsg *rMsg = new routerMsg(msgname);
-   rMsg->setRoute(path);
-
-   rMsg->setHopCount(0);
-   rMsg->setMessageType(PROBE_MSG);
-
-   rMsg->encapsulate(pMsg);
-   return rMsg;
-}
-
+/* print channel information */
 bool hostNode:: printNodeToPaymentChannel(){
-   bool invalidKey = false;
-   printf("print of channels\n" );
-   for (auto i : nodeToPaymentChannel){
-      printf("(key: %d )",i.first);
-      if (i.first<0) invalidKey = true;
-   }
-   cout<<endl;
-   return !invalidKey;
+    bool invalidKey = false;
+    printf("print of channels\n" );
+    for (auto i : nodeToPaymentChannel){
+       printf("(key: %d )",i.first);
+       if (i.first<0) invalidKey = true;
+    }
+    cout<<endl;
+    return !invalidKey;
 }
 
-void hostNode::forwardProbeMessage(routerMsg *msg){
-   // Increment hop count.
-   msg->setHopCount(msg->getHopCount()+1);
-   //use hopCount to find next destination
-   int nextDest = msg->getRoute()[msg->getHopCount()];
-   probeMsg *pMsg = check_and_cast<probeMsg *>(msg->getEncapsulatedPacket());
-
-   if (pMsg->getIsReversed() == false){
-      vector<double> *pathBalances = & ( pMsg->getPathBalances());
-      (*pathBalances).push_back(nodeToPaymentChannel[nextDest].balanceEWMA);
-   }
-   if (_loggingEnabled) cout << "forwardProbeMsg send:" << simTime() << endl;
-   send(msg, nodeToPaymentChannel[nextDest].gate);
-}
-
+/* print any vector */
 void printVectorDouble(vector<double> v){
-   for (auto temp : v){
-      cout << temp << ", ";
-   }
-   cout << endl;
-}
-
-
-void hostNode::handleProbeMessageLandmarkRouting(routerMsg* ttmsg){
-   probeMsg *pMsg = check_and_cast<probeMsg *>(ttmsg->getEncapsulatedPacket());
-   if (simTime()> _simulationLength ){
-      ttmsg->decapsulate();
-      delete pMsg;
-      delete ttmsg;
-      return;
-   }
-
-   bool isReversed = pMsg->getIsReversed();
-   int nextDest = ttmsg->getRoute()[ttmsg->getHopCount()+1];
-   if (isReversed == true){ //store times into private map, delete message
-
-
-
-      int pathIdx = pMsg->getPathIndex();
-      int destNode = pMsg->getReceiver();
-      int transactionId = pMsg->getTransactionId();
-      transactionIdToProbeInfoMap[transactionId].probeReturnTimes[pathIdx] = simTime();
-      transactionIdToProbeInfoMap[transactionId].numProbesWaiting = transactionIdToProbeInfoMap[transactionId].numProbesWaiting- 1;
-      double bottleneck = minVectorElemDouble(pMsg->getPathBalances());
-      transactionIdToProbeInfoMap[transactionId].probeBottlenecks[pathIdx] = bottleneck;
-
-      //check to see if all probes are back
-      //cout << "transactionId: " << pMsg->getTransactionId();
-      //cout << "numProbesWaiting: " <<  transactionIdToProbeInfoMap[transactionId].numProbesWaiting << endl;
-
-      if (transactionIdToProbeInfoMap[transactionId].numProbesWaiting == 0){ //all back
-          //forwardTransactionMessage(transactionIdToProbeInfoMap[transactionId].messageToSend);
-          //set path for transaction using vibhaa's function
-          int numPathsPossible = 0;
-          for (auto bottleneck: transactionIdToProbeInfoMap[transactionId].probeBottlenecks){
-              if (bottleneck > 0){
-                  numPathsPossible++;
-              }
-          }
-
-           //  virtual int sampleFromDistribution(vector<double> probabilities);
-
-
-          vector<double> probabilities;
-          //construct thing to sample from
-          for (auto bottleneck: transactionIdToProbeInfoMap[transactionId].probeBottlenecks){
-               if (bottleneck > 0){
-                   probabilities.push_back(1/numPathsPossible);
-
-                }
-               else{
-                   probabilities.push_back(0);
-               }
-           }
-
-          int indexToUse = sampleFromDistribution(probabilities); //TODO: check that this returns the INDEX (so starts at 0)
-          transactionMsg *transMsg = check_and_cast<transactionMsg *>(transactionIdToProbeInfoMap[transactionId].messageToSend->getEncapsulatedPacket());
-          //cout << "sent transaction on path: ";
-          //printVector(nodeToShortestPathsMap[transMsg->getReceiver()][indexToUse].path);
-
-          transactionIdToProbeInfoMap[transactionId].messageToSend->setRoute(nodeToShortestPathsMap[transMsg->getReceiver()][indexToUse].path);
-          handleTransactionMessage(transactionIdToProbeInfoMap[transactionId].messageToSend);
-
-          transactionIdToProbeInfoMap.erase(transactionId);
-
-
-      }
-      ttmsg->decapsulate();
-           delete pMsg;
-           delete ttmsg;
-
-   }
-   else{ //reverse and send message again
-      pMsg->setIsReversed(true);
-      ttmsg->setHopCount(0);
-      vector<int> route = ttmsg->getRoute();
-      reverse(route.begin(), route.end());
-      ttmsg->setRoute(route);
-      forwardProbeMessage(ttmsg);
-   }
-}
-
-
-
-void hostNode::handleProbeMessage(routerMsg* ttmsg){
-   probeMsg *pMsg = check_and_cast<probeMsg *>(ttmsg->getEncapsulatedPacket());
-   if (simTime()> _simulationLength ){
-      ttmsg->decapsulate();
-      delete pMsg;
-      delete ttmsg;
-      return;
-   }
-
-   bool isReversed = pMsg->getIsReversed();
-   int nextDest = ttmsg->getRoute()[ttmsg->getHopCount()+1];
-   if (isReversed == true){ //store times into private map, delete message
-
-
-      
-      int pathIdx = pMsg->getPathIndex();
-      int destNode = pMsg->getReceiver();
-      nodeToShortestPathsMap[destNode][pathIdx].isProbeOutstanding = false;
-      
-      PathInfo * p = &(nodeToShortestPathsMap[destNode][pathIdx]);
-      assert(p->path == pMsg->getPath());
-      p->lastUpdated = simTime();
-      vector<double> pathBalances = pMsg->getPathBalances();
-      double bottleneck = minVectorElemDouble(pathBalances);
-      p->bottleneck = bottleneck;
-      p->pathBalances = pathBalances;
-      
-      if (_signalsEnabled) emit(nodeToShortestPathsMap[destNode][pathIdx].probeBackPerDestPerPathSignal,pathIdx);
-
-      if (destNodeToNumTransPending[destNode] > 0){
-         //reset the probe message
-         vector<int> route = ttmsg->getRoute();
-         reverse(route.begin(), route.end());
-         ttmsg->setRoute(route);
-         ttmsg->setHopCount(0);
-         pMsg->setIsReversed(false);
-         vector<double> tempPathBal = {};
-         pMsg->setPathBalances(tempPathBal);
-         nodeToShortestPathsMap[destNode][pathIdx].isProbeOutstanding = true;
-         forwardProbeMessage(ttmsg);
-      }
-      else{
-         ttmsg->decapsulate();
-         delete pMsg;
-         delete ttmsg;
-
-      }
-   }
-   else{ //reverse and send message again
-      pMsg->setIsReversed(true);
-      ttmsg->setHopCount(0);
-      vector<int> route = ttmsg->getRoute();
-      reverse(route.begin(), route.end());
-      ttmsg->setRoute(route);
-      forwardProbeMessage(ttmsg);
-   }
-}
-
-void hostNode:: restartProbes(int destNode){
-
-   for (auto p: nodeToShortestPathsMap[destNode] ){
-      PathInfo pathInformation = p.second;
-      //if (pathInformation.isProbeOutstanding == false) {
-        nodeToShortestPathsMap[destNode][p.first].isProbeOutstanding = true;
-        routerMsg * msg = generateProbeMessage(destNode, p.first, p.second.path);
-        forwardProbeMessage(msg);
-      //}
-   }
-
-}
-
-// check if all the provided rates are non-negative and also verify
-// that their sum is less than the demand, return false otherwise
-bool hostNode::ratesFeasible(vector<PathRateTuple> actualRates, double demand) {
-    double sumRates = 0;
-    for (auto a : actualRates) {
-        double rate = get<1>(a);
-        if (rate < (0 - _epsilon))
-            return false;
-        sumRates += rate;
+    for (auto temp : v){
+        cout << temp << ", ";
     }
-    return (sumRates <= (demand + _epsilon));
-}
-
-// computes the projection of the given recommended rates onto the demand d_ij per source
-vector<PathRateTuple> hostNode::computeProjection(vector<PathRateTuple> recommendedRates, double demand) {
-    auto compareRates = [](PathRateTuple rate1, PathRateTuple rate2) {
-            return (get<1>(rate1) < get<1>(rate2));
-    };
-
-    auto nuFeasible = [](double nu, double nuLeft, double nuRight) {
-            return (nu >= -1 * _epsilon && nu >= (nuLeft - _epsilon)  && nu <= (nuRight + _epsilon));
-    };
-
-
-    sort(recommendedRates.begin(), recommendedRates.end(), compareRates);
-    double nu = 0.0;
-    vector<PathRateTuple> actualRates;
-
-    // initialize all rates to zero
-    vector<PathRateTuple> zeroRates;
-    for (int i = 0; i < recommendedRates.size(); i++) {
-        zeroRates.push_back(make_tuple(i, 0.0));
-    }
-
-    // if everything is negative (aka the largest is negative), just return 0s
-    if (get<1>(recommendedRates[recommendedRates.size() - 1]) < 0 + _epsilon){
-        return zeroRates;
-    }
-
-    // consider nu  = 0 and see if everything checks out
-    actualRates = zeroRates;
-    int firstPositiveIndex = -1;
-    int i = 0;
-    for (auto p : recommendedRates) {
-        double rate = get<1>(p);
-        int pathIndex = get<0>(p);
-        if (rate > 0) {
-            if (firstPositiveIndex == -1) 
-                firstPositiveIndex = i;
-            actualRates[pathIndex] = make_tuple(pathIndex, rate);
-        }
-        i++;
-    }
-    if (ratesFeasible(actualRates, demand))
-        return actualRates;
-
-    // atleast something should be positive if you got this far
-    assert(firstPositiveIndex >= 0);
-
-
-    // now go through all intervals between adjacent 2* recommended rates and see if any of them
-    // can give you a valid assignment of actual rates and nu
-    i = firstPositiveIndex; 
-    double nuLeft = 0;
-    double nuRight = 0;
-    while (i < recommendedRates.size()) {
-        // start over checking with a new nu interval
-        actualRates = zeroRates;
-        nuLeft = nuRight; 
-        nuRight = 2*get<1>(recommendedRates[i]);
-
-        // find sum of all elements that are to the right of nuRight
-        double sumOfRightElements = 0.0;
-        for (int j = i; j < recommendedRates.size(); j++)
-            sumOfRightElements += get<1>(recommendedRates[j]);     
-        nu = (sumOfRightElements - demand) * 2.0/(recommendedRates.size() - i);
-
-        // given this nu, compute the actual rates for those elements to the right of nuRight
-        for (auto p : recommendedRates) {
-            double rate = get<1>(p);
-            int pathIndex = get<0>(p);
-            if (2*rate > nuLeft) {
-                actualRates[pathIndex] = make_tuple(pathIndex, rate - nu/2.0);
-            }
-        }
-
-        // check if these rates are feasible and nu actually falls in the right interval 
-        if (ratesFeasible(actualRates, demand) && nuFeasible(nu, nuLeft, nuRight)) 
-            return actualRates;
-
-        // otherwise move on
-        i++;
-    }
-
-    // should never be reached
-    assert(false);
-    return zeroRates;
+    cout << endl;
 }
 
 
-void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode){ 
-    //maybe less than k routes
-    destNodeToLastMeasurementTime[destNode] = 0.0;
-
-   for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
-      //map<int, map<int, PathInfo>> nodeToShortestPathsMap;
-      //Radhika TODO: PathInfo can be a struct and need not be a class. 
-      PathInfo temp = {};
-      nodeToShortestPathsMap[destNode][pathIdx] = temp;
-      nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
-      nodeToShortestPathsMap[destNode][pathIdx].probability = 1.0 / kShortestPaths.size();
-
-
-      //initialize signals
-      char signalName[64];
-      simsignal_t signal;
-      cProperty *statisticTemplate;
-
-      // bottleneckPerDest signal
-      if (destNode<_numHostNodes){
-         sprintf(signalName, "bottleneckPerDestPerPath_%d(host %d)", pathIdx, destNode);
-      }
-      else{
-         sprintf(signalName, "bottleneckPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "bottleneckPerDestPerPathTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToShortestPathsMap[destNode][pathIdx].bottleneckPerDestPerPathSignal = signal;
-
-      if (destNode<_numHostNodes){
-         sprintf(signalName, "probeBackPerDestPerPath_%d(host %d)", pathIdx, destNode);
-      }
-      else{
-         sprintf(signalName, "probeBackPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "probeBackPerDestPerPathTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToShortestPathsMap[destNode][pathIdx].probeBackPerDestPerPathSignal = signal;
-
-      if (destNode<_numHostNodes){
-         sprintf(signalName, "rateCompletedPerDestPerPath_%d(host %d)", pathIdx, destNode);
-      }
-      else{
-         sprintf(signalName, "rateCompletedPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-      }
-
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "rateCompletedPerDestPerPathTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToShortestPathsMap[destNode][pathIdx].rateCompletedPerDestPerPathSignal = signal;
-
-      // probabilityPerDest signal
-      if (destNode<_numHostNodes){
-         sprintf(signalName, "probabilityPerDestPerPath_%d(host %d)", pathIdx, destNode);
-      }
-      else{
-         sprintf(signalName, "probabilityPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "probabilityPerDestPerPathTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToShortestPathsMap[destNode][pathIdx].probabilityPerDestPerPathSignal = signal;
-
-
-      if (destNode<_numHostNodes){
-         sprintf(signalName, "rateAttemptedPerDestPerPath_%d(host %d)", pathIdx, destNode);
-      }
-      else{
-         sprintf(signalName, "rateAttemptedPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-      }
-
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "rateAttemptedPerDestPerPathTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToShortestPathsMap[destNode][pathIdx].rateAttemptedPerDestPerPathSignal = signal;
-
-      routerMsg * msg = generateProbeMessage(destNode, pathIdx, kShortestPaths[pathIdx]);
-      nodeToShortestPathsMap[destNode][pathIdx].isProbeOutstanding = true;
-      forwardProbeMessage(msg);
-   }
-}
-
-
-
-void hostNode::initializePriceProbes(vector<vector<int>> kShortestPaths, int destNode){ //maybe less than k routes
-   for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
-      PathInfo temp = {};
-      nodeToShortestPathsMap[destNode][pathIdx] = temp;
-      nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
-      routerMsg * triggerTransSendMsg = generateTriggerTransactionSendMessage(kShortestPaths[pathIdx], pathIdx, destNode);
-      nodeToShortestPathsMap[destNode][pathIdx].triggerTransSendMsg = triggerTransSendMsg;
-      nodeToShortestPathsMap[destNode][pathIdx].rateToSendTrans = _minPriceRate;
-      nodeToShortestPathsMap[destNode][pathIdx].yRateToSendTrans = _minPriceRate;
-
-      //initialize signals
-      char signalName[64];
-      simsignal_t signal;
-      cProperty *statisticTemplate;
-
-      //rateCompletedPerDestPerPath signal
-      if (destNode<_numHostNodes){
-         sprintf(signalName, "rateCompletedPerDestPerPath_%d(host %d)", pathIdx, destNode);
-      }
-      else{
-         sprintf(signalName, "rateCompletedPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "rateCompletedPerDestPerPathTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToShortestPathsMap[destNode][pathIdx].rateCompletedPerDestPerPathSignal = signal;
-
-      //rateAttemptedPerDestPerPath signal
-      if (destNode<_numHostNodes){
-         sprintf(signalName, "rateAttemptedPerDestPerPath_%d(host %d)", pathIdx, destNode);
-      }
-      else{
-         sprintf(signalName, "rateAttemptedPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "rateAttemptedPerDestPerPathTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToShortestPathsMap[destNode][pathIdx].rateAttemptedPerDestPerPathSignal = signal;
-
-      //rateToSendTransPerPath signal
-      if (destNode<_numHostNodes){
-         sprintf(signalName, "rateToSendTransPerPath_%d(host %d)", pathIdx, destNode);
-      }
-      else{
-         sprintf(signalName, "rateToSendTransPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "rateToSendTransPerPathTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToShortestPathsMap[destNode][pathIdx].rateToSendTransSignal = signal;
-
-      //timeToNextSendPerPath signal
-      if (destNode<_numHostNodes){
-         sprintf(signalName, "timeToNextSendPerPath_%d(host %d)", pathIdx, destNode);
-      }
-      else{
-         sprintf(signalName, "timeToNextSendPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "timeToNextSendPerPathTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToShortestPathsMap[destNode][pathIdx].timeToNextSendSignal = signal;
-
-      //sumOfTransUnitsInFlightPerPath signal
-      if (destNode<_numHostNodes){
-         sprintf(signalName, "sumOfTransUnitsInFlightPerPath_%d(host %d)", pathIdx, destNode);
-      }
-      else{
-         sprintf(signalName, "sumOfTransUnitsInFlightPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "sumOfTransUnitsInFlightPerPathTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToShortestPathsMap[destNode][pathIdx].sumOfTransUnitsInFlightSignal = signal;
-      
-      //priceLastSeenPerPath signal
-      if (destNode<_numHostNodes){
-         sprintf(signalName, "priceLastSeenPerPath_%d(host %d)", pathIdx, destNode);
-      }
-      else{
-         sprintf(signalName, "priceLastSeenPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "priceLastSeenPerPathTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToShortestPathsMap[destNode][pathIdx].priceLastSeenSignal = signal;
-
-      //isSendTimerSetPerPath signal
-      if (destNode < _numHostNodes){
-         sprintf(signalName, "isSendTimerSetPerPath_%d(host %d)", pathIdx, destNode);
-      }
-      else{
-         sprintf(signalName, "isSendTimerSetPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "isSendTimerSetPerPathTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToShortestPathsMap[destNode][pathIdx].isSendTimerSetSignal = signal;
-
-   }
-}
-
-/* initialize() -
+/* samples a random number (index) of the passed in vector
+ *  based on the actual probabilities passed in
  */
-void hostNode::initialize()
-{
-   string topologyFile_ = par("topologyFile");
-   string workloadFile_ = par("workloadFile");
+int hostNode::sampleFromDistribution(vector<double> probabilities) {
+    vector<double> cumProbabilities { 0 };
 
-   completionTimeSignal = registerSignal("completionTime");
+    double sumProbabilities = accumulate(probabilities.begin(), probabilities.end(), 0.0); 
+    assert(sumProbabilities < 1.0);
+    
+    // compute cumulative probabilities
+    for (int i = 0; i < probabilities.size(); i++) {
+        cumProbabilities.push_back(probabilities[i] + cumProbabilities[i]);
+    }
 
-   successfulDoNotSendTimeOut = {};
-
-   if (getIndex() == 0){  //main initialization for global parameters
-      _simulationLength = par("simulationLength");
-      _statRate = par("statRate");
-      _clearRate = par("timeoutClearRate");
-      _waterfillingEnabled = par("waterfillingEnabled");
-      _smoothWaterfillingEnabled = par("smoothWaterfillingEnabled");
-      _timeoutEnabled = par("timeoutEnabled");
-      _signalsEnabled = par("signalsEnabled");
-      _loggingEnabled = par("loggingEnabled");
-      _priceSchemeEnabled = par("priceSchemeEnabled");
-
-      _hasQueueCapacity = false;
-      _queueCapacity = 0;
-      _reschedulingEnabled = true;
-
-      _nesterov = false;
-      _secondOrderOptimization = true;
-
-      
-      _landmarkRoutingEnabled = false;
-      if (_landmarkRoutingEnabled){
-          _hasQueueCapacity = true;
-          _queueCapacity = 0;
-          _timeoutEnabled = false;
-      }
-
-      // price scheme parameters
-      _eta = par("eta");
-      _kappa = par("kappa");
-      _tUpdate = par("updateQueryTime");
-      _tQuery = par("updateQueryTime");
-      _alpha = par("alpha");
-      _gamma = 1; // ewma factor to compute per path rates
-      _zeta = par("zeta"); // ewma for d_ij every source dest demand
-      _minPriceRate = par("minRate");
-      _rho = _rhoLambda = _rhoMu = par("rhoValue");
-
-      _epsilon = pow(10, -6);
-      cout << "epsilon" << _epsilon << endl;
-      
-      // smooth waterfilling parameters
-      _Tau = par("tau");
-      _Normalizer = par("normalizer"); // TODO: C from discussion with Mohammad)
-
-      _ewmaFactor = 1; // EWMA factor for balance information on probes
-
-      if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled){
-         _kValue = par("numPathChoices");
-      }
-      _maxTravelTime = 0.0;
-     _delta = 0.01; // to avoid divide by zero 
-      setNumNodes(topologyFile_);
-      // add all the TransUnits into global list
-      generateTransUnitList(workloadFile_);
-
-      //create "channels" map - from topology file
-      //create "balances" map - from topology file
-      generateChannelsBalancesMap(topologyFile_);
-      /*
-      cout << "landmarks: ";
-      for (auto l: _landmarks)
-          cout << l << ", "
-      cout << endl;
-      */
-   }
-
-
-   //Create nodeToPaymentChannel map
-   const char * gateName = "out";
-   cGate *destGate = NULL;
-
-   int i = 0;
-   int gateSize = gate(gateName, 0)->size();
-
-   do {
-      destGate = gate(gateName, i++);
-      cGate *nextGate = destGate->getNextGate();
-      if (nextGate ) {
-         PaymentChannel temp =  {};
-         temp.gate = destGate;
-
-         bool isHost = nextGate->getOwnerModule()->par("isHost");
-         int key = nextGate->getOwnerModule()->getIndex();
-         if (!isHost){
-            key = key + _numHostNodes;
-         }
-         nodeToPaymentChannel[key] = temp;
-      }
-   } while (i < gateSize);
-
-   //initialize everything for adjacent nodes/nodes with payment channel to me
-   for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
-   {
-      int key =  iter->first; //node
-
-      //fill in balance field of nodeToPaymentChannel
-      nodeToPaymentChannel[key].balance = _balances[make_tuple(myIndex(),key)];
-      nodeToPaymentChannel[key].balanceEWMA = nodeToPaymentChannel[key].balance;
-
-      // intialize capacity and other price variables
-      double balanceOpp =  _balances[make_tuple(key, myIndex())];
-      nodeToPaymentChannel[key].totalCapacity = nodeToPaymentChannel[key].balance + balanceOpp;
-      nodeToPaymentChannel[key].lambda = nodeToPaymentChannel[key].yLambda = 0;
-      nodeToPaymentChannel[key].muLocal = nodeToPaymentChannel[key].yMuLocal = 0;
-      nodeToPaymentChannel[key].muRemote = nodeToPaymentChannel[key].yMuRemote = 0;
-
-      //initialize queuedTransUnits
-      vector<tuple<int, double , routerMsg *, Id>> temp;
-      make_heap(temp.begin(), temp.end(), sortPriorityThenAmtFunction);
-      nodeToPaymentChannel[key].queuedTransUnits = temp;
-
-      //register signals
-      char signalName[64];
-      simsignal_t signal;
-      cProperty *statisticTemplate;
-
-      //numInQueuePerChannel signal
-      if (key<_numHostNodes) {
-         sprintf(signalName, "numInQueuePerChannel(host %d)", key);
-      }
-      else{
-         sprintf(signalName, "numInQueuePerChannel(router %d [%d] )", key - _numHostNodes, key);
-      }
-
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numInQueuePerChannelTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToPaymentChannel[key].numInQueuePerChannelSignal = signal;
-
-      //numProcessedPerChannel signal
-      if (key<_numHostNodes) {
-         sprintf(signalName, "numProcessedPerChannel(host %d)", key);
-      }
-      else {
-         sprintf(signalName, "numProcessedPerChannel(router %d [%d])", key - _numHostNodes, key);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numProcessedPerChannelTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToPaymentChannel[key].numProcessedPerChannelSignal = signal;
-
-      //statNumProcessed int
-      nodeToPaymentChannel[key].statNumProcessed = 0;
-
-      //balancePerChannel signal
-
-      if (key<_numHostNodes) {
-         sprintf(signalName, "balancePerChannel(host %d)", key);
-      }
-      else {
-         sprintf(signalName, "balancePerChannel(router %d [%d])", key - _numHostNodes, key);
-      }
-
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "balancePerChannelTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToPaymentChannel[key].balancePerChannelSignal = signal;
-
-      //numSentPerChannel signal
-      if (key < _numHostNodes) {
-         sprintf(signalName, "numSentPerChannel(host %d)", key);
-      }
-      else {
-         sprintf(signalName, "numSentPerChannel(router %d [%d])", key-_numHostNodes, key);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numSentPerChannelTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToPaymentChannel[key].numSentPerChannelSignal = signal;
-
-      //statNumSent int
-      nodeToPaymentChannel[key].statNumSent = 0;
-
-      if (_priceSchemeEnabled){
-         if (key<_numHostNodes) {
-            sprintf(signalName, "nValuePerChannel(host %d)", key);
-         }
-         else {
-            sprintf(signalName, "nValuePerChannel(router %d [%d])", key - _numHostNodes, key);
-         }
-         signal = registerSignal(signalName);
-         statisticTemplate = getProperties()->get("statisticTemplate", "nValuePerChannelTemplate");
-         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-         nodeToPaymentChannel[key].nValueSignal = signal;
-
-         if (key<_numHostNodes) {
-            sprintf(signalName, "xLocalPerChannel(host %d)", key);
-         }
-         else {
-            sprintf(signalName, "xLocalPerChannel(router %d [%d])", key - _numHostNodes, key);
-         }
-         signal = registerSignal(signalName);
-         statisticTemplate = getProperties()->get("statisticTemplate", "xLocalPerChannelTemplate");
-         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-         nodeToPaymentChannel[key].xLocalSignal = signal;
-
-         if (key<_numHostNodes) {
-            sprintf(signalName, "lambdaPerChannel(host %d)", key);
-         }
-         else {
-            sprintf(signalName, "lambdaPerChannel(router %d [%d])", key - _numHostNodes, key);
-         }
-         signal = registerSignal(signalName);
-         statisticTemplate = getProperties()->get("statisticTemplate", "lambdaPerChannelTemplate");
-         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-         nodeToPaymentChannel[key].lambdaSignal = signal;
-
-         if (key<_numHostNodes) {
-            sprintf(signalName, "muLocalPerChannel(host %d)", key);
-         }
-         else {
-            sprintf(signalName, "muLocalPerChannel(router %d [%d])", key - _numHostNodes, key);
-         }
-         signal = registerSignal(signalName);
-         statisticTemplate = getProperties()->get("statisticTemplate", "muLocalPerChannelTemplate");
-         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-         nodeToPaymentChannel[key].muLocalSignal = signal;
-
-         if (key<_numHostNodes) {
-            sprintf(signalName, "muRemotePerChannel(host %d)", key);
-         }
-         else {
-            sprintf(signalName, "muRemotePerChannel(router %d [%d])", key - _numHostNodes, key);
-         }
-         signal = registerSignal(signalName);
-         statisticTemplate = getProperties()->get("statisticTemplate", "muRemotePerChannelTemplate");
-         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-         nodeToPaymentChannel[key].muRemoteSignal = signal;
-      }
-   }
-
-   //initialize signals with all other nodes in graph
-   for (int i = 0; i < _numHostNodes; ++i) {
-      char signalName[64];
-      simsignal_t signal;
-      cProperty *statisticTemplate;
-
-      //rateCompletedPerDest signal
-      sprintf(signalName, "rateCompletedPerDest_Total(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "rateCompletedPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      rateCompletedPerDestSignals.push_back(signal);
-
-      statRateCompleted.push_back(0);
-
-      //numCompletedPerDest signal
-      sprintf(signalName, "numCompletedPerDest_Total(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numCompletedPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      numCompletedPerDestSignals.push_back(signal);
-
-      statNumCompleted.push_back(0);
-
-
-      //rateAttemptedPerDest signal
-      sprintf(signalName, "rateAttemptedPerDest_Total(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "rateAttemptedPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      rateAttemptedPerDestSignals.push_back(signal);
-      statRateAttempted.push_back(0);
-      
-      //rateArrivedPerDest signal
-      sprintf(signalName, "rateArrivedPerDest_Total(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "rateArrivedPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      rateArrivedPerDestSignals.push_back(signal);
-      statRateArrived.push_back(0);
-
-      //numAttemptedPerDest signal
-      sprintf(signalName, "numArrivedPerDest_Total(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numArrivedPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      numArrivedPerDestSignals.push_back(signal);
-
-      statNumArrived.push_back(0);
-
-      //rateFailedPerDest signal
-      sprintf(signalName, "rateFailedPerDest(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "rateFailedPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      rateFailedPerDestSignals.push_back(signal);
-
-      statRateFailed.push_back(0);
-
-      //numFailedPerDest signal
-      sprintf(signalName, "numFailedPerDest_Total(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numFailedPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      numFailedPerDestSignals.push_back(signal);
-
-      statNumFailed.push_back(0);
-
-      //pathPerTransPerDest signal
-      sprintf(signalName, "pathPerTransPerDest(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "pathPerTransPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      pathPerTransPerDestSignals.push_back(signal);
-
-      //numTimedOutPerDest signal
-      sprintf(signalName, "numTimedOutPerDest_Total(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numTimedOutPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      numTimedOutPerDestSignals.push_back(signal);
-      statNumTimedOut.push_back(0);
-
-      // demandPerDest signal
-      sprintf(signalName, "demandEstimatePerDest(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "demandEstimatePerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      demandEstimatePerDestSignals.push_back(signal);
-
-      //numPendingPerDest signal
-      sprintf(signalName, "numPendingPerDest_total(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numPendingPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      numPendingPerDestSignals.push_back(signal);
-
-      //numWaitingInSenderQueue signal
-      sprintf(signalName, "numWaitingPerDest_total(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numWaitingPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      numWaitingPerDestSignals.push_back(signal);
-
-      //numtimedoutperdestatsender  signal
-      sprintf(signalName, "numTimedOutAtSenderPerDest(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", 
-              "numTimedOutAtSenderPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      numTimedOutAtSenderSignals.push_back(signal);
-      statNumTimedOutAtSender.push_back(0);
-
-      //fracSuccessfulPerDest signal
-      sprintf(signalName, "fracSuccessfulPerDest_Total(host node %d)", i);
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "fracSuccessfulPerDestTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      fracSuccessfulPerDestSignals.push_back(signal);
-   }
-
-    // generate first transaction
-   generateNextTransaction();
-   //cout << "[host id] " << myIndex() << ": finished creating trans messages." << endl;
-
-   //get stat message
-   routerMsg *statMsg = generateStatMessage();
-   scheduleAt(simTime()+0, statMsg);
-
-   if (_timeoutEnabled){
-      routerMsg *clearStateMsg = generateClearStateMessage();
-      scheduleAt(simTime()+_clearRate, clearStateMsg);
-   }
-
-   if (_priceSchemeEnabled){
-      routerMsg *triggerPriceUpdateMsg = generateTriggerPriceUpdateMessage();
-      scheduleAt(simTime() + _tUpdate, triggerPriceUpdateMsg );
-
-      routerMsg *triggerPriceQueryMsg = generateTriggerPriceQueryMessage();
-      scheduleAt(simTime() + _tQuery, triggerPriceQueryMsg );
-   }
+    // generate the next index to send on based on these probabilities
+    double value  = (rand() / double(RAND_MAX));
+    int index;
+    for (int i = 1; i < cumProbabilities.size(); i++) {
+        if (value < cumProbabilities[i])
+            return i - 1;
+    }
+    return 0;
 }
 
+
+/* generate next Transaction to be processed at this node 
+ * this is an optimization to prevent all txns from being loaded initially
+ */
 void hostNode::generateNextTransaction() {
       if (_transUnitList[myIndex()].empty())
           return;
       TransUnit j = _transUnitList[myIndex()].top();
-
       double timeSent = j.timeSent;
-
-      // cout << timeSent << " " << j.sender << " " << j.receiver << endl;
-
+      
       routerMsg *msg = generateTransactionMessage(j); //TODO: flag to whether to calculate path
 
       if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled){
@@ -1038,21 +117,371 @@ void hostNode::generateNextTransaction() {
       _transUnitList[myIndex()].pop();
 }
 
-routerMsg *hostNode::generateTriggerPriceQueryMessage(){
-   char msgname[MSGSIZE];
-   sprintf(msgname, "node-%d triggerPriceQueryMsg", myIndex());
-   routerMsg *rMsg = new routerMsg(msgname);
-   rMsg->setMessageType(TRIGGER_PRICE_QUERY_MSG);
-   return rMsg;
+
+
+
+/* register a signal per destination for this path of the particular type passed in
+ * and return the signal created
+ */
+simsignal_t hostNode::registerSignalPerDestPath(string signalStart, int pathIdx, int destNode) {
+    string signalPrefix = signalStart + "PerDestPerPath";
+    char signalName[64];
+    if (destNode < _numHostNodes){
+        sprintf(signalName, signalPrefix + "_%d(host %d)", pathIdx, destNode);
+    } else{
+        sprintf(signalName, signalPrefix + "_%d(router %d [%d] )", 
+             pathIdx, destNode - _numHostNodes, destNode);
+    }
+    simsignal_t signal = registerSignal(signalName);
+    cProperty *statisticTemplate = getProperties()->get("statisticTemplate", 
+            signalPrefix + "Template");
+    getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+    return signal;
 }
 
-routerMsg *hostNode::generateTriggerPriceUpdateMessage(){
-   char msgname[MSGSIZE];
-   sprintf(msgname, "node-%d triggerPriceUpdateMsg", myIndex());
-   routerMsg *rMsg = new routerMsg(msgname);
-   rMsg->setMessageType(TRIGGER_PRICE_UPDATE_MSG);
-   return rMsg;
+
+/* register a signal per channel of the particular type passed in
+ * and return the signal created
+ */
+simsignal_t hostNode::registerSignalPerChannel(string signalStart, int id) {
+    string signalPrefix = signalStart + "PerChannel";
+    char signalName[64];
+    if (id < _numHostNodes){
+        sprintf(signalName, signalPrefix + "(host %d)", id);
+    } else{
+        sprintf(signalName, signalPrefix + "(router %d [%d] )", 
+             pathIdx, id - _numHostNodes, id);
+    }
+    simsignal_t signal = registerSignal(signalName);
+    cProperty *statisticTemplate = getProperties()->get("statisticTemplate", 
+            signalPrefix + "Template");
+    getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+    return signal;
 }
+
+
+/* register a signal per dest of the particular type passed in
+ * and return the signal created
+ */
+simsignal_t hostNode::registerSignalPerChannel(string signalStart, int destNode, string suffix) {
+    string signalPrefix = signalStart + "PerDest" + suffix;
+    char signalName[64];
+    simsignal_t signal = registerSignal(signalName);
+    cProperty *statisticTemplate = getProperties()->get("statisticTemplate", 
+            signalPrefix + "Template");
+    getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+    return signal;
+}
+
+
+/*
+ * handleUpdateMessage - called when receive update message, increment back funds, see if we can
+ *      process more jobs with new funds, delete update message
+ */
+void hostNode::handleUpdateMessage(routerMsg* msg) {
+    vector<tuple<int, double , routerMsg *, Id>> *q;
+    int prevNode = msg->getRoute()[msg->getHopCount()-1];
+    updateMsg *uMsg = check_and_cast<updateMsg *>(msg->getEncapsulatedPacket());
+    PaymentChannel *prevChannel = &(nodeToPaymentChannel[prevNode]);
+   
+    //increment the in flight funds back
+    double newBalance = prevChannel->balance + uMsg->getAmount();
+    prevChannel->balance =  newBalance;       
+    prevChannel->balanceEWMA = (1 -_ewmaFactor) * prevChannel->balanceEWMA 
+        + (_ewmaFactor) * newBalance; 
+
+    //remove transaction from incoming_trans_units
+    map<Id, double> *incomingTransUnits = &(prevChannel->incomingTransUnits);
+    (*incomingTransUnits).erase(make_tuple(uMsg->getTransactionId(), uMsg->getHtlcIndex()));
+    prevChannel->statNumProcessed = prevChannel->statNumProcessed + 1;
+
+    msg->decapsulate();
+    delete uMsg;
+    delete msg; //delete update message
+
+    //see if we can send more jobs out
+    q = &(prevChannel->queuedTransUnits);
+    processTransUnits(prevNode, *q);
+} 
+
+
+
+/* responsible for forwarding all messages but transactions which need special care
+ * in particular, looks up the next node's interface and sends out the message
+ */
+void hostNode::forwardMessage(routerMsg* msg){
+   // Increment hop count.
+   msg->setHopCount(msg->getHopCount()+1);
+   //use hopCount to find next destination
+   int nextDest = msg->getRoute()[msg->getHopCount()];
+   if (_loggingEnabled) cout << "forwarding " << msg->getMessageType() << " at " 
+       << simTime() << endl;
+   send(msg, nodeToPaymentChannel[nextDest].gate);
+}
+
+
+
+/* initialize() all of the global parameters and basic
+ * per channel information as well as default signals for all
+ * payment channels and destinations
+ */
+void hostNode::initialize() {
+    string topologyFile_ = par("topologyFile");
+    string workloadFile_ = par("workloadFile");
+
+    completionTimeSignal = registerSignal("completionTime");
+    successfulDoNotSendTimeOut = {};
+
+    // initialize global parameters once
+    if (getIndex() == 0){  
+        _simulationLength = par("simulationLength");
+        _statRate = par("statRate");
+        _clearRate = par("timeoutClearRate");
+        _waterfillingEnabled = par("waterfillingEnabled");
+        _smoothWaterfillingEnabled = par("smoothWaterfillingEnabled");
+        _timeoutEnabled = par("timeoutEnabled");
+        _signalsEnabled = par("signalsEnabled");
+        _loggingEnabled = par("loggingEnabled");
+        _priceSchemeEnabled = par("priceSchemeEnabled");
+
+        _hasQueueCapacity = false;
+        _queueCapacity = 0;
+        _reschedulingEnabled = true;
+
+        _landmarkRoutingEnabled = false;
+        if (_landmarkRoutingEnabled){
+            _hasQueueCapacity = true;
+            _queueCapacity = 0;
+            _timeoutEnabled = false;
+        }
+
+        // price scheme parameters         
+        _nesterov = false;
+        _secondOrderOptimization = true;
+
+        _eta = par("eta");
+        _kappa = par("kappa");
+        _tUpdate = par("updateQueryTime");
+        _tQuery = par("updateQueryTime");
+        _alpha = par("alpha");
+        _gamma = 1; // ewma factor to compute per path rates
+        _zeta = par("zeta"); // ewma for d_ij every source dest demand
+        _minPriceRate = par("minRate");
+        _rho = _rhoLambda = _rhoMu = par("rhoValue");
+
+        _epsilon = pow(10, -6);
+        cout << "epsilon" << _epsilon << endl;
+        
+        // smooth waterfilling parameters
+        _Tau = par("tau");
+        _Normalizer = par("normalizer"); // TODO: C from discussion with Mohammad)
+        _ewmaFactor = 1; // EWMA factor for balance information on probes
+
+        if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled){
+           _kValue = par("numPathChoices");
+        }
+
+        _maxTravelTime = 0.0;
+        _delta = 0.01; // to avoid divide by zero 
+        setNumNodes(topologyFile_);
+        // add all the TransUnits into global list
+        generateTransUnitList(workloadFile_);
+
+        //create "channels" map - from topology file
+        generateChannelsBalancesMap(topologyFile_);
+    } 
+
+
+    // Assign gates to all the payment channels
+    const char * gateName = "out";
+    cGate *destGate = NULL;
+
+    int i = 0;
+    int gateSize = gate(gateName, 0)->size();
+
+    do {
+        destGate = gate(gateName, i++);
+        cGate *nextGate = destGate->getNextGate();
+        if (nextGate ) {
+            PaymentChannel temp =  {};
+            temp.gate = destGate;
+
+            bool isHost = nextGate->getOwnerModule()->par("isHost");
+            int key = nextGate->getOwnerModule()->getIndex();
+            if (!isHost){
+                key = key + _numHostNodes;
+            }
+            nodeToPaymentChannel[key] = temp;
+        }
+    } while (i < gateSize);
+
+    //initialize everything for adjacent nodes/nodes with payment channel to me
+    for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
+    {
+        int key =iter->first; //node
+
+        //fill in balance field of nodeToPaymentChannel
+        nodeToPaymentChannel[key].balance = _balances[make_tuple(myIndex(),key)];
+        nodeToPaymentChannel[key].balanceEWMA = nodeToPaymentChannel[key].balance;
+
+        // intialize capacity
+        double balanceOpp =  _balances[make_tuple(key, myIndex())];
+        nodeToPaymentChannel[key].totalCapacity = nodeToPaymentChannel[key].balance + balanceOpp;
+
+        //initialize queuedTransUnits
+        vector<tuple<int, double , routerMsg *, Id>> temp;
+        make_heap(temp.begin(), temp.end(), sortPriorityThenAmtFunction);
+        nodeToPaymentChannel[key].queuedTransUnits = temp;
+
+        //register PerChannel signals
+        simsignal_t signal;
+        signal = registerSignalPerChannel("numInQueue", key);
+        nodeToPaymentChannel[key].numInQueuePerChannelSignal = signal;
+
+        signal = registerSignalPerChannel("numProcessed", key);
+        nodeToPaymentChannel[key].numProcessedPerChannelSignal = signal;
+        nodeToPaymentChannel[key].statNumProcessed = 0;
+
+        signal = registerSignalPerChannel("balance", key);
+        nodeToPaymentChannel[key].balancePerChannelSignal = signal;
+
+        signal = registerSignalPerChannel("numSent", key);
+        nodeToPaymentChannel[key].numSentPerChannelSignal = signal;
+        nodeToPaymentChannel[key].statNumSent = 0;
+    }
+
+    //initialize signals with all other nodes in graph
+    for (int i = 0; i < _numHostNodes; ++i) {
+        simsignal_t signal;
+        signal = registerSignalPerDest("rateCompleted", i, "_Total");
+        rateCompletedPerDestSignals.push_back(signal);
+        statRateCompleted.push_back(0);
+
+        signal = registerSignalPerDest("numCompleted", i, "_Total");
+        numCompletedPerDestSignals.push_back(signal);
+        statNumCompleted.push_back(0);
+
+        signal = registerSignalPerDest("rateAttempted", i, "_Total");
+        rateAttemptedPerDestSignals.push_back(signal);
+        statRateAttempted.push_back(0);
+
+        signal = registerSignalPerDest("rateArrived", i, "_Total");
+        rateArrivedPerDestSignals.push_back(signal);
+        statRateArrived.push_back(0);
+
+        signal = registerSignalPerDest("numArrived", i, "_Total");
+        numArrivedPerDestSignals.push_back(signal);
+        statNumArrived.push_back(0);
+
+        signal = registerSignalPerDest("numFailed", i, "_Total");
+        numFailedPerDestSignals.push_back(signal);
+        statNumFailed.push_back(0);
+
+        signal = registerSignalPerDest("numTimedOut", i, "_Total");
+        numTimedOutPerDestSignals.push_back(signal);
+        statNumTimedOut.push_back(0);
+
+        signal = registerSignalPerDest("numPending", i, "_Total");
+        numPendingPerDestSignals.push_back(signal);
+        
+        signal = registerSignalPerDest("numWaiting", i, "_Total");
+        numWaitingPerDestSignals.push_back(signal);
+
+        signal = registerSignalPerDest("numTimedOutAtSender", i, "_Total");
+        numTimedOutAtSenderSignals.push_back(signal);
+        statNumTimedOutAtSender.push_back(0);
+
+        signal = registerSignalPerDest("fracSuccessful", i, "_Total");
+        fracSuccessfulPerDestSignals.push_back(signal);
+
+        signal = registerSignalPerDest("rateFailed", i, "");
+        rateFailedPerDestSignals.push_back(signal);
+        statRateFailed.push_back(0);
+
+        signal = registerSignalPerDest("pathPerTrans", i, "");
+        pathPerTransPerDestSignals.push_back(signal);
+
+        signal = registerSignalPerDest("demandEstimate", i, "");
+        demandEstimatePerDestSignals.push_back(signal);
+    }
+    
+    // generate first transaction
+    generateNextTransaction();
+
+    //generate stat message
+    routerMsg *statMsg = generateStatMessage();
+    scheduleAt(simTime() + 0, statMsg);
+
+    if (_timeoutEnabled){
+       routerMsg *clearStateMsg = generateClearStateMessage();
+       scheduleAt(simTime()+ _clearRate, clearStateMsg);
+    }
+}
+
+/* function that is called at the end of the simulation that
+ * deletes any remaining messages and records scalars
+ */
+void hostNode::finish() {
+    deleteMessagesInQueues();
+    if (myIndex() == 0) {
+        // can be done on a per node basis also if need be
+        // all in seconds
+        recordScalar("max travel time", _maxTravelTime);
+        recordScalar("delta", _delta);
+        recordScalar("average delay", _avgDelay/1000.0);
+        recordScalar("epsilon", _epsilon);
+    }
+}
+
+
+/*
+ *  given an adjacent node, and TransUnit queue of things to send to that node, sends
+ *  TransUnits until channel funds are too low
+ *  calls forwardTransactionMessage on every individual TransUnit
+ */
+void hostNode:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q) {
+    bool successful = true;
+    while((int)q.size() > 0 && successful) {
+        successful = forwardTransactionMessage(get<2>(q.back()));
+        if (successful){
+            q.pop_back();
+        }
+    }
+}
+
+
+/* removes all of the cancelled messages from the queues to any
+ * of the adjacent payment channels
+ */
+void hostNode::deleteMessagesInQueues(){
+    for (auto iter = nodeToPaymentChannel.begin(); iter!=nodeToPaymentChannel.end(); iter++){
+        int key = iter->first;
+        for (auto temp = (nodeToPaymentChannel[key].queuedTransUnits).begin();
+                temp!= (nodeToPaymentChannel[key].queuedTransUnits).end(); ){
+            routerMsg * rMsg = get<2>(*temp);
+            auto tMsg = rMsg->getEncapsulatedPacket();
+            rMsg->decapsulate();
+            delete tMsg;
+            delete rMsg;
+            temp = (nodeToPaymentChannel[key].queuedTransUnits).erase(temp);
+        }
+    }
+
+    // remove any waiting transactions too
+    for (auto iter = nodeToDestInfo.begin(); iter!=nodeToDestInfo.end(); iter++){
+        int dest = iter->first;
+        while ((nodeToDestInfo[dest].transWaitingToBeSent).size() > 0) {
+            routerMsg * rMsg = nodeToDestInfo[dest].transWaitingToBeSent.front();
+            auto tMsg = rMsg->getEncapsulatedPacket();
+            rMsg->decapsulate();
+            delete tMsg;
+            delete rMsg;
+            nodeToDestInfo[dest].transWaitingToBeSent.pop_front();
+        }
+    }
+}
+
+
 
 
 void hostNode::handleMessage(cMessage *msg)
@@ -1210,368 +639,6 @@ void hostNode::handleMessage(cMessage *msg)
       if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
    }
 
-}
-
-void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
-   transactionSendMsg *tsMsg = check_and_cast<transactionSendMsg *>(ttmsg->getEncapsulatedPacket());
-
-   vector<int> path = tsMsg->getTransactionPath();
-   int pathIndex = tsMsg->getPathIndex();
-   int destNode = tsMsg->getReceiver();
-
-   // TODO: vibhaa clean this up
-   if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0){ //has trans to send
-      //remove the transaction $tu$ at the head of the queue
-      routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
-      nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
-      transactionMsg *transMsg = check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
-     
-      // if there is a txn to send send it considering time outs from this point onwards
-      if (msgToSend != NULL) {
-          //Send the transaction $tu$ along the corresponding path.
-          transMsg->setPathIndex(pathIndex);
-          msgToSend->setRoute(path);
-          msgToSend->setHopCount(0);
-
-          // increment the number of units sent on a particular payment channel
-          int nextNode = path[1];
-          nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + 1;
-
-          // increment number of units sent to a particular destination on a particular path
-          nodeToShortestPathsMap[destNode][pathIndex].nValue += 1;
-          if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
-
-          // increment amount in inflght and other info on last transaction on this path
-          nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight =
-                    nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight + transMsg->getAmount();
-          nodeToShortestPathsMap[destNode][pathIndex].lastTransSize = transMsg->getAmount();
-          nodeToShortestPathsMap[destNode][pathIndex].lastSendTime = simTime();
-          nodeToShortestPathsMap[destNode][pathIndex].amtAllowedToSend = 
-                   max(nodeToShortestPathsMap[destNode][pathIndex].amtAllowedToSend - transMsg->getAmount(), 
-                           0.0);
-          
-          //generate time out message here, when path is decided
-          if (_timeoutEnabled) {
-            routerMsg *toutMsg = generateTimeOutMessage(msgToSend);
-            scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
-          }
-
-          // cannot be cancelled at this point
-          // // TODO: should you be calling handle Transaction Message or pushing into a queue for the node to payment 
-          // channel ? all other schemes call handleTransactionMessage
-          forwardTransactionMessage(msgToSend);
-
-          // update the number attempted to this destination and on this path
-          nodeToShortestPathsMap[destNode][pathIndex].statRateAttempted =
-                nodeToShortestPathsMap[destNode][pathIndex].statRateAttempted + 1;
-          statRateAttempted[destNode] += 1;
-
-          //Update the  “time when next transaction can be sent” to (“current time” +
-          //(“amount in the transaction $tu$ that is currently being sent” / “rate”)).
-          double rateToSendTrans = nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans;
-          if (!_reschedulingEnabled) {
-            if (rateToSendTrans == 0){
-             rateToSendTrans = 1; //TODO: fix constant
-            }
-            nodeToShortestPathsMap[destNode][pathIndex].timeToNextSend = simTime() +
-                min(transMsg->getAmount()/rateToSendTrans, 1.0);
-          }
-          else {
-            if (rateToSendTrans == 0){
-             rateToSendTrans = _epsilon; //TODO: fix constant
-            }
-            nodeToShortestPathsMap[destNode][pathIndex].timeToNextSend = simTime() +
-                max(transMsg->getAmount()/rateToSendTrans, _epsilon);
-          }
-
-          //If there are more transactions queued up, set a timer to send the “trigger
-          //sending transaction” self-message at the “time when next transaction can
-          //be sent” with this path and destination identifiers.
-          if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0){
-             scheduleAt(nodeToShortestPathsMap[destNode][pathIndex].timeToNextSend, ttmsg);
-          }
-          else {
-            nodeToShortestPathsMap[destNode][pathIndex].isSendTimerSet = false;
-          }
-      }
-      else {
-          // no uncancelled transactions
-          nodeToShortestPathsMap[destNode][pathIndex].isSendTimerSet = false;
-      }
-   }
-   else{ //no trans to send
-      nodeToShortestPathsMap[destNode][pathIndex].isSendTimerSet = false;
-   }
-}
-
-
-
-void hostNode::handlePriceQueryMessage(routerMsg* ttmsg){
-   priceQueryMsg *pqMsg = check_and_cast<priceQueryMsg *>(ttmsg->getEncapsulatedPacket());
-
-   bool isReversed = pqMsg->getIsReversed();
-   if (!isReversed && ttmsg->getHopCount() == 0){ //is at hopcount 0
-      int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
-      double zOld = pqMsg->getZValue();
-      double lambda = nodeToPaymentChannel[nextNode].lambda;
-      double muLocal = nodeToPaymentChannel[nextNode].muLocal;
-      double muRemote = nodeToPaymentChannel[nextNode].muRemote;
-      double zNew =  zOld + (2 * lambda) + muLocal  - muRemote;
-      pqMsg->setZValue(zNew);
-      forwardMessage(ttmsg);
-   }
-   else if (!isReversed){ //is at destination
-      pqMsg->setIsReversed(true);
-      vector<int> route = ttmsg->getRoute();
-      reverse(route.begin(), route.end());
-      ttmsg->setRoute(route);
-      ttmsg->setHopCount(0);
-      forwardMessage(ttmsg);
-   }
-   else{ //is back at sender
-      double demand;
-
-      double zValue = pqMsg->getZValue();
-      int destNode = ttmsg->getRoute()[0];
-      int routeIndex = pqMsg->getPathIndex();
-
-      double oldRate = nodeToShortestPathsMap[destNode][routeIndex].rateSentOnPath;
-
-      // Nesterov's gradient descent equation
-      // and other speeding up mechanisms
-      double preProjectionRate = 0.0;
-      if (_nesterov) {
-          double yPrev = nodeToShortestPathsMap[destNode][routeIndex].yRateToSendTrans;
-          double yNew = oldRate + _alpha*(1 - zValue);
-          nodeToShortestPathsMap[destNode][routeIndex].yRateToSendTrans = yNew;
-          preProjectionRate = yNew + _rho*(yNew - yPrev);
-      } else {
-          preProjectionRate  = oldRate + _alpha*(1-zValue);
-      }
-      nodeToShortestPathsMap[destNode][routeIndex].priceLastSeen = zValue;
-      nodeToShortestPathsMap[destNode][routeIndex].rateToSendTrans = 
-          maxDouble(preProjectionRate, _minPriceRate);
-
-      /* compute the projection of this new rate along with old rates
-      vector<PathRateTuple> pathRateTuples;
-      for (auto p : nodeToShortestPathsMap[destNode]) {
-          int pathIndex = p.first;
-          double rate;
-          if (pathIndex != routeIndex) {
-              rate =  p.second.rateToSendTrans;
-          } else {
-              rate = preProjectionRate;
-          }
-            
-          PathRateTuple newTuple = make_tuple(pathIndex, rate);
-          pathRateTuples.push_back(newTuple);
-      }
-      vector<PathRateTuple> projectedRates = pathRateTuples;
-          //computeProjection(pathRateTuples, nodeToDestInfo[destNode].demand);
-
-      // reassign all path's rates to the projected rates and make sure it is atleast minPriceRate for every path
-      for (auto p : projectedRates) {
-          int pathIndex = get<0>(p);
-          double newRate = get<1>(p);
-
-          if (_reschedulingEnabled) {
-              updateTimers(destNode, pathIndex, newRate);
-          }
-          else
-              nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans = maxDouble(newRate, _minPriceRate);
-      }*/
-            
-      //delete both messages
-      ttmsg->decapsulate();
-      delete pqMsg;
-      delete ttmsg;
-   }
-}
-
-// reschedule the timer on this given path according to the new rate
-void hostNode::updateTimers(int destNode, int pathIndex, double newRate) {
-      simtime_t lastSendTime = nodeToShortestPathsMap[destNode][pathIndex].lastSendTime;
-      double lastTxnSize = nodeToShortestPathsMap[destNode][pathIndex].lastTransSize;
-      simtime_t oldTime = nodeToShortestPathsMap[destNode][pathIndex].timeToNextSend;
-
-
-        // compute allowed to send
-      double oldRate = nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans; 
-      simtime_t lastUpdateTime = nodeToShortestPathsMap[destNode][pathIndex].lastRateUpdateTime; 
-      simtime_t timeForThisRate = min(simTime() - lastUpdateTime, simTime() - lastSendTime);
-      nodeToShortestPathsMap[destNode][pathIndex].amtAllowedToSend += oldRate * timeForThisRate.dbl();
-      nodeToShortestPathsMap[destNode][pathIndex].amtAllowedToSend = min(_tokenBucketCapacity,
-              nodeToShortestPathsMap[destNode][pathIndex].amtAllowedToSend);
-
-      // update the rate
-      nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans = newRate;
-      double allowedToSend = nodeToShortestPathsMap[destNode][pathIndex].amtAllowedToSend;
-      nodeToShortestPathsMap[destNode][pathIndex].lastRateUpdateTime = simTime();
-
-      // Reschedule timer on this path according to this rate
-      double rateToUse = max(newRate, _epsilon);
-      simtime_t newTimeToSend = simTime() + max((lastTxnSize - allowedToSend)/ rateToUse, _epsilon);
-      cancelEvent(nodeToShortestPathsMap[destNode][pathIndex].triggerTransSendMsg);
-      nodeToShortestPathsMap[destNode][pathIndex].timeToNextSend = newTimeToSend;
-      if (nodeToDestInfo[destNode].transWaitingToBeSent.size() == 0) 
-          nodeToShortestPathsMap[destNode][pathIndex].isSendTimerSet = false;
-      else {
-          scheduleAt(newTimeToSend, nodeToShortestPathsMap[destNode][pathIndex].triggerTransSendMsg);
-      }
-}
-
-void hostNode::handlePriceUpdateMessage(routerMsg* ttmsg){
-   priceUpdateMsg *puMsg = check_and_cast<priceUpdateMsg *>(ttmsg->getEncapsulatedPacket());
-   double xRemote = puMsg->getXLocal();
-   int sender = ttmsg->getRoute()[0];
-
-   //Update $\lambda$, $mu_local$ and $mu_remote$
-   double xLocal = nodeToPaymentChannel[sender].xLocal;
-   double cValue = nodeToPaymentChannel[sender].totalCapacity;
-   double oldLambda = nodeToPaymentChannel[sender].lambda;
-   double oldMuLocal = nodeToPaymentChannel[sender].muLocal;
-   double oldMuRemote = nodeToPaymentChannel[sender].muRemote;
-
-    // Nesterov's gradient descent equation
-    // and other speeding up mechanisms
-    double newLambda = 0.0;
-    double newMuLocal = 0.0;
-    double newMuRemote = 0.0;
-    if (_nesterov) {
-        double yLambda = nodeToPaymentChannel[sender].yLambda;
-        double yMuLocal = nodeToPaymentChannel[sender].yMuLocal;
-        double yMuRemote = nodeToPaymentChannel[sender].yMuRemote;
-
-        double yLambdaNew = oldLambda + _eta*(xLocal + xRemote - (cValue/_delta));
-        newLambda = yLambdaNew + _rhoLambda*(yLambdaNew - yLambda); 
-        nodeToPaymentChannel[sender].yLambda = yLambdaNew;
-
-        double yMuLocalNew = oldMuLocal + _kappa*(xLocal - xRemote);
-        newMuLocal = yMuLocalNew + _rhoMu*(yMuLocalNew - yMuLocal);
-        nodeToPaymentChannel[sender].yMuLocal = yMuLocalNew;
-
-        double yMuRemoteNew = oldMuRemote + _kappa*(xRemote - xLocal);
-        newMuRemote = yMuRemoteNew + _rhoMu*(yMuRemoteNew - yMuRemote);
-        nodeToPaymentChannel[sender].yMuRemote = yMuRemoteNew;
-    } 
-    else if (_secondOrderOptimization) {
-        double lastLambdaGrad = nodeToPaymentChannel[sender].lastLambdaGrad;
-        double newLambdaGrad = xLocal + xRemote - (cValue/_delta);
-        newLambda = oldLambda +  _eta*newLambdaGrad + _rhoLambda*(newLambdaGrad - lastLambdaGrad);
-        nodeToPaymentChannel[sender].lastLambdaGrad = newLambdaGrad;
-
-        double lastMuLocalGrad = nodeToPaymentChannel[sender].lastMuLocalGrad;
-        double newMuLocalGrad = xLocal - xRemote;
-        newMuLocal = oldMuLocal + _kappa*newMuLocalGrad + _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
-        newMuRemote = oldMuRemote - _kappa*newMuLocalGrad - _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
-        nodeToPaymentChannel[sender].lastMuLocalGrad = newMuLocalGrad;
-    } 
-    else {
-        newLambda = oldLambda +  _eta*(xLocal + xRemote - (cValue/_delta));
-        newMuLocal = oldMuLocal + _kappa*(xLocal - xRemote);
-        newMuRemote = oldMuRemote + _kappa*(xRemote - xLocal); 
-    }
-
-   nodeToPaymentChannel[sender].lambda = maxDouble(newLambda, 0);
-   nodeToPaymentChannel[sender].muLocal = maxDouble(newMuLocal, 0);
-   nodeToPaymentChannel[sender].muRemote = maxDouble(newMuRemote, 0);
-
-    //delete both messages
-    ttmsg->decapsulate();
-    delete puMsg;
-    delete ttmsg;
-
-}
-
-void hostNode::handleTriggerPriceQueryMessage(routerMsg* ttmsg){
-   if (simTime() > _simulationLength){
-      delete ttmsg;
-   }
-   else{
-      scheduleAt(simTime()+_tQuery, ttmsg);
-   }
-
-   for (auto it = destNodeToNumTransPending.begin(); it!=destNodeToNumTransPending.end(); it++){
-
-      if (it->first == myIndex()){ //TODO: fix this error
-         /*
-            cout << "myIndex(): " << myIndex() << "; destination: " << it->first << endl;
-            for (auto p: nodeToShortestPathsMap[it->first] ){
-            vector<int> path = p.second.path;
-            printVector(path);
-            }
-          */
-         continue;
-
-      }
-      if (it->second>0){ //if we have transactions pending
-         for (auto p = nodeToShortestPathsMap[it->first].begin() ; p!= nodeToShortestPathsMap[it->first].end(); p++){
-            //p is per path in the destNode
-            int routeIndex = p->first;
-            PathInfo pInfo = nodeToShortestPathsMap[it->first][p->first];
-            routerMsg * msg = generatePriceQueryMessage(pInfo.path, routeIndex);
-            handlePriceQueryMessage(msg);
-         }
-      }
-   }
-}
-
-void hostNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
-   if (simTime() > _simulationLength){
-      delete ttmsg;
-   }
-   else{
-      scheduleAt(simTime()+_tUpdate, ttmsg);
-   }
-
-   for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){      
-      nodeToPaymentChannel[it->first].xLocal =   nodeToPaymentChannel[it->first].nValue / _tUpdate;
-      nodeToPaymentChannel[it->first].nValue = 0;
-      if (it->first<0){
-         printNodeToPaymentChannel();
-         endSimulation();
-      }
-      routerMsg * priceUpdateMsg = generatePriceUpdateMessage(nodeToPaymentChannel[it->first].xLocal, it->first);
-      sendUpdateMessage(priceUpdateMsg);
-   }
-
-   // also update the rateSent for a given destination and path to use for your next rate computation
-   for ( auto it = nodeToShortestPathsMap.begin(); it != nodeToShortestPathsMap.end(); it++ ) {
-       int destNode = it->first;
-       for (auto p : nodeToShortestPathsMap[destNode]) {
-          int pathIndex = p.first;
-          double latestRate = nodeToShortestPathsMap[destNode][pathIndex].nValue / _tUpdate;
-          nodeToShortestPathsMap[destNode][pathIndex].nValue = 0; 
-
-          double oldRate = nodeToShortestPathsMap[destNode][pathIndex].rateSentOnPath; 
-          nodeToShortestPathsMap[destNode][pathIndex].rateSentOnPath = (1 - _gamma) *oldRate + _gamma * latestRate; 
-       }
-
-
-       DestInfo* destInfo = &(nodeToDestInfo[destNode]);
-       double newDemand = destInfo->transSinceLastInterval/_tUpdate;
-       destInfo->demand = (1 - _zeta) * destInfo->demand + _zeta * newDemand;
-       destInfo->transSinceLastInterval = 0;
-   }
-}
-
-routerMsg * hostNode::generatePriceUpdateMessage(double xLocal, int reciever){
-   char msgname[MSGSIZE];
-
-   sprintf(msgname, "tic-%d-to-%d priceUpdateMsg", myIndex(), reciever);
-
-   routerMsg *rMsg = new routerMsg(msgname);
-
-   vector<int> route={myIndex(),reciever};
-   rMsg->setRoute(route);
-   rMsg->setHopCount(0);
-   rMsg->setMessageType(PRICE_UPDATE_MSG);
-
-   priceUpdateMsg *puMsg = new priceUpdateMsg(msgname);
-
-   puMsg->setXLocal(xLocal);
-   rMsg->encapsulate(puMsg);
-   return rMsg;
 }
 
 
@@ -1758,17 +825,7 @@ void hostNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
    } // end if (_loggingEnabled)
 }
 
-void hostNode::finish(){
-    deleteMessagesInQueues();
-    if (myIndex() == 0) {
-        // can be done on a per node basis also if need be
-        // all in seconds
-        recordScalar("max travel time", _maxTravelTime);
-        recordScalar("delta", _delta);
-        recordScalar("average delay", _avgDelay/1000.0);
-        recordScalar("epsilon", _epsilon);
-    }
-}
+
 
 void hostNode::handleStatMessage(routerMsg* ttmsg){
    if (simTime() > _simulationLength){
@@ -1852,24 +909,7 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
 
 }
 
-void hostNode::forwardTimeOutMessage(routerMsg* msg){
-   // Increment hop count.
-   msg->setHopCount(msg->getHopCount()+1);
-   //use hopCount to find next destination
-   int nextDest = msg->getRoute()[msg->getHopCount()];
-   if (_loggingEnabled) cout << "forwardTimeOutMsg send: " << simTime() << endl;
-   send(msg, nodeToPaymentChannel[nextDest].gate);
-}
 
-
-void hostNode::forwardMessage(routerMsg* msg){
-   // Increment hop count.
-   msg->setHopCount(msg->getHopCount()+1);
-   //use hopCount to find next destination
-   int nextDest = msg->getRoute()[msg->getHopCount()];
-   if (_loggingEnabled) cout << "forwardMsg send: "<< simTime() << endl;
-   send(msg, nodeToPaymentChannel[nextDest].gate);
-}
 
 void hostNode::handleTimeOutMessageWaterfilling(routerMsg* ttmsg){
    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
@@ -2171,50 +1211,8 @@ routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //de
    return msg;
 }
 
-/*
- * forwardAckMessage - called inside handleAckMsg, sends ackMsg to next destination, and
 
- *      adds transId to sent_ack_trans_units list
- */
-void hostNode::forwardAckMessage(routerMsg *msg){
-   // Increment hop count.
-   msg->setHopCount(msg->getHopCount()+1);
-   //use hopCount to find next destination
-   int nextDest = msg->getRoute()[msg->getHopCount()];
-   if (_loggingEnabled) cout << "forwardAckMsg send: "<< simTime() << endl;
-   send(msg, nodeToPaymentChannel[nextDest].gate);
-}
 
-/*
- * handleUpdateMessage - called when receive update message, increment back funds, see if we can
- *      process more jobs with new funds, delete update message
- */
-void hostNode::handleUpdateMessage(routerMsg* msg){
-   vector<tuple<int, double , routerMsg *, Id>> *q;
-   int prevNode = msg->getRoute()[msg->getHopCount()-1];
-
-   updateMsg *uMsg = check_and_cast<updateMsg *>(msg->getEncapsulatedPacket());
-   //increment the in flight funds back
-   double newBalance = nodeToPaymentChannel[prevNode].balance + uMsg->getAmount();
-   nodeToPaymentChannel[prevNode].balance =  newBalance;       
-   nodeToPaymentChannel[prevNode].balanceEWMA = 
-          (1 -_ewmaFactor) * nodeToPaymentChannel[prevNode].balanceEWMA + (_ewmaFactor) * newBalance; 
-
-   //remove transaction from incoming_trans_units
-   map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-
-   (*incomingTransUnits).erase(make_tuple(uMsg->getTransactionId(), uMsg->getHtlcIndex()));
-
-   nodeToPaymentChannel[prevNode].statNumProcessed = nodeToPaymentChannel[prevNode].statNumProcessed + 1;
-
-   msg->decapsulate();
-   delete uMsg;
-   delete msg; //delete update message
-
-   //see if we can send more jobs out
-   q = &(nodeToPaymentChannel[prevNode].queuedTransUnits);
-   processTransUnits(prevNode, *q);
-}
 
 routerMsg *hostNode::generateClearStateMessage(){
    char msgname[MSGSIZE];
@@ -2251,23 +1249,7 @@ routerMsg *hostNode::generateUpdateMessage(int transId, int receiver, double amo
 }
 
 
-/*
- * forwardUpdateMessage - sends updateMessage to appropriate destination
- */
-void hostNode::sendUpdateMessage(routerMsg *msg){
-   // Increment hop count.
-   msg->setHopCount(msg->getHopCount()+1);
-   //use hopCount to find next destination
-   int nextDest = msg->getRoute()[msg->getHopCount()];
 
-   if (_loggingEnabled) {
-      cout << "forwardUpdateMsg send:"<< simTime() << endl;
-      cout << "msgName: "<< msg->getName() << endl;
-      cout << "route: " << endl;
-      printVector(msg->getRoute());
-   }
-   send(msg, nodeToPaymentChannel[nextDest].gate);
-}
 
 routerMsg* hostNode::generateWaterfillingTransactionMessage(double amt, vector<int> path, int pathIndex, transactionMsg* transMsg){
    char msgname[MSGSIZE];
@@ -2306,221 +1288,14 @@ routerMsg* hostNode::generateWaterfillingTransactionMessage(double amt, vector<i
 
 }
 
-routerMsg* hostNode::generateWaterfillingTimeOutMessage( vector<int> path, int transactionId, int receiver){
-   char msgname[MSGSIZE];
-   sprintf(msgname, "tic-%d-to-%d water-timeOutMsg", myIndex(), receiver);
-   timeOutMsg *msg = new timeOutMsg(msgname);
-
-   msg->setReceiver(receiver);
-   msg->setTransactionId(transactionId);
-
-   sprintf(msgname, "tic-%d-to-%d water-router-timeOutMsg", myIndex(), receiver);
-   routerMsg *rMsg = new routerMsg(msgname);
-   rMsg->setRoute(path);
-
-   rMsg->setHopCount(0);
-   rMsg->setMessageType(TIME_OUT_MSG);
-   rMsg->encapsulate(msg);
-   return rMsg;
-}
-
-
-// computes the updated path probabilities based on the current state of 
-// bottleneck link balances and returns the next path index to send the transaction 
-// on in accordance to the latest rate
-
-int hostNode::updatePathProbabilities(vector<double> bottleneckBalances, int destNode) {
-
-    double averageBottleneck = accumulate(bottleneckBalances.begin(), 
-            bottleneckBalances.end(), 0.0)/bottleneckBalances.size(); 
-                
-    double timeSinceLastTxn = simTime().dbl() - destNodeToLastMeasurementTime[destNode];
-    destNodeToLastMeasurementTime[destNode] = simTime().dbl();
-
-    // compute new porbabailities based on adjustment factor and expression
-    vector<double> probabilities;
-    int i = 0;
-    for (auto b : bottleneckBalances) {
-        probabilities.push_back(nodeToShortestPathsMap[destNode][i].probability + 
-            (1 - exp(-1 * timeSinceLastTxn/_Tau))*(b - averageBottleneck)/_Normalizer);
-        probabilities[i] = max(0.0, probabilities[i]);
-        i++;
-    }
-    double sumProbabilities = accumulate(probabilities.begin(), probabilities.end(), 0.0); 
-    
-    // normalize them to 1 and update the stored probabilities
-    for (i = 0; i < probabilities.size(); i++) {
-        probabilities[i] /= sumProbabilities;
-        nodeToShortestPathsMap[destNode][i].probability = probabilities[i];
-    }
-    return sampleFromDistribution(probabilities);
-
-}
-
-
-// samples a random number (index) of the passed in vector
-// based on the actual probabilities passed in
-
-int hostNode::sampleFromDistribution(vector<double> probabilities) {
-
-    vector<double> cumProbabilities { 0 };
-
-    double sumProbabilities = accumulate(probabilities.begin(), probabilities.end(), 0.0); 
-    assert(sumProbabilities < 1.0);
-    
-    // compute cumulative probabilities
-    for (int i = 0; i < probabilities.size(); i++) {
-        cumProbabilities.push_back(probabilities[i] + cumProbabilities[i]);
-    }
-
-    // generate the next index to send on based on these probabilities
-    double value  = (rand() / double(RAND_MAX));
-    int index;
-    for (int i = 1; i < cumProbabilities.size(); i++) {
-        if (value < cumProbabilities[i])
-            return i - 1;
-    }
-
-    // should never be reached
-    //assert(false);
-
-    return 0;
-}
 
 
 
-void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
-   transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
-   int destNode = transMsg->getReceiver();
-   double remainingAmt = transMsg->getAmount();
-   bool randomChoice = false;
-
-   map<int, double> pathMap = {}; //key is pathIdx, double is amt
-   vector<double> bottleneckList;
-   
-   priority_queue<pair<double,int>> pq;
-   if (_loggingEnabled) cout << "bottleneck for node " <<  getIndex();
-   
-   // fill up priority queue
-   for (auto iter: nodeToShortestPathsMap[destNode] ){
-      int key = iter.first;
-      double bottleneck = (iter.second).bottleneck;
-      double inflight = (iter.second).sumOfTransUnitsInFlight;
-      bottleneckList.push_back(bottleneck);
-      if (_loggingEnabled) cout << bottleneck << " (" << key  << "," << iter.second.lastUpdated<<"), ";
-      
-      pq.push(make_pair(bottleneck - inflight, key)); //automatically sorts with biggest first index-element
-   }
-   if (_loggingEnabled) cout << endl;
 
 
-   double highestBal;
-   double secHighestBal;
-   double diffToSend;
-   double amtToSend;
-   int highestBalIdx;
-   int numPaths = nodeToShortestPathsMap[destNode].size();
-
-    if (randomChoice) {
-       vector<double> probabilities (numPaths, 1.0/numPaths);
-       int pathIndex = sampleFromDistribution(probabilities);
-       pathMap[pathIndex] = pathMap[pathIndex] + remainingAmt;
-       remainingAmt = 0;
-    } 
-    else if (_smoothWaterfillingEnabled) {
-        highestBal = get<0>(pq.top());
-
-        if (highestBal >= 0) {
-            // Vibhaa : >= 0 here gives slightly better results
-            int pathIndex = updatePathProbabilities(bottleneckList, destNode);
-            pathMap[pathIndex] = pathMap[pathIndex] + remainingAmt;
-            remainingAmt = 0;
-        }
-    }
-    else {
-          // normal waterfilling
-          while(pq.size()>0 && remainingAmt > SMALLEST_INDIVISIBLE_UNIT){
-            highestBal = get<0>(pq.top());
-            highestBalIdx = get<1>(pq.top());
-            pq.pop();
-            
-            if (pq.size()==0){
-             secHighestBal=0;
-            }
-            else{
-             secHighestBal = get<0>(pq.top());
-            }
-            diffToSend = highestBal - secHighestBal;
-
-            amtToSend = min(remainingAmt/(pathMap.size()+1),diffToSend);
-
-            for (auto p: pathMap){
-                pathMap[p.first] = p.second + amtToSend;
-                remainingAmt = remainingAmt - amtToSend;
-            }
-            pathMap[highestBalIdx] = amtToSend;
-            remainingAmt = remainingAmt - amtToSend;
-         }
-   
-           // send all of the remaining amount beyond the indivisible unit on one path
-           // the highest bal path as long as it has non zero balance
-           if (remainingAmt > 0 && pq.size()>0 ) {
-               highestBal = get<0>(pq.top());
-               highestBalIdx = get<1>(pq.top());
-               
-               if (highestBal > 0) {
-                    pathMap[highestBalIdx] = pathMap[highestBalIdx] + remainingAmt;
-                    remainingAmt = 0;
-                }
-            } 
-            else {
-               cout << "PATHS NOT FOUND to " << destNode << "WHEN IT SHOULD HAVE BEEN";
-                throw std::exception();
-            }
-       }
- 
-
-    //Radhika: where is this check that if balance 0, don't send happening?
-    // works as long as txn is sent on one path only
-   if (remainingAmt == 0) {
-       statRateAttempted[destNode] = statRateAttempted[destNode] + 1;
-   }
-  transMsg->setAmount(remainingAmt);
-   
-   for (auto p: pathMap){
-      if (p.second > 0){
-         tuple<int,int> key = make_tuple(transMsg->getTransactionId(),p.first); 
-         //key is (transactionId, pathIndex)
-
-         //update the data structure keeping track of how much sent and received on each path
-         if (transPathToAckState.count(key) == 0){
-            AckState temp = {};
-            temp.amtSent = p.second;
-            temp.amtReceived = 0;
-            transPathToAckState[key] = temp;
-         }
-         else{
-            transPathToAckState[key].amtSent =  transPathToAckState[key].amtSent + p.second;
-         }
-
-         vector<int> path = nodeToShortestPathsMap[destNode][p.first].path;
-         double amt = p.second;
 
 
-         routerMsg* waterMsg = generateWaterfillingTransactionMessage(amt, path, p.first, transMsg);
 
-         if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], p.first);
-         // increment numAttempted per path
-         nodeToShortestPathsMap[destNode][p.first].statRateAttempted =
-            nodeToShortestPathsMap[destNode][p.first].statRateAttempted + 1;
-         handleTransactionMessage(waterMsg);
-         
-         // incrementInFlight balance
-         nodeToShortestPathsMap[destNode][p.first].sumOfTransUnitsInFlight += p.second;
-
-      }
-   }
-}
 
 //If transaction already timed-out, delete it without processing it. 
 bool hostNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
@@ -2784,135 +1559,6 @@ void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
 }
 
 
-void hostNode::initializePathInfoLandmarkRouting(vector<vector<int>> kShortestPaths, int  destNode){ //initialize PathInfo struct: including signals
-    //print all the vectors
-    /*
-    cout << "route start: " << endl;
-    for (auto r: kShortestPaths){
-        for (auto i : r) cout << i << ", ";
-        cout << endl;
-    }
-    */
-
-    //maybe less than k routes
-      destNodeToLastMeasurementTime[destNode] = 0.0;
-      nodeToShortestPathsMap[destNode] = {};
-     for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
-        //map<int, map<int, PathInfo>> nodeToShortestPathsMap;
-        //Radhika TODO: PathInfo can be a struct and need not be a class.
-
-        PathInfo temp = {};
-
-        nodeToShortestPathsMap[destNode][pathIdx] = temp;
-        nodeToShortestPathsMap[destNode][pathIdx].path = kShortestPaths[pathIdx];
-        nodeToShortestPathsMap[destNode][pathIdx].probability = 1.0 / kShortestPaths.size();
-        if (pathIdx == 0) {
-          nodeToShortestPathsMap[destNode][pathIdx].probability = 0.8;
-        }
-        else {
-          nodeToShortestPathsMap[destNode][pathIdx].probability = 0.2;
-        }
-
-        /* NOTE: indexing each path from source -> dest doesn't make sense anymore
-         (should be by landmark, and a landmark is skipped if no route exists)
-        //initialize signals
-        char signalName[64];
-        simsignal_t signal;
-        cProperty *statisticTemplate;
-
-        // bottleneckPerDest signal
-        if (destNode<_numHostNodes){
-           sprintf(signalName, "bottleneckPerDestPerPath_%d(host %d)", pathIdx, destNode);
-        }
-        else{
-           sprintf(signalName, "bottleneckPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-        }
-        signal = registerSignal(signalName);
-        statisticTemplate = getProperties()->get("statisticTemplate", "bottleneckPerDestPerPathTemplate");
-        getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-        nodeToShortestPathsMap[destNode][pathIdx].bottleneckPerDestPerPathSignal = signal;
-
-        if (destNode<_numHostNodes){
-           sprintf(signalName, "probeBackPerDestPerPath_%d(host %d)", pathIdx, destNode);
-        }
-        else{
-           sprintf(signalName, "probeBackPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-        }
-        signal = registerSignal(signalName);
-        statisticTemplate = getProperties()->get("statisticTemplate", "probeBackPerDestPerPathTemplate");
-        getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-        nodeToShortestPathsMap[destNode][pathIdx].probeBackPerDestPerPathSignal = signal;
-
-        if (destNode<_numHostNodes){
-           sprintf(signalName, "rateCompletedPerDestPerPath_%d(host %d)", pathIdx, destNode);
-        }
-        else{
-           sprintf(signalName, "rateCompletedPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-        }
-
-        signal = registerSignal(signalName);
-        statisticTemplate = getProperties()->get("statisticTemplate", "rateCompletedPerDestPerPathTemplate");
-        getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-        nodeToShortestPathsMap[destNode][pathIdx].rateCompletedPerDestPerPathSignal = signal;
-
-        // probabilityPerDest signal
-        if (destNode<_numHostNodes){
-           sprintf(signalName, "probabilityPerDestPerPath_%d(host %d)", pathIdx, destNode);
-        }
-        else{
-           sprintf(signalName, "probabilityPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-        }
-        signal = registerSignal(signalName);
-        statisticTemplate = getProperties()->get("statisticTemplate", "probabilityPerDestPerPathTemplate");
-        getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-        nodeToShortestPathsMap[destNode][pathIdx].probabilityPerDestPerPathSignal = signal;
-
-
-        if (destNode<_numHostNodes){
-           sprintf(signalName, "rateAttemptedPerDestPerPath_%d(host %d)", pathIdx, destNode);
-        }
-        else{
-           sprintf(signalName, "rateAttemptedPerDestPerPath_%d(router %d [%d] )", pathIdx, destNode - _numHostNodes, destNode);
-        }
-
-        signal = registerSignal(signalName);
-        statisticTemplate = getProperties()->get("statisticTemplate", "rateAttemptedPerDestPerPathTemplate");
-        getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-        nodeToShortestPathsMap[destNode][pathIdx].rateAttemptedPerDestPerPathSignal = signal;
-
-        routerMsg * msg = generateProbeMessage(destNode, pathIdx, kShortestPaths[pathIdx]);
-        nodeToShortestPathsMap[destNode][pathIdx].isProbeOutstanding = true;
-        forwardProbeMessage(msg);
-        */
-     }
-    return;
-}
-
-
-void hostNode::initializeLandmarkRoutingProbes(routerMsg * msg, int transactionId, int destNode){
-
-    ProbeInfo probeInfoTemp =  {};
-    probeInfoTemp.messageToSend = msg; //message to send out once all probes return
-    probeInfoTemp.probeReturnTimes = {}; //probeReturnTimes[0] is return time of first probe
-
-    for (auto pTemp: nodeToShortestPathsMap[destNode]){
-        PathInfo pInfo = pTemp.second;
-        vector<int> path = pInfo.path;
-        routerMsg * rMsg = generateProbeMessage(destNode , pTemp.first, path);
-        //set the transactionId in the generated message
-        probeMsg *pMsg = check_and_cast<probeMsg *>(rMsg->getEncapsulatedPacket());
-        pMsg->setTransactionId(transactionId);
-        forwardProbeMessage(rMsg);
-
-        probeInfoTemp.probeReturnTimes.push_back(-1);
-        probeInfoTemp.probeBottlenecks.push_back(-1);
-
-
-    }
-    probeInfoTemp.numProbesWaiting = nodeToShortestPathsMap[destNode].size();
-    transactionIdToProbeInfoMap[transactionId] = probeInfoTemp;
-    return;
-}
 
 void hostNode::handleTransactionMessageLandmarkRouting(routerMsg* ttmsg){
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
@@ -3118,35 +1764,10 @@ routerMsg *hostNode::generateTransactionMessage(TransUnit unit)
    return rMsg;
 }
 
-routerMsg *hostNode::generateTriggerTransactionSendMessage(vector<int> path, int pathIndex, int destNode)
-{
-   char msgname[MSGSIZE];
-   sprintf(msgname, "tic-%d-to-%d transactionSendMsg", myIndex(), destNode);
-   transactionSendMsg *tsMsg = new transactionSendMsg(msgname);
-   tsMsg->setPathIndex(pathIndex);
-   tsMsg->setTransactionPath(path);
-   tsMsg->setReceiver(destNode);
-
-   routerMsg *rMsg = new routerMsg(msgname);
-   rMsg->setMessageType(TRIGGER_TRANSACTION_SEND_MSG);
-   rMsg->encapsulate(tsMsg);
-   return rMsg;
-}
 
 
-/*
- * processTransUnits - given an adjacent node, and TransUnit queue of things to send to that node, sends
- *  TransUnits until channel funds are too low by calling forwardMessage on message representing TransUnit
- */
-void hostNode:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q){
-   bool successful = true;
-   while((int)q.size()>0 && successful){
-      successful = forwardTransactionMessage(get<2>(q.back()));
-      if (successful){
-         q.pop_back();
-      }
-   }
-}
+
+
 
 /*
  *  forwardTransactionMessage - given a message representing a TransUnit, increments hopCount, finds next destination,

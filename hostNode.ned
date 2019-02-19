@@ -126,20 +126,20 @@ simple hostNode
 		@statisticTemplate[muRemotePerChannelTemplate](record=vector, stats);
 		
 		//price scheme path specific signals
-		@signal[rateToSendTransPerPath*](type="double"); 
-		@statisticTemplate[rateToSendTransPerPathTemplate](record=vector, stats);
+		@signal[rateToSendTransPerDestPerPath*](type="double"); 
+		@statisticTemplate[rateToSendTransPerDestPerPathTemplate](record=vector, stats);
 		
-		@signal[timeToNextSendPerPath*](type="simtime_t"); 
-		@statisticTemplate[timeToNextSendPerPathTemplate](record=vector, stats);
+		@signal[timeToNextSendPerDestPerPath*](type="simtime_t"); 
+		@statisticTemplate[timeToNextSendPerDestPerPathTemplate](record=vector, stats);
 		
-		@signal[sumOfTransUnitsInFlightPerPath*](type="double"); 
-		@statisticTemplate[sumOfTransUnitsInFlightPerPathTemplate](record=vector, stats);
+		@signal[sumOfTransUnitsInFlightPerDestPerPath*](type="double"); 
+		@statisticTemplate[sumOfTransUnitsInFlightPerDestPerPathTemplate](record=vector, stats);
 		
-		@signal[priceLastSeenPerPath*](type="double"); 
-		@statisticTemplate[priceLastSeenPerPathTemplate](record=vector, stats);
+		@signal[priceLastSeenPerDestPerPath*](type="double"); 
+		@statisticTemplate[priceLastSeenPerDestPerPathTemplate](record=vector, stats);
 		
-		@signal[isSendTimerSetPerPath*](type="long"); 
-		@statisticTemplate[isSendTimerSetPerPathTemplate](record=vector, stats);
+		@signal[isSendTimerSetPerDestPerPath*](type="long"); 
+		@statisticTemplate[isSendTimerSetPerDestPerPathTemplate](record=vector, stats);
 		
 		
 		
