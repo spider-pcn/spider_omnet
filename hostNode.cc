@@ -163,7 +163,7 @@ simsignal_t hostNode::registerSignalPerChannel(string signalStart, int id) {
 /* register a signal per dest of the particular type passed in
  * and return the signal created
  */
-simsignal_t hostNode::registerSignalPerChannel(string signalStart, int destNode, string suffix) {
+simsignal_t hostNode::registerSignalPerDest(string signalStart, int destNode, string suffix) {
     string signalPrefix = signalStart + "PerDest" + suffix;
     char signalName[64];
     simsignal_t signal = registerSignal(signalName);
@@ -172,6 +172,55 @@ simsignal_t hostNode::registerSignalPerChannel(string signalStart, int destNode,
     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
     return signal;
 }
+
+
+/* generates messages responsible for recognizing that a txn is complete
+ * and funds have been securely transferred from a previous node to a 
+ * neighboring node after the ack/secret has been received
+ * Always goes only one hop, no more
+ */
+routerMsg *hostNode::generateUpdateMessage(int transId, 
+        int receiver, double amount, int htlcIndex){
+    char msgname[MSGSIZE];
+    sprintf(msgname, "tic-%d-to-%d updateMsg", myIndex(), receiver);
+    
+    routerMsg *rMsg = new routerMsg(msgname);
+    vector<int> route={myIndex(),receiver};
+    rMsg->setRoute(route);
+    rMsg->setHopCount(0);
+    rMsg->setMessageType(UPDATE_MSG);
+
+    updateMsg *uMsg = new updateMsg(msgname);
+    uMsg->setAmount(amount);
+    uMsg->setTransactionId(transId);
+    uMsg->setHtlcIndex(htlcIndex);
+    rMsg->encapsulate(uMsg);
+    return rMsg;
+}
+
+/* generate statistic trigger message every x seconds
+ * to output all statistics which can then be plotted
+ */
+routerMsg *hostNode::generateStatMessage(){
+    char msgname[MSGSIZE];
+    sprintf(msgname, "node-%d statMsg", myIndex());
+    routerMsg *rMsg = new routerMsg(msgname);
+    rMsg->setMessageType(STAT_MSG);
+    return rMsg;
+}
+
+/* generate a periodic message to remove
+ * any state pertaining to transactions that have 
+ * timed out
+ */
+routerMsg *hostNode::generateClearStateMessage(){
+    char msgname[MSGSIZE];
+    sprintf(msgname, "node-%d clearStateMsg", myIndex());
+    routerMsg *rMsg = new routerMsg(msgname);
+    rMsg->setMessageType(CLEAR_STATE_MSG);
+    return rMsg;
+}
+
 
 
 /*
@@ -203,6 +252,254 @@ void hostNode::handleUpdateMessage(routerMsg* msg) {
     q = &(prevChannel->queuedTransUnits);
     processTransUnits(prevNode, *q);
 } 
+
+
+/* emits all the default statistics across all the schemes
+ * until the end of the simulation
+ */
+void hostNode::handleStatMessage(routerMsg* ttmsg){
+    // reschedule this message to be sent again
+    if (simTime() > _simulationLength){
+        delete ttmsg;
+    }
+    else {
+        scheduleAt(simTime()+_statRate, ttmsg);
+    }
+    
+    if (_signalsEnabled) {
+        // per channel Stats
+        for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
+            PaymentChannel *p = it->second;
+            
+            emit(p->numInQueuePerChannelSignal, (p->queuedTransUnits).size());
+            emit(p->balancePerChannelSignal, p->balance);
+            emit(p->numProcessedPerChannelSignal, p->statNumProcessed);
+            emit(p->numSentPerChannelSignal, p->statNumSent);
+            
+            p->statNumProcessed = 0;
+            p->statNumSent = 0;
+        }
+    }
+
+    for (auto it = 0; it < _numHostNodes; it++){ 
+       // per destination stats
+       if (it != getIndex()) {
+           if (nodeToShortestPathsMap.count(it) > 0) {
+               for (auto p: nodeToShortestPathsMap[it]) {
+                   PathInfo *pathInfo = nodeToShortestPathsMap[it][p.first];
+                   if (_signalsEnabled) {
+                       emit(pathInfo->bottleneckPerDestPerPathSignal, pathInfo->bottleneck);
+                       emit(pathInfo->probabilityPerDestPerPathSignal, pathInfo->probability);
+                   }
+                   
+                   //emit rateCompleted per path
+                   emit(pathInfo->rateCompletedPerDestPerPathSignal, 
+                           pathInfo->statRateCompleted);
+                   pathInfo->statRateCompleted = 0;
+                   
+                   //emit rateAttempted per path
+                   emit(pathInfo->rateAttemptedPerDestPerPathSignal, 
+                           pathInfo->statRateAttempted);
+                   pathInfo->statRateAttempted = 0;
+               }
+           }
+           emit(rateAttemptedPerDestSignals[it], statRateAttempted[it]);
+           statRateAttempted[it] = 0;
+           
+           emit(rateArrivedPerDestSignals[it], statRateArrived[it]);
+           statRateArrived[it] = 0;
+           
+           emit(rateCompletedPerDestSignals[it], statRateCompleted[it]);
+           statRateCompleted[it] = 0;
+
+           if (_signalsEnabled) {
+               if (_hasQueueCapacity){
+                   emit(numFailedPerDestSignals[it], statNumFailed[it]);
+                   emit(rateFailedPerDestSignals[it], statRateFailed[it]);
+               }
+
+               emit(numArrivedPerDestSignals[it], statNumArrived[it]);
+               emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
+               emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
+               emit(numTimedOutAtSenderSignals[it], statNumTimedOutAtSender[it]);
+               emit(demandEstimatePerDestSignals[it], nodeToDestInfo[it].demand); 
+               emit(numPendingPerDestSignals[it], destNodeToNumTransPending[it]);
+               emit(numWaitingPerDestSignals[it], 
+                       nodeToDestInfo[it].transWaitingToBeSent.size()); 
+               
+               int frac = ((100*statNumCompleted[it])/(max(statNumArrived[it],1)));
+               emit(fracSuccessfulPerDestSignals[it],frac);
+           }
+       }
+    }
+}
+
+/* handler that is responsible for removing all the state associated
+ * with a cancelled transaction once its grace period has passed
+ * this included removal from outgoing/incoming units and any
+ * queues
+ */
+void hostNode::handleClearStateMessage(routerMsg* ttmsg){
+    //reschedule for the next interval
+    if (simTime() > _simulationLength){
+        delete ttmsg;
+    }
+    else{
+        scheduleAt(simTime()+_clearRate, ttmsg);
+    }
+    
+    for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); ) {       
+        int transactionId = get<0>(*it);
+        simtime_t msgArrivalTime = get<1>(*it);
+        int prevNode = get<2>(*it);
+        int nextNode = get<3>(*it);
+        int destNode = get<4>(*it);
+        
+        // if grace period has passed
+        if (simTime() > (msgArrivalTime + _maxTravelTime)){
+            // remove from queue to next node
+            if (nextNode != -1){   
+                vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = 
+                    &(nodeToPaymentChannel[nextNode].queuedTransUnits);
+
+                auto iterQueue = find_if((*queuedTransUnits).begin(),
+                  (*queuedTransUnits).end(),
+                  [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
+                  { return (get<0>(get<3>(p)) == transactionId); });
+                
+                // delete all occurences of this transaction in the queue
+                // especially if there are splits
+                while (iterQueue != (*queuedTransUnits).end()){
+                    routerMsg * rMsg = get<2>(*iterQueue);
+                    auto tMsg = rMsg->getEncapsulatedPacket();
+                    rMsg->decapsulate();
+                    delete tMsg;
+                    delete rMsg;
+                    iterQueue = (*queuedTransUnits).erase(iterQueue);
+                    
+                    iterQueue = find_if((*queuedTransUnits).begin(),
+                     (*queuedTransUnits).end(),
+                     [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
+                     { return (get<0>(get<3>(p)) == transactionId); });
+                }
+                
+                // resort the queue based on priority
+                make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), 
+                        sortPriorityThenAmtFunction);
+            }
+
+            // remove from incoming TransUnits from the previous node
+            if (prevNode != -1){
+                map<tuple<int,int>, double> *incomingTransUnits = 
+                    &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+                auto iterIncoming = find_if((*incomingTransUnits).begin(),
+                  (*incomingTransUnits).end(),
+                  [&transactionId](const pair<tuple<int, int >, double> & p)
+                  { return get<0>(p.first) == transactionId; });
+                
+                while (iterIncoming != (*incomingTransUnits).end()){
+                    iterIncoming = (*incomingTransUnits).erase(iterIncoming);
+                    // TODO: remove?
+                    // tuple<int, int> tempId = make_tuple(transactionId, 
+                    // get<1>(iterIncoming->first));
+                    //
+                    iterIncoming = find_if((*incomingTransUnits).begin(),
+                         (*incomingTransUnits).end(),
+                        [&transactionId](const pair<tuple<int, int >, double> & p)
+                        { return get<0>(p.first) == transactionId; });
+                }
+            }
+
+            // remove from outgoing transUnits to nextNode and restore balance on own end
+            if (nextNode != -1){
+                map<tuple<int,int>, double> *outgoingTransUnits = 
+                    &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
+                
+                auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
+                  (*outgoingTransUnits).end(),
+                  [&transactionId](const pair<tuple<int, int >, double> & p)
+                  { return get<0>(p.first) == transactionId; });
+                
+                while (iterOutgoing != (*outgoingTransUnits).end()){
+                    double amount = iterOutgoing -> second;
+                    iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
+              
+                    PaymentChannel *nextChannel = nodeToPaymentChannel[nextNode];
+                    double updatedBalance = nextChannel->balance + amount;
+                    nextChannel->balance = updatedBalance; 
+                    nextChannel->balanceEWMA = (1 -_ewmaFactor) * nextChannel->balanceEWMA + 
+                        (_ewmaFactor) * updatedBalance;
+
+                    iterOutgoing = find_if((*outgoingTransUnits).begin(),
+                        (*outgoingTransUnits).end(),
+                        [&transactionId](const pair<tuple<int, int >, double> & p)
+                        { return get<0>(p.first) == transactionId; });
+                }
+            }
+            
+            // all done, can remove txn and update stats
+            it = canceledTransactions.erase(it);
+
+            //end host didn't receive ack, so txn timed out 
+            statNumTimedOut[destNode] = statNumTimedOut[destNode]  + 1;
+        }
+        else{
+            it++;
+        }
+    }
+}
+
+
+
+/*
+ *  Given a message representing a TransUnit, increments hopCount, finds next destination,
+ *  adjusts (decrements) channel balance, sends message to next node on route
+ *  as long as it isn't cancelled
+ */
+bool hostNode::forwardTransactionMessage(routerMsg *msg) {
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
+    int nextDest = msg->getRoute()[msg->getHopCount()+1];
+    int transactionId = transMsg->getTransactionId();
+    PaymentChannel *neighbor = &(nodeToPaymentChannel[nextDest]);
+
+    if (neighbor->balance <= 0 || transMsg->getAmount() > neighbor->balance){
+        return false;
+    }
+    else {
+        // return true directly if txn has been cancelled
+        // so that you waste not resources on this and move on to a new txn
+        // if you return false processTransUnits won't look for more txns
+        auto iter = find_if(canceledTransactions.begin(),
+           canceledTransactions.end(),
+           [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
+           { return get<0>(p) == transactionId; });
+
+        // can potentially erase info?
+        if (iter != canceledTransactions.end()) {
+            return true;
+        }
+
+        // update state to send transaction out
+        msg->setHopCount(msg->getHopCount()+1);
+
+        //add amount to outgoing map
+        map<Id, double> *outgoingTransUnits = &(neighbor->outgoingTransUnits);
+        (*outgoingTransUnits)[make_tuple(transMsg->getTransactionId(), 
+                transMsg->getHtlcIndex())] = transMsg->getAmount();
+        neighbor->statNumSent += 1;
+      
+        // update balance
+        int amt = transMsg->getAmount();
+        double newBalance = neighbor->balance - amt;
+        neighbor->balance = newBalance;
+        neighbor-> balanceEWMA = (1 -_ewmaFactor) * neighbor->alanceEWMA + 
+            (_ewmaFactor) * newBalance;
+        
+        if (_loggingEnabled) cout << "forwardTransactionMsg send: " << simTime() << endl;
+        send(msg, nodeToPaymentChannel[nextDest].gate);
+        return true;
+    } 
+}
 
 
 
@@ -642,272 +939,16 @@ void hostNode::handleMessage(cMessage *msg)
 }
 
 
-void hostNode::handleClearStateMessageWaterfilling(routerMsg *ttsmg) {
-        for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); it++){
-            //iterate through all canceledTransactions
-            int transactionId = get<0>(*it);
-            simtime_t msgArrivalTime = get<1>(*it);
-            int prevNode = get<2>(*it);
-            int nextNode = get<3>(*it);
-            int destNode = get<4>(*it);
-
-            if (simTime() > (msgArrivalTime + _maxTravelTime)){
-              for (auto p : nodeToShortestPathsMap[destNode]) {
-                    int pathIndex = p.first;
-                    tuple<int,int> key = make_tuple(transactionId, pathIndex);
-                    if (transPathToAckState.count(key) != 0) {
-                        nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= 
-                        (transPathToAckState[key].amtSent - transPathToAckState[key].amtReceived);
-                        transPathToAckState.erase(key);
-                    }
-              }
-            }
-        }
-}
 
 
 
-void hostNode::handleClearStateMessage(routerMsg* ttmsg){
-   if (simTime() > _simulationLength){
-      delete ttmsg;
-   }
-   else{
-      scheduleAt(simTime()+_clearRate, ttmsg);
-   }
-
-   for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); ){ //iterate through all canceledTransactions
-      int transactionId = get<0>(*it);
-      simtime_t msgArrivalTime = get<1>(*it);
-      int prevNode = get<2>(*it);
-      int nextNode = get<3>(*it);
-      int destNode = get<4>(*it);
-
-
-      if (simTime() > (msgArrivalTime + _maxTravelTime)){ //we can process it
-
-         if (nextNode != -1){
-            vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
-            //sort_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end());
-
-            auto iterQueue = find_if((*queuedTransUnits).begin(),
-                  (*queuedTransUnits).end(),
-                  [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
-                  { return (get<0>(get<3>(p)) == transactionId); });
-            while (iterQueue != (*queuedTransUnits).end()){
-                routerMsg * rMsg = get<2>(*iterQueue);
-                       auto tMsg = rMsg->getEncapsulatedPacket();
-                       rMsg->decapsulate();
-                       delete tMsg;
-                       delete rMsg;
-               iterQueue =   (*queuedTransUnits).erase(iterQueue);
-
-
-               iterQueue = find_if((*queuedTransUnits).begin(),
-                     (*queuedTransUnits).end(),
-                     [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
-                     { return (get<0>(get<3>(p)) == transactionId); });
-            }
-
-            make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
-            //end queue searching
-         }
-
-         if (prevNode != -1){
-            map<tuple<int,int>, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-            auto iterIncoming = find_if((*incomingTransUnits).begin(),
-                  (*incomingTransUnits).end(),
-                  [&transactionId](const pair<tuple<int, int >, double> & p)
-                  { return get<0>(p.first) == transactionId; });
-            while (iterIncoming != (*incomingTransUnits).end()){
-
-               iterIncoming = (*incomingTransUnits).erase(iterIncoming);
-               tuple<int, int> tempId = make_tuple(transactionId, get<1>(iterIncoming->first));
-
-               iterIncoming = find_if((*incomingTransUnits).begin(),
-                     (*incomingTransUnits).end(),
-                     [&transactionId](const pair<tuple<int, int >, double> & p)
-                     { return get<0>(p.first) == transactionId; });
-            }
-         }
-
-         if (nextNode != -1){
-            map<tuple<int,int>, double> *outgoingTransUnits = &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
-            auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
-                  (*outgoingTransUnits).end(),
-                  [&transactionId](const pair<tuple<int, int >, double> & p)
-                  { return get<0>(p.first) == transactionId; });
-            while (iterOutgoing != (*outgoingTransUnits).end()){
-               double amount = iterOutgoing -> second;
-               iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
-              
-               double updatedBalance = nodeToPaymentChannel[nextNode].balance + amount;
-               nodeToPaymentChannel[nextNode].balance = updatedBalance; 
-               nodeToPaymentChannel[nextNode].balanceEWMA = 
-          (1 -_ewmaFactor) * nodeToPaymentChannel[nextNode].balanceEWMA + (_ewmaFactor) * updatedBalance;
-
-               iterOutgoing = find_if((*outgoingTransUnits).begin(),
-                     (*outgoingTransUnits).end(),
-                     [&transactionId](const pair<tuple<int, int >, double> & p)
-                     { return get<0>(p.first) == transactionId; });
-            }
-         }
-         it = canceledTransactions.erase(it);
-
-         // we've actually canceleld the transaction and didn't receive an ack or anything
-         statNumTimedOut[destNode] = statNumTimedOut[destNode]  + 1;
-
-      }
-      else{
-         it++;
-      }
-   }
-}
-
-
-routerMsg *hostNode::generateStatMessage(){
-   char msgname[MSGSIZE];
-   sprintf(msgname, "node-%d statMsg", myIndex());
-   routerMsg *rMsg = new routerMsg(msgname);
-   rMsg->setMessageType(STAT_MSG);
-   return rMsg;
-}
-
-int maxTwoNum(int a, int b){
-   if (a>b){
-      return a;
-   }
-   return b;
-}
-
-
-void hostNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
-   if (_signalsEnabled) {
-      for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
-
-         int node = it->first; //key
-
-         PaymentChannel* p = &(nodeToPaymentChannel[node]);
-
-         //statistics for price scheme per payment channel
-         simsignal_t nValueSignal;
-         simsignal_t xLocalSignal;
-         simsignal_t lambdaSignal;
-         simsignal_t muLocalSignal;
-         simsignal_t muRemoteSignal;
-
-         emit(p->nValueSignal, p->nValue);
-         emit(p->xLocalSignal, p->xLocal);
-         emit(p->lambdaSignal, p->lambda);
-         emit(p->muLocalSignal, p->muLocal);
-         emit(p->muRemoteSignal, p->muRemote);
-      }
-
-
-      for (auto it = 0; it<_numHostNodes; it++){ //iterate through all nodes in graph
-
-         if (it != getIndex()){
-            if (nodeToShortestPathsMap.count(it) > 0) {
-               for (auto p: nodeToShortestPathsMap[it]){
-                  int pathIndex = p.first;
-                  PathInfo *pInfo = &(p.second);
-
-                  //signals for price scheme per path
-                  emit(pInfo->rateToSendTransSignal, pInfo->rateToSendTrans);
-                  emit(pInfo->timeToNextSendSignal, pInfo->timeToNextSend);
-                  emit(pInfo->sumOfTransUnitsInFlightSignal, pInfo->sumOfTransUnitsInFlight);
-                  emit(pInfo->priceLastSeenSignal, pInfo->priceLastSeen);
-                  emit(pInfo->isSendTimerSetSignal, pInfo->isSendTimerSet);
-
-               }
-            }
-         }//end if (nodeToShortestPathsMap.count(it) > 0)
-      }//end for
-   } // end if (_loggingEnabled)
-}
 
 
 
-void hostNode::handleStatMessage(routerMsg* ttmsg){
-   if (simTime() > _simulationLength){
-      delete ttmsg;
-
-   }
-   else{
-      scheduleAt(simTime()+_statRate, ttmsg);
-   }
-
-   if (_signalsEnabled) {
-      for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
-
-         int node = it->first; //key
-         emit(nodeToPaymentChannel[node].numInQueuePerChannelSignal, (nodeToPaymentChannel[node].queuedTransUnits).size());
-
-         emit(nodeToPaymentChannel[node].balancePerChannelSignal, nodeToPaymentChannel[node].balance);
-         
-         emit(nodeToPaymentChannel[node].numProcessedPerChannelSignal, nodeToPaymentChannel[node].statNumProcessed);
-         nodeToPaymentChannel[node].statNumProcessed = 0;
-
-         emit(nodeToPaymentChannel[node].numSentPerChannelSignal, nodeToPaymentChannel[node].statNumSent);
-         nodeToPaymentChannel[node].statNumSent = 0;
-      }
-   }
-
-   for (auto it = 0; it<_numHostNodes; it++){ //iterate through all nodes in graph
-      if (it != getIndex()){
-         if (nodeToShortestPathsMap.count(it) > 0) {
-            for (auto p: nodeToShortestPathsMap[it]){
-               if (_signalsEnabled) {
-                   emit(p.second.bottleneckPerDestPerPathSignal, p.second.bottleneck);
-                   emit(p.second.probabilityPerDestPerPathSignal, p.second.probability);
-               }
-
-               //emit rateCompleted per path
-               emit(p.second.rateCompletedPerDestPerPathSignal, p.second.statRateCompleted);
-               nodeToShortestPathsMap[it][p.first].statRateCompleted = 0;
-
-               //emit rateAttempted per path
-               emit(p.second.rateAttemptedPerDestPerPathSignal, p.second.statRateAttempted);
-               nodeToShortestPathsMap[it][p.first].statRateAttempted = 0;
-            }
-         }
 
 
-         emit(rateAttemptedPerDestSignals[it], statRateAttempted[it]);
-         statRateAttempted[it] = 0;
-         
-         emit(rateArrivedPerDestSignals[it], statRateArrived[it]);
-         statRateArrived[it] = 0;
-         
-         emit(rateCompletedPerDestSignals[it], statRateCompleted[it]);
-         statRateCompleted[it] = 0;
-
-         if (_signalsEnabled) {
-            emit(numArrivedPerDestSignals[it], statNumArrived[it]);
-         if (_hasQueueCapacity){
-
-                    emit(numFailedPerDestSignals[it], statNumFailed[it]);
-
-                    emit(rateFailedPerDestSignals[it], statRateFailed[it]);
-           }
-
-            emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
-            emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
-            emit(numTimedOutAtSenderSignals[it], statNumTimedOutAtSender[it]);
-            emit(demandEstimatePerDestSignals[it], nodeToDestInfo[it].demand); 
-            emit(numPendingPerDestSignals[it], destNodeToNumTransPending[it]);
-            emit(numWaitingPerDestSignals[it], nodeToDestInfo[it].transWaitingToBeSent.size()); 
-
-            int frac = ((100*statNumCompleted[it])/(maxTwoNum(statNumArrived[it],1)));
-            emit(fracSuccessfulPerDestSignals[it],frac);
-
-         }
 
 
-      }//end if
-
-   }//end for
-
-}
 
 
 
@@ -1213,40 +1254,6 @@ routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //de
 
 
 
-
-routerMsg *hostNode::generateClearStateMessage(){
-   char msgname[MSGSIZE];
-   sprintf(msgname, "node-%d clearStateMsg", myIndex());
-   routerMsg *rMsg = new routerMsg(msgname);
-   rMsg->setMessageType(CLEAR_STATE_MSG);
-   return rMsg;
-}
-
-/*
- *  generateUpdateMessage - creates new message to send as updateMessage
- *      - note: all update messages have route length of exactly 2
- *
- */
-routerMsg *hostNode::generateUpdateMessage(int transId, int receiver, double amount, int htlcIndex){
-   char msgname[MSGSIZE];
-
-   sprintf(msgname, "tic-%d-to-%d updateMsg", myIndex(), receiver);
-
-   routerMsg *rMsg = new routerMsg(msgname);
-
-   vector<int> route={myIndex(),receiver};
-   rMsg->setRoute(route);
-   rMsg->setHopCount(0);
-   rMsg->setMessageType(UPDATE_MSG);
-
-   updateMsg *uMsg = new updateMsg(msgname);
-
-   uMsg->setAmount(amount);
-   uMsg->setTransactionId(transId);
-   uMsg->setHtlcIndex(htlcIndex);
-   rMsg->encapsulate(uMsg);
-   return rMsg;
-}
 
 
 
@@ -1763,64 +1770,3 @@ routerMsg *hostNode::generateTransactionMessage(TransUnit unit)
    rMsg->encapsulate(msg);
    return rMsg;
 }
-
-
-
-
-
-
-/*
- *  forwardTransactionMessage - given a message representing a TransUnit, increments hopCount, finds next destination,
- *      adjusts (decrements) channel balance, sends message to next node on route
- */
-bool hostNode::forwardTransactionMessage(routerMsg *msg)
-{
-   transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
-   int nextDest = msg->getRoute()[msg->getHopCount()+1];
-   int transactionId = transMsg->getTransactionId();
-
-   if (nodeToPaymentChannel[nextDest].balance <= 0 || transMsg->getAmount() >nodeToPaymentChannel[nextDest].balance){
-       cout << "transMsg->getAmount():" <<  transMsg->getAmount() << endl;
-       cout << "nodeToPaymentChannel[nextDest].balance:" << nodeToPaymentChannel[nextDest].balance << endl;
-      return false;
-   }
-
-   else{
-
-      // check if txn has been cancelled and if so return without doing anything to move on to the next transaction
-      // TODO: this case won't be hit for price scheme because you check before calling this function even
-      int transactionId = transMsg->getTransactionId();
-      auto iter = find_if(canceledTransactions.begin(),
-           canceledTransactions.end(),
-           [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-           { return get<0>(p) == transactionId; });
-
-      // can potentially erase info?
-      if (iter != canceledTransactions.end()) {
-         return true;
-      }
-
-      // Increment hop count.
-      msg->setHopCount(msg->getHopCount()+1);
-      //use hopCount to find next destination
-
-      //add amount to outgoing map
-      map<Id, double> *outgoingTransUnits = &(nodeToPaymentChannel[nextDest].outgoingTransUnits);
-      (*outgoingTransUnits)[make_tuple(transMsg->getTransactionId(),transMsg->getHtlcIndex())] = transMsg->getAmount();
-
-      //numSentPerChannel incremented every time (key,value) pair added to outgoing_trans_units map
-      nodeToPaymentChannel[nextDest].statNumSent =  nodeToPaymentChannel[nextDest].statNumSent+1;
-      int amt = transMsg->getAmount();
-
-      double newBalance = nodeToPaymentChannel[nextDest].balance - amt;
-      nodeToPaymentChannel[nextDest].balance = newBalance;
-      nodeToPaymentChannel[nextDest].balanceEWMA = 
-          (1 -_ewmaFactor) * nodeToPaymentChannel[nextDest].balanceEWMA + (_ewmaFactor) * newBalance;
-
-      //int transId = transMsg->getTransactionId();
-      if (_loggingEnabled) cout << "forwardTransactionMsg send: " << simTime() << endl;
-      send(msg, nodeToPaymentChannel[nextDest].gate);
-      return true;
-   } //end else (transMsg->getAmount() >nodeToPaymentChannel[dest].balance)
-}
-

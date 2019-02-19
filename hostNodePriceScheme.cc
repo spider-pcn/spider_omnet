@@ -214,13 +214,75 @@ vector<PathRateTuple> hostNodePriceScheme::computeProjection(
 }
 
 
+/* handler for the statistic message triggered every x seconds to also
+ * output the price based scheme stats in addition to the default
+ */
+void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
+    if (_signalsEnabled) {
+        // per payment channel stats
+        for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ 
+            int node = it->first; //key
+            PaymentChannel* p = &(nodeToPaymentChannel[node]);
+
+            //statistics for price scheme per payment channel
+            simsignal_t nValueSignal;
+            simsignal_t xLocalSignal;
+            simsignal_t lambdaSignal;
+            simsignal_t muLocalSignal;
+            simsignal_t muRemoteSignal;
+
+            emit(p->nValueSignal, p->nValue);
+            emit(p->xLocalSignal, p->xLocal);
+            emit(p->lambdaSignal, p->lambda);
+            emit(p->muLocalSignal, p->muLocal);
+            emit(p->muRemoteSignal, p->muRemote);
+        }
+        
+        // per destination statistics
+        for (auto it = 0; it < _numHostNodes; it++){ 
+            if (it != getIndex()) {
+                if (nodeToShortestPathsMap.count(it) > 0) {
+                    for (auto p: nodeToShortestPathsMap[it]){
+                        int pathIndex = p.first;
+                        PathInfo *pInfo = &(p.second);
+
+                        //signals for price scheme per path
+                        emit(pInfo->rateToSendTransSignal, pInfo->rateToSendTrans);
+                        emit(pInfo->timeToNextSendSignal, pInfo->timeToNextSend);
+                        emit(pInfo->sumOfTransUnitsInFlightSignal, 
+                                pInfo->sumOfTransUnitsInFlight);
+                        emit(pInfo->priceLastSeenSignal, pInfo->priceLastSeen);
+                        emit(pInfo->isSendTimerSetSignal, pInfo->isSendTimerSet);
+                    }
+                }
+            }        
+        }
+    } 
+
+    // call the base method to output rest of the stats
+    hostNodeBase::handleStatMessage(ttmsg);
+}
+
+/* handler for the clear state message that deals with
+ * transactions that will no longer be completed
+ * TODO: add any more specific cleanups 
+ */
+void hostNodePriceScheme::handleClearStateMessage(routerMsg *ttmsg) {
+    // works fine now because timeouts start per transaction only when
+    // sent out and no txn splitting
+    hostNodeBase::handleClearStateMessage(ttmsg);
+}
+
+
+
+
 /* handler for the trigger message that regularly fires to indicate
  * that it is time to recompute prices for all payment channels 
  * and let your neighbors know about the latest rates of incoming 
  * transactions for every one of them and wait for them to send
  * you the same before recomputing prices
  */
-void hostNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
+void hostNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
     // reschedule this to trigger again at intervals of _tUpdate
     if (simTime() > _simulationLength) {
         delete ttmsg;

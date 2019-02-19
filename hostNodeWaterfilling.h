@@ -29,7 +29,7 @@ class hostNodeWaterfilling : public hostNodeBase {
         virtual void handleTransactionMessageWaterfilling(routerMsg *msg);
         virtual void handleTimeOutMessage(routerMsg *msg) override;
         virtual void handleProbeMessage(routerMsg *msg);
-        virtual void handleClearStateMessageWaterfilling(routerMsg *msg);
+        virtual void handleClearStateMessage(routerMsg *msg) override;
         virtual void handleAckMessageSpecialized(routerMsg *msg) override;
         
 

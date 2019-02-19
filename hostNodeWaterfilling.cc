@@ -122,6 +122,35 @@ void hostNodeWaterfilling::handleProbeMessage(routerMsg* ttmsg){
     }
 }
 
+/* handler that clears additional state particular to waterfilling 
+ * when a cancelled transaction is deemed no longer completeable
+ * in particular it clears the state that tracks how much of a
+ * transaction is still pending
+ * calls the base class's handler after its own handler
+ */
+void hostNodeWaterfilling::handleClearStateMessage(routerMsg *ttsmg) {
+    for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); it++){
+        int transactionId = get<0>(*it);
+        simtime_t msgArrivalTime = get<1>(*it);
+        int prevNode = get<2>(*it);
+        int nextNode = get<3>(*it);
+        int destNode = get<4>(*it);
+        
+        if (simTime() > (msgArrivalTime + _maxTravelTime)){
+            for (auto p : nodeToShortestPathsMap[destNode]) {
+                int pathIndex = p.first;
+                tuple<int,int> key = make_tuple(transactionId, pathIndex);
+                // TODO: transToAmtLeftToComplete.erase(transactionId);
+                if (transPathToAckState.count(key) != 0) {
+                    nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= 
+                        (transPathToAckState[key].amtSent - transPathToAckState[key].amtReceived);
+                    transPathToAckState.erase(key);
+                }
+            }
+        }
+    }
+    hostNodeBase::handleClearStateMessage(ttmsg);
+}
 
 /* initialize probes along the paths specified to the destination node
  * and set up all the state in the table that maintains bottleneck balance
