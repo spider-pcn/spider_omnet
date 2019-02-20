@@ -263,6 +263,31 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
     hostNodeBase::handleStatMessage(ttmsg);
 }
 
+
+/* specialized ack handler that does the routine if this is a price scheme 
+ * algorithm. In particular, collects/updates stats for this path alone
+ * NOTE: acks are on the reverse path relative to the original sender
+ */
+void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
+    ackMsg *aMsg = check_and_cast<ackMsg*>(ttmsg->getEncapsulatedPacket());
+    int pathIndex = aMsg->getPathIndex();
+    int destNode = ttmsg->getRoute()[0]; 
+    
+    if (aMsg->getIsSuccess()==false){
+        statNumFailed[destNode] += 1;
+        statRateFailed[destNode] += 1;
+    }
+    else {
+        statNumCompleted[destNode] += 1;
+        statRateCompleted[destNode] += 1;
+        nodeToShortestPathsMap[destNode][pathIndex].statRateCompleted += 1;
+    }
+    
+    nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= aMsg->getAmount();
+    destNodeToNumTransPending[destNode] -= 1;     
+    hostNodeBase::handleAckMessage(ttmsg);
+}
+
 /* handler for the clear state message that deals with
  * transactions that will no longer be completed
  * TODO: add any more specific cleanups 

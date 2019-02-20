@@ -13,7 +13,7 @@ class hostNodeLandmarkRouting : public hostNodeBase {
     protected:
        // message handlers 
        virtual void handleTransactionMessage(routerMsg *msg) override;
-       virtual void handleProbeMessageLandmarkRouting(routerMsg *msg);
+       virtual void handleProbeMessage(routerMsg *msg);
       
        // core logic
        virtual void initializePathInfoLandmarkRouting(vector<vector<int>> kShortestRoutes, 

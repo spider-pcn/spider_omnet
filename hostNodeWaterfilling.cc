@@ -9,6 +9,49 @@ double _Tau;
 double _Normalizer;
 
 
+/* responsible for generating one HTLC for a particular path 
+ * for waterfilling after the path has been decided by 
+ * splitTransaction
+ */
+routerMsg* hostNodeWaterfilling::generateWaterfillingTransactionMessage(double amt, 
+        vector<int> path, int pathIndex, transactionMsg* transMsg) {
+    char msgname[MSGSIZE];
+    sprintf(msgname, "tic-%d-to-%d water-transMsg", myIndex(), transMsg->getReceiver());
+    
+    transactionMsg *msg = new transactionMsg(msgname);
+    msg->setAmount(amt);
+    msg->setTimeSent(transMsg->getTimeSent());
+    msg->setSender(transMsg->getSender());
+    msg->setReceiver(transMsg->getReceiver());
+    msg->setPriorityClass(transMsg->getPriorityClass());
+    msg->setHasTimeOut(transMsg->getHasTimeOut());
+    msg->setPathIndex(pathIndex);
+    msg->setTimeOut(transMsg->getTimeOut());
+    msg->setTransactionId(transMsg->getTransactionId());
+
+    // find htlc for txn
+    int transactionId = transMsg->getTransactionId();    
+    int htlcIndex = 0;
+    if (transactionIdToNumHtlc.count(transactionId) == 0) {
+        transactionIdToNumHtlc[transactionId] = 1;
+    }
+    else {
+        htlcIndex =  transactionIdToNumHtlc[transactionId];
+        transactionIdToNumHtlc[transactionId] = transactionIdToNumHtlc[transactionId] + 1;
+    }
+    msg->setHtlcIndex(htlcIndex);
+
+    // routerMsg on the outside
+    sprintf(msgname, "tic-%d-to-%d water-routerTransMsg", myIndex(), transMsg->getReceiver());
+    routerMsg *rMsg = new routerMsg(msgname);
+    rMsg->setRoute(path);
+    rMsg->setHopCount(0);
+    rMsg->setMessageType(TRANSACTION_MSG);
+    rMsg->encapsulate(msg);
+    return rMsg;
+
+} 
+
 /* special type of time out message for waterfilling designed for a specific path so that
  * such messages will be sent on all paths considered for waterfilling
  */
@@ -57,6 +100,59 @@ routerMsg* hostNodeWaterfilling::generateProbeMessage(int destNode, int pathIdx,
     rMsg->encapsulate(pMsg);
     return rMsg;
 }
+
+
+/* handles the special time out mechanism for waterfilling which is responsible
+ * for sending time out messages on all paths that may have seen this txn and 
+ * marking the txn as cancelled
+ */
+void hostNodeWaterfilling::handleTimeOutMessage(routerMsg* ttmsg){
+    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
+
+    if ((ttmsg->isSelfMessage()){ 
+        //is at the sender
+        int transactionId = toutMsg->getTransactionId();
+        int destination = toutMsg->getReceiver();
+       
+        for (auto p : (nodeToShortestPathsMap[destination])){
+            int pathIndex = p.first;
+            tuple<int,int> key = make_tuple(transactionId, pathIndex);
+            if(_loggingEnabled) {
+                cout << "transPathToAckState.count(key): " 
+                   << transPathToAckState.count(key) << endl;
+                cout << "transactionId: " << transactionId 
+                    << "; pathIndex: " << pathIndex << endl;
+            }
+            
+            if (transPathToAckState[key].amtSent != transPathToAckState[key].amtReceived) {
+                routerMsg* waterTimeOutMsg = generateTimeOutMessage(
+                    nodeToShortestPathsMap[destination][p.first].path, 
+                    transactionId, destination);
+                // TODO: what if a transaction on two different paths have same next hop?
+                int nextNode = (waterTimeOutMsg->getRoute())[waterTimeOutMsg->getHopCount()+1];
+                CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
+                        simTime(), -1, nextNode, destination);
+                canceledTransactions.insert(ct);
+                forwardMessage(waterTimeOutMsg);
+            }
+            else {
+                transPathToAckState.erase(key);
+            }
+        }
+        delete ttmsg;
+    }
+    else{
+        // at the receiver
+        CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),
+                (ttmsg->getRoute())[ttmsg->getHopCount()-1], -1, toutMsg->getReceiver());
+        canceledTransactions.insert(ct);
+        ttmsg->decapsulate();
+        delete toutMsg;
+        delete ttmsg;
+    }
+}
+
+
 
 /* handle Waterfilling probe Message
  * if it back at the sender, then update the bottleneck balances for this path 
@@ -150,6 +246,70 @@ void hostNodeWaterfilling::handleClearStateMessage(routerMsg *ttsmg) {
         }
     }
     hostNodeBase::handleClearStateMessage(ttmsg);
+}
+
+
+/* handles to logic for ack messages in the presence of timeouts
+ * in particular, removes the transaction from the cancelled txns
+ * to mark that it has been received 
+ * it uses the transAmtSent vs Received to detect if txn is complete
+ * and therefore is different from the base class 
+ */
+void hostNodeWaterfilling::handleAckMessageTimeOut(routerMsg* ttmsg){
+    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
+    int transactionId = aMsg->getTransactionId();
+    
+    //TODO: what if there are multiple HTLC's per transaction? 
+    auto iter = find_if(canceledTransactions.begin(),
+         canceledTransactions.end(),
+         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
+         { return get<0>(p) == transactionId; });
+    
+    if (iter!=canceledTransactions.end()) {
+        canceledTransactions.erase(iter);
+    }
+}
+
+/* specialized ack handler that does the routine if this is waterfilling 
+ * algorithm. In particular, collects/updates stats for this path alone
+ * NOTE: acks are on the reverse path relative to the original sender
+ */
+void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
+    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
+    int receiver = aMsg->getReceiver();
+    int pathIndex = aMsg->getPathIndex();
+    int transactionId = aMsg->getTransactionId();
+    
+    if (transToAmtLeftToComplete.count(transactionId) == 0){
+        cout << "error, transaction " << transactionId 
+          <<" htlc index:" << aMsg->getHtlcIndex() 
+          << " acknowledged at time " << simTime() 
+          << " wasn't written to transToAmtLeftToComplete" << endl;
+    }
+    else {
+        (transToAmtLeftToComplete[transactionId]).amtReceived += aMsg->getAmount();
+        nodeToShortestPathsMap[receiver][pathIndex].statRateCompleted += 1;
+
+        if (transToAmtLeftToComplete[transactionId].amtReceived == 
+                transToAmtLeftToComplete[transactionId].amtSent) {
+            statNumCompleted[receiver] += 1; 
+            statRateCompleted[receiver] += 1;
+            
+            // erase transaction from map 
+            // NOTE: still keeping it in the per path map (transPathToAckState)
+            // to identify that timeout needn't be sent
+            transToAmtLeftToComplete.erase(aMsg->getTransactionId());
+        }
+       
+        //increment transaction amount ack on a path. 
+        tuple<int,int> key = make_tuple(transactionId, pathIndex);
+        transPathToAckState[key].amtReceived += aMsg->getAmount();
+        
+        // decrement amt inflight on a path
+        nodeToShortestPathsMap[receiver][pathIndex].sumOfTransUnitsInFlight -= aMsg->getAmount();
+        destNodeToNumTransPending[receiver] -= 1;
+    }
+    hostNodeBase::handleAckMessage(ttmsg);
 }
 
 /* initialize probes along the paths specified to the destination node
@@ -288,15 +448,14 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
             highestBalIdx = get<1>(pq.top());
             pq.pop();
             
-            if (pq.size()==0){
-             secHighestBal=0;
+            if (pq.size()==0) {
+                secHighestBal=0;
             }
-            else{
-             secHighestBal = get<0>(pq.top());
+            else {
+                secHighestBal = get<0>(pq.top());
             }
             diffToSend = highestBal - secHighestBal;
-
-            amtToSend = min(remainingAmt/(pathMap.size()+1),diffToSend);
+            amtToSend = min(remainingAmt / (pathMap.size() + 1), diffToSend);
 
             for (auto p: pathMap){
                 pathMap[p.first] = p.second + amtToSend;

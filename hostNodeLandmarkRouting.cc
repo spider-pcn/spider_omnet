@@ -9,7 +9,7 @@ vector<int> _landmarks;
  * with non-zero bottleneck balance and choosing one randomly from 
  * those to send the txn on
  */
-void hostNode::handleProbeMessageLandmarkRouting(routerMsg* ttmsg){
+void hostNode::handleProbeMessage(routerMsg* ttmsg){
     probeMsg *pMsg = check_and_cast<probeMsg *>(ttmsg->getEncapsulatedPacket());
     if (simTime()> _simulationLength ){
         ttmsg->decapsulate();
