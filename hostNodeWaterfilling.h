@@ -2,6 +2,7 @@
 #define ROUTERNODE_WF_H
 
 #include "probeMsg_m.h"
+#include "hostNodeBase.h"
 
 using namespace std;
 using namespace omnetpp;
@@ -18,15 +19,16 @@ class hostNodeWaterfilling : public hostNodeBase {
         vector<simsignal_t> pathPerTransPerDestSignals = {};    
 
     protected:
+        virtual void initialize() override;
         // message generating functions
         virtual routerMsg *generateWaterfillingTransactionMessage(double amt,
                 vector<int> path, int pathIndex, transactionMsg * transMsg);
         virtual routerMsg *generateTimeOutMessage(vector<int> path, 
-                int transactionId, int receiver) override;
+                int transactionId, int receiver);
         virtual routerMsg *generateProbeMessage(int destNode, int pathIdx, vector<int> path);
 
         // message handlers
-        virtual void handleMessage(routerMsg *msg);
+        virtual void handleMessage(routerMsg *msg) override;
         virtual void handleTransactionMessageSpecialized(routerMsg *msg) override;
         virtual void handleTimeOutMessage(routerMsg *msg) override;
         virtual void handleProbeMessage(routerMsg *msg);
@@ -43,7 +45,7 @@ class hostNodeWaterfilling : public hostNodeBase {
         // restarts probes onces they've been stopped
         virtual void restartProbes(int destNode);
 
-        // forwards messages including probes
+        // forwards probes
         virtual void forwardProbeMessage(routerMsg *msg);
 
         // splits transactions and decides which paths they should use
@@ -53,5 +55,5 @@ class hostNodeWaterfilling : public hostNodeBase {
         virtual int updatePathProbabilities(vector<double> bottleneckBalances, int destNode);
 
 
-}
+};
 #endif

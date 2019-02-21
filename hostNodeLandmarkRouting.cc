@@ -1,7 +1,56 @@
 #include "hostNodeLandmarkRouting.h"
 
 // set of landmarks for landmark routing
+vector<tuple<int,int>> _landmarksWithConnectivityList = {};
 vector<int> _landmarks;
+
+
+/* generates the probe message for a particular destination and a particur path
+ * identified by the list of hops and the path index
+ */
+routerMsg* hostNodeLandmarkRouting::generateProbeMessage(int destNode, int pathIdx, vector<int> path){
+    char msgname[MSGSIZE];
+    sprintf(msgname, "tic-%d-to-%d probeMsg [idx %d]", myIndex(), destNode, pathIdx);
+    probeMsg *pMsg = new probeMsg(msgname);
+    pMsg->setSender(myIndex());
+    pMsg->setPathIndex(pathIdx);
+    pMsg->setReceiver(destNode);
+    pMsg->setIsReversed(false);
+    vector<double> pathBalances;
+    pMsg->setPathBalances(pathBalances);
+    pMsg->setPath(path);
+
+    sprintf(msgname, "tic-%d-to-%d router-probeMsg [idx %d]", myIndex(), destNode, pathIdx);
+    routerMsg *rMsg = new routerMsg(msgname);
+    rMsg->setRoute(path);
+
+    rMsg->setHopCount(0);
+    rMsg->setMessageType(PROBE_MSG);
+
+    rMsg->encapsulate(pMsg);
+    return rMsg;
+}
+
+/* forwards probe messages for waterfilling alone that appends the current balance
+ * to the list of balances
+ */
+void hostNodeLandmarkRouting::forwardProbeMessage(routerMsg *msg){
+    // Increment hop count.
+    msg->setHopCount(msg->getHopCount()+1);
+    //use hopCount to find next destination
+    int nextDest = msg->getRoute()[msg->getHopCount()];
+
+    probeMsg *pMsg = check_and_cast<probeMsg *>(msg->getEncapsulatedPacket());
+    if (pMsg->getIsReversed() == false){
+        vector<double> *pathBalances = & ( pMsg->getPathBalances());
+        (*pathBalances).push_back(nodeToPaymentChannel[nextDest].balanceEWMA);
+    }
+
+   if (_loggingEnabled) cout << "forwarding " << msg->getMessageType() << " at " 
+       << simTime() << endl;
+   send(msg, nodeToPaymentChannel[nextDest].gate);
+}
+
 
 /* overall controller for handling messages that dispatches the right function
  * based on message type in Landmark Routing
@@ -10,7 +59,7 @@ void hostNodeLandmarkRouting::handleMessage(routerMsg *ttmsg) {
     switch(ttmsg->getMessageType()) {
         case PROBE_MSG:
              if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
-                 <<": RECEIVED PROBE MSG] "<< msg->getName() << endl;
+                 <<": RECEIVED PROBE MSG] "<< ttmsg->getName() << endl;
              handleProbeMessage(ttmsg);
              if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
              break;
@@ -162,7 +211,7 @@ void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
  * to how many probes are in progress is initialized when probes are sent
  * This function only helps for memoization
  */
-void hostNode::initializePathInfoLandmarkRouting(vector<vector<int>> kShortestPaths, 
+void hostNodeLandmarkRouting::initializePathInfoLandmarkRouting(vector<vector<int>> kShortestPaths, 
         int  destNode){ 
     nodeToShortestPathsMap[destNode] = {};
     for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
@@ -180,7 +229,7 @@ void hostNode::initializePathInfoLandmarkRouting(vector<vector<int>> kShortestPa
  * the msg passed is the transaction that triggered this set of probes which also
  * corresponds to the txn that needs to be sent out once all probes return
  */
-void hostNode::initializeLandmarkRoutingProbes(routerMsg * msg, int transactionId, int destNode){
+void hostNodeLandmarkRouting::initializeLandmarkRoutingProbes(routerMsg * msg, int transactionId, int destNode){
     ProbeInfo probeInfoTemp =  {};
     probeInfoTemp.messageToSend = msg; //message to send out once all probes return
     probeInfoTemp.probeReturnTimes = {}; //probeReturnTimes[0] is return time of first probe

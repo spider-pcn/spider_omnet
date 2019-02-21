@@ -32,6 +32,10 @@ O = $(PROJECT_OUTPUT_DIR)/$(CONFIGNAME)/$(PROJECTRELATIVE_PATH)
 # Object files for local .cc, .msg and .sm files
 OBJS = \
     $O/hostInitialize.o \
+    $O/hostNodeBase.o \
+    $O/hostNodeWaterfilling.o \
+    $O/hostNodeLandmarkRouting.o \
+    $O/hostNodePriceScheme.o \
     $O/hostNode.o \
     $O/routerNode.o \
     $O/ackMsg_m.o \

@@ -3,6 +3,7 @@
 
 #include "priceQueryMsg_m.h"
 #include "priceUpdateMsg_m.h"
+#include "hostNodeBase.h"
 
 using namespace std;
 using namespace omnetpp;
@@ -14,7 +15,9 @@ class hostNodePriceScheme : public hostNodeBase {
         vector<simsignal_t> probabilityPerDestSignals = {};
         vector<simsignal_t> numWaitingPerDestSignals = {};
         vector<simsignal_t> numTimedOutAtSenderSignals = {};
-        vector<simsignal_t> pathPerTransPerDestSignals = {};  
+        vector<simsignal_t> pathPerTransPerDestSignals = {};
+        vector<simsignal_t> demandEstimatePerDestSignals = {};
+
 
     protected:
         // message generators
@@ -32,7 +35,7 @@ class hostNodePriceScheme : public hostNodeBase {
                 double demand);
 
         // modified message handlers
-        virtual void handleMessage(routerMsg *msg);
+        virtual void handleMessage(routerMsg *msg) override;
         virtual void handleTransactionMessageSpecialized(routerMsg *msg) override;
         virtual void handleStatMessage(routerMsg *msg) override;
         virtual void handleAckMessageSpecialized(routerMsg* ttmsg) override;
@@ -51,9 +54,9 @@ class hostNodePriceScheme : public hostNodeBase {
         // for that destination
         virtual void initializePriceProbes(vector<vector<int>> kShortestPaths, int destNode);
 
-
-        
         // updates timers once rates have been updated on a certain path
         virtual void updateTimers(int destNode, int pathIndex, double newRate);
-}
+        
+        virtual void initialize() override;
+};
 #endif

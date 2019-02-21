@@ -1,4 +1,4 @@
-#include "hostNodePriceWaterfilling.h"
+#include "hostNodeWaterfilling.h"
 
 // global parameters
 // set to 1 to report exact instantaneous balances
@@ -7,7 +7,21 @@ double _ewmaFactor;
 // parameters for smooth waterfilling
 double _Tau;
 double _Normalizer;
+bool _smoothWaterfillingEnabled;
+#define SMALLEST_INDIVISIBLE_UNIT 1
 
+/* initialization function to initialize parameters */
+void hostNodeWaterfilling::initialize(){
+    hostNodeBase::initialize();
+    
+    if (myIndex() == 0) {
+        // smooth waterfilling parameters
+        _Tau = par("tau");
+        _Normalizer = par("normalizer"); // TODO: C from discussion with Mohammad)
+        _ewmaFactor = 1; // EWMA factor for balance information on probes
+        _smoothWaterfillingEnabled = par("smoothWaterfillingEnabled");
+    }
+}
 
 /* responsible for generating one HTLC for a particular path 
  * for waterfilling after the path has been decided by 
@@ -106,11 +120,11 @@ routerMsg* hostNodeWaterfilling::generateProbeMessage(int destNode, int pathIdx,
 /* overall controller for handling messages that dispatches the right function
  * based on message type in waterfilling
  */
-void hostNode::handleMessage(routerMsg *ttmsg) {
+void hostNodeWaterfilling::handleMessage(routerMsg *ttmsg) {
     switch(ttmsg->getMessageType()) {
         case PROBE_MSG:
              if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
-                 <<": RECEIVED PROBE MSG] "<< msg->getName() << endl;
+                 <<": RECEIVED PROBE MSG] "<< ttmsg->getName() << endl;
              handleProbeMessage(ttmsg);
              if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
              break;
@@ -123,9 +137,9 @@ void hostNode::handleMessage(routerMsg *ttmsg) {
  */
 void hostNodeWaterfilling::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
-    int hopcount = ttmsg->getHopCount();
+    int hopCount = ttmsg->getHopCount();
     int destNode = transMsg->getReceiver();
-    int nextNode = ttmsg->getRoute()[hopcount+1];
+    int nextNode = ttmsg->getRoute()[hopCount+1];
     int transactionId = transMsg->getTransactionId();
     double waitTime = _maxTravelTime;
     
@@ -220,7 +234,7 @@ void hostNodeWaterfilling::handleTransactionMessageSpecialized(routerMsg* ttmsg)
 void hostNodeWaterfilling::handleTimeOutMessage(routerMsg* ttmsg){
     timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
 
-    if ((ttmsg->isSelfMessage()){ 
+    if (ttmsg->isSelfMessage()) { 
         //is at the sender
         int transactionId = toutMsg->getTransactionId();
         int destination = toutMsg->getReceiver();
@@ -294,7 +308,7 @@ void hostNodeWaterfilling::handleProbeMessage(routerMsg* ttmsg){
         p->lastUpdated = simTime();
         p->bottleneck = bottleneck;
         p->pathBalances = pathBalances;
-        p>isProbeOutstanding = false;
+        p->isProbeOutstanding = false;
         
         if (_signalsEnabled) 
             emit(nodeToShortestPathsMap[destNode][pathIdx].probeBackPerDestPerPathSignal,pathIdx);
@@ -335,7 +349,7 @@ void hostNodeWaterfilling::handleProbeMessage(routerMsg* ttmsg){
  * transaction is still pending
  * calls the base class's handler after its own handler
  */
-void hostNodeWaterfilling::handleClearStateMessage(routerMsg *ttsmg) {
+void hostNodeWaterfilling::handleClearStateMessage(routerMsg *ttmsg) {
     for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); it++){
         int transactionId = get<0>(*it);
         simtime_t msgArrivalTime = get<1>(*it);
@@ -428,7 +442,7 @@ void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
  * information across all paths to all destinations
  * also responsible for initializing signals
  */
-void hostNode::initializeProbes(vector<vector<int>> kShortestPaths, int destNode){ 
+void hostNodeWaterfilling::initializeProbes(vector<vector<int>> kShortestPaths, int destNode){ 
     destNodeToLastMeasurementTime[destNode] = 0.0;
 
     for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
@@ -502,7 +516,7 @@ void hostNodeWaterfilling::forwardProbeMessage(routerMsg *msg){
  * probabilities based on the bottleneck balances in the smooth waterfilling 
  * case
  */
-void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
+void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg){
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
     int destNode = transMsg->getReceiver();
     double remainingAmt = transMsg->getAmount();
@@ -637,7 +651,7 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
  * on in accordance to the latest rate
  * acts as a helper for smooth waterfilling
  */
-int hostNode::updatePathProbabilities(vector<double> bottleneckBalances, int destNode) {
+int hostNodeWaterfilling::updatePathProbabilities(vector<double> bottleneckBalances, int destNode) {
     double averageBottleneck = accumulate(bottleneckBalances.begin(), 
             bottleneckBalances.end(), 0.0)/bottleneckBalances.size(); 
                 
@@ -662,3 +676,5 @@ int hostNode::updatePathProbabilities(vector<double> bottleneckBalances, int des
     }
     return sampleFromDistribution(probabilities);
 }
+
+

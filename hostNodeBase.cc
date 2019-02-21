@@ -1,17 +1,16 @@
 #include "hostNodeBase.h"
-#include "hostInitialize.cc"
 #include <queue>
 
 void hostNodeBase::setIndex(int index) {
-    myIndex = index;
+    this->index = index;
 }
 
 int hostNodeBase::myIndex() {
-    return myIndex;
+    return index;
 }
 
 /* print channel information */
-bool hostNode:: printNodeToPaymentChannel(){
+bool hostNodeBase:: printNodeToPaymentChannel(){
     bool invalidKey = false;
     printf("print of channels\n" );
     for (auto i : nodeToPaymentChannel){
@@ -34,7 +33,7 @@ void printVectorDouble(vector<double> v){
 /* samples a random number (index) of the passed in vector
  *  based on the actual probabilities passed in
  */
-int hostNode::sampleFromDistribution(vector<double> probabilities) {
+int hostNodeBase::sampleFromDistribution(vector<double> probabilities) {
     vector<double> cumProbabilities { 0 };
 
     double sumProbabilities = accumulate(probabilities.begin(), probabilities.end(), 0.0); 
@@ -59,7 +58,7 @@ int hostNode::sampleFromDistribution(vector<double> probabilities) {
 /* generate next Transaction to be processed at this node 
  * this is an optimization to prevent all txns from being loaded initially
  */
-void hostNode::generateNextTransaction() {
+void hostNodeBase::generateNextTransaction() {
       if (_transUnitList[myIndex()].empty())
           return;
       TransUnit j = _transUnitList[myIndex()].top();
@@ -88,18 +87,20 @@ void hostNode::generateNextTransaction() {
 /* register a signal per destination for this path of the particular type passed in
  * and return the signal created
  */
-simsignal_t hostNode::registerSignalPerDestPath(string signalStart, int pathIdx, int destNode) {
+simsignal_t hostNodeBase::registerSignalPerDestPath(string signalStart, int pathIdx, int destNode) {
     string signalPrefix = signalStart + "PerDestPerPath";
     char signalName[64];
+    string templateString = signalPrefix + "Template";
+    
     if (destNode < _numHostNodes){
-        sprintf(signalName, signalPrefix + "_%d(host %d)", pathIdx, destNode);
+        sprintf(signalName, "%s_%d(host %d)", signalPrefix.c_str(), pathIdx, destNode);
     } else{
-        sprintf(signalName, signalPrefix + "_%d(router %d [%d] )", 
+        sprintf(signalName, "%s_%d(router %d [%d] )", signalPrefix.c_str(),
              pathIdx, destNode - _numHostNodes, destNode);
     }
     simsignal_t signal = registerSignal(signalName);
     cProperty *statisticTemplate = getProperties()->get("statisticTemplate", 
-            signalPrefix + "Template");
+            templateString.c_str());
     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
     return signal;
 }
@@ -108,18 +109,20 @@ simsignal_t hostNode::registerSignalPerDestPath(string signalStart, int pathIdx,
 /* register a signal per channel of the particular type passed in
  * and return the signal created
  */
-simsignal_t hostNode::registerSignalPerChannel(string signalStart, int id) {
+simsignal_t hostNodeBase::registerSignalPerChannel(string signalStart, int id) {
     string signalPrefix = signalStart + "PerChannel";
     char signalName[64];
+    string templateString = signalPrefix + "Template";
+
     if (id < _numHostNodes){
-        sprintf(signalName, signalPrefix + "(host %d)", id);
+        sprintf(signalName, "%s(host %d)", signalPrefix.c_str(), id);
     } else{
-        sprintf(signalName, signalPrefix + "(router %d [%d] )", 
-             pathIdx, id - _numHostNodes, id);
+        sprintf(signalName, "%s(router %d [%d] )", signalPrefix.c_str(),
+                id - _numHostNodes, id);
     }
     simsignal_t signal = registerSignal(signalName);
     cProperty *statisticTemplate = getProperties()->get("statisticTemplate", 
-            signalPrefix + "Template");
+            templateString.c_str());
     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
     return signal;
 }
@@ -128,12 +131,15 @@ simsignal_t hostNode::registerSignalPerChannel(string signalStart, int id) {
 /* register a signal per dest of the particular type passed in
  * and return the signal created
  */
-simsignal_t hostNode::registerSignalPerDest(string signalStart, int destNode, string suffix) {
+simsignal_t hostNodeBase::registerSignalPerDest(string signalStart, int destNode, string suffix) {
     string signalPrefix = signalStart + "PerDest" + suffix;
     char signalName[64];
+    string templateString = signalPrefix + "Template"; 
+
+    sprintf(signalName, "%s(host node %d)", signalPrefix.c_str(), destNode);  
     simsignal_t signal = registerSignal(signalName);
     cProperty *statisticTemplate = getProperties()->get("statisticTemplate", 
-            signalPrefix + "Template");
+            templateString.c_str());
     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
     return signal;
 }
@@ -145,7 +151,7 @@ simsignal_t hostNode::registerSignalPerDest(string signalStart, int destNode, st
  * returning corresponding routerMsg message with encapsulated transactionMsg inside.
  *      note: calls get_route function to get route from sender to receiver
  */
-routerMsg *hostNode::generateTransactionMessage(TransUnit unit) {
+routerMsg *hostNodeBase::generateTransactionMessage(TransUnit unit) {
     char msgname[MSGSIZE];
     sprintf(msgname, "tic-%d-to-%d transactionMsg", unit.sender, unit.receiver);
     
@@ -188,7 +194,7 @@ routerMsg *hostNode::generateTransactionMessage(TransUnit unit) {
  * isSuccess denotes whether the ack is in response to a transaction
  * that succeeded or failed.
  */
-routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
+routerMsg *hostNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     int sender = (ttmsg->getRoute())[0];
     int receiver = (ttmsg->getRoute())[(ttmsg->getRoute()).size() -1];
 
@@ -234,7 +240,7 @@ routerMsg *hostNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
  * neighboring node after the ack/secret has been received
  * Always goes only one hop, no more
  */
-routerMsg *hostNode::generateUpdateMessage(int transId, 
+routerMsg *hostNodeBase::generateUpdateMessage(int transId, 
         int receiver, double amount, int htlcIndex){
     char msgname[MSGSIZE];
     sprintf(msgname, "tic-%d-to-%d updateMsg", myIndex(), receiver);
@@ -256,7 +262,7 @@ routerMsg *hostNode::generateUpdateMessage(int transId,
 /* generate statistic trigger message every x seconds
  * to output all statistics which can then be plotted
  */
-routerMsg *hostNode::generateStatMessage(){
+routerMsg *hostNodeBase::generateStatMessage(){
     char msgname[MSGSIZE];
     sprintf(msgname, "node-%d statMsg", myIndex());
     routerMsg *rMsg = new routerMsg(msgname);
@@ -268,7 +274,7 @@ routerMsg *hostNode::generateStatMessage(){
  * any state pertaining to transactions that have 
  * timed out
  */
-routerMsg *hostNode::generateClearStateMessage(){
+routerMsg *hostNodeBase::generateClearStateMessage(){
     char msgname[MSGSIZE];
     sprintf(msgname, "node-%d clearStateMsg", myIndex());
     routerMsg *rMsg = new routerMsg(msgname);
@@ -280,7 +286,7 @@ routerMsg *hostNode::generateClearStateMessage(){
 /* responsible for generating the generic time out message 
  * generated whenever transaction is sent out into the network
  */
-routerMsg *hostNode::generateTimeOutMessage(routerMsg* msg) {
+routerMsg *hostNodeBase::generateTimeOutMessage(routerMsg* msg) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
     char msgname[MSGSIZE];
     sprintf(msgname, "tic-%d-to-%d timeOutMsg", transMsg->getSender(), transMsg->getReceiver());
@@ -303,6 +309,14 @@ routerMsg *hostNode::generateTimeOutMessage(routerMsg* msg) {
 
 
 /***** MESSAGE HANDLERS *****/
+/* empty message handler because no special messages */
+void hostNodeBase::handleMessage(routerMsg *msg){
+    ;
+}
+/* empty message handler because no special messages */
+void hostNodeBase::handleMessage(cMessage *msg){
+    ;
+}
 
 void hostNodeBase::handleTransactionMessageSpecialized(routerMsg *ttmsg) {
     handleTransactionMessage(ttmsg);
@@ -314,7 +328,7 @@ void hostNodeBase::handleTransactionMessageSpecialized(routerMsg *ttmsg) {
  *      2. has not reached yet - add to appropriate job queue q, process q as
  *          much as we have funds for
  */
-void hostNode::handleTransactionMessage(routerMsg* ttmsg, bool revisit = false){
+void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
     int hopcount = ttmsg->getHopCount();
     vector<tuple<int, double , routerMsg *, Id>> *q;
@@ -385,7 +399,7 @@ void hostNode::handleTransactionMessage(routerMsg* ttmsg, bool revisit = false){
  * true if the transaction is timed out so that no special handlers
  * are called after
  */
-bool hostNode::handleTransactionMessageTimeOut(routerMsg* ttmsg) {
+bool hostNodeBase::handleTransactionMessageTimeOut(routerMsg* ttmsg) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
     int transactionId = transMsg->getTransactionId();
 
@@ -418,12 +432,12 @@ bool hostNode::handleTransactionMessageTimeOut(routerMsg* ttmsg) {
  *  The actual cancellation/clearing of the state happens on the clear state 
  *  message
  */
-void hostNode::handleTimeOutMessage(routerMsg* ttmsg){
+void hostNodeBase::handleTimeOutMessage(routerMsg* ttmsg){
     timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
     int destination = toutMsg->getReceiver();
     int transactionId = toutMsg->getTransactionId();
     
-    if ((ttmsg->isSelfMessage()) {
+    if (ttmsg->isSelfMessage()) {
             if (successfulDoNotSendTimeOut.count(transactionId) > 0) {
                 successfulDoNotSendTimeOut.erase(toutMsg->getTransactionId());
                 ttmsg->decapsulate();
@@ -454,7 +468,7 @@ void hostNode::handleTimeOutMessage(routerMsg* ttmsg){
  * one path on which a txn might complete
  * NOTE: acks are on the reverse path relative to the original sender
  */
-void hostNode::handleAckMessageSpecialized(routerMsg* ttmsg) { 
+void hostNodeBase::handleAckMessageSpecialized(routerMsg* ttmsg) { 
     int destNode = ttmsg->getRoute()[0];
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
 
@@ -475,7 +489,7 @@ void hostNode::handleAckMessageSpecialized(routerMsg* ttmsg) {
  * and triggering an update message to the next node on the path
  * before forwarding the ack back to the previous node
  */
-void hostNode::handleAckMessage(routerMsg* ttmsg){
+void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
     assert(myIndex() == ttmsg->getRoute()[ttmsg->getHopCount()]);
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
     
@@ -503,7 +517,7 @@ void hostNode::handleAckMessage(routerMsg* ttmsg){
     else { 
         routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), 
                 prevNode, aMsg->getAmount(), aMsg->getHtlcIndex() );
-        sendUpdateMessage(uMsg);
+        forwardMessage(uMsg);
     }
     
     // stats
@@ -525,7 +539,7 @@ void hostNode::handleAckMessage(routerMsg* ttmsg){
  * it uses the successfulDoNotSendTimeout to detect if txns have
  * been completed when handling the timeout - so insert into it here
  */
-void hostNode::handleAckMessageTimeOut(routerMsg* ttmsg){
+void hostNodeBase::handleAckMessageTimeOut(routerMsg* ttmsg){
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
     int transactionId = aMsg->getTransactionId();
     
@@ -549,7 +563,7 @@ void hostNode::handleAckMessageTimeOut(routerMsg* ttmsg){
  * handleUpdateMessage - called when receive update message, increment back funds, see if we can
  *      process more jobs with new funds, delete update message
  */
-void hostNode::handleUpdateMessage(routerMsg* msg) {
+void hostNodeBase::handleUpdateMessage(routerMsg* msg) {
     vector<tuple<int, double , routerMsg *, Id>> *q;
     int prevNode = msg->getRoute()[msg->getHopCount()-1];
     updateMsg *uMsg = check_and_cast<updateMsg *>(msg->getEncapsulatedPacket());
@@ -579,7 +593,7 @@ void hostNode::handleUpdateMessage(routerMsg* msg) {
 /* emits all the default statistics across all the schemes
  * until the end of the simulation
  */
-void hostNode::handleStatMessage(routerMsg* ttmsg){
+void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
     // reschedule this message to be sent again
     if (simTime() > _simulationLength){
         delete ttmsg;
@@ -591,7 +605,7 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
     if (_signalsEnabled) {
         // per channel Stats
         for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
-            PaymentChannel *p = it->second;
+            PaymentChannel *p = &(it->second);
             
             emit(p->numInQueuePerChannelSignal, (p->queuedTransUnits).size());
             emit(p->balancePerChannelSignal, p->balance);
@@ -608,7 +622,7 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
        if (it != getIndex()) {
            if (nodeToShortestPathsMap.count(it) > 0) {
                for (auto p: nodeToShortestPathsMap[it]) {
-                   PathInfo *pathInfo = nodeToShortestPathsMap[it][p.first];
+                   PathInfo *pathInfo = &(nodeToShortestPathsMap[it][p.first]);
                    if (_signalsEnabled) {
                        emit(pathInfo->bottleneckPerDestPerPathSignal, pathInfo->bottleneck);
                        emit(pathInfo->probabilityPerDestPerPathSignal, pathInfo->probability);
@@ -643,12 +657,7 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
                emit(numArrivedPerDestSignals[it], statNumArrived[it]);
                emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
                emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
-               emit(numTimedOutAtSenderSignals[it], statNumTimedOutAtSender[it]);
-               emit(demandEstimatePerDestSignals[it], nodeToDestInfo[it].demand); 
                emit(numPendingPerDestSignals[it], destNodeToNumTransPending[it]);
-               emit(numWaitingPerDestSignals[it], 
-                       nodeToDestInfo[it].transWaitingToBeSent.size()); 
-               
                int frac = ((100*statNumCompleted[it])/(max(statNumArrived[it],1)));
                emit(fracSuccessfulPerDestSignals[it],frac);
            }
@@ -661,7 +670,7 @@ void hostNode::handleStatMessage(routerMsg* ttmsg){
  * this included removal from outgoing/incoming units and any
  * queues
  */
-void hostNode::handleClearStateMessage(routerMsg* ttmsg){
+void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
     //reschedule for the next interval
     if (simTime() > _simulationLength){
         delete ttmsg;
@@ -746,7 +755,7 @@ void hostNode::handleClearStateMessage(routerMsg* ttmsg){
                     double amount = iterOutgoing -> second;
                     iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
               
-                    PaymentChannel *nextChannel = nodeToPaymentChannel[nextNode];
+                    PaymentChannel *nextChannel = &(nodeToPaymentChannel[nextNode]);
                     double updatedBalance = nextChannel->balance + amount;
                     nextChannel->balance = updatedBalance; 
                     nextChannel->balanceEWMA = (1 -_ewmaFactor) * nextChannel->balanceEWMA + 
@@ -778,7 +787,7 @@ void hostNode::handleClearStateMessage(routerMsg* ttmsg){
  *  adjusts (decrements) channel balance, sends message to next node on route
  *  as long as it isn't cancelled
  */
-bool hostNode::forwardTransactionMessage(routerMsg *msg) {
+bool hostNodeBase::forwardTransactionMessage(routerMsg *msg) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
     int nextDest = msg->getRoute()[msg->getHopCount()+1];
     int transactionId = transMsg->getTransactionId();
@@ -814,7 +823,7 @@ bool hostNode::forwardTransactionMessage(routerMsg *msg) {
         int amt = transMsg->getAmount();
         double newBalance = neighbor->balance - amt;
         neighbor->balance = newBalance;
-        neighbor-> balanceEWMA = (1 -_ewmaFactor) * neighbor->alanceEWMA + 
+        neighbor-> balanceEWMA = (1 -_ewmaFactor) * neighbor->balanceEWMA + 
             (_ewmaFactor) * newBalance;
         
         if (_loggingEnabled) cout << "forwardTransactionMsg send: " << simTime() << endl;
@@ -828,7 +837,7 @@ bool hostNode::forwardTransactionMessage(routerMsg *msg) {
 /* responsible for forwarding all messages but transactions which need special care
  * in particular, looks up the next node's interface and sends out the message
  */
-void hostNode::forwardMessage(routerMsg* msg){
+void hostNodeBase::forwardMessage(routerMsg* msg){
    // Increment hop count.
    msg->setHopCount(msg->getHopCount()+1);
    //use hopCount to find next destination
@@ -940,13 +949,6 @@ void hostNodeBase::initialize() {
         signal = registerSignalPerDest("numPending", i, "_Total");
         numPendingPerDestSignals.push_back(signal);
         
-        signal = registerSignalPerDest("numWaiting", i, "_Total");
-        numWaitingPerDestSignals.push_back(signal);
-
-        signal = registerSignalPerDest("numTimedOutAtSender", i, "_Total");
-        numTimedOutAtSenderSignals.push_back(signal);
-        statNumTimedOutAtSender.push_back(0);
-
         signal = registerSignalPerDest("fracSuccessful", i, "_Total");
         fracSuccessfulPerDestSignals.push_back(signal);
 
@@ -954,11 +956,6 @@ void hostNodeBase::initialize() {
         rateFailedPerDestSignals.push_back(signal);
         statRateFailed.push_back(0);
 
-        signal = registerSignalPerDest("pathPerTrans", i, "");
-        pathPerTransPerDestSignals.push_back(signal);
-
-        signal = registerSignalPerDest("demandEstimate", i, "");
-        demandEstimatePerDestSignals.push_back(signal);
     }
     
     // generate first transaction
@@ -977,7 +974,7 @@ void hostNodeBase::initialize() {
 /* function that is called at the end of the simulation that
  * deletes any remaining messages and records scalars
  */
-void hostNode::finish() {
+void hostNodeBase::finish() {
     deleteMessagesInQueues();
     if (myIndex() == 0) {
         // can be done on a per node basis also if need be
@@ -995,7 +992,7 @@ void hostNode::finish() {
  *  TransUnits until channel funds are too low
  *  calls forwardTransactionMessage on every individual TransUnit
  */
-void hostNode:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q) {
+void hostNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q) {
     bool successful = true;
     while((int)q.size() > 0 && successful) {
         successful = forwardTransactionMessage(get<2>(q.back()));
@@ -1009,7 +1006,7 @@ void hostNode:: processTransUnits(int dest, vector<tuple<int, double , routerMsg
 /* removes all of the cancelled messages from the queues to any
  * of the adjacent payment channels
  */
-void hostNode::deleteMessagesInQueues(){
+void hostNodeBase::deleteMessagesInQueues(){
     for (auto iter = nodeToPaymentChannel.begin(); iter!=nodeToPaymentChannel.end(); iter++){
         int key = iter->first;
         for (auto temp = (nodeToPaymentChannel[key].queuedTransUnits).begin();

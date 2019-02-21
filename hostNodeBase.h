@@ -1,5 +1,5 @@
-#ifndef ROUTERNODE_BASE_H
-#define ROUTERNODE_BASE_H
+#ifndef ROUTERNODE_H
+#define ROUTERNODE_H
 
 #include <stdio.h>
 #include <string.h>
@@ -18,13 +18,14 @@
 #include <map>
 #include <fstream>
 #include "global.h"
+#include "hostInitialize.h"
 
 using namespace std;
 using namespace omnetpp;
 
-class hostNodeBase {
-    private:
-        int myIndex; // node identifier
+class hostNodeBase : public cSimpleModule {
+    protected:
+        int index; // node identifier
         map<int, PaymentChannel> nodeToPaymentChannel;
         map<int, DestInfo> nodeToDestInfo; //one structure per destination;
              
@@ -77,9 +78,10 @@ class hostNodeBase {
         map<int, AckState> transToAmtLeftToComplete = {};
         //allows us to calculate the htlcIndex number
         map<int, int> transactionIdToNumHtlc = {};         
-       
     
     protected:
+
+    public:
         //if host node, return getIndex(), if routerNode, return getIndex()+numHostNodes
         virtual int myIndex();
         virtual void setIndex(int index);  
@@ -106,8 +108,9 @@ class hostNodeBase {
       
 
         // message handlers
-        // virtual void handleMessage(cMessage *msg);
-        virtual void handleTransactionMessage(routerMsg *msg, bool revisit);
+        virtual void handleMessage(routerMsg *msg);
+        virtual void handleMessage(cMessage *msg) override;
+        virtual void handleTransactionMessage(routerMsg *msg, bool revisit=false);
         virtual void handleTransactionMessageSpecialized(routerMsg *msg);
         //returns true if message was deleted
         virtual bool handleTransactionMessageTimeOut(routerMsg *msg); 
@@ -126,8 +129,8 @@ class hostNodeBase {
         virtual void forwardMessage(routerMsg *msg);
 
         // core simulator functions
-        virtual void initialize();
-        virtual void finish();
+        virtual void initialize() override;
+        virtual void finish() override;
         virtual void processTransUnits(int dest, 
                 vector<tuple<int, double , routerMsg *, Id>>& q);
         virtual void deleteMessagesInQueues();
