@@ -107,7 +107,8 @@ class hostNodeBase {
 
         // message handlers
         // virtual void handleMessage(cMessage *msg);
-        virtual void handleTransactionMessage(routerMsg *msg);
+        virtual void handleTransactionMessage(routerMsg *msg, bool revisit);
+        virtual void handleTransactionMessageSpecialized(routerMsg *msg);
         //returns true if message was deleted
         virtual bool handleTransactionMessageTimeOut(routerMsg *msg); 
         virtual void handleTimeOutMessage(routerMsg *msg);

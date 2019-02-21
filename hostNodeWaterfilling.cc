@@ -102,6 +102,117 @@ routerMsg* hostNodeWaterfilling::generateProbeMessage(int destNode, int pathIdx,
 }
 
 
+
+/* overall controller for handling messages that dispatches the right function
+ * based on message type in waterfilling
+ */
+void hostNode::handleMessage(routerMsg *ttmsg) {
+    switch(ttmsg->getMessageType()) {
+        case PROBE_MSG:
+             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                 <<": RECEIVED PROBE MSG] "<< msg->getName() << endl;
+             handleProbeMessage(ttmsg);
+             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+             break;
+    }
+}
+
+/* main routine for handling transaction messages for waterfilling
+ * that initiates probes and splits transactions according to latest probes
+ * TODO: don't wait until after 1 second for retries
+ */
+void hostNodeWaterfilling::handleTransactionMessageSpecialized(routerMsg* ttmsg){
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+    int hopcount = ttmsg->getHopCount();
+    int destNode = transMsg->getReceiver();
+    int nextNode = ttmsg->getRoute()[hopcount+1];
+    int transactionId = transMsg->getTransactionId();
+    double waitTime = _maxTravelTime;
+    
+    // txn at receiver
+    if (!ttmsg->isSelfMessage()) {
+        // add to incoming units
+        int prevNode = ttmsg->getRoute()[hopCount - 1];
+        map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+        (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = 
+            transMsg->getAmount();
+
+        if (_timeoutEnabled) {
+            auto iter = find_if(canceledTransactions.begin(),
+               canceledTransactions.end(),
+               [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
+               { return get<0>(p) == transactionId; });
+
+            if (iter!=canceledTransactions.end()){
+                canceledTransactions.erase(iter);
+            }
+        }
+
+        // send ack
+        routerMsg* newMsg =  generateAckMessage(ttmsg);
+        forwardMessage(newMsg);
+        return; 
+    }
+    else { 
+        // transaction received at sender
+        //If transaction seen for first time, update stats.
+        if (simTime() == transMsg->getTimeSent()) { 
+            statNumArrived[destNode] += 1; 
+            statRateArrived[destNode] += 1; 
+            destNodeToNumTransPending[destNode] += 1; 
+            
+            AckState * s = new AckState();
+            s->amtReceived = 0;
+            s->amtSent = transMsg->getAmount();
+            transToAmtLeftToComplete[transMsg->getTransactionId()] = *s;
+        }
+        
+        // Compute paths and initialize probes if destination hasn't been encountered
+        if (nodeToShortestPathsMap.count(destNode) == 0 ){
+            vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
+            initializeProbes(kShortestRoutes, destNode);
+            scheduleAt(simTime() + waitTime, ttmsg);
+            return;
+        }
+        else {
+            // if all probes from destination are recent enough and txn hasn't timed out, 
+            // send transaction on one or more paths.
+            bool recent = probesRecent(nodeToShortestPathsMap[destNode]);
+            if (recent){
+                if ((!_timeoutEnabled) || (simTime() < (transMsg->getTimeSent() + transMsg->getTimeOut()))) { 
+                    splitTransactionForWaterfilling(ttmsg);
+                    double amtRemaining = transMsg->getAmount();
+                    if (amtRemaining > 0) {
+                        scheduleAt(simTime() + waitTime, ttmsg);
+                    }
+                    else {
+                        ttmsg->decapsulate();
+                        delete transMsg;
+                        delete ttmsg;
+                    }
+                }
+                else {
+                    // transaction timed out
+                    statNumTimedOut[destNode] += 1;
+                    statNumTimedOutAtSender[destNode] += 1; 
+                    ttmsg->decapsulate();
+                    delete transMsg;
+                    delete ttmsg;
+                }
+                return;
+            }
+            else { 
+                // need more recent probes
+                if (destNodeToNumTransPending[destNode] > 0) {
+                    restartProbes(destNode);
+                }
+                scheduleAt(simTime() + waitTime, ttmsg);
+                return;
+            }
+        }
+    }
+}
+
 /* handles the special time out mechanism for waterfilling which is responsible
  * for sending time out messages on all paths that may have seen this txn and 
  * marking the txn as cancelled
@@ -512,7 +623,7 @@ void hostNode::splitTransactionForWaterfilling(routerMsg * ttmsg){
             
             // increment numAttempted per path
             pathInfo->statRateAttempted += 1;
-            handleTransactionMessage(waterMsg);
+            handleTransactionMessage(waterMsg, true/*revisit*/);
             
             // incrementInFlight balance
             pathInfo->sumOfTransUnitsInFlight += p.second;

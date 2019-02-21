@@ -26,7 +26,8 @@ class hostNodeWaterfilling : public hostNodeBase {
         virtual routerMsg *generateProbeMessage(int destNode, int pathIdx, vector<int> path);
 
         // message handlers
-        virtual void handleTransactionMessageWaterfilling(routerMsg *msg);
+        virtual void handleMessage(routerMsg *msg);
+        virtual void handleTransactionMessageSpecialized(routerMsg *msg) override;
         virtual void handleTimeOutMessage(routerMsg *msg) override;
         virtual void handleProbeMessage(routerMsg *msg);
         virtual void handleClearStateMessage(routerMsg *msg) override;

@@ -214,6 +214,161 @@ vector<PathRateTuple> hostNodePriceScheme::computeProjection(
 }
 
 
+/* overall controller for handling messages that dispatches the right function
+ * based on message type in price Scheme
+ */
+void hostNode::handleMessage(routerMsg *ttmsg) {
+    switch(ttmsg->getMessageType()) {
+        case TRIGGER_PRICE_UPDATE_MSG:
+             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                 <<": RECEIVED TRIGGER_PRICE_UPDATE MSG] "<< msg->getName() << endl;
+             handleTriggerPriceUpdateMessage(ttmsg);
+             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+             break;
+
+        case PRICE_UPDATE_MSG:
+             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                 <<": RECEIVED PRICE_UPDATE MSG] "<< msg->getName() << endl;
+             handlePriceUpdateMessage(ttmsg);
+             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+             break;
+
+        case TRIGGER_PRICE_QUERY_MSG:
+             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                 <<": RECEIVED TRIGGER_PRICE_QUERY MSG] "<< msg->getName() << endl;
+             handleTriggerPriceQueryMessage(ttmsg);
+             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+             break;
+        
+        case PRICE_QUERY_MSG:
+             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                 <<": RECEIVED PRICE_QUERY MSG] "<< msg->getName() << endl;
+             handlePriceQueryMessage(ttmsg);
+             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+             break;
+
+        case TRIGGER_TRANSACTION_SEND_MSG:
+             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                 <<": RECEIVED TRIGGER_TXN_SEND MSG] "<< msg->getName() << endl;
+             handleTriggerTransactionSendMessage(ttmsg);
+             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+             break;
+
+    }
+}
+
+/* main routine for handling a new transaction under the pricing scheme
+ * In particular, initiate price probes, assigns a txn to a path if the 
+ * rate for that path allows it, otherwise queues it at the sender
+ * until a timer fires on the next path allowing a txn to go through
+ */
+void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+    int hopcount = ttmsg->getHopCount();
+    int destNode = transMsg->getReceiver();
+    int nextNode = ttmsg->getRoute()[hopcount + 1];
+    int transactionId = transMsg->getTransactionId();
+    
+    // first time seeing this transaction so add to d_ij computation
+    // count the txn for accounting also
+    if (simTime() == transMsg->getTimeSent()) {
+        destNodeToNumTransPending[destNode]  += 1;
+        nodeToDestInfo[destNode].transSinceLastInterval += 1;
+        statNumArrived[destNode] += 1; 
+        statRateArrived[destNode] += 1; 
+    }
+
+    // initiate price probes if it is a new destination
+    if (nodeToShortestPathsMap.count(destNode) == 0 && ttmsg->isSelfMessage()){
+        vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
+        initializePriceProbes(kShortestRoutes, destNode);
+        //TODO: change to a queue implementation
+        scheduleAt(simTime() + _maxTravelTime, ttmsg);
+        return;
+    }
+    
+    // at destination, add to incoming transUnits and trigger ack
+    if (transMsg->getReceiver() == myIndex()) {
+        int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
+        map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+        (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] =
+            transMsg->getAmount();
+        
+        if (_timeoutEnabled) {
+            auto iter = find_if(canceledTransactions.begin(),
+               canceledTransactions.end(),
+               [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
+               { return get<0>(p) == transactionId; });
+
+            if (iter!=canceledTransactions.end()){
+                canceledTransactions.erase(iter);
+            }
+        }
+        routerMsg* newMsg =  generateAckMessage(ttmsg);
+        forwardMessage(newMsg);
+        return;
+    }
+    else if (ttmsg->isSelfMessage()) {
+        // at sender, either queue up or send on a path that allows you to send
+        DestInfo* destInfo = &(nodeToDestInfo[destNode]);
+       
+        //send on a path if no txns queued up and timer was in the path
+        if ((destInfo->transWaitingToBeSent).size() > 0) {
+            destInfo->transWaitingToBeSent.push_back(ttmsg);
+        } else {
+            for (auto p: nodeToShortestPathsMap[destNode]) {
+                int pathIndex = p.first;
+                PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
+                
+                if (pathInfo->rateToSendTrans > 0 && simTime() > pathInfo->timeToNextSend) {
+                    ttmsg->setRoute(pathInfo->path);
+                    int nextNode = pathInfo->path[1];
+                    handleTransactionMessage(ttmsg, true /*revisit*/);
+
+                    // record stats on sent units for payment channel, destination and path
+                    nodeToPaymentChannel[nextNode].nValue += 1;
+                    statRateAttempted[destNode] += 1;
+                    pathInfo->nValue += 1;
+                    pathInfo->statRateAttempted += 1;
+                    pathInfo->sumOfTransUnitsInFlight += transMsg->getAmount();
+                    pathInfo->lastTransSize = transMsg->getAmount();
+                    pathInfo->lastSendTime = simTime();
+                    pathInfo->amtAllowedToSend = max(pathInfo->amtAllowedToSend - transMsg->getAmout(), 0.0);
+                
+                    // update the "time when the next transaction can be sent"
+                    double rateToUse = max(pathInfo->rateToSendTrans, _epsilon);
+                    simtime_t newTimeToNextSend =  simTime() + max(transMsg->getAmount()/rateToUse, _epsilon);
+                    pathInfo->timeToNextSend = newTimeToNextSend;
+                    
+                    //generate time out message here, when path is decided
+                    if (_timeoutEnabled) {
+                        routerMsg *toutMsg = generateTimeOutMessage(ttmsg);
+                        scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
+                    }
+                    
+                    if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
+                    return;
+                }
+            }
+            
+            //transaction cannot be sent on any of the paths, queue transaction
+            destInfo->transWaitingToBeSent.push_back(ttmsg);
+            for (auto p: nodeToShortestPathsMap[destNode]) {
+                PathInfo *pInfo = &(nodeToShortestPathsMap[destNode][p.first]);
+                if (pInfo->isSendTimerSet == false) {
+                    simtime_t timeToNextSend = pInfo->timeToNextSend;
+                    if (simTime() > timeToNextSend) {
+                        timeToNextSend = simTime() + _epsilon;
+                    }               
+                }
+                scheduleAt(timeToNextSend, pInfo->triggerTransSendMsg);
+                pInfo->isSendTimerSet = true;
+            }
+        }
+    }
+}
+
+
 /* handler for the statistic message triggered every x seconds to also
  * output the price based scheme stats in addition to the default
  */
@@ -596,7 +751,7 @@ void hostNode::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         }
 
         // cannot be cancelled at this point
-        handleTransactionMessage(msgToSend);
+        handleTransactionMessage(msgToSend, 1/*revisiting*/);
 
         // update the number attempted to this destination and on this path
         p->statRateAttempted = p->statRateAttempted + 1;
@@ -737,9 +892,3 @@ void hostNodePriceScheme::initialize() {
         scheduleAt(simTime() + _tQuery, triggerPriceQueryMsg );
     }
 }
-
-
-
-
-
-

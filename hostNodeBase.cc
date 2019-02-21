@@ -304,6 +304,114 @@ routerMsg *hostNode::generateTimeOutMessage(routerMsg* msg) {
 
 /***** MESSAGE HANDLERS *****/
 
+void hostNodeBase::handleTransactionMessageSpecialized(routerMsg *ttmsg) {
+    handleTransactionMessage(ttmsg);
+}
+
+/* Main handler for normal processing of a transaction
+ * checks if message has reached sender
+ *      1. has reached  - turn transactionMsg into ackMsg, forward ackMsg
+ *      2. has not reached yet - add to appropriate job queue q, process q as
+ *          much as we have funds for
+ */
+void hostNode::handleTransactionMessage(routerMsg* ttmsg, bool revisit = false){
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+    int hopcount = ttmsg->getHopCount();
+    vector<tuple<int, double , routerMsg *, Id>> *q;
+    int destination = transMsg->getReceiver();
+    int transactionId = transMsg->getTransactionId();
+    
+    if (!revisit) {
+        statRateArrived[destination] += 1;
+        statRateAttempted[destination] += 1;
+    }
+    
+    // if it is at the destination
+    if (ttmsg->getHopCount() ==  ttmsg->getRoute().size() - 1) {
+        // add to incoming trans units 
+        int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
+        map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+        (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = 
+            transMsg->getAmount();
+        
+        if (_timeoutEnabled){
+            //TODO: what if we have multiple HTLC's per transaction id?
+            auto iter = find_if(canceledTransactions.begin(),
+               canceledTransactions.end(),
+               [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
+               { return get<0>(p) == transactionId; });
+            if (iter!=canceledTransactions.end()) {
+                canceledTransactions.erase(iter);
+            }
+        }
+        // send ack even if it has timed out because txns wait till _maxTravelTime before being 
+        // cleared by clearState
+        routerMsg* newMsg =  generateAckMessage(ttmsg);
+        forwardMessage(newMsg);
+        return;
+    } 
+    else{
+        //at the sender
+        int destNode = transMsg->getReceiver();
+        int nextNode = ttmsg->getRoute()[hopcount+1];
+        q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
+        tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
+
+        // if there is insufficient balance at the first node, return failure
+        if (_hasQueueCapacity && _queueCapacity == 0) {
+            if (forwardTransactionMessage(ttmsg) == false) {
+                routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
+                handleAckMessage(failedAckMsg);
+            }
+        }
+        else if (_hasQueueCapacity && (*q).size() >= _queueCapacity) {
+            // there are other transactions ahead in the queue so don't attempt to forward 
+            routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
+            handleAckMessage(failedAckMsg);
+        }
+        else{
+            // add to queue and process in order of queue
+            (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
+                  ttmsg, key));
+            push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
+            processTransUnits(nextNode, *q);
+        }
+    }
+}
+
+
+/* handler responsible for prematurely terminating the processing
+ * of a transaction if it has timed out and deleteing it. Returns
+ * true if the transaction is timed out so that no special handlers
+ * are called after
+ */
+bool hostNode::handleTransactionMessageTimeOut(routerMsg* ttmsg) {
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+    int transactionId = transMsg->getTransactionId();
+
+    // look for transaction in cancelled txn set and delete if present
+    auto iter = find_if(canceledTransactions.begin(),
+         canceledTransactions.end(),
+         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
+         { return get<0>(p) == transactionId; });
+    
+    if ( iter!=canceledTransactions.end() ){
+        if (getIndex() == transMsg->getSender()) {
+            statNumTimedOutAtSender[transMsg->getReceiver()] = 
+                statNumTimedOutAtSender[transMsg->getReceiver()] + 1;
+        }
+
+        //delete yourself
+        ttmsg->decapsulate();
+        delete transMsg;
+        delete ttmsg;
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
 /*  Default action for time out message that is responsible for either recognizing
  *  that txn is complete and timeout is a noop or inserting the transaction into 
  *  a cancelled transaction list
@@ -928,424 +1036,3 @@ void hostNode::deleteMessagesInQueues(){
         }
     }
 }
-
-
-
-
-//If transaction already timed-out, delete it without processing it. 
-bool hostNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
-   transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
-
-   //check if transactionId is in canceledTransaction set
-   int transactionId = transMsg->getTransactionId();
-
-   auto iter = find_if(canceledTransactions.begin(),
-         canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-         { return get<0>(p) == transactionId; });
-
-   //Radhika: is the first condition needed? Isn't last condition enough?
-   // Vibhaa got rid of the last condition
-   //
-   // this will never get hit i think
-   if ( iter!=canceledTransactions.end() ){
-       if (getIndex() == transMsg->getSender()) {
-          statNumTimedOutAtSender[transMsg->getReceiver()] = 
-              statNumTimedOutAtSender[transMsg->getReceiver()] + 1;
-
-
-       }
-
-      //delete yourself
-      ttmsg->decapsulate();
-      delete transMsg;
-      delete ttmsg;
-      return true;
-   }
-   else{
-      return false;
-   }
-}
-
-void hostNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){
-   transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
-   int hopcount = ttmsg->getHopCount();
-
-   int destination = transMsg->getReceiver();
-   //is a self-message/at hop count = 0
-   int destNode = transMsg->getReceiver();
-   int nextNode = ttmsg->getRoute()[hopcount+1];
-
-
-
-   // first time seeing this transaction so add to d_ij computation
-   // count the txn for accounting also
-   if (simTime() == transMsg->getTimeSent()){
-       destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] + 1;
-       nodeToDestInfo[destNode].transSinceLastInterval += 1;
-       statNumArrived[destNode] = statNumArrived[destNode]+1;
-       statRateArrived[destNode] = statRateArrived[destNode]+1;
-   }
-
-   if (nodeToShortestPathsMap.count(destNode) == 0 && getIndex() == transMsg->getSender()){
-      vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
-      initializePriceProbes(kShortestRoutes, destNode);
-      //TODO: change to a queue implementation
-      scheduleAt(simTime() + _maxTravelTime, ttmsg);
-      return;
-   }
-
-   int transactionId = transMsg->getTransactionId();
-   if (transMsg->getReceiver() == myIndex()) {
-      int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
-
-      map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-      (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = transMsg->getAmount();
-      int transactionId = transMsg->getTransactionId();
-      routerMsg* newMsg =  generateAckMessage(ttmsg);
-
-      if (_timeoutEnabled){
-         //forward ack message - no need to wait;
-         //check if transactionId is in canceledTransaction set
-         auto iter = find_if(canceledTransactions.begin(),
-               canceledTransactions.end(),
-               [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-               { return get<0>(p) == transactionId; });
-
-         if (iter!=canceledTransactions.end()){
-            canceledTransactions.erase(iter);
-         }
-      }
-      forwardAckMessage(newMsg);
-      return;
-   }
-   else if (transMsg->getSender() == myIndex()) {
-    // Vibhaa : Fix this to use self-message
-      //is a self-message/at hop count = 0
-      int destNode = transMsg->getReceiver();
-
-      DestInfo* destInfo = &(nodeToDestInfo[destNode]);
-
-      //check if there are transactions queued up
-      if ((destInfo->transWaitingToBeSent).size() == 0){ //none queued up
-         //for each of the k paths for that destination
-         for (auto p: nodeToShortestPathsMap[destNode]){
-            int pathIndex = p.first;
-            PathInfo second = nodeToShortestPathsMap[destNode][pathIndex];
-
-            if (second.rateToSendTrans > 0 && simTime() > second.timeToNextSend){
-               //set transaction path and update inflight on path
-               ttmsg->setRoute(second.path);
-
-               int nextNode = second.path[1];
-                //transaction being sent out, need to increment nValue
-               nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + 1;
-
-                // increment number of units sent to a particular destination on a particular path
-                nodeToShortestPathsMap[destNode][pathIndex].nValue += 1;
-               
-                //generate time out message here, when path is decided
-                if (_timeoutEnabled) {
-                 routerMsg *toutMsg = generateTimeOutMessage(ttmsg);
-                 scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
-                }
-                
-            // @Vibhaa: should this be calling handleTransactionMessage because there might be queues to this payment channel
-            // doesn't happen typically at the end host but still
-               forwardTransactionMessage(ttmsg);
-
-               // update number attempted to this destination and on this path
-              nodeToShortestPathsMap[destNode][pathIndex].statRateAttempted =
-                nodeToShortestPathsMap[destNode][pathIndex].statRateAttempted + 1;
-              statRateAttempted[destNode] += 1;
-               
-               //update "amount of transaction in flight" and other state regarding last transaction to this destination
-               nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight =
-                  nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight + transMsg->getAmount();
-               nodeToShortestPathsMap[destNode][pathIndex].lastTransSize = transMsg->getAmount();
-               nodeToShortestPathsMap[destNode][pathIndex].lastSendTime = simTime();
-               nodeToShortestPathsMap[destNode][pathIndex].amtAllowedToSend = 
-                   max(nodeToShortestPathsMap[destNode][pathIndex].amtAllowedToSend - transMsg->getAmount(), 
-                           0.0);
-
-
-               //update the "time when the next transaction can be sent
-               double rateToUse = max(second.rateToSendTrans, _epsilon);
-               simtime_t newTimeToNextSend =  simTime() + max(transMsg->getAmount()/rateToUse, _epsilon);
-               nodeToShortestPathsMap[destNode][pathIndex].timeToNextSend = newTimeToNextSend;
-                
-               if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
-
-               return;
-            }
-         }
-
-         //transaction cannot be sent on any of the paths, queue transaction
-         // can't you just send out transaction here because you should have actually sent the txn but you havent
-         destInfo->transWaitingToBeSent.push_back(ttmsg);
-         for (auto p: nodeToShortestPathsMap[destNode]){
-            PathInfo pInfo = p.second;
-            if (p.second.isSendTimerSet == false){
-               simtime_t timeToNextSend = pInfo.timeToNextSend;
-               if (simTime()>timeToNextSend){
-                  //pInfo.timeToNextSend = simTime() + 0.5;
-                  timeToNextSend = simTime() + _epsilon; //TODO: fix this constant
-               }
-               scheduleAt(timeToNextSend, pInfo.triggerTransSendMsg);
-               nodeToShortestPathsMap[destNode][p.first].isSendTimerSet = true;
-            }
-         }
-
-      }
-      else{ //has a queue
-         destInfo->transWaitingToBeSent.push_back(ttmsg);
-      }
-   }
-
-}
-
-
-
-void hostNode::handleTransactionMessageWaterfilling(routerMsg* ttmsg){
-   transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
-
-   int hopcount = ttmsg->getHopCount();
-   
-   //is a self-message/at hop count = 0
-   int destNode = transMsg->getReceiver();
-   int nextNode = ttmsg->getRoute()[hopcount+1];
-
-   assert(destNode != myIndex()); 
-   //no route is specified -
-   //means we need to break up into chunks and assign route
-
-   //If transaction seen for first time, update stats.
-   if (simTime() == transMsg->getTimeSent()){ //TODO: flag for transactionMessage (isFirstTime seen)
-      statNumArrived[destNode] = statNumArrived[destNode]+1;
-      statRateArrived[destNode] = statRateArrived[destNode]+1;
-      destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode] + 1;
-      AckState * s = new AckState();
-      s->amtReceived = 0;
-      s->amtSent = transMsg->getAmount();
-      transToAmtLeftToComplete[transMsg->getTransactionId()] = *s;
-   }
-
-   //If destination seen for first time, compute K shortest paths and initialize probes.
-   if (nodeToShortestPathsMap.count(destNode) == 0 ){
-      vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
-      if (_loggingEnabled) {
-         cout << "source: " << transMsg->getSender() << ", dest: " << destNode << endl;
-
-         for (auto v: kShortestRoutes){
-            cout << "route: ";
-            printVector(v);
-         }
-
-         cout << "after K Shortest Routes" << endl;
-      }
-      initializeProbes(kShortestRoutes, destNode);
-
-      /* schedule more probes
-      for (auto i = 0; i < numProbes; i++) {
-          timeBetweenProbes = _maxTravelTime / _numOutstandingProbes;
-          scheduleAt(simTime + timeBetweenProbes, triggerNewProbesMsg);
-      }*/
-      scheduleAt(simTime() + 1, ttmsg);
-      return;
-   }
-   else{
-      bool recent = probesRecent(nodeToShortestPathsMap[destNode]);
-
-      //if all probes from destination are recent enough, send transaction on one or more paths.
-      if (recent){ // we made sure all the probes are back
-         // destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode]-1;
-         if ((!_timeoutEnabled) || (simTime() < (transMsg->getTimeSent() + transMsg->getTimeOut()))) { 
-             //TODO: remove?
-            splitTransactionForWaterfilling(ttmsg);
-            if (transMsg->getAmount()>0){
-               // destNodeToNumTransPending[destNode] = destNodeToNumTransPending[destNode]+1;
-               scheduleAt(simTime() + 1, ttmsg);
-            }
-            else{
-               ttmsg->decapsulate();
-               delete transMsg;
-               delete ttmsg;
-            }
-         }
-         //don't send transaction if it has timed out.
-         else{
-            statNumTimedOut[destNode] += 1;
-            statNumTimedOutAtSender[destNode] += 1; 
-            ttmsg->decapsulate();
-            delete transMsg;
-            delete ttmsg;
-         }
-         return;
-      }
-
-      else{ //if not recent
-         if (destNodeToNumTransPending[destNode] > 0){
-             restartProbes(destNode);
-         }
-         scheduleAt(simTime() + 1, ttmsg);
-         return;
-      }
-   }
-}
-
-
-
-void hostNode::handleTransactionMessageLandmarkRouting(routerMsg* ttmsg){
-   transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
-
-   int hopcount = ttmsg->getHopCount();
-   vector<tuple<int, double , routerMsg *, Id>> *q;
-
-   int destNode = transMsg->getReceiver();
-   int destination = destNode;
-
-   if (ttmsg->getRoute().size() == 0){ //route not yet set, first time we're seeing it
-
-       // in waterfilling message can be received multiple times, so only update when simTime == transTime
-      statNumArrived[destination] = statNumArrived[destination] + 1;
-      statRateArrived[destination] = statRateArrived[destination] + 1;
-      statRateAttempted[destination] = statRateAttempted[destination] + 1;
-
-      //If destination seen for first time, compute K shortest paths and initialize probes.
-        if (nodeToShortestPathsMap.count(destNode) == 0 ){
-
-            //cout << "calculate new routes" << endl;
-           vector<vector<int>> kShortestRoutes = getKShortestRoutesLandmarkRouting(transMsg->getSender(),destNode, _kValue);
-           initializePathInfoLandmarkRouting(kShortestRoutes, destNode); //initialize PathInfo struct: including signals
-        }
-
-           initializeLandmarkRoutingProbes(ttmsg, transMsg->getTransactionId(), destNode ); //parameters: routerMsg* ttmsg, int destNode
-
-   }
-   else if(ttmsg->getRoute().size() > 0 && ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
-      int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
-      map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-      (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = transMsg->getAmount();
-      int transactionId = transMsg->getTransactionId();
-      routerMsg* newMsg =  generateAckMessage(ttmsg);
-
-      forwardAckMessage(newMsg);
-      return;
-   }
-   else if(ttmsg->getRoute().size() > 0 && ttmsg->getHopCount() == 0){
-
-      //is a self-message/at hop count = 0
-      int destNode = transMsg->getReceiver();
-      int nextNode = ttmsg->getRoute()[hopcount+1];
-      q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
-      tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
-
-      if (_hasQueueCapacity && _queueCapacity <= (*q).size()){ //failed transaction, queue at capacity
-          if (forwardTransactionMessage(ttmsg) == false){ //attempt to send - important if queue size is 0
-
-              routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
-                      handleAckMessage(failedAckMsg);
-          }
-          else{
-
-          }
-      }
-      else{
-
-         (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
-                  ttmsg, key));
-         push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
-         processTransUnits(nextNode, *q);
-      }
-   }
-   else{
-       cout << "should never be here in handleTransactionMessageLandmarkRouting" << endl;
-   }
-}
-
-
-
-
-/* handleTransactionMessage - checks if message has arrived
- *      1. has arrived - turn transactionMsg into ackMsg, forward ackMsg
- *      2. has not arrived - add to appropriate job queue q, process q as
- *          much as we have funds for
- */
-void hostNode::handleTransactionMessage(routerMsg* ttmsg){
-   transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
-
-   int hopcount = ttmsg->getHopCount();
-   vector<tuple<int, double , routerMsg *, Id>> *q;
-
-   int destination = transMsg->getReceiver();
-   if (!_waterfillingEnabled && !_priceSchemeEnabled){
-       // in waterfilling and price scheme message can be received multiple times, so only update when simTime == transTime
-      statRateArrived[destination] = statRateArrived[destination] + 1;
-      statRateAttempted[destination] = statRateAttempted[destination] + 1;
-   }
-   
-   //check if transactionId is in canceledTransaction set
-   int transactionId = transMsg->getTransactionId();
-   if(ttmsg->getHopCount() ==  ttmsg->getRoute().size()-1){ // are at last index of route
-      int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
-      map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-      (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = transMsg->getAmount();
-      int transactionId = transMsg->getTransactionId();
-      routerMsg* newMsg =  generateAckMessage(ttmsg);
-
-      if (_timeoutEnabled){
-         //forward ack message - no need to wait;
-         //check if transactionId is in canceledTransaction set
-         //Radhika: what if we have multiple HTLC's per transaction id? Why is this check needed?
-         auto iter = find_if(canceledTransactions.begin(),
-               canceledTransactions.end(),
-               [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-               { return get<0>(p) == transactionId; });
-
-         if (iter!=canceledTransactions.end()){
-            canceledTransactions.erase(iter);
-         }
-      }
-
-      forwardAckMessage(newMsg);
-      return;
-   }
-   else{
-
-      //is a self-message/at hop count = 0
-      int destNode = transMsg->getReceiver();
-      int nextNode = ttmsg->getRoute()[hopcount+1];
-
-	 		//cout << "Transaction arrived: " << simTime() << " " << myIndex() << " " << destNode	<< endl;
-
-      q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
-      tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
-
-      if (_hasQueueCapacity && _queueCapacity == 0) {
-          if (forwardTransactionMessage(ttmsg) == false) {
-              // if there isn't balance, because cancelled txn case will never be hit
-              // TODO: make this and forward txn message cleaner
-              // maybe just clean out queue when a timeout arrives as opposed to after clear state
-             routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
-             handleAckMessage(failedAckMsg);
-          }
-      }
-      else if (_hasQueueCapacity && (*q).size() >= _queueCapacity){ 
-          //failed transaction, queue at capacity and others are queued so don't send this transaction even
-         routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
-         handleAckMessage(failedAckMsg);
-      }
-      else{
-          // add to queue and process in order of queue
-         (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
-                  ttmsg, key));
-         push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
-         processTransUnits(nextNode, *q);
-      }
-   }
-}
-
-
-
-
-

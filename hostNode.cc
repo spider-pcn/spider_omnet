@@ -176,7 +176,7 @@ void hostNode::handleMessage(cMessage *msg) {
              if (_timeoutEnabled && hostNodeObj->handleTransactionMessageTimeOut(ttmsg)){
                  return;
              }
-             hostNodeObj->handleTransactionMessage(ttmsg);
+             hostNodeObj->handleTransactionMessageSpecialized(ttmsg);
              if (_loggingEnabled) cout << "[AFTER HANDLING:]" << endl;
              break;
 
@@ -207,13 +207,6 @@ void hostNode::handleMessage(cMessage *msg) {
              if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
              break;
         
-        case PROBE_MSG:
-             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
-                 <<": RECEIVED PROBE MSG] "<< msg->getName() << endl;
-             hostNodeObj->handleProbeMessage(ttmsg);
-             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
-             break;
-        
         case CLEAR_STATE_MSG:
              if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
                  <<": RECEIVED CLEAR_STATE_MSG] "<< msg->getName() << endl;
@@ -221,40 +214,9 @@ void hostNode::handleMessage(cMessage *msg) {
              if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
              break;
         
-        case TRIGGER_PRICE_UPDATE_MSG:
-             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
-                 <<": RECEIVED TRIGGER_PRICE_UPDATE MSG] "<< msg->getName() << endl;
-             hostNodeObj->handleTriggerPriceUpdateMessage(ttmsg);
-             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
-             break;
+        default:
+            hostNodeObj->handleMessage(ttmsg);
 
-        case PRICE_UPDATE_MSG:
-             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
-                 <<": RECEIVED PRICE_UPDATE MSG] "<< msg->getName() << endl;
-             hostNodeObj->handlePriceUpdateMessage(ttmsg);
-             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
-             break;
-
-        case TRIGGER_PRICE_QUERY_MSG:
-             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
-                 <<": RECEIVED TRIGGER_PRICE_QUERY MSG] "<< msg->getName() << endl;
-             hostNodeObj->handleTriggerPriceQueryMessage(ttmsg);
-             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
-             break;
-        
-        case PRICE_QUERY_MSG:
-             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
-                 <<": RECEIVED PRICE_QUERY MSG] "<< msg->getName() << endl;
-             hostNodeObj->handlePriceQueryMessage(ttmsg);
-             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
-             break;
-
-        case TRIGGER_TRANSACTION_SEND_MSG:
-             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
-                 <<": RECEIVED TRIGGER_TXN_SEND MSG] "<< msg->getName() << endl;
-             hostNodeObj->handleTriggerTransactionSendMessage(ttmsg);
-             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
-             break;
     }
 }
 

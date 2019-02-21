@@ -11,14 +11,15 @@ class hostNodeLandmarkRouting : public hostNodeBase {
         map<int, ProbeInfo> transactionIdToProbeInfoMap = {}; //used only for landmark routing
 
     protected:
-       // message handlers 
-       virtual void handleTransactionMessage(routerMsg *msg) override;
-       virtual void handleProbeMessage(routerMsg *msg);
+        // message handlers
+        virtual void handleMessage(routerMsg *msg);
+        virtual void handleTransactionMessageSpecialized(routerMsg *msg) override;
+        virtual void handleProbeMessage(routerMsg *msg);
       
-       // core logic
-       virtual void initializePathInfoLandmarkRouting(vector<vector<int>> kShortestRoutes, 
+        // core logic
+        virtual void initializePathInfoLandmarkRouting(vector<vector<int>> kShortestRoutes, 
                int  destNode);
-       virtual void initializeLandmarkRoutingProbes(routerMsg * msg, 
+        virtual void initializeLandmarkRoutingProbes(routerMsg * msg, 
                int transactionId, int destNode);
 }
 #endif

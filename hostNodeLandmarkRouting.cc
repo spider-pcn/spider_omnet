@@ -3,13 +3,83 @@
 // set of landmarks for landmark routing
 vector<int> _landmarks;
 
+/* overall controller for handling messages that dispatches the right function
+ * based on message type in Landmark Routing
+ */
+void hostNodeLandmarkRouting::handleMessage(routerMsg *ttmsg) {
+    switch(ttmsg->getMessageType()) {
+        case PROBE_MSG:
+             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                 <<": RECEIVED PROBE MSG] "<< msg->getName() << endl;
+             handleProbeMessage(ttmsg);
+             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+             break;
+    }
+}
+
+/* main routine for handling a new transaction under landmark routing 
+ * In particular, initiate probes at sender and send acknowledgements
+ * at the receiver
+ */
+void hostNodeLandmarkRouting::handleTransactionMessageSpecialized(routerMsg* ttmsg){
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+    int hopcount = ttmsg->getHopCount();
+    vector<tuple<int, double , routerMsg *, Id>> *q;
+    int destNode = transMsg->getReceiver();
+    int destination = destNode;
+    int transactionId = transMsg->getTransactionId();
+
+    // if its at the sender, initiate probes, when they come back,
+    // call normal handleTransactionMessage
+    if (ttmsg->isSelfMessage()) { 
+        statNumArrived[destination] += 1; 
+        statRateArrived[destination] += 1; 
+        statRateAttempted[destination] += 1; 
+
+        // if destination hasn't been encountered, find paths
+        if (nodeToShortestPathsMap.count(destNode) == 0 ){
+            vector<vector<int>> kShortestRoutes = getKShortestRoutesLandmarkRouting(transMsg->getSender(), 
+                    destNode, _kValue);
+            initializePathInfoLandmarkRouting(kShortestRoutes, destNode);
+        }
+        
+        initializeLandmarkRoutingProbes(ttmsg, transMsg->getTransactionId(), destNode);
+    }
+    else if (ttmsg->getHopCount() ==  ttmsg->getRoute().size() - 1) { 
+        // txn is at destination, add to incoming units
+        int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
+        map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+        (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = 
+            transMsg->getAmount();
+
+        if (_timeoutEnabled) {
+            auto iter = find_if(canceledTransactions.begin(),
+               canceledTransactions.end(),
+               [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
+               { return get<0>(p) == transactionId; });
+
+            if (iter!=canceledTransactions.end()){
+                canceledTransactions.erase(iter);
+            }
+        }
+
+        // send ack
+        routerMsg* newMsg =  generateAckMessage(ttmsg);
+        forwardMessage(newMsg);
+        return;
+    }
+    else {
+        assert(false);
+    }
+}
+
 
 /* handle Probe Message for Landmark Routing 
  * In essence, is waiting for all the probes, finding those paths 
  * with non-zero bottleneck balance and choosing one randomly from 
  * those to send the txn on
  */
-void hostNode::handleProbeMessage(routerMsg* ttmsg){
+void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
     probeMsg *pMsg = check_and_cast<probeMsg *>(ttmsg->getEncapsulatedPacket());
     if (simTime()> _simulationLength ){
         ttmsg->decapsulate();
@@ -68,7 +138,7 @@ void hostNode::handleProbeMessage(routerMsg* ttmsg){
            //printVector(nodeToShortestPathsMap[transMsg->getReceiver()][indexToUse].path);
            transactionIdToProbeInfoMap[transactionId].messageToSend->
                setRoute(nodeToShortestPathsMap[transMsg->getReceiver()][indexToUse].path);
-           handleTransactionMessage(transactionIdToProbeInfoMap[transactionId].messageToSend);
+           handleTransactionMessage(transactionIdToProbeInfoMap[transactionId].messageToSend, true /*revisit*/);
            transactionIdToProbeInfoMap.erase(transactionId);
        }
        
