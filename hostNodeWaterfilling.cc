@@ -12,7 +12,7 @@ bool _smoothWaterfillingEnabled;
 
 /* initialization function to initialize parameters */
 void hostNodeWaterfilling::initialize(){
-    hostNodeBase::initialize();
+    //hostNodeBase::initialize(firstOutGate);
     
     if (myIndex() == 0) {
         // smooth waterfilling parameters

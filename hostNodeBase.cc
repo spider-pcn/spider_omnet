@@ -1,6 +1,8 @@
 #include "hostNodeBase.h"
 #include <queue>
 
+Define_Module(hostNodeBase);
+
 void hostNodeBase::setIndex(int index) {
     this->index = index;
 }
@@ -102,6 +104,7 @@ simsignal_t hostNodeBase::registerSignalPerDestPath(string signalStart, int path
     cProperty *statisticTemplate = getProperties()->get("statisticTemplate", 
             templateString.c_str());
     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+    cout << signalPrefix << " " << templateString << " " << signalName << endl;
     return signal;
 }
 
@@ -124,6 +127,7 @@ simsignal_t hostNodeBase::registerSignalPerChannel(string signalStart, int id) {
     cProperty *statisticTemplate = getProperties()->get("statisticTemplate", 
             templateString.c_str());
     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+    cout << signalPrefix << " " << templateString << " " << signalName << endl;
     return signal;
 }
 
@@ -134,13 +138,15 @@ simsignal_t hostNodeBase::registerSignalPerChannel(string signalStart, int id) {
 simsignal_t hostNodeBase::registerSignalPerDest(string signalStart, int destNode, string suffix) {
     string signalPrefix = signalStart + "PerDest" + suffix;
     char signalName[64];
-    string templateString = signalPrefix + "Template"; 
+    string templateString = signalStart + "PerDestTemplate"; 
 
     sprintf(signalName, "%s(host node %d)", signalPrefix.c_str(), destNode);  
     simsignal_t signal = registerSignal(signalName);
     cProperty *statisticTemplate = getProperties()->get("statisticTemplate", 
             templateString.c_str());
     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+
+    cout << signalPrefix << " " << templateString << " " << signalName << endl;
     return signal;
 }
 
@@ -315,7 +321,89 @@ void hostNodeBase::handleMessage(routerMsg *msg){
 }
 /* empty message handler because no special messages */
 void hostNodeBase::handleMessage(cMessage *msg){
-    ;
+    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
+ 
+    //Radhika TODO: figure out what's happening here
+    if (simTime() > _simulationLength){
+        auto encapMsg = (ttmsg->getEncapsulatedPacket());
+        ttmsg->decapsulate();
+        delete ttmsg;
+        delete encapMsg;
+        return;
+    }
+
+    // cout << "maxTravelTime:" << _maxTravelTime << endl;
+
+    // handle all messges by type
+    switch (ttmsg->getMessageType()) {
+        case ACK_MSG:
+            if (_loggingEnabled) 
+                cout << "[HOST "<< myIndex() <<": RECEIVED ACK MSG] " << msg->getName() << endl;
+            if (_timeoutEnabled)
+                handleAckMessageTimeOut(ttmsg);
+            handleAckMessageSpecialized(ttmsg);
+            if (_loggingEnabled) cout << "[AFTER HANDLING:]" <<endl;
+            break;
+
+        case TRANSACTION_MSG: 
+            { 
+                if (_loggingEnabled) 
+                    cout<< "[HOST "<< myIndex() <<": RECEIVED TRANSACTION MSG]  "
+                     << msg->getName() <<endl;
+             
+                transactionMsg *transMsg = 
+                    check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+                if (transMsg->isSelfMessage() && simTime() == transMsg->getTimeSent()) {
+                    generateNextTransaction();
+                }
+             
+                if (_timeoutEnabled && handleTransactionMessageTimeOut(ttmsg)){
+                    return;
+                }
+                handleTransactionMessageSpecialized(ttmsg);
+                if (_loggingEnabled) cout << "[AFTER HANDLING:]" << endl;
+            }
+            break;
+
+        case UPDATE_MSG:
+            if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                <<": RECEIVED UPDATE MSG] "<< msg->getName() << endl;
+                handleUpdateMessage(ttmsg);
+            if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+            break;
+
+        case STAT_MSG:
+            if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                <<": RECEIVED STAT MSG] "<< msg->getName() << endl;
+                handleStatMessage(ttmsg);
+            if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+            break;
+
+        case TIME_OUT_MSG:
+            if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                <<": RECEIVED TIME_OUT_MSG] "<< msg->getName() << endl;
+       
+            if (!_timeoutEnabled){
+                cout << "timeout message generated when it shouldn't have" << endl;
+                return;
+            }
+
+                handleTimeOutMessage(ttmsg);
+            if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+            break;
+        
+        case CLEAR_STATE_MSG:
+            if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                <<": RECEIVED CLEAR_STATE_MSG] "<< msg->getName() << endl;
+                handleClearStateMessage(ttmsg);
+            if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+            break;
+        
+        default:
+                handleMessage(ttmsg);
+
+    }
+
 }
 
 void hostNodeBase::handleTransactionMessageSpecialized(routerMsg *ttmsg) {
@@ -857,20 +945,67 @@ void hostNodeBase::initialize() {
     completionTimeSignal = registerSignal("completionTime");
     successfulDoNotSendTimeOut = {};
     
+
+    cout << "starting initialization" ;
+    string topologyFile_ = par("topologyFile");
+    string workloadFile_ = par("workloadFile");
+
+
+    // initialize global parameters once
+    if (getIndex() == 0){  
+        _simulationLength = par("simulationLength");
+        _statRate = par("statRate");
+        _clearRate = par("timeoutClearRate");
+        _waterfillingEnabled = par("waterfillingEnabled");
+        _timeoutEnabled = par("timeoutEnabled");
+        _signalsEnabled = par("signalsEnabled");
+        _loggingEnabled = par("loggingEnabled");
+        _priceSchemeEnabled = par("priceSchemeEnabled");
+
+        _hasQueueCapacity = false;
+        _queueCapacity = 0;
+
+
+        _landmarkRoutingEnabled = false;
+        if (_landmarkRoutingEnabled){
+            _hasQueueCapacity = true;
+            _queueCapacity = 0;
+            _timeoutEnabled = false;
+        }
+
+        _epsilon = pow(10, -6);
+        cout << "epsilon" << _epsilon << endl;
+        
+        if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled){
+           _kValue = par("numPathChoices");
+        }
+
+        _maxTravelTime = 0.0;
+        _delta = 0.01; // to avoid divide by zero 
+        setNumNodes(topologyFile_);
+        // add all the TransUnits into global list
+        generateTransUnitList(workloadFile_);
+
+        //create "channels" map - from topology file
+        generateChannelsBalancesMap(topologyFile_);
+    }
+    
+    
+    setIndex(getIndex());
+
     // Assign gates to all the payment channels
-    const char * gateName = "out";
     cGate *destGate = NULL;
+    cGate* curOutGate = gate("out", 0);
 
     int i = 0;
-    int gateSize = gate(gateName, 0)->size();
-
+    int gateSize = curOutGate->size();
     do {
-        destGate = gate(gateName, i++);
-        cGate *nextGate = destGate->getNextGate();
+        cGate *nextGate = curOutGate->getNextGate();
         if (nextGate ) {
             PaymentChannel temp =  {};
-            temp.gate = destGate;
+            temp.gate = curOutGate;
 
+            cout << "owner module issue" <<  nextGate->getOwner();
             bool isHost = nextGate->getOwnerModule()->par("isHost");
             int key = nextGate->getOwnerModule()->getIndex();
             if (!isHost){
@@ -878,7 +1013,11 @@ void hostNodeBase::initialize() {
             }
             nodeToPaymentChannel[key] = temp;
         }
+        i++;
+        curOutGate = nextGate;
     } while (i < gateSize);
+
+    cout << "initialized all gates";
 
     //initialize everything for adjacent nodes/nodes with payment channel to me
     for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
@@ -960,6 +1099,8 @@ void hostNodeBase::initialize() {
     
     // generate first transaction
     generateNextTransaction();
+
+    cout << "Initialized all state";
 
     //generate stat message
     routerMsg *statMsg = generateStatMessage();

@@ -63,7 +63,7 @@ else:
 f = open(args.ini_filename, "w+")
 f.write("[General]\n\n")
 f.write("[Config " +  configname + "]\n")
-f.write("network = " + os.path.basename(args.network_name) + "\n")
+f.write("network = " + os.path.basename(args.network_name) + "_" + args.routingScheme + "\n")
 f.write("**.topologyFile = \"" + args.topo_filename + "\"\n")
 f.write("**.workloadFile = \"" + args.workload_filename + "\"\n")
 f.write("**.simulationLength = " + args.simulationLength + "\n")

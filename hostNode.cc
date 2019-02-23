@@ -39,8 +39,6 @@ int _queueCapacity;
 #define MSGSIZE 100
 
 
-Define_Module(hostNode);
-
 int hostNode::myIndex(){
    return getIndex();
 }
@@ -50,6 +48,7 @@ int hostNode::myIndex(){
  * right base class for each of the nodes
  */
 void hostNode::initialize() {
+    cout << "starting initialization" ;
     string topologyFile_ = par("topologyFile");
     string workloadFile_ = par("workloadFile");
 
@@ -105,6 +104,8 @@ void hostNode::initialize() {
     hostNodeObj->setIndex(myIndex());
 
     // call the object to initialize all of the other parameters for this node
+    // with the first out gate
+    cout << "calling on host object";
     hostNodeObj->initialize();
 }
 
