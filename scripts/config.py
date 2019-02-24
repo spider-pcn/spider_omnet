@@ -89,8 +89,8 @@ INTERESTING_SIGNALS["completion_rate_cdfs"] = ["rateCompletedPerDest",\
         "rateArrivedPerDest"]
 INTERESTING_SIGNALS["rateCompleted"] = ["rateCompletedPerDest_Total"] 
 INTERESTING_SIGNALS["rateArrived"] = ["rateArrivedPerDest_Total"]
-INTERESTING_SIGNALS["rateToSendTrans"] = ["rateToSendTransPerPath"]
-INTERESTING_SIGNALS["priceLastSeen"] = ["priceLastSeenPerPath"]
+INTERESTING_SIGNALS["rateToSendTrans"] = ["rateToSendTransPerDestPerPath"]
+INTERESTING_SIGNALS["priceLastSeen"] = ["priceLastSeenPerDestPerPath"]
 
 # DO NOT CHANGE THIS: PAINFULLY HARDCODED TO NOT INTERFERE WITH numTimedOutAtSender
 INTERESTING_SIGNALS["numTimedOutPerDest"] = ["numTimedOutPerDest"]
@@ -101,7 +101,7 @@ for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", \
     INTERESTING_SIGNALS[signal] = signal + "PerDest"
     per_dest_list.append(signal + "PerDest")
 per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", \
-        "rateToSendTransPerPath", "priceLastSeenPerPath", "numTimedOutPerDest"])
+        "rateToSendTransPerDestPerPath", "priceLastSeenPerDestPerPath", "numTimedOutPerDest"])
 
 per_channel_list = []
 for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "numSent", "muRemote", "numInflight"]:

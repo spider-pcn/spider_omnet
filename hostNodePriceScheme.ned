@@ -1,4 +1,4 @@
-simple hostNode
+simple hostNodePriceScheme
 {
 	parameters:
 	    bool isHost = true;

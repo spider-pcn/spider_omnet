@@ -27,7 +27,7 @@ def parse_node_name(node_name, max_router, max_host):
 
 
 # take the topology file in a specific format and write it to a ned file
-def write_ned_file(topo_filename, output_filename, network_name):
+def write_ned_file(topo_filename, output_filename, network_name, routing_alg):
     # topo_filename must be a text file where each line contains the ids of two neighbouring nodes that 
     # have a payment channel between them, relative delays in each direction,  initial balance on each 
     # end (see sample-topology.txt)
@@ -78,10 +78,15 @@ def write_ned_file(topo_filename, output_filename, network_name):
     max_host = max_host + 1
 
     # generic routerNode and hostNode definition that every network will have
+    print routing_alg
+    if (routing_alg == 'shortestPath'):
+        host_node_type = 'hostNodeBase'
+    else:
+        host_node_type = 'hostNode' + routing_alg[0].upper() + routing_alg[1:]
     outfile.write("import routerNode;\n")
-    outfile.write("import hostNode;\n\n")
+    outfile.write("import " + host_node_type + ";\n\n")
 
-    outfile.write("network " + network_name + "\n")
+    outfile.write("network " + network_name + "_" + routing_alg + "\n")
     outfile.write("{\n")
 
     # This script (meant for a simpler datacenter topology) just assigns the same link delay to all links.
@@ -90,7 +95,7 @@ def write_ned_file(topo_filename, output_filename, network_name):
     outfile.write('\tparameters:\n\t\tdouble linkDelay @unit("s") = default(100us);\n')
     outfile.write('\t\tdouble linkDataRate @unit("Gbps") = default(1Gbps);\n')
     outfile.write('\tsubmodules:\n')
-    outfile.write('\t\thost['+str(max_host)+']: hostNode {} \n')
+    outfile.write('\t\thost['+str(max_host)+']: ' + host_node_type + ' {} \n')
     outfile.write('\t\trouter['+str(max_router)+']: routerNode {} \n')
     outfile.write('connections: \n')
 
@@ -216,6 +221,7 @@ parser.add_argument('--separate-end-hosts', action='store_true', \
         help='do you need separate end hosts that only send transactions')
 parser.add_argument('--randomize-start-bal', action='store_true', \
         help='Do not start from pergect balance, but rather randomize it')
+routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting']
 
 
 args = parser.parse_args()
@@ -250,7 +256,10 @@ else:
 print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename, \
         args.separate_end_hosts, args.randomize_start_bal)
 network_base = os.path.basename(args.network_name)
-write_ned_file(args.topo_filename, args.network_name + '.ned', network_base)
+
+for routing_alg in routing_alg_list:
+    write_ned_file(args.topo_filename, args.network_name + '_' + routing_alg + '.ned', \
+            network_base, routing_alg)
 
 
 

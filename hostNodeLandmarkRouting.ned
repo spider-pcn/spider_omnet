@@ -1,4 +1,4 @@
-simple hostNode
+simple hostNodeLandmarkRouting
 {
 	parameters:
 	    bool isHost = true;

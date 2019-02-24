@@ -1,20 +1,21 @@
 #!/bin/bash
 PATH_NAME="benchmarks/circulations/"
 
-prefix=("two_node_imbalance" "two_node_capacity" ) #"sw_sparse_40_routers") # "sw_40_routers" "sf_40_routers")
+prefix=("five_node_hardcoded") 
+ #"two_node_imbalance" "two_node_capacity" ) #"sw_sparse_40_routers") # "sw_40_routers" "sf_40_routers")
     #"sw_400_routers" "sf_400_routers")
     #"sw_1000_routers" "sf_1000_routers")
 
 arraylength=${#prefix[@]}
 
 #general parameters that do not affect config names
-simulationLength=4000.0
-statCollectionRate=25
+simulationLength=25.0
+statCollectionRate=1
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
-loggingEnabled=false
-routing_scheme_list=("priceScheme") #smoothWaterfilling" "waterfilling")
+loggingEnabled=true
+routing_scheme_list=("smoothWaterfilling" "waterfilling")
 
 eta=0.02
 alpha=0.1
@@ -27,7 +28,10 @@ rho=0.05
 tau=10
 normalizer=100
 
-cp hostNode.ned ${PATH_NAME}
+cp hostNodeBase.ned ${PATH_NAME}
+cp hostNodeWaterfilling.ned ${PATH_NAME}
+cp hostNodeLandmarkRouting.ned ${PATH_NAME}
+cp hostNodePriceScheme.ned ${PATH_NAME}
 cp routerNode.ned ${PATH_NAME}
 
 for (( i=0; i<${arraylength}; i++));
@@ -45,7 +49,7 @@ do
 
           # create the ini file with specified parameters
           python scripts/create_ini_file.py \
-                  --network-name $network\
+                  --network-name ${network}\
                   --topo-filename ${topofile}\
                   --workload-filename ${workload}_workload.txt\
                   --ini-filename $inifile\
@@ -77,7 +81,7 @@ do
 
             # create the ini file with specified parameters
             python scripts/create_ini_file.py \
-                    --network-name $network\
+                    --network-name ${network}\
                     --topo-filename ${topofile}\
                     --workload-filename ${workload}_workload.txt\
                     --ini-filename ${inifile}\
@@ -103,8 +107,8 @@ do
             # run the omnetexecutable with the right parameters
             # in the background
             ./spiderNet -u Cmdenv -f ${inifile}\
-                -c ${network}_${routing_scheme}_${numPathChoices} -n ${PATH_NAME} \
-                > $output_file &
+                -c ${network}_${routing_scheme}_${numPathChoices} -n ${PATH_NAME}\
+                > $output_file 
             pids+=($!)i
         fi
       done 

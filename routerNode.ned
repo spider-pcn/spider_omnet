@@ -12,7 +12,7 @@ simple routerNode
 
 		@display("i=block/routing"); 
 
-		@signal[numInQueuePerChannel*](type="long"); // note an asterisk and the type of emitted values  
+		@signal[numInQueuePerChannel*](type="unsigned long"); 
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
 
 		@signal[numProcessedPerChannel*](type="long");  
@@ -21,7 +21,7 @@ simple routerNode
 		@signal[numSentPerChannel*](type="long");  
 		@statisticTemplate[numSentPerChannelTemplate](record=vector, stats);   
 		
-		@signal[balancePerChannel*](type="long"); 
+		@signal[balancePerChannel*](type="double"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
 		
 		//price scheme payment channel specific signals
@@ -40,7 +40,7 @@ simple routerNode
 		@signal[muRemotePerChannel*](type="double"); 
 		@statisticTemplate[muRemotePerChannelTemplate](record=vector, stats);
     		
-                @signal[numInflightPerChannel*](type="long"); 
+                @signal[numInflightPerChannel*](type="unsigned long"); 
 		@statisticTemplate[numInflightPerChannelTemplate](record=vector, stats);
 
 
