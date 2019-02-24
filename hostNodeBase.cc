@@ -203,6 +203,7 @@ routerMsg *hostNodeBase::generateTransactionMessage(TransUnit unit) {
 routerMsg *hostNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     int sender = (ttmsg->getRoute())[0];
     int receiver = (ttmsg->getRoute())[(ttmsg->getRoute()).size() -1];
+    vector<int> route = ttmsg->getRoute();
 
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
     int transactionId = transMsg->getTransactionId();
@@ -222,15 +223,17 @@ routerMsg *hostNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     aMsg->setHasTimeOut(hasTimeOut);
     aMsg->setHtlcIndex(transMsg->getHtlcIndex());
     aMsg->setPathIndex(transMsg->getPathIndex());
+    if (!isSuccess){
+        aMsg->setFailedHopNum((route.size()-1) - ttmsg->getHopCount());
+    }
  
      //no need to set secret - not modelled
-    vector<int> route = ttmsg->getRoute();
     reverse(route.begin(), route.end());
     msg->setRoute(route);
     
     //need to reverse path from current hop number in case of partial failure
     msg->setHopCount((route.size()-1) - ttmsg->getHopCount());
-
+    
     msg->setMessageType(ACK_MSG); 
     ttmsg->decapsulate();
     delete transMsg;
@@ -588,7 +591,7 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
     if (aMsg->getIsSuccess() == false) {
         // increment funds on this channel unless this is the node that caused the fauilure
         // in which case funds were never decremented in the first place
-        if (aMsg->getFailedHopNum() != myIndex())
+        if (ttmsg->getRoute()[aMsg->getFailedHopNum()] != myIndex())
             nodeToPaymentChannel[prevNode].balance += aMsg->getAmount();
 
         // no relevant incoming_trans_units because no node on fwd path before this

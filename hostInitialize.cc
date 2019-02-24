@@ -57,7 +57,8 @@ vector<int> getRoute(int sender, int receiver){
       printf("] \n");
 
     */
-
+    
+   updateMaxTravelTime(route);
    return route;
 
 
