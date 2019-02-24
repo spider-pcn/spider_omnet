@@ -21,6 +21,8 @@ double _rhoLambda;
 double _rhoMu;
 double _rho;
 
+Define_Module(hostNodePriceScheme);
+
 /* generate the trigger message to initiate price Updates periodically
  */
 routerMsg *hostNodePriceScheme::generateTriggerPriceUpdateMessage(){
@@ -216,7 +218,18 @@ vector<PathRateTuple> hostNodePriceScheme::computeProjection(
 /* overall controller for handling messages that dispatches the right function
  * based on message type in price Scheme
  */
-void hostNodePriceScheme::handleMessage(routerMsg *ttmsg) {
+void hostNodePriceScheme::handleMessage(cMessage *msg) {
+    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
+ 
+    //Radhika TODO: figure out what's happening here
+    if (simTime() > _simulationLength){
+        auto encapMsg = (ttmsg->getEncapsulatedPacket());
+        ttmsg->decapsulate();
+        delete ttmsg;
+        delete encapMsg;
+        return;
+    } 
+
     switch(ttmsg->getMessageType()) {
         case TRIGGER_PRICE_UPDATE_MSG:
              if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
@@ -252,6 +265,9 @@ void hostNodePriceScheme::handleMessage(routerMsg *ttmsg) {
              handleTriggerTransactionSendMessage(ttmsg);
              if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
              break;
+
+        default:
+             hostNodeBase::handleMessage(msg);
 
     }
 }

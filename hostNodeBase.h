@@ -108,7 +108,6 @@ class hostNodeBase : public cSimpleModule {
       
 
         // message handlers
-        virtual void handleMessage(routerMsg *msg);
         virtual void handleMessage(cMessage *msg) override;
         virtual void handleTransactionMessage(routerMsg *msg, bool revisit=false);
         virtual void handleTransactionMessageSpecialized(routerMsg *msg);

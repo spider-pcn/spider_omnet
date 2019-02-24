@@ -16,7 +16,8 @@ class hostNodeWaterfilling : public hostNodeBase {
 
         // waterfilling specific signals
         vector<simsignal_t> probabilityPerDestSignals = {};
-        vector<simsignal_t> pathPerTransPerDestSignals = {};    
+        vector<simsignal_t> pathPerTransPerDestSignals = {};  
+        vector<simsignal_t> numTimedOutAtSenderSignals = {};
 
     protected:
         virtual void initialize() override;
@@ -28,7 +29,7 @@ class hostNodeWaterfilling : public hostNodeBase {
         virtual routerMsg *generateProbeMessage(int destNode, int pathIdx, vector<int> path);
 
         // message handlers
-        virtual void handleMessage(routerMsg *msg) override;
+        virtual void handleMessage(cMessage *msg) override;
         virtual void handleTransactionMessageSpecialized(routerMsg *msg) override;
         virtual void handleTimeOutMessage(routerMsg *msg) override;
         virtual void handleProbeMessage(routerMsg *msg);

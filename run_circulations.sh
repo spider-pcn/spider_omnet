@@ -14,8 +14,8 @@ statCollectionRate=1
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
-loggingEnabled=false
-routing_scheme_list=("shortestPath") #"priceScheme") #smoothWaterfilling" "waterfilling")
+loggingEnabled=true
+routing_scheme_list=("smoothWaterfilling" "waterfilling")
 
 eta=0.02
 alpha=0.1
@@ -29,6 +29,7 @@ tau=10
 normalizer=100
 
 cp hostNodeBase.ned ${PATH_NAME}
+cp hostNodeWaterfilling.ned ${PATH_NAME}
 cp routerNode.ned ${PATH_NAME}
 
 for (( i=0; i<${arraylength}; i++));
@@ -104,8 +105,8 @@ do
             # run the omnetexecutable with the right parameters
             # in the background
             ./spiderNet -u Cmdenv -f ${inifile}\
-                -c ${network}_${routing_scheme}_${numPathChoices} -n ${PATH_NAME} \
-                > $output_file &
+                -c ${network}_${routing_scheme}_${numPathChoices} -n ${PATH_NAME}\
+                > $output_file 
             pids+=($!)i
         fi
       done 

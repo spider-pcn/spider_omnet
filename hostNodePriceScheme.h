@@ -35,7 +35,7 @@ class hostNodePriceScheme : public hostNodeBase {
                 double demand);
 
         // modified message handlers
-        virtual void handleMessage(routerMsg *msg) override;
+        virtual void handleMessage(cMessage *msg) override;
         virtual void handleTransactionMessageSpecialized(routerMsg *msg) override;
         virtual void handleStatMessage(routerMsg *msg) override;
         virtual void handleAckMessageSpecialized(routerMsg* ttmsg) override;

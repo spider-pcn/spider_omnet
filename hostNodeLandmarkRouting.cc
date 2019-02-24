@@ -4,6 +4,7 @@
 vector<tuple<int,int>> _landmarksWithConnectivityList = {};
 vector<int> _landmarks;
 
+Define_Module(hostNodeLandmarkRouting);
 
 /* generates the probe message for a particular destination and a particur path
  * identified by the list of hops and the path index
@@ -55,7 +56,18 @@ void hostNodeLandmarkRouting::forwardProbeMessage(routerMsg *msg){
 /* overall controller for handling messages that dispatches the right function
  * based on message type in Landmark Routing
  */
-void hostNodeLandmarkRouting::handleMessage(routerMsg *ttmsg) {
+void hostNodeLandmarkRouting::handleMessage(cMessage *msg) {
+    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
+    
+    //Radhika TODO: figure out what's happening here
+    if (simTime() > _simulationLength){
+        auto encapMsg = (ttmsg->getEncapsulatedPacket());
+        ttmsg->decapsulate();
+        delete ttmsg;
+        delete encapMsg;
+        return;
+    } 
+
     switch(ttmsg->getMessageType()) {
         case PROBE_MSG:
              if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
@@ -63,6 +75,9 @@ void hostNodeLandmarkRouting::handleMessage(routerMsg *ttmsg) {
              handleProbeMessage(ttmsg);
              if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
              break;
+
+        default:
+             hostNodeBase::handleMessage(msg);
     }
 }
 

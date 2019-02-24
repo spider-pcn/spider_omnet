@@ -10,9 +10,11 @@ double _Normalizer;
 bool _smoothWaterfillingEnabled;
 #define SMALLEST_INDIVISIBLE_UNIT 1
 
+Define_Module(hostNodeWaterfilling);
+
 /* initialization function to initialize parameters */
 void hostNodeWaterfilling::initialize(){
-    //hostNodeBase::initialize(firstOutGate);
+    hostNodeBase::initialize();
     
     if (myIndex() == 0) {
         // smooth waterfilling parameters
@@ -20,6 +22,17 @@ void hostNodeWaterfilling::initialize(){
         _Normalizer = par("normalizer"); // TODO: C from discussion with Mohammad)
         _ewmaFactor = 1; // EWMA factor for balance information on probes
         _smoothWaterfillingEnabled = par("smoothWaterfillingEnabled");
+    }
+
+    //initialize WF specific signals with all other nodes in graph
+    for (int i = 0; i < _numHostNodes; ++i) {
+        simsignal_t signal;
+        signal = registerSignalPerDest("pathPerTrans", i, "");
+        pathPerTransPerDestSignals.push_back(signal);
+
+        signal = registerSignalPerDest("numTimedOutAtSender", i, "_Total");
+        numTimedOutAtSenderSignals.push_back(signal);
+        statNumTimedOutAtSender.push_back(0);
     }
 }
 
@@ -120,7 +133,18 @@ routerMsg* hostNodeWaterfilling::generateProbeMessage(int destNode, int pathIdx,
 /* overall controller for handling messages that dispatches the right function
  * based on message type in waterfilling
  */
-void hostNodeWaterfilling::handleMessage(routerMsg *ttmsg) {
+void hostNodeWaterfilling::handleMessage(cMessage *msg) {
+    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
+
+    //Radhika TODO: figure out what's happening here
+    if (simTime() > _simulationLength){
+        auto encapMsg = (ttmsg->getEncapsulatedPacket());
+        ttmsg->decapsulate();
+        delete ttmsg;
+        delete encapMsg;
+        return;
+    } 
+
     switch(ttmsg->getMessageType()) {
         case PROBE_MSG:
              if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
@@ -128,6 +152,8 @@ void hostNodeWaterfilling::handleMessage(routerMsg *ttmsg) {
              handleProbeMessage(ttmsg);
              if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
              break;
+        default:
+             hostNodeBase::handleMessage(msg);
     }
 }
 
@@ -464,6 +490,8 @@ void hostNodeWaterfilling::initializeProbes(vector<vector<int>> kShortestPaths, 
 
         signal = registerSignalPerDestPath("rateAttempted", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].rateAttemptedPerDestPerPathSignal = signal;
+
+
 
         // generate a probe message on this path
         routerMsg * msg = generateProbeMessage(destNode, pathIdx, kShortestPaths[pathIdx]);

@@ -39,7 +39,7 @@ int hostNodeBase::sampleFromDistribution(vector<double> probabilities) {
     vector<double> cumProbabilities { 0 };
 
     double sumProbabilities = accumulate(probabilities.begin(), probabilities.end(), 0.0); 
-    assert(sumProbabilities < 1.0);
+    assert(sumProbabilities <= 1.0);
     
     // compute cumulative probabilities
     for (int i = 0; i < probabilities.size(); i++) {
@@ -315,11 +315,9 @@ routerMsg *hostNodeBase::generateTimeOutMessage(routerMsg* msg) {
 
 
 /***** MESSAGE HANDLERS *****/
-/* empty message handler because no special messages */
-void hostNodeBase::handleMessage(routerMsg *msg){
-    ;
-}
-/* empty message handler because no special messages */
+/* overall controller for handling messages that dispatches the right function
+ * based on message type
+ */
 void hostNodeBase::handleMessage(cMessage *msg){
     routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
  
@@ -332,7 +330,7 @@ void hostNodeBase::handleMessage(cMessage *msg){
         return;
     }
 
-    // cout << "maxTravelTime:" << _maxTravelTime << endl;
+    cout << "maxTravelTime:" << _maxTravelTime << endl;
 
     // handle all messges by type
     switch (ttmsg->getMessageType()) {
@@ -1094,7 +1092,6 @@ void hostNodeBase::initialize() {
         signal = registerSignalPerDest("rateFailed", i, "");
         rateFailedPerDestSignals.push_back(signal);
         statRateFailed.push_back(0);
-
     }
     
     // generate first transaction
