@@ -30,6 +30,8 @@ normalizer=100
 
 cp hostNodeBase.ned ${PATH_NAME}
 cp hostNodeWaterfilling.ned ${PATH_NAME}
+cp hostNodeLandmarkRouting.ned ${PATH_NAME}
+cp hostNodePriceScheme.ned ${PATH_NAME}
 cp routerNode.ned ${PATH_NAME}
 
 for (( i=0; i<${arraylength}; i++));
