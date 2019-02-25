@@ -782,15 +782,24 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         p->timeToNextSend = simTime() + max(transMsg->getAmount()/rateToSendTrans, bound);
         
         //If there are more transactions queued up, reschedule timer
-        if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0){
+        //if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0){
             scheduleAt(p->timeToNextSend, ttmsg);
-        } else {
+        /*} else {
             p->isSendTimerSet = false;
-        }
+        }*/
     }
     else{ 
         //no trans to send
-        nodeToShortestPathsMap[destNode][pathIndex].isSendTimerSet = false;
+        // don't turn off timers
+        PathInfo* p = &(nodeToShortestPathsMap[destNode][pathIndex]);
+        double rateToSendTrans = p->rateToSendTrans;
+        double lastTxnSize = p->lastTransSize;
+        p->timeToNextSend = simTime() +
+                max(lastTxnSize/rateToSendTrans, _epsilon);
+        scheduleAt(p->timeToNextSend, ttmsg);
+        p->amtAllowedToSend = 0.0;
+          
+        //nodeToShortestPathsMap[destNode][pathIndex].isSendTimerSet = false;
     }
 }
 
@@ -862,11 +871,11 @@ void hostNodePriceScheme::updateTimers(int destNode, int pathIndex, double newRa
     simtime_t newTimeToSend = simTime() + max((lastTxnSize - allowedToSend)/ rateToUse, _epsilon);
     cancelEvent(p->triggerTransSendMsg);
     p->timeToNextSend = newTimeToSend;
-    if (nodeToDestInfo[destNode].transWaitingToBeSent.size() == 0) 
+    /*if (nodeToDestInfo[destNode].transWaitingToBeSent.size() == 0) 
         p->isSendTimerSet = false;
-    else {
+    else {*/
         scheduleAt(newTimeToSend, p->triggerTransSendMsg);
-    }
+    //}
 }
 
 /* additional initalization that has to be done for the price based scheme
