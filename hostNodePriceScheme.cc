@@ -352,6 +352,10 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                     pathInfo->lastTransSize = transMsg->getAmount();
                     pathInfo->lastSendTime = simTime();
                     pathInfo->amtAllowedToSend = max(pathInfo->amtAllowedToSend - transMsg->getAmount(), 0.0);
+
+                    // necessary for knowing what path to remove transaction in flight funds from
+                    tuple<int,int> key = make_tuple(transMsg->getTransactionId(), pathIndex); 
+                    transPathToAckState[key].amtSent += transMsg->getAmount();
                 
                     // update the "time when the next transaction can be sent"
                     double rateToUse = max(pathInfo->rateToSendTrans, _epsilon);
@@ -449,7 +453,8 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
 void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
     ackMsg *aMsg = check_and_cast<ackMsg*>(ttmsg->getEncapsulatedPacket());
     int pathIndex = aMsg->getPathIndex();
-    int destNode = ttmsg->getRoute()[0]; 
+    int destNode = ttmsg->getRoute()[0];
+    int transactionId = aMsg->getTransactionId();
     
     if (aMsg->getIsSuccess()==false){
         statNumFailed[destNode] += 1;
@@ -460,17 +465,44 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
         statRateCompleted[destNode] += 1;
         nodeToShortestPathsMap[destNode][pathIndex].statRateCompleted += 1;
     }
+
+    //increment transaction amount ack on a path. 
+    tuple<int,int> key = make_tuple(transactionId, pathIndex);
+    transPathToAckState[key].amtReceived += aMsg->getAmount();
     
     nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= aMsg->getAmount();
     destNodeToNumTransPending[destNode] -= 1;     
     hostNodeBase::handleAckMessage(ttmsg);
 }
 
+
 /* handler for the clear state message that deals with
  * transactions that will no longer be completed
- * TODO: add any more specific cleanups 
+ * In particular clears out the amount inn flight on the path
  */
+// TODO: actually maintain state as to how much has been sent and how much received
 void hostNodePriceScheme::handleClearStateMessage(routerMsg *ttmsg) {
+    for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); it++){
+        int transactionId = get<0>(*it);
+        simtime_t msgArrivalTime = get<1>(*it);
+        int prevNode = get<2>(*it);
+        int nextNode = get<3>(*it);
+        int destNode = get<4>(*it);
+        
+        if (simTime() > (msgArrivalTime + _maxTravelTime)){
+            // ack was not received,safely can consider this txn done
+            for (auto p : nodeToShortestPathsMap[destNode]) {
+                int pathIndex = p.first;
+                tuple<int,int> key = make_tuple(transactionId, pathIndex);
+                if (transPathToAckState.count(key) != 0) {
+                    nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= 
+                        (transPathToAckState[key].amtSent - transPathToAckState[key].amtReceived);
+                    transPathToAckState.erase(key);
+                }
+            }
+        }
+    }
+
     // works fine now because timeouts start per transaction only when
     // sent out and no txn splitting
     hostNodeBase::handleClearStateMessage(ttmsg);
@@ -768,6 +800,10 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         p->lastTransSize = transMsg->getAmount();
         p->lastSendTime = simTime();
         p->amtAllowedToSend = max(p->amtAllowedToSend - transMsg->getAmount(), 0.0);
+        
+        // necessary for knowing what path to remove transaction in flight funds from
+        tuple<int,int> key = make_tuple(transMsg->getTransactionId(), pathIndex); 
+        transPathToAckState[key].amtSent += transMsg->getAmount();
         
         //generate time out message here, when path is decided
         if (_timeoutEnabled) {
