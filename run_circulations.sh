@@ -15,7 +15,7 @@ timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=true
-routing_scheme_list=("smoothWaterfilling" "waterfilling")
+routing_scheme_list=("priceScheme")
 
 eta=0.02
 alpha=0.1
@@ -108,7 +108,7 @@ do
             # in the background
             ./spiderNet -u Cmdenv -f ${inifile}\
                 -c ${network}_${routing_scheme}_${numPathChoices} -n ${PATH_NAME}\
-                > $output_file 
+                > $output_file & 
             pids+=($!)i
         fi
       done 

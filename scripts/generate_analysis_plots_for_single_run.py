@@ -70,7 +70,10 @@ parser.add_argument('--x_local',
         help='Plot the per channel rate of sending related price when price based scheme is used')
 parser.add_argument('--rate_to_send',
         action='store_true',
-        help='Plot the per channel rate to send when price based scheme is used')
+        help='Plot the per path rate to send when price based scheme is used')
+parser.add_argument('--rate_sent',
+        action='store_true',
+        help='Plot the per path rate actually sent when price based scheme is used')
 parser.add_argument('--price',
         action='store_true',
         help='Plot the per channel price to send when price based scheme is used')
@@ -404,6 +407,10 @@ def plot_per_src_dest_stats(args, text_to_add):
         if args.rate_to_send:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateToSendTrans", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Rate to send per path", per_path_info=True)
+
+        if args.rate_sent:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateSent", False, True)
+            plot_relevant_stats(data_to_plot, pdf, "Rate actually sent per path", per_path_info=True)
 
         if args.price:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "priceLastSeen", False, True)

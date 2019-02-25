@@ -31,7 +31,7 @@ simple hostNodePriceScheme
                 double normalizer = default(100);
 
 		
-		@signal[completionTime](type="long"); 
+		@signal[completionTime](type="simtime_t"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 
 		
 		@signal[numCleared](type="long"); 
@@ -39,7 +39,7 @@ simple hostNodePriceScheme
 		
 		@display("i=block/routing"); 
 
-		@signal[numInQueuePerChannel*](type="long"); // note an asterisk and the type of emitted values  
+		@signal[numInQueuePerChannel*](type="unsigned long"); 
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
 
 		@signal[numProcessedPerChannel*](type="long");  
@@ -60,10 +60,10 @@ simple hostNodePriceScheme
 		@signal[numPendingPerDest*](type="long");  
 		@statisticTemplate[numPendingPerDestTemplate](record=vector, stats); 
 
- 		@signal[numWaitingPerDest*](type="long");  
+ 		@signal[numWaitingPerDest*](type="unsigned long");  
 		@statisticTemplate[numWaitingPerDestTemplate](record=vector, stats);  
 	
-		@signal[fracSuccessfulPerDest*](type="double");  
+		@signal[fracSuccessfulPerDest*](type="long");  
 		@statisticTemplate[fracSuccessfulPerDestTemplate](record=vector, stats);   
 		
 		@signal[pathPerTransPerDest*](type="long");  
@@ -87,7 +87,7 @@ simple hostNodePriceScheme
 		@signal[numArrivedPerDest*](type="long"); 
 		@statisticTemplate[numArrivedPerDestTemplate](record=vector, stats);   
 
-		@signal[balancePerChannel*](type="long"); 
+		@signal[balancePerChannel*](type="double"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
 		
 		@signal[bottleneckPerDestPerPath*](type="long"); 
@@ -128,6 +128,9 @@ simple hostNodePriceScheme
 		//price scheme path specific signals
 		@signal[rateToSendTransPerDestPerPath*](type="double"); 
 		@statisticTemplate[rateToSendTransPerDestPerPathTemplate](record=vector, stats);
+
+                @signal[rateSentPerDestPerPath*](type="double"); 
+		@statisticTemplate[rateSentPerDestPerPathTemplate](record=vector, stats);	
 		
 		@signal[timeToNextSendPerDestPerPath*](type="simtime_t"); 
 		@statisticTemplate[timeToNextSendPerDestPerPathTemplate](record=vector, stats);
@@ -138,7 +141,7 @@ simple hostNodePriceScheme
 		@signal[priceLastSeenPerDestPerPath*](type="double"); 
 		@statisticTemplate[priceLastSeenPerDestPerPathTemplate](record=vector, stats);
 		
-		@signal[isSendTimerSetPerDestPerPath*](type="long"); 
+		@signal[isSendTimerSetPerDestPerPath*](type="bool"); 
 		@statisticTemplate[isSendTimerSetPerDestPerPathTemplate](record=vector, stats);
 		
 		

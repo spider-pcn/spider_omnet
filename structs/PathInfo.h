@@ -42,6 +42,7 @@ struct PathInfo{
 
         //signals for price scheme per path
         simsignal_t rateToSendTransSignal;
+        simsignal_t rateActuallySentSignal;
         simsignal_t timeToNextSendSignal;
         simsignal_t sumOfTransUnitsInFlightSignal;
         simsignal_t priceLastSeenSignal;

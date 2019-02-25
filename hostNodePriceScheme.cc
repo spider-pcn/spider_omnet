@@ -418,6 +418,7 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
 
                         //signals for price scheme per path
                         emit(pInfo->rateToSendTransSignal, pInfo->rateToSendTrans);
+                        emit(pInfo->rateActuallySentSignal, pInfo->rateSentOnPath);
                         emit(pInfo->timeToNextSendSignal, pInfo->timeToNextSend);
                         emit(pInfo->sumOfTransUnitsInFlightSignal, 
                                 pInfo->sumOfTransUnitsInFlight);
@@ -829,6 +830,9 @@ void hostNodePriceScheme::initializePriceProbes(vector<vector<int>> kShortestPat
 
         signal = registerSignalPerDestPath("rateToSendTrans", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].rateToSendTransSignal = signal;
+
+        signal = registerSignalPerDestPath("rateSent", pathIdx, destNode);
+        nodeToShortestPathsMap[destNode][pathIdx].rateActuallySentSignal = signal;
         
         signal = registerSignalPerDestPath("timeToNextSend", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].timeToNextSendSignal = signal;

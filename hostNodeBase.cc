@@ -104,7 +104,6 @@ simsignal_t hostNodeBase::registerSignalPerDestPath(string signalStart, int path
     cProperty *statisticTemplate = getProperties()->get("statisticTemplate", 
             templateString.c_str());
     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-    cout << signalPrefix << " " << templateString << " " << signalName << endl;
     return signal;
 }
 
@@ -127,7 +126,6 @@ simsignal_t hostNodeBase::registerSignalPerChannel(string signalStart, int id) {
     cProperty *statisticTemplate = getProperties()->get("statisticTemplate", 
             templateString.c_str());
     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-    cout << signalPrefix << " " << templateString << " " << signalName << endl;
     return signal;
 }
 
@@ -146,7 +144,6 @@ simsignal_t hostNodeBase::registerSignalPerDest(string signalStart, int destNode
             templateString.c_str());
     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
 
-    cout << signalPrefix << " " << templateString << " " << signalName << endl;
     return signal;
 }
 
