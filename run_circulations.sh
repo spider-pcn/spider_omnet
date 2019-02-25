@@ -9,12 +9,12 @@ prefix=("five_node_hardcoded")
 arraylength=${#prefix[@]}
 
 #general parameters that do not affect config names
-simulationLength=25.0
-statCollectionRate=1
+simulationLength=4000.0
+statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
-loggingEnabled=true
+loggingEnabled=false
 routing_scheme_list=("priceScheme")
 
 eta=0.02

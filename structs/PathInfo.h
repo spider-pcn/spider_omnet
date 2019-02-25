@@ -26,6 +26,7 @@ struct PathInfo{
         double yRateToSendTrans = 1;
         simtime_t timeToNextSend = 0;
         double sumOfTransUnitsInFlight = 0;
+        double rttMin = 0.0;
         double priceLastSeen = 0;
         routerMsg * triggerTransSendMsg;
         simtime_t lastSendTime = 0;

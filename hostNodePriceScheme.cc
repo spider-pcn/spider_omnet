@@ -20,6 +20,7 @@ double _minPriceRate;
 double _rhoLambda;
 double _rhoMu;
 double _rho;
+double _minWindow;
 
 Define_Module(hostNodePriceScheme);
 
@@ -334,8 +335,10 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
             for (auto p: nodeToShortestPathsMap[destNode]) {
                 int pathIndex = p.first;
                 PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
+                double window = max(pathInfo->rateToSendTrans * pathInfo->rttMin, _minWindow);
                 
-                if (pathInfo->rateToSendTrans > 0 && simTime() > pathInfo->timeToNextSend) {
+                if (pathInfo->rateToSendTrans > 0 && simTime() > pathInfo->timeToNextSend &&
+                        pathInfo->sumOfTransUnitsInFlight < window) {
                     ttmsg->setRoute(pathInfo->path);
                     int nextNode = pathInfo->path[1];
                     handleTransactionMessage(ttmsg, true /*revisit*/);
@@ -737,8 +740,11 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
     vector<int> path = tsMsg->getTransactionPath();
     int pathIndex = tsMsg->getPathIndex();
     int destNode = tsMsg->getReceiver();
-    
-    if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0){
+    PathInfo* p = &(nodeToShortestPathsMap[destNode][pathIndex]);
+    double window = max(p->rateToSendTrans * p->rttMin, _minWindow);
+
+    if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0 && 
+            p->sumOfTransUnitsInFlight < window){
         //remove the transaction $tu$ at the head of the queue
         routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
         nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
@@ -757,7 +763,6 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
 
         // increment amount in inflght and other info on last transaction on this path
-        PathInfo* p = &(nodeToShortestPathsMap[destNode][pathIndex]);
         p->nValue += 1;
         p->sumOfTransUnitsInFlight = p->sumOfTransUnitsInFlight + transMsg->getAmount();
         p->lastTransSize = transMsg->getAmount();
@@ -818,6 +823,8 @@ void hostNodePriceScheme::initializePriceProbes(vector<vector<int>> kShortestPat
         temp.triggerTransSendMsg = triggerTransSendMsg;
         temp.rateToSendTrans = _minPriceRate;
         temp.yRateToSendTrans = _minPriceRate;
+        // TODO: change this to something sensible
+        temp.rttMin = kShortestPaths[pathIdx].size() * _delta;
         nodeToShortestPathsMap[destNode][pathIdx] = temp;
 
         //initialize signals
@@ -894,6 +901,7 @@ void hostNodePriceScheme::initialize() {
         _nesterov = false;
         _secondOrderOptimization = true;
         _reschedulingEnabled = true;
+        _minWindow = 1.0;
 
         _eta = par("eta");
         _kappa = par("kappa");
