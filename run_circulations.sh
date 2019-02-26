@@ -15,7 +15,7 @@ timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-routing_scheme_list=("priceScheme")
+routing_scheme_list=("priceScheme" "priceSchemeWindow")
 
 eta=0.02
 alpha=0.1
@@ -68,7 +68,7 @@ do
     done
 
   #routing schemes where number of path choices matter
-    for routing_scheme in waterfilling smoothWaterfilling priceScheme
+    for routing_scheme in waterfilling smoothWaterfilling priceScheme priceSchemeWindow
     do
       pids=""
       # if you add more choices for the number of paths you might run out of cores/memory
@@ -78,6 +78,13 @@ do
 
             output_file=outputs/${prefix[i]}_circ_${routing_scheme}
             inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}.ini
+
+            if [[ $routing_scheme =~ .*Window.* ]]; then
+                windowEnabled=true
+            else 
+                windowEnabled=false
+            fi
+
 
             # create the ini file with specified parameters
             python scripts/create_ini_file.py \
@@ -101,7 +108,8 @@ do
                     --update-query-time $updateQueryTime\
                     --min-rate $minPriceRate\
                     --tau $tau\
-                    --normalizer $normalizer
+                    --normalizer $normalizer \
+                    --window-enabled $windowEnabled 
 
 
             # run the omnetexecutable with the right parameters

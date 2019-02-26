@@ -1,6 +1,8 @@
 #include "hostNodeBase.h"
 #include <queue>
 
+bool _windowEnabled;
+
 Define_Module(hostNodeBase);
 
 void hostNodeBase::setIndex(int index) {
@@ -329,8 +331,6 @@ void hostNodeBase::handleMessage(cMessage *msg){
         delete encapMsg;
         return;
     }
-
-    cout << "maxTravelTime:" << _maxTravelTime << endl;
 
     // handle all messges by type
     switch (ttmsg->getMessageType()) {

@@ -378,7 +378,10 @@ void routerNode::handlePriceQueryMessage(routerMsg* ttmsg){
       double lambda = nodeToPaymentChannel[nextNode].lambda;
       double muLocal = nodeToPaymentChannel[nextNode].muLocal;
       double muRemote = nodeToPaymentChannel[nextNode].muRemote;
-      double zNew =  zOld + (2 * lambda) + muLocal  - muRemote;
+      double zNew = zOld;
+
+      if (ttmsg->getHopCount() < ttmsg->getRoute().size() - 2)
+        zNew += (2 * lambda) + muLocal  - muRemote;
       pqMsg->setZValue(zNew);
       forwardMessage(ttmsg);
    }

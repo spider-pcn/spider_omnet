@@ -337,8 +337,9 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                 PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
                 pathInfo->window = max(pathInfo->rateToSendTrans * pathInfo->rttMin, _minWindow);
                 
-                if (pathInfo->rateToSendTrans > 0 && simTime() > pathInfo->timeToNextSend &&
-                        pathInfo->sumOfTransUnitsInFlight < window) {
+                if (pathInfo->rateToSendTrans > 0 && simTime() > pathInfo->timeToNextSend && 
+                        (!_windowEnabled || 
+                         (_windowEnabled && pathInfo->sumOfTransUnitsInFlight < pathInfo->window))) {
                     ttmsg->setRoute(pathInfo->path);
                     int nextNode = pathInfo->path[1];
                     handleTransactionMessage(ttmsg, true /*revisit*/);
@@ -685,7 +686,7 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
         double lambda = nodeToPaymentChannel[nextNode].lambda;
         double muLocal = nodeToPaymentChannel[nextNode].muLocal;
         double muRemote = nodeToPaymentChannel[nextNode].muRemote;
-        double zNew =  zOld + (2 * lambda) + muLocal  - muRemote;
+        double zNew =  zOld;// + (2 * lambda) + muLocal  - muRemote;
         pqMsg->setZValue(zNew);
         forwardMessage(ttmsg);
     }
@@ -776,8 +777,8 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
     PathInfo* p = &(nodeToShortestPathsMap[destNode][pathIndex]);
     p->window = max(p->rateToSendTrans * p->rttMin, _minWindow);
 
-    if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0 && 
-            p->sumOfTransUnitsInFlight < window){
+    if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0 && (!_windowEnabled || 
+            (_windowEnabled && p->sumOfTransUnitsInFlight < p->window))){
         //remove the transaction $tu$ at the head of the queue
         routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
         nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
@@ -953,6 +954,7 @@ void hostNodePriceScheme::initialize() {
         _zeta = par("zeta"); // ewma for d_ij every source dest demand
         _minPriceRate = par("minRate");
         _rho = _rhoLambda = _rhoMu = par("rhoValue");
+        _windowEnabled = par("windowEnabled");
     }
 
     for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter) {
