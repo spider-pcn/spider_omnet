@@ -81,7 +81,7 @@ do
             --graph-topo $payment_graph_topo \
             --payment-graph-dag-percentage 0\
             --topo-filename $topofile\
-            --experiment-time 8000 \
+            --experiment-time 12000 \
             --balance-per-channel $balance\
             --generate-json-also\
             --timeout-value 5

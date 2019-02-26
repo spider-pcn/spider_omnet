@@ -740,7 +740,7 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
             pathRateTuples.push_back(newTuple);
         }
         vector<PathRateTuple> projectedRates = 
-            computeProjection(pathRateTuples, 110 /*nodeToDestInfo[destNode].demand*/);
+            computeProjection(pathRateTuples, 1.1 * nodeToDestInfo[destNode].demand);
 
         // reassign all path's rates to the projected rates and 
         // make sure it is atleast minPriceRate for every path

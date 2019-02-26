@@ -9,13 +9,14 @@ prefix=("five_node_hardcoded")
 arraylength=${#prefix[@]}
 
 #general parameters that do not affect config names
-simulationLength=4000.0
+simulationLength=12000.0
 statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-routing_scheme_list=("priceScheme" "priceSchemeWindow")
+path_choices_dep_list=( "priceScheme" "priceSchemeWindow" )
+path_choices_indep_list=()
 
 eta=0.02
 alpha=0.1
@@ -42,83 +43,78 @@ do
     network=${prefix[i]}_circ_net
 
 #    #routing schemes where number of path choices doesn't matter
-    for routing_scheme in shortestPath #silentWhispers
+    for routing_scheme in "${path_choices_indep_list[@]}" 
     do
-        if [[ " ${routing_scheme_list[*]} " == *"$routing_scheme"* ]]; then
-          inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}.ini
+      inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}.ini
 
-          # create the ini file with specified parameters
-          python scripts/create_ini_file.py \
-                  --network-name ${network}\
-                  --topo-filename ${topofile}\
-                  --workload-filename ${workload}_workload.txt\
-                  --ini-filename $inifile\
-                  --signals-enabled $signalsEnabled\
-                  --logging-enabled $loggingEnabled\
-                  --simulation-length $simulationLength\
-                  --stat-collection-rate $statCollectionRate\
-                  --timeout-clear-rate $timeoutClearRate\
-                  --timeout-enabled $timeoutEnabled\
-                  --routing-scheme ${routing_scheme}
+      # create the ini file with specified parameters
+      python scripts/create_ini_file.py \
+              --network-name ${network}\
+              --topo-filename ${topofile}\
+              --workload-filename ${workload}_workload.txt\
+              --ini-filename $inifile\
+              --signals-enabled $signalsEnabled\
+              --logging-enabled $loggingEnabled\
+              --simulation-length $simulationLength\
+              --stat-collection-rate $statCollectionRate\
+              --timeout-clear-rate $timeoutClearRate\
+              --timeout-enabled $timeoutEnabled\
+              --routing-scheme ${routing_scheme}
 
 
-          # run the omnetexecutable with the right parameters
-          ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme} -n ${PATH_NAME}
-      fi
+      # run the omnetexecutable with the right parameters
+      ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme} -n ${PATH_NAME}
     done
 
   #routing schemes where number of path choices matter
-    for routing_scheme in waterfilling smoothWaterfilling priceScheme priceSchemeWindow
+    for routing_scheme in  "${path_choices_dep_list[@]}" 
     do
       pids=""
       # if you add more choices for the number of paths you might run out of cores/memory
       for numPathChoices in 4
       do
-        if [[ " ${routing_scheme_list[*]} " == *"$routing_scheme"* ]]; then
+        output_file=outputs/${prefix[i]}_circ_${routing_scheme}
+        inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}.ini
 
-            output_file=outputs/${prefix[i]}_circ_${routing_scheme}
-            inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}.ini
-
-            if [[ $routing_scheme =~ .*Window.* ]]; then
-                windowEnabled=true
-            else 
-                windowEnabled=false
-            fi
-
-
-            # create the ini file with specified parameters
-            python scripts/create_ini_file.py \
-                    --network-name ${network}\
-                    --topo-filename ${topofile}\
-                    --workload-filename ${workload}_workload.txt\
-                    --ini-filename ${inifile}\
-                    --signals-enabled $signalsEnabled\
-                    --logging-enabled $loggingEnabled\
-                    --simulation-length $simulationLength\
-                    --stat-collection-rate $statCollectionRate\
-                    --timeout-clear-rate $timeoutClearRate\
-                    --timeout-enabled $timeoutEnabled\
-                    --routing-scheme ${routing_scheme}\
-                    --num-path-choices ${numPathChoices}\
-                    --zeta $zeta\
-                    --alpha $alpha\
-                    --eta $eta\
-                    --kappa $kappa\
-                    --rho $rho\
-                    --update-query-time $updateQueryTime\
-                    --min-rate $minPriceRate\
-                    --tau $tau\
-                    --normalizer $normalizer \
-                    --window-enabled $windowEnabled 
-
-
-            # run the omnetexecutable with the right parameters
-            # in the background
-            ./spiderNet -u Cmdenv -f ${inifile}\
-                -c ${network}_${routing_scheme}_${numPathChoices} -n ${PATH_NAME}\
-                > $output_file & 
-            pids+=($!)i
+        if [[ $routing_scheme =~ .*Window.* ]]; then
+            windowEnabled=true
+        else 
+            windowEnabled=false
         fi
+
+
+        # create the ini file with specified parameters
+        python scripts/create_ini_file.py \
+                --network-name ${network}\
+                --topo-filename ${topofile}\
+                --workload-filename ${workload}_workload.txt\
+                --ini-filename ${inifile}\
+                --signals-enabled $signalsEnabled\
+                --logging-enabled $loggingEnabled\
+                --simulation-length $simulationLength\
+                --stat-collection-rate $statCollectionRate\
+                --timeout-clear-rate $timeoutClearRate\
+                --timeout-enabled $timeoutEnabled\
+                --routing-scheme ${routing_scheme}\
+                --num-path-choices ${numPathChoices}\
+                --zeta $zeta\
+                --alpha $alpha\
+                --eta $eta\
+                --kappa $kappa\
+                --rho $rho\
+                --update-query-time $updateQueryTime\
+                --min-rate $minPriceRate\
+                --tau $tau\
+                --normalizer $normalizer \
+                --window-enabled $windowEnabled 
+
+
+        # run the omnetexecutable with the right parameters
+        # in the background
+        ./spiderNet -u Cmdenv -f ${inifile}\
+            -c ${network}_${routing_scheme}_${numPathChoices} -n ${PATH_NAME}\
+            > $output_file & 
+        pids+=($!)
       done 
     done
 done
