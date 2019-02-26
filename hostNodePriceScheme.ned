@@ -137,7 +137,10 @@ simple hostNodePriceScheme
 		
 		@signal[sumOfTransUnitsInFlightPerDestPerPath*](type="double"); 
 		@statisticTemplate[sumOfTransUnitsInFlightPerDestPerPathTemplate](record=vector, stats);
-		
+			
+        	@signal[windowPerDestPerPath*](type="double"); 
+		@statisticTemplate[windowPerDestPerPathTemplate](record=vector, stats);
+
 		@signal[priceLastSeenPerDestPerPath*](type="double"); 
 		@statisticTemplate[priceLastSeenPerDestPerPathTemplate](record=vector, stats);
 		

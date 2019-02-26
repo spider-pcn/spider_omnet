@@ -335,7 +335,7 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
             for (auto p: nodeToShortestPathsMap[destNode]) {
                 int pathIndex = p.first;
                 PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
-                double window = max(pathInfo->rateToSendTrans * pathInfo->rttMin, _minWindow);
+                pathInfo->window = max(pathInfo->rateToSendTrans * pathInfo->rttMin, _minWindow);
                 
                 if (pathInfo->rateToSendTrans > 0 && simTime() > pathInfo->timeToNextSend &&
                         pathInfo->sumOfTransUnitsInFlight < window) {
@@ -429,6 +429,7 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
                         emit(pInfo->timeToNextSendSignal, pInfo->timeToNextSend);
                         emit(pInfo->sumOfTransUnitsInFlightSignal, 
                                 pInfo->sumOfTransUnitsInFlight);
+                        emit(pInfo->windowSignal, pInfo->window);
                         emit(pInfo->priceLastSeenSignal, pInfo->priceLastSeen);
                         emit(pInfo->isSendTimerSetSignal, pInfo->isSendTimerSet);
                     }
@@ -705,7 +706,7 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
         int routeIndex = pqMsg->getPathIndex();
 
         PathInfo *p = &(nodeToShortestPathsMap[destNode][routeIndex]);
-        double oldRate = p->rateSentOnPath;
+        double oldRate = p->rateToSendTrans; // rateSentOnPath;
 
         // Nesterov's gradient descent equation
         // and other speeding up mechanisms
@@ -720,10 +721,10 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
         }
 
         p->priceLastSeen = zValue;
-        p->rateToSendTrans = maxDouble(preProjectionRate, _minPriceRate);
-        updateTimers(destNode, routeIndex, p->rateToSendTrans);
+        //p->rateToSendTrans = maxDouble(preProjectionRate, _minPriceRate);
+        //updateTimers(destNode, routeIndex, p->rateToSendTrans);
 
-        /* compute the projection of this new rate along with old rates
+        // compute the projection of this new rate along with old rates
         vector<PathRateTuple> pathRateTuples;
         for (auto p : nodeToShortestPathsMap[destNode]) {
             int pathIndex = p.first;
@@ -737,8 +738,8 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
             PathRateTuple newTuple = make_tuple(pathIndex, rate);
             pathRateTuples.push_back(newTuple);
         }
-        vector<PathRateTuple> projectedRates = pathRateTuples;
-            //computeProjection(pathRateTuples, nodeToDestInfo[destNode].demand);
+        vector<PathRateTuple> projectedRates = 
+            computeProjection(pathRateTuples, 110 /*nodeToDestInfo[destNode].demand*/);
 
         // reassign all path's rates to the projected rates and 
         // make sure it is atleast minPriceRate for every path
@@ -752,7 +753,7 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
             else
                 nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans = 
                 maxDouble(newRate, _minPriceRate);
-        }*/
+        }
               
         //delete both messages
         ttmsg->decapsulate();
@@ -773,7 +774,7 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
     int pathIndex = tsMsg->getPathIndex();
     int destNode = tsMsg->getReceiver();
     PathInfo* p = &(nodeToShortestPathsMap[destNode][pathIndex]);
-    double window = max(p->rateToSendTrans * p->rttMin, _minWindow);
+    p->window = max(p->rateToSendTrans * p->rttMin, _minWindow);
 
     if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0 && 
             p->sumOfTransUnitsInFlight < window){
@@ -834,7 +835,7 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         //no trans to send
         // don't turn off timers
         PathInfo* p = &(nodeToShortestPathsMap[destNode][pathIndex]);
-        double rateToSendTrans = p->rateToSendTrans;
+        double rateToSendTrans = max(p->rateToSendTrans, _epsilon);
         double lastTxnSize = p->lastTransSize;
         p->timeToNextSend = simTime() +
                 max(lastTxnSize/rateToSendTrans, _epsilon);
@@ -860,7 +861,8 @@ void hostNodePriceScheme::initializePriceProbes(vector<vector<int>> kShortestPat
         temp.rateToSendTrans = _minPriceRate;
         temp.yRateToSendTrans = _minPriceRate;
         // TODO: change this to something sensible
-        temp.rttMin = kShortestPaths[pathIdx].size() * _delta;
+        temp.rttMin = (kShortestPaths[pathIdx].size() - 1) * 2 * _avgDelay/1000.0;
+        cout << temp.rttMin << " is rtt for path " << pathIdx << endl;
         nodeToShortestPathsMap[destNode][pathIdx] = temp;
 
         //initialize signals
@@ -882,6 +884,9 @@ void hostNodePriceScheme::initializePriceProbes(vector<vector<int>> kShortestPat
 
         signal = registerSignalPerDestPath("sumOfTransUnitsInFlight", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].sumOfTransUnitsInFlightSignal = signal;
+
+        signal = registerSignalPerDestPath("window", pathIdx, destNode);
+        nodeToShortestPathsMap[destNode][pathIdx].windowSignal = signal;
       
         signal = registerSignalPerDestPath("priceLastSeen", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].priceLastSeenSignal = signal;

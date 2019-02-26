@@ -27,6 +27,7 @@ struct PathInfo{
         simtime_t timeToNextSend = 0;
         double sumOfTransUnitsInFlight = 0;
         double rttMin = 0.0;
+        double window = 100;
         double priceLastSeen = 0;
         routerMsg * triggerTransSendMsg;
         simtime_t lastSendTime = 0;
@@ -46,6 +47,7 @@ struct PathInfo{
         simsignal_t rateActuallySentSignal;
         simsignal_t timeToNextSendSignal;
         simsignal_t sumOfTransUnitsInFlightSignal;
+        simsignal_t windowSignal;
         simsignal_t priceLastSeenSignal;
         simsignal_t isSendTimerSetSignal;
 

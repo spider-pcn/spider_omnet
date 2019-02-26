@@ -10,6 +10,7 @@ from parse_sca_files import *
 from matplotlib.backends.backend_pdf import PdfPages
 from cycler import cycler
 from config import *
+from itertools import cycle
 
 parser = argparse.ArgumentParser('Analysis Plots')
 parser.add_argument('--vec_file',
@@ -199,7 +200,7 @@ def aggregate_frac_successful_info(success, attempted):
 
 # plots every router's signal_type info in a new pdf page
 # and add a router wealth plot separately
-def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per_path_info=False):
+def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per_path_info=False, window_info=None):
     color_opts = ['#fa9e9e', '#a4e0f9', '#57a882', '#ad62aa']
     router_wealth_info =[]
     
@@ -207,18 +208,30 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
         channel_bal_timeseries = []
         plt.figure()
         plt.rc('axes', prop_cycle = (cycler('color', ['r', 'g', 'b', 'y', 'c', 'm', 'y', 'k']) +
-            cycler('linestyle', ['-', '--', ':', '-.', '-', '--', ':', '-.'])))
+            cycler('linestyle', ['-']*8)))
+                #, '--', ':', '-.', '-', '--', ':', '-.'])))
+        
         
         i = 0
         for channel, info in channel_info.items():
             # plot one plot per src dest pair and multiple lines per path
             if per_path_info:
+                color_cycle_for_path = cycle(['r', 'g', 'b', 'y', 'c', 'm', 'y', 'k'])
                 for path, path_signals in info.items():
                     time = [t[0] for t in path_signals]
                     values = [t[1] for t in path_signals]
+                    
+                    c = next(color_cycle_for_path)
+
+                    if window_info is not None:
+                        window_signals = window_info[router][channel][path]
+                        window_val = [t[1] for t in window_signals]
+                        label_name = str(path) + "_Window"
+                        plt.plot(time, window_val, label=label_name, linestyle="--", color=c)
+                    
                     label_name = str(path)
                     plt.plot(time, values, \
-                            label=label_name + "(" + str(np.average(values[80:])) + ")")
+                            label=label_name + "(" + str(np.average(values[80:])) + ")", color=c)
                 plt.title(signal_type + " " + str(router) + "->" + str(channel))
                 plt.xlabel("Time")
                 plt.ylabel(signal_type)
@@ -418,7 +431,10 @@ def plot_per_src_dest_stats(args, text_to_add):
         if args.amt_inflight_per_path:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, \
                     "sumOfTransUnitsInFlight", False, True)
-            plot_relevant_stats(data_to_plot, pdf, "Amount Inflight per path", per_path_info=True)
+            window_info = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, \
+                    "window", False, True)
+            plot_relevant_stats(data_to_plot, pdf, "Amount Inflight/Window per path", per_path_info=True, \
+                    window_info=window_info)
         
         if args.price:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "priceLastSeen", False, True)
