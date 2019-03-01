@@ -19,7 +19,7 @@ path_choices_dep_list=( "priceScheme" "priceSchemeWindow" )
 path_choices_indep_list=()
 
 eta=0.02
-alpha=0.1
+alpha=0.5
 kappa=0.02
 updateQueryTime=1.5
 minPriceRate=0.25
@@ -45,6 +45,7 @@ do
 #    #routing schemes where number of path choices doesn't matter
     for routing_scheme in "${path_choices_indep_list[@]}" 
     do
+      output_file=outputs/${prefix[i]}_circ_${routing_scheme}
       inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}.ini
 
       # create the ini file with specified parameters
@@ -63,7 +64,8 @@ do
 
 
       # run the omnetexecutable with the right parameters
-      ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme} -n ${PATH_NAME}
+      ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme} -n ${PATH_NAME}\
+            > $output_file & 
     done
 
   #routing schemes where number of path choices matter

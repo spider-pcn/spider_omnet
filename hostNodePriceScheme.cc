@@ -96,7 +96,8 @@ routerMsg * hostNodePriceScheme::generatePriceQueryMessage(vector<int> path, int
 routerMsg *hostNodePriceScheme::generateTriggerTransactionSendMessage(vector<int> path, 
         int pathIndex, int destNode) {
     char msgname[MSGSIZE];
-    sprintf(msgname, "tic-%d-to-%d transactionSendMsg", myIndex(), destNode);
+    sprintf(msgname, "tic-%d-to-%d (path %d) transactionSendMsg", myIndex(), destNode, pathIndex);
+    cout << msgname << endl;
     transactionSendMsg *tsMsg = new transactionSendMsg(msgname);
     tsMsg->setPathIndex(pathIndex);
     tsMsg->setTransactionPath(path);
@@ -340,11 +341,13 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                 if (pathInfo->rateToSendTrans > 0 && simTime() > pathInfo->timeToNextSend && 
                         (!_windowEnabled || 
                          (_windowEnabled && pathInfo->sumOfTransUnitsInFlight < pathInfo->window))) {
+                    
                     ttmsg->setRoute(pathInfo->path);
-                    int nextNode = pathInfo->path[1];
+                    transMsg->setPathIndex(pathIndex);
                     handleTransactionMessage(ttmsg, true /*revisit*/);
 
                     // record stats on sent units for payment channel, destination and path
+                    int nextNode = pathInfo->path[1];
                     nodeToPaymentChannel[nextNode].nValue += 1;
                     statRateAttempted[destNode] += 1;
                     pathInfo->nValue += 1;
@@ -530,7 +533,7 @@ void hostNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
 
     // go through all the payment channels and recompute the arrival rate of 
     // transactions for all of them
-    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++) {
+    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++ ) {
         PaymentChannel *neighborChannel = &(nodeToPaymentChannel[it->first]);      
         neighborChannel->xLocal = neighborChannel->nValue / _tUpdate;
         neighborChannel->nValue = 0;
@@ -707,7 +710,7 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
         int routeIndex = pqMsg->getPathIndex();
 
         PathInfo *p = &(nodeToShortestPathsMap[destNode][routeIndex]);
-        double oldRate = p->rateToSendTrans; // rateSentOnPath;
+        double oldRate = p->rateToSendTrans;
 
         // Nesterov's gradient descent equation
         // and other speeding up mechanisms
@@ -718,14 +721,15 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
           p->yRateToSendTrans = yNew;
           preProjectionRate = yNew + _rho*(yNew - yPrev);
         } else {
-          preProjectionRate  = oldRate + _alpha*(1-zValue);
+          preProjectionRate  = oldRate + _alpha*(1 - zValue);
         }
 
         p->priceLastSeen = zValue;
-        //p->rateToSendTrans = maxDouble(preProjectionRate, _minPriceRate);
-        //updateTimers(destNode, routeIndex, p->rateToSendTrans);
+        // p->rateToSendTrans = maxDouble(preProjectionRate, _minPriceRate);
+        // updateTimers(destNode, routeIndex, p->rateToSendTrans);
 
         // compute the projection of this new rate along with old rates
+        double sumRates = 0.0;
         vector<PathRateTuple> pathRateTuples;
         for (auto p : nodeToShortestPathsMap[destNode]) {
             int pathIndex = p.first;
@@ -735,12 +739,19 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
             } else {
                 rate = preProjectionRate;
             }
+            sumRates += p.second.rateToSendTrans;
               
             PathRateTuple newTuple = make_tuple(pathIndex, rate);
             pathRateTuples.push_back(newTuple);
         }
+
+        int queueSize = nodeToDestInfo[destNode].transWaitingToBeSent.size();
+        double drainTime = 100.0; // seconds
+        double bias = nodeToDestInfo[destNode].demand - sumRates; 
+        // get<1>(pathRateTuples[routeIndex]) += _alpha * bias;
+
         vector<PathRateTuple> projectedRates = 
-            computeProjection(pathRateTuples, 1.1 * nodeToDestInfo[destNode].demand);
+            computeProjection(pathRateTuples, 1.1*nodeToDestInfo[destNode].demand /*+ queueSize/drainTime*/);
 
         // reassign all path's rates to the projected rates and 
         // make sure it is atleast minPriceRate for every path
