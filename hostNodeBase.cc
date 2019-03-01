@@ -237,6 +237,7 @@ routerMsg *hostNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     {
         aMsg->encapsulate(transMsg);
         msg->encapsulate(aMsg);
+        delete ttmsg;
     }
     else
     {
@@ -563,6 +564,7 @@ void hostNodeBase::handleTimeOutMessage(routerMsg* ttmsg){
  * NOTE: acks are on the reverse path relative to the original sender
  */
 void hostNodeBase::handleAckMessageSpecialized(routerMsg* ttmsg) { 
+
     int destNode = ttmsg->getRoute()[0];
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
 

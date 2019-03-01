@@ -81,7 +81,9 @@ void hostNodeLNDBaseline::initializePathInfoLNDBaseline(vector<vector<int>> kSho
 void hostNodeLNDBaseline::handleAckMessageSpecialized(routerMsg *msg)
 {
     ackMsg *aMsg = check_and_cast<ackMsg *>(msg->getEncapsulatedPacket());
+    cout << "LND Baseline before ack message encap trans cast" << endl;
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(aMsg->getEncapsulatedPacket());
+    cout << "LND Baseline after ack message encap trans cast" << endl;
     //guaranteed to be at last step of the path
 
     //get current index; increment it, see if there is a path for the incremented index
@@ -110,10 +112,13 @@ void hostNodeLNDBaseline::handleAckMessageSpecialized(routerMsg *msg)
             transMsg->setPathIndex(newIndex);
             msg->setRoute(nodeToShortestPathsMap[aMsg->getReceiver()][newIndex].path);
             msg->setHopCount(0);
+            msg->setMessageType(TRANSACTION_MSG);
             aMsg->decapsulate();
             msg->decapsulate();
             msg->encapsulate(transMsg);
-            delete aMsg;
+            delete aMsg; //TODO: need to fix, some parts of handleAckMessageSpecialized needs to be implemented
+                //Example: incrementing back funds in case of failure
+                //TODO: keep the transaction message, and make a new router message?
             handleTransactionMessage(msg);
         }
     }
