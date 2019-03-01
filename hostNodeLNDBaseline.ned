@@ -1,4 +1,4 @@
-simple hostNodeLandmarkRouting
+simple hostNodeLNDBaseline
 {
 	parameters:
 	    bool isHost = true;

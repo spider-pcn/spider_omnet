@@ -1,7 +1,6 @@
 #include "hostNodeLNDBaseline.h"
 
 // set of landmarks for landmark routing
-vector<int> _landmarks;
 
 Define_Module(hostNodeLNDBaseline);
 
@@ -49,7 +48,7 @@ void hostNodeLNDBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
         {
             transMsg->setPathIndex(0);
             ttmsg->setRoute(nodeToShortestPathsMap[destNode][0].path);
-            handleTranasctionMessage(ttmsg);
+            handleTransactionMessage(ttmsg);
         }
         else
         {
@@ -81,7 +80,7 @@ void hostNodeLNDBaseline::initializePathInfoLNDBaseline(vector<vector<int>> kSho
 
 void hostNodeLNDBaseline::handleAckMessageSpecialized(routerMsg *msg)
 {
-    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
+    ackMsg *aMsg = check_and_cast<ackMsg *>(msg->getEncapsulatedPacket());
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(aMsg->getEncapsulatedPacket());
     //guaranteed to be at last step of the path
 
@@ -92,7 +91,7 @@ void hostNodeLNDBaseline::handleAckMessageSpecialized(routerMsg *msg)
         aMsg->decapsulate();
         delete transMsg;
         if (_signalsEnabled)
-            emit (pathPerTransPerDestSignals[destNode], numPathsAttempted);
+            emit (pathPerTransPerDestSignals[aMsg->getReceiver()], numPathsAttempted);
         hostNodeBase::handleAckMessageSpecialized(msg);
     }
     else
@@ -103,7 +102,7 @@ void hostNodeLNDBaseline::handleAckMessageSpecialized(routerMsg *msg)
             aMsg->decapsulate();
             delete transMsg;
             if (_signalsEnabled)
-                emit(pathPerTransPerDestSignals[destNode], numPathsAttempted);
+                emit(pathPerTransPerDestSignals[aMsg->getReceiver()], numPathsAttempted);
             hostNodeBase::handleAckMessageSpecialized(msg);
         }
         else

@@ -1,5 +1,5 @@
-#ifndef ROUTERNODE_WF_H
-#define ROUTERNODE_WF_H
+#ifndef ROUTERNODE_LNDB_H
+#define ROUTERNODE_LNDB_H
 
 #include "probeMsg_m.h"
 #include "hostNodeBase.h"
@@ -33,7 +33,7 @@ class hostNodeLNDBaseline : public hostNodeBase {
         virtual void handleAckMessageSpecialized(routerMsg *msg) override;
 
         //initializePathInfoLNDBaseline - store into datastructure
-        virtual void initializePathInfoLNDBaseline(vector<vector<int>> kShortestRoutes, int destNode)l
+        virtual void initializePathInfoLNDBaseline(vector<vector<int>> kShortestRoutes, int destNode);
 
 
 };
