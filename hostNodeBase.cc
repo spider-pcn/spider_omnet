@@ -68,7 +68,7 @@ void hostNodeBase::generateNextTransaction() {
       
       routerMsg *msg = generateTransactionMessage(j); //TODO: flag to whether to calculate path
 
-      if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled){
+      if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled || _lndBaselineEnabled){
          vector<int> blankPath = {};
          //Radhika TODO: maybe no need to compute path to begin with?
          msg->setRoute(blankPath);
@@ -233,9 +233,17 @@ routerMsg *hostNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     
     msg->setMessageType(ACK_MSG); 
     ttmsg->decapsulate();
-    delete transMsg;
-    delete ttmsg;
-    msg->encapsulate(aMsg);
+    if (_lndBaselineEnabled)
+    {
+        aMsg->encapsulate(transMsg);
+        msg->encapsulate(aMsg);
+    }
+    else
+    {
+        delete transMsg;
+        delete ttmsg;
+        msg->encapsulate(aMsg);
+    }
     return msg;
 }
 
@@ -963,9 +971,9 @@ void hostNodeBase::initialize() {
         _hasQueueCapacity = false;
         _queueCapacity = 0;
 
-
+        _lndBaselineEnabled = true;
         _landmarkRoutingEnabled = false;
-        if (_landmarkRoutingEnabled){
+        if (_landmarkRoutingEnabled || _lndBaselineEnabled){
             _hasQueueCapacity = true;
             _queueCapacity = 0;
             _timeoutEnabled = false;

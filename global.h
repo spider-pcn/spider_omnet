@@ -58,6 +58,7 @@ extern bool _timeoutEnabled;
 extern int _kValue; //for k shortest paths
 extern double _simulationLength;
 extern bool _landmarkRoutingEnabled;
+extern bool _lndBaselineEnabled;
 
 extern vector<tuple<int,int>> _landmarksWithConnectivityList;//pair: (number of edges, node number)
 

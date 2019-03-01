@@ -26,6 +26,7 @@ bool _loggingEnabled;
 bool _signalsEnabled;
 bool _priceSchemeEnabled;
 bool _landmarkRoutingEnabled;
+bool _lndBaselineEnabled;
 
 // for all precision errors
 double _epsilon; 
