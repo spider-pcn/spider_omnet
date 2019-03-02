@@ -1,22 +1,24 @@
 #!/bin/bash
 PATH_NAME="benchmarks/circulations/"
 
-prefix=("five_node_hardcoded") 
- #"two_node_imbalance" "two_node_capacity" ) #"sw_sparse_40_routers") # "sw_40_routers" "sf_40_routers")
+prefix=( "hotnets" ) #five_node_hardcoded" )
+#"two_node_imbalance" "two_node_capacity" ) #"sw_sparse_40_routers") # "sw_40_routers" "sf_40_routers")
     #"sw_400_routers" "sf_400_routers")
     #"sw_1000_routers" "sf_1000_routers")
 
 arraylength=${#prefix[@]}
 
 #general parameters that do not affect config names
-simulationLength=12000.0
+simulationLength=5000
 statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-path_choices_dep_list=( "priceScheme" "priceSchemeWindow" )
-path_choices_indep_list=()
+#path_choices_dep_list=( "priceSchemeWindow" "waterfilling" "smoothWaterfilling")
+#path_choices_indep_list=( "shortestPath" )
+path_choices_dep_list=( "priceSchemeWindow")
+path_choices_indep_list=(  )
 
 eta=0.02
 alpha=0.5
@@ -115,7 +117,7 @@ do
         # in the background
         ./spiderNet -u Cmdenv -f ${inifile}\
             -c ${network}_${routing_scheme}_${numPathChoices} -n ${PATH_NAME}\
-            > $output_file & 
+            > $output_file &
         pids+=($!)
       done 
     done

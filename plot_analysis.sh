@@ -3,14 +3,14 @@ PATH_NAME="benchmarks/"
 GRAPH_PATH="scripts/figures/"
 
 #prefix=("two_node" "three_node" "four_node" "five_node") 
-prefix=("sw_10_routers")  #"sw_sparse_40_routers" "sf_40_routers")
+prefix=( "hotnets" "sf_10_routers")  #"sw_sparse_40_routers" "sf_40_routers")
     #"sw_400_routers" "sf_400_routers")
     #"sw_1000_routers" "sf_1000_routers")
 
 arraylength=${#prefix[@]}
 
 #general parameters that do not affect config names
-simulationLength=6000
+simulationLength=5000
 statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true

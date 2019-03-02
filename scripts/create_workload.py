@@ -16,10 +16,16 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
     # define start and end nodes and amounts
     # edge a->b in payment graph appears in index i as start_nodes[i]=a, and end_nodes[i]=b
     if payment_graph_topo == 'hotnets_topo':
-        start_nodes = [0,3,0,1,2,3,2,4]
-        end_nodes = [4,0,1,3,1,2,4,2]
-        amt_relative = [1,2,1,2,1,2,2,1]
-        amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+        if circ_frac == 1:
+            start_nodes = [0, 1, 2, 2, 3, 3, 4]
+            end_nodes = [1, 3, 1, 4, 2, 0, 2]
+            amt_relative = [1, 2, 1, 1, 1, 1, 1]
+            amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+        else:
+            start_nodes = [0,3,0,1,2,3,2,4]
+            end_nodes = [4,0,1,3,1,2,4,2]
+            amt_relative = [1,2,1,2,1,2,2,1]
+            amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
         graph = hotnets_topo_graph
 
     elif payment_graph_topo == 'simple_deadlock':

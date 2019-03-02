@@ -2,7 +2,7 @@
 PATH_NAME="../benchmarks/circulations/"
 
 num_nodes=("2" "2" "3" "4" "5" "10" "0" "0" "10" "20" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
-    "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
+    "10" "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
 
 balance=100
 
@@ -11,6 +11,7 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sw_10_routers" "sw_20_routers" "sw_40_routers" "sw_60_routers" "sw_80_routers"  \
     "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
     "sw_800_routers" "sw_1000_routers"\
+    "sf_10_routers" \
     "sf_40_routers" "sf_60_routers" "sf_80_routers"  \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
@@ -23,7 +24,7 @@ mkdir -p ${PATH_NAME}
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=( 4 )
+array=( 5 )
 for i in "${array[@]}"
 do 
     # generate the graph first to ned file
@@ -58,6 +59,9 @@ do
 
     if [ ${prefix[i]:0:4} == "five" ]; then
         payment_graph_topo="hardcoded_circ"
+    elif [ ${prefix[i]:0:7} == "hotnets" ]; then
+        payment_graph_topo="hotnets_topo"
+
     fi
 
     echo $network
@@ -81,15 +85,15 @@ do
             --graph-topo $payment_graph_topo \
             --payment-graph-dag-percentage 0\
             --topo-filename $topofile\
-            --experiment-time 12000 \
+            --experiment-time 5000 \
             --balance-per-channel $balance\
-            --generate-json-also\
+            --generate-json-also \
             --timeout-value 5
 
     # create the ini file
     $PYTHON create_ini_file.py \
             --network-name $network\
-            --topo-filename ${topofile:3}\
+            --topo-filename ${topofile:3} \
             --workload-filename ${workload:3}_workload.txt\
             --ini-filename $inifile
 done 
