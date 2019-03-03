@@ -40,6 +40,8 @@ public:
     //statistics for price scheme per payment channel
     simsignal_t nValueSignal;
     simsignal_t xLocalSignal;
+    simsignal_t balSumSignal;
+    simsignal_t inFlightSumSignal;
     simsignal_t lambdaSignal;
     simsignal_t muLocalSignal;
     simsignal_t muRemoteSignal;

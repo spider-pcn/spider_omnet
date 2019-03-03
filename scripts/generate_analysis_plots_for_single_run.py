@@ -69,6 +69,15 @@ parser.add_argument('--mu_remote',
 parser.add_argument('--x_local',
         action='store_true',
         help='Plot the per channel rate of sending related price when price based scheme is used')
+parser.add_argument('--n_local',
+        action='store_true',
+        help='Plot the per channel number of txns when price based scheme is used')
+parser.add_argument('--bal_sum',
+        action='store_true',
+        help='Plot the per channel sum over update messages of balance when price based scheme is used')
+parser.add_argument('--inflight_sum',
+        action='store_true',
+        help='Plot the per channel sum of txns sent out over this time interval related price when price based scheme is used')
 parser.add_argument('--rate_to_send',
         action='store_true',
         help='Plot the per path rate to send when price based scheme is used')
@@ -359,7 +368,18 @@ def plot_per_payment_channel_stats(args, text_to_add):
         if args.x_local:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "xLocal", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "xLocal")
+        
+        if args.n_local:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "nValue", True, is_both=False)
+            plot_relevant_stats(data_to_plot, pdf, "nValue")
 
+        if args.bal_sum:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "balSum", True, is_both=False)
+            plot_relevant_stats(data_to_plot, pdf, "balSum")
+
+        if args.inflight_sum:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "inFlightSum", True, is_both=False)
+            plot_relevant_stats(data_to_plot, pdf, "inFlightSum")
 
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + args.save + "_per_channel_info.pdf"
     

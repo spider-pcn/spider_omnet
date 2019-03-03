@@ -109,7 +109,8 @@ per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", 
         "priceLastSeenPerDestPerPath", "numTimedOutPerDest"])
 
 per_channel_list = []
-for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "numSent", "muRemote", "numInflight"]:
+for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "nValue", "balSum", "inFlightSum", \
+        "numSent", "muRemote", "numInflight"]:
     INTERESTING_SIGNALS[signal] = signal + "PerChannel"
     per_channel_list.append(signal + "PerChannel")
 

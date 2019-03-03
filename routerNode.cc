@@ -226,6 +226,28 @@ void routerNode::initialize()
          nodeToPaymentChannel[key].nValueSignal = signal;
 
          if (key<_numHostNodes) {
+            sprintf(signalName, "inFlightSumPerChannel(host %d)", key);
+         }
+         else {
+            sprintf(signalName, "inFlightSumPerChannel(router %d [%d])", key - _numHostNodes, key);
+         }
+         signal = registerSignal(signalName);
+         statisticTemplate = getProperties()->get("statisticTemplate", "inFlightSumPerChannelTemplate");
+         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+         nodeToPaymentChannel[key].inFlightSumSignal = signal;
+
+         if (key<_numHostNodes) {
+            sprintf(signalName, "balSumPerChannel(host %d)", key);
+         }
+         else {
+            sprintf(signalName, "balSumPerChannel(router %d [%d])", key - _numHostNodes, key);
+         }
+         signal = registerSignal(signalName);
+         statisticTemplate = getProperties()->get("statisticTemplate", "balSumPerChannelTemplate");
+         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+         nodeToPaymentChannel[key].balSumSignal = signal;
+
+         if (key<_numHostNodes) {
             sprintf(signalName, "xLocalPerChannel(host %d)", key);
          }
          else {
@@ -698,6 +720,8 @@ void routerNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
 
          emit(p->nValueSignal, p->nValue);
          emit(p->xLocalSignal, p->xLocal);
+         emit(p->inFlightSumSignal, p->sumInFlight);
+         emit(p->balSumSignal, p->balSum);
          emit(p->lambdaSignal, p->lambda);
          emit(p->muLocalSignal, p->muLocal);
          emit(p->muRemoteSignal, p->muRemote);
