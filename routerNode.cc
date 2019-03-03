@@ -525,7 +525,7 @@ routerMsg * routerNode::generatePriceUpdateMessage(double nLocal, double balSum,
    priceUpdateMsg *puMsg = new priceUpdateMsg(msgname);
    puMsg->setNLocal(nLocal);
    puMsg->setBalSum(balSum);
-   puMsg->setSumInFlight(balSum);
+   puMsg->setSumInFlight(sumInFlight);
    
    rMsg->encapsulate(puMsg);
    return rMsg;
@@ -718,10 +718,10 @@ void routerNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
          simsignal_t muLocalSignal;
          simsignal_t muRemoteSignal;
 
-         emit(p->nValueSignal, p->nValue);
+         emit(p->nValueSignal, p->lastNValue);
          emit(p->xLocalSignal, p->xLocal);
-         emit(p->inFlightSumSignal, p->sumInFlight);
-         emit(p->balSumSignal, p->balSum);
+         emit(p->inFlightSumSignal, p->lastSumInFlight);
+         emit(p->balSumSignal, p->lastBalSum);
          emit(p->lambdaSignal, p->lambda);
          emit(p->muLocalSignal, p->muLocal);
          emit(p->muRemoteSignal, p->muRemote);
@@ -866,16 +866,18 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
 
    updateMsg *uMsg = check_and_cast<updateMsg *>(msg->getEncapsulatedPacket());
    //increment the in flight funds back
+   
+   //remove transaction from incoming_trans_units
+   if (_priceSchemeEnabled)
+       nodeToPaymentChannel[prevNode].balSum += nodeToPaymentChannel[prevNode].balance/
+           nodeToPaymentChannel[prevNode].incomingTransUnits.size();
+
    double newBalance = nodeToPaymentChannel[prevNode].balance + uMsg->getAmount();
    nodeToPaymentChannel[prevNode].balance =  newBalance;       
    nodeToPaymentChannel[prevNode].balanceEWMA = 
           (1 -_ewmaFactor) * nodeToPaymentChannel[prevNode].balanceEWMA + (_ewmaFactor) * newBalance; 
 
-   //remove transaction from incoming_trans_units
-   if (_priceSchemeEnabled)
-       nodeToPaymentChannel[prevNode].balSum += newBalance;
    map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-
    (*incomingTransUnits).erase(make_tuple(uMsg->getTransactionId(),uMsg->getHtlcIndex()));
 
    nodeToPaymentChannel[prevNode].statNumProcessed = nodeToPaymentChannel[prevNode].statNumProcessed + 1;

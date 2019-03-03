@@ -20,13 +20,13 @@ loggingEnabled=false
 path_choices_dep_list=( "priceSchemeWindow")
 path_choices_indep_list=(  )
 
-eta=0.02
+eta=0.05
 alpha=0.5
-kappa=0.02
+kappa=0.05
 updateQueryTime=1.5
 minPriceRate=0.25
 zeta=0.01
-rho=0.05
+rho=0.01
 
 tau=10
 normalizer=100

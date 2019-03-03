@@ -525,8 +525,8 @@ void hostNodePriceScheme::handleUpdateMessage(routerMsg* msg) {
     PaymentChannel *prevChannel = &(nodeToPaymentChannel[prevNode]);
    
     //increment the balance sum to reflect the current balance sum
-    double newBalance = prevChannel->balance + uMsg->getAmount();
-    prevChannel->balSum += newBalance;
+    // double newBalance = prevChannel->balance + uMsg->getAmount();
+    prevChannel->balSum += prevChannel->balance/prevChannel->incomingTransUnits.size();
 
     hostNodeBase::handleUpdateMessage(msg);
 }
