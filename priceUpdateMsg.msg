@@ -15,6 +15,8 @@
 
 packet priceUpdateMsg
 {
-    double xLocal;
+    double nLocal;
+    double balSum;
+    double sumInFlight;
 }
 

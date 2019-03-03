@@ -392,11 +392,17 @@ void routerNode::handlePriceQueryMessage(routerMsg* ttmsg){
 
 void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
    priceUpdateMsg *puMsg = check_and_cast<priceUpdateMsg *>(ttmsg->getEncapsulatedPacket());
-   double xRemote = puMsg->getXLocal();
+   double nRemote = puMsg->getNLocal();
+   double inflightRemote = puMsg->getSumInFlight();
+   double balSumRemote = puMsg->getBalSum();
    int sender = ttmsg->getRoute()[0];
 
    //Update $\lambda$, $mu_local$ and $mu_remote$
    double xLocal = nodeToPaymentChannel[sender].xLocal;
+   int nLocal = nodeToPaymentChannel[sender].lastNValue;
+   double inflightLocal = nodeToPaymentChannel[sender].lastSumInFlight;
+   double balSumLocal = nodeToPaymentChannel[sender].lastBalSum;
+
    double cValue = nodeToPaymentChannel[sender].totalCapacity;
    double oldLambda = nodeToPaymentChannel[sender].lambda;
    double oldMuLocal = nodeToPaymentChannel[sender].muLocal;
@@ -412,34 +418,37 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
         double yMuLocal = nodeToPaymentChannel[sender].yMuLocal;
         double yMuRemote = nodeToPaymentChannel[sender].yMuRemote;
 
-        double yLambdaNew = oldLambda + _eta*(xLocal + xRemote - (cValue/_delta));
+        double yLambdaNew = oldLambda + _eta*(nLocal + nRemote - inflightLocal -inflightRemote 
+                - balSumLocal - balSumRemote);
         newLambda = yLambdaNew + _rhoLambda*(yLambdaNew - yLambda); 
         nodeToPaymentChannel[sender].yLambda = yLambdaNew;
 
-        double yMuLocalNew = oldMuLocal + _kappa*(xLocal - xRemote);
+        double yMuLocalNew = oldMuLocal + _kappa*(nLocal - nRemote);
         newMuLocal = yMuLocalNew + _rhoMu*(yMuLocalNew - yMuLocal);
         nodeToPaymentChannel[sender].yMuLocal = yMuLocalNew;
 
-        double yMuRemoteNew = oldMuRemote + _kappa*(xRemote - xLocal);
+        double yMuRemoteNew = oldMuRemote + _kappa*(nRemote - nLocal);
         newMuRemote = yMuRemoteNew + _rhoMu*(yMuRemoteNew - yMuRemote);
         nodeToPaymentChannel[sender].yMuRemote = yMuRemoteNew;
     } 
     else if (_secondOrderOptimization) {
         double lastLambdaGrad = nodeToPaymentChannel[sender].lastLambdaGrad;
-        double newLambdaGrad = xLocal + xRemote - (cValue/_delta);
+        double newLambdaGrad = nLocal + nRemote - inflightLocal -inflightRemote 
+                - balSumLocal - balSumRemote;
         newLambda = oldLambda +  _eta*newLambdaGrad + _rhoLambda*(newLambdaGrad - lastLambdaGrad);
         nodeToPaymentChannel[sender].lastLambdaGrad = newLambdaGrad;
 
         double lastMuLocalGrad = nodeToPaymentChannel[sender].lastMuLocalGrad;
-        double newMuLocalGrad = xLocal - xRemote;
+        double newMuLocalGrad = nLocal - nRemote;
         newMuLocal = oldMuLocal + _kappa*newMuLocalGrad + _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
         newMuRemote = oldMuRemote - _kappa*newMuLocalGrad - _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
         nodeToPaymentChannel[sender].lastMuLocalGrad = newMuLocalGrad;
     } 
     else {
-        newLambda = oldLambda +  _eta*(xLocal + xRemote - (cValue/_delta));
-        newMuLocal = oldMuLocal + _kappa*(xLocal - xRemote);
-        newMuRemote = oldMuRemote + _kappa*(xRemote - xLocal); 
+        newLambda = oldLambda +  _eta*(nLocal + nRemote - inflightLocal -inflightRemote 
+                - balSumLocal - balSumRemote);
+        newMuLocal = oldMuLocal + _kappa*(nLocal - nRemote);
+        newMuRemote = oldMuRemote + _kappa*(nRemote - nLocal); 
     }
 
    nodeToPaymentChannel[sender].lambda = maxDouble(newLambda, 0);
@@ -460,16 +469,26 @@ void routerNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
       scheduleAt(simTime()+_tUpdate, ttmsg);
    }
 
-   for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all canceledTransactions
-      nodeToPaymentChannel[it->first].xLocal =  nodeToPaymentChannel[it->first].nValue / _tUpdate;
-      nodeToPaymentChannel[it->first].nValue = 0;
-      routerMsg * priceUpdateMsg = generatePriceUpdateMessage(nodeToPaymentChannel[it->first].xLocal, it->first);
+   for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ 
+       //iterate through all channels
+       PaymentChannel *neighborChannel = &(nodeToPaymentChannel[it->first]);
+      neighborChannel->xLocal =  neighborChannel->nValue / _tUpdate;
+      routerMsg * priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue,
+             neighborChannel->balSum, neighborChannel->sumInFlight, it->first);
+      neighborChannel->lastNValue = neighborChannel->nValue;
+      neighborChannel->nValue = 0;
+
+      neighborChannel->lastBalSum = neighborChannel->balSum;
+      neighborChannel->balSum = 0;
+
+      neighborChannel->lastSumInFlight = neighborChannel->sumInFlight;
+      neighborChannel->sumInFlight = 0;
       sendUpdateMessage(priceUpdateMsg);
    }
 
 }
 
-routerMsg * routerNode::generatePriceUpdateMessage(double xLocal, int reciever){
+routerMsg * routerNode::generatePriceUpdateMessage(double nLocal, double balSum, double sumInFlight, int reciever){
    char msgname[MSGSIZE];
 
    sprintf(msgname, "tic-%d-to-%d priceUpdateMsg", myIndex(), reciever);
@@ -482,8 +501,10 @@ routerMsg * routerNode::generatePriceUpdateMessage(double xLocal, int reciever){
    rMsg->setMessageType(PRICE_UPDATE_MSG);
 
    priceUpdateMsg *puMsg = new priceUpdateMsg(msgname);
-
-   puMsg->setXLocal(xLocal);
+   puMsg->setNLocal(nLocal);
+   puMsg->setBalSum(balSum);
+   puMsg->setSumInFlight(balSum);
+   
    rMsg->encapsulate(puMsg);
    return rMsg;
 }
@@ -827,6 +848,8 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
           (1 -_ewmaFactor) * nodeToPaymentChannel[prevNode].balanceEWMA + (_ewmaFactor) * newBalance; 
 
    //remove transaction from incoming_trans_units
+   if (_priceSchemeEnabled)
+       nodeToPaymentChannel[prevNode].balSum += newBalance;
    map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
 
    (*incomingTransUnits).erase(make_tuple(uMsg->getTransactionId(),uMsg->getHtlcIndex()));
@@ -1054,7 +1077,8 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest)
       //use hopCount to find next destination
 
       //add amount to outgoing map
-
+      if (_priceSchemeEnabled) 
+          nodeToPaymentChannel[nextDest].sumInFlight += transMsg->getAmount();
       map<Id, double> *outgoingTransUnits = &(nodeToPaymentChannel[nextDest].outgoingTransUnits);
       (*outgoingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = transMsg->getAmount();
 

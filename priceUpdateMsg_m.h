@@ -23,14 +23,18 @@
  * <pre>
  * packet priceUpdateMsg
  * {
- *     double xLocal;
+ *     double nLocal;
+ *     double balSum;
+ *     double sumInFlight;
  * }
  * </pre>
  */
 class priceUpdateMsg : public ::omnetpp::cPacket
 {
   protected:
-    double xLocal;
+    double nLocal;
+    double balSum;
+    double sumInFlight;
 
   private:
     void copy(const priceUpdateMsg& other);
@@ -49,8 +53,12 @@ class priceUpdateMsg : public ::omnetpp::cPacket
     virtual void parsimUnpack(omnetpp::cCommBuffer *b) override;
 
     // field getter/setter methods
-    virtual double getXLocal() const;
-    virtual void setXLocal(double xLocal);
+    virtual double getNLocal() const;
+    virtual void setNLocal(double nLocal);
+    virtual double getBalSum() const;
+    virtual void setBalSum(double balSum);
+    virtual double getSumInFlight() const;
+    virtual void setSumInFlight(double sumInFlight);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const priceUpdateMsg& obj) {obj.parsimPack(b);}

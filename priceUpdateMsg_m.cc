@@ -181,7 +181,9 @@ Register_Class(priceUpdateMsg)
 
 priceUpdateMsg::priceUpdateMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
 {
-    this->xLocal = 0;
+    this->nLocal = 0;
+    this->balSum = 0;
+    this->sumInFlight = 0;
 }
 
 priceUpdateMsg::priceUpdateMsg(const priceUpdateMsg& other) : ::omnetpp::cPacket(other)
@@ -203,29 +205,55 @@ priceUpdateMsg& priceUpdateMsg::operator=(const priceUpdateMsg& other)
 
 void priceUpdateMsg::copy(const priceUpdateMsg& other)
 {
-    this->xLocal = other.xLocal;
+    this->nLocal = other.nLocal;
+    this->balSum = other.balSum;
+    this->sumInFlight = other.sumInFlight;
 }
 
 void priceUpdateMsg::parsimPack(omnetpp::cCommBuffer *b) const
 {
     ::omnetpp::cPacket::parsimPack(b);
-    doParsimPacking(b,this->xLocal);
+    doParsimPacking(b,this->nLocal);
+    doParsimPacking(b,this->balSum);
+    doParsimPacking(b,this->sumInFlight);
 }
 
 void priceUpdateMsg::parsimUnpack(omnetpp::cCommBuffer *b)
 {
     ::omnetpp::cPacket::parsimUnpack(b);
-    doParsimUnpacking(b,this->xLocal);
+    doParsimUnpacking(b,this->nLocal);
+    doParsimUnpacking(b,this->balSum);
+    doParsimUnpacking(b,this->sumInFlight);
 }
 
-double priceUpdateMsg::getXLocal() const
+double priceUpdateMsg::getNLocal() const
 {
-    return this->xLocal;
+    return this->nLocal;
 }
 
-void priceUpdateMsg::setXLocal(double xLocal)
+void priceUpdateMsg::setNLocal(double nLocal)
 {
-    this->xLocal = xLocal;
+    this->nLocal = nLocal;
+}
+
+double priceUpdateMsg::getBalSum() const
+{
+    return this->balSum;
+}
+
+void priceUpdateMsg::setBalSum(double balSum)
+{
+    this->balSum = balSum;
+}
+
+double priceUpdateMsg::getSumInFlight() const
+{
+    return this->sumInFlight;
+}
+
+void priceUpdateMsg::setSumInFlight(double sumInFlight)
+{
+    this->sumInFlight = sumInFlight;
 }
 
 class priceUpdateMsgDescriptor : public omnetpp::cClassDescriptor
@@ -293,7 +321,7 @@ const char *priceUpdateMsgDescriptor::getProperty(const char *propertyname) cons
 int priceUpdateMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 1+basedesc->getFieldCount() : 1;
+    return basedesc ? 3+basedesc->getFieldCount() : 3;
 }
 
 unsigned int priceUpdateMsgDescriptor::getFieldTypeFlags(int field) const
@@ -306,8 +334,10 @@ unsigned int priceUpdateMsgDescriptor::getFieldTypeFlags(int field) const
     }
     static unsigned int fieldTypeFlags[] = {
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<1) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<3) ? fieldTypeFlags[field] : 0;
 }
 
 const char *priceUpdateMsgDescriptor::getFieldName(int field) const
@@ -319,16 +349,20 @@ const char *priceUpdateMsgDescriptor::getFieldName(int field) const
         field -= basedesc->getFieldCount();
     }
     static const char *fieldNames[] = {
-        "xLocal",
+        "nLocal",
+        "balSum",
+        "sumInFlight",
     };
-    return (field>=0 && field<1) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<3) ? fieldNames[field] : nullptr;
 }
 
 int priceUpdateMsgDescriptor::findField(const char *fieldName) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount() : 0;
-    if (fieldName[0]=='x' && strcmp(fieldName, "xLocal")==0) return base+0;
+    if (fieldName[0]=='n' && strcmp(fieldName, "nLocal")==0) return base+0;
+    if (fieldName[0]=='b' && strcmp(fieldName, "balSum")==0) return base+1;
+    if (fieldName[0]=='s' && strcmp(fieldName, "sumInFlight")==0) return base+2;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -342,8 +376,10 @@ const char *priceUpdateMsgDescriptor::getFieldTypeString(int field) const
     }
     static const char *fieldTypeStrings[] = {
         "double",
+        "double",
+        "double",
     };
-    return (field>=0 && field<1) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<3) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **priceUpdateMsgDescriptor::getFieldPropertyNames(int field) const
@@ -410,7 +446,9 @@ std::string priceUpdateMsgDescriptor::getFieldValueAsString(void *object, int fi
     }
     priceUpdateMsg *pp = (priceUpdateMsg *)object; (void)pp;
     switch (field) {
-        case 0: return double2string(pp->getXLocal());
+        case 0: return double2string(pp->getNLocal());
+        case 1: return double2string(pp->getBalSum());
+        case 2: return double2string(pp->getSumInFlight());
         default: return "";
     }
 }
@@ -425,7 +463,9 @@ bool priceUpdateMsgDescriptor::setFieldValueAsString(void *object, int field, in
     }
     priceUpdateMsg *pp = (priceUpdateMsg *)object; (void)pp;
     switch (field) {
-        case 0: pp->setXLocal(string2double(value)); return true;
+        case 0: pp->setNLocal(string2double(value)); return true;
+        case 1: pp->setBalSum(string2double(value)); return true;
+        case 2: pp->setSumInFlight(string2double(value)); return true;
         default: return false;
     }
 }

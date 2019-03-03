@@ -15,11 +15,18 @@ public:
     map<Id, double> outgoingTransUnits;
 
     //channel information for price scheme
-    int nValue;// Total amount across all transactions (i.e. the sum of the amount in each transaction)
+    double nValue;// Total amount across all transactions (i.e. the sum of the amount in each transaction)
         // that have arrived to be sent along the channel
+    double lastNValue;
     double xLocal; //Transaction arrival rate ($x_local$)
     double totalCapacity; //Total channel capacity ($C$)
+    
     double lambda; //Price due to load ($\lambda$)
+    double sumInFlight;// total number in flight over the last T seconds
+    double lastSumInFlight; 
+    double balSum; // sum of balances across the last T seconds of update messages
+    double lastBalSum;
+
     double lastLambdaGrad = 0; // for accelerated gradient descent
     double yLambda; // Nesterov's equation y
 
