@@ -109,17 +109,28 @@ void hostNodeLNDBaseline::handleAckMessageSpecialized(routerMsg *msg)
         }
         else
         {
+            char msgname[MSGSIZE];
+            sprintf(msgname, "tic-%d-to-%d transactionMsg", transMsg->getSender(), transMsg->getReceiver());
+            routerMsg* ttmsg = new routerMsg(msgname);
             transMsg->setPathIndex(newIndex);
-            msg->setRoute(nodeToShortestPathsMap[aMsg->getReceiver()][newIndex].path);
-            msg->setHopCount(0);
-            msg->setMessageType(TRANSACTION_MSG);
+            ttmsg->setRoute(nodeToShortestPathsMap[aMsg->getReceiver()][newIndex].path);
+            cout << "new route for "<< transMsg->getSender() << " to "<< transMsg->getReceiver() << endl;
+            printVector(ttmsg->getRoute());
+            ttmsg->setHopCount(0);
+            ttmsg->setMessageType(TRANSACTION_MSG);
             aMsg->decapsulate();
-            msg->decapsulate();
-            msg->encapsulate(transMsg);
-            delete aMsg; //TODO: need to fix, some parts of handleAckMessageSpecialized needs to be implemented
+            
+            hostNodeBase::handleAckMessage(msg);
+            //msg->decapsulate();
+            
+            ttmsg->encapsulate(transMsg);
+            
+            //delete aMsg; //TODO: need to fix, some parts of handleAckMessageSpecialized needs to be implemented
                 //Example: incrementing back funds in case of failure
                 //TODO: keep the transaction message, and make a new router message?
-            handleTransactionMessage(msg);
+            
+            
+            handleTransactionMessage(ttmsg, true);
         }
     }
     return;

@@ -598,12 +598,12 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
     if (aMsg->getIsSuccess() == false) {
         // increment funds on this channel unless this is the node that caused the fauilure
         // in which case funds were never decremented in the first place
-        if (ttmsg->getRoute()[aMsg->getFailedHopNum()] != myIndex())
+        if (aMsg->getFailedHopNum() < ttmsg->getHopCount())
             nodeToPaymentChannel[prevNode].balance += aMsg->getAmount();
 
         // no relevant incoming_trans_units because no node on fwd path before this
         if (ttmsg->getHopCount() < ttmsg->getRoute().size() - 1) {
-            int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
+            int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
             map<Id, double> *incomingTransUnits = 
                 &(nodeToPaymentChannel[nextNode].incomingTransUnits);
             (*incomingTransUnits).erase(make_tuple(aMsg->getTransactionId(), 

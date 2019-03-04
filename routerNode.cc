@@ -775,7 +775,9 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
    (*outgoingTransUnits).erase(make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex()));
 
    if (aMsg->getIsSuccess() == false){
-      if (ttmsg->getRoute()[aMsg->getFailedHopNum()] != myIndex()) {
+        //TODO: problem, repeated indices in path, so if 0->1, 035451 and fails right before 1,
+            //both times, 5 won't get funds back.
+      if (aMsg->getFailedHopNum() < ttmsg->getHopCount()) {
           //increment payment back to outgoing channel
           double updatedBalance = nodeToPaymentChannel[prevNode].balance + aMsg->getAmount();
           nodeToPaymentChannel[prevNode].balanceEWMA = 
