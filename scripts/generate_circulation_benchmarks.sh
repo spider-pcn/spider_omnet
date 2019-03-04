@@ -1,13 +1,13 @@
 #!/bin/bash
 PATH_NAME="../benchmarks/circulations/"
 
-num_nodes=("2" "2" "3" "4" "5" "10" "0" "0" "10" "20" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
+num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
     "10" "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
 
 balance=100
 
 prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
-    "hotnets" "lnd_dec4_2018" "lnd_dec28_2018" \
+    "hotnets" "five_line" "lnd_dec4_2018" "lnd_dec28_2018" \
     "sw_10_routers" "sw_20_routers" "sw_40_routers" "sw_60_routers" "sw_80_routers"  \
     "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
     "sw_800_routers" "sw_1000_routers"\
@@ -57,7 +57,9 @@ do
         delay="30"
     fi
 
-    if [ ${prefix[i]:0:4} == "five" ]; then
+    if [ ${prefix[i]:0:9} == "five_line" ]; then
+        payment_graph_topo="simple_line"
+    elif [ ${prefix[i]:0:4} == "five" ]; then
         payment_graph_topo="hardcoded_circ"
     elif [ ${prefix[i]:0:7} == "hotnets" ]; then
         payment_graph_topo="hotnets_topo"

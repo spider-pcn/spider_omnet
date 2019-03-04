@@ -67,7 +67,7 @@ do
 
       # run the omnetexecutable with the right parameters
       ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme} -n ${PATH_NAME}\
-            > $output_file & 
+            > ${output_file}.txt & 
     done
 
   #routing schemes where number of path choices matter
@@ -117,7 +117,7 @@ do
         # in the background
         ./spiderNet -u Cmdenv -f ${inifile}\
             -c ${network}_${routing_scheme}_${numPathChoices} -n ${PATH_NAME}\
-            > $output_file &
+            > ${output_file}.txt &
         pids+=($!)
       done 
     done

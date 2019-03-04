@@ -609,7 +609,7 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
     // stats
     nodeToPaymentChannel[prevNode].statNumProcessed += 1;
     simtime_t timeTakenInMilli = 1000*(simTime() - aMsg->getTimeSent());
-    if (_signalsEnabled) emit(completionTimeSignal, timeTakenInMilli);
+    // if (_signalsEnabled) emit(completionTimeSignal, timeTakenInMilli);
     
     //delete ack message
     ttmsg->decapsulate();

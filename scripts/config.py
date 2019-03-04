@@ -47,6 +47,13 @@ five_node_graph.add_edge(2, 3)
 five_node_graph.add_edge(3, 4)
 five_node_graph.add_edge(4, 0)
 
+# five node line
+five_line_graph = nx.Graph()
+five_line_graph.add_edge(0, 1)
+five_line_graph.add_edge(1, 2)
+five_line_graph.add_edge(2, 3)
+five_line_graph.add_edge(3, 4)
+
 # Filenames for Kaggle data
 KAGGLE_PATH = './data/'
 KAGGLE_AMT_DIST_FILENAME = KAGGLE_PATH + 'amt_dist.npy'

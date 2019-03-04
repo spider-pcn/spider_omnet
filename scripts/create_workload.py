@@ -36,11 +36,19 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         graph = simple_deadlock_graph
 
     elif payment_graph_topo == 'simple_line':
-        start_nodes = [0,3]
-        end_nodes = [3,0]
-        amt_relative = [1,1]
+        if "five" in filename:
+            num_nodes = 5
+            graph = five_line_graph
+        else:
+            num_nodes = 3
+            graph = simple_line_graph
+        print num_nodes
+
+        start_nodes = [0, num_nodes - 1]
+        end_nodes = [num_nodes - 1, 0]
+        amt_relative = [MEAN_RATE, MEAN_RATE]
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
-        graph = simple_line_graph
+
     elif payment_graph_topo == 'hardcoded_circ':
         start_nodes = [0, 1, 2, 3, 4]
         end_nodes = [1, 2, 3, 4, 0]

@@ -235,6 +235,8 @@ if args.num_nodes <= 5 and args.graph_type == 'simple_topologies':
         G = three_node_graph
     elif args.num_nodes == 4:
         G = four_node_graph
+    elif 'line' in args.network_name:
+        G = five_line_graph
     else:
         G = five_node_graph
 elif args.graph_type in ['small_world', 'scale_free', 'tree', 'random']:
