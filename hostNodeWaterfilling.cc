@@ -336,9 +336,6 @@ void hostNodeWaterfilling::handleProbeMessage(routerMsg* ttmsg){
         p->pathBalances = pathBalances;
         p->isProbeOutstanding = false;
         
-        if (_signalsEnabled) 
-            emit(nodeToShortestPathsMap[destNode][pathIdx].probeBackPerDestPerPathSignal,pathIdx);
-
         if (destNodeToNumTransPending[destNode] > 0){
            //reset the probe message to send again
            nodeToShortestPathsMap[destNode][pathIdx].isProbeOutstanding = true;
@@ -661,7 +658,7 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg){
             routerMsg* waterMsg = generateWaterfillingTransactionMessage(amtOnPath, 
                  pathInfo->path, pathIndex, transMsg);
             
-            if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
+            // if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
             
             // increment numAttempted per path
             pathInfo->statRateAttempted += 1;

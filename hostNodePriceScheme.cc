@@ -375,7 +375,7 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                         scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
                     }
                     
-                    if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
+                    // if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
                     return;
                 }
             }
@@ -416,7 +416,7 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
             simsignal_t muRemoteSignal;
 
             emit(p->nValueSignal, p->nValue);
-            emit(p->xLocalSignal, p->xLocal);
+            // emit(p->xLocalSignal, p->xLocal);
             emit(p->lambdaSignal, p->lambda);
             emit(p->muLocalSignal, p->muLocal);
             emit(p->muRemoteSignal, p->muRemote);
@@ -433,15 +433,15 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
                         //signals for price scheme per path
                         emit(pInfo->rateToSendTransSignal, pInfo->rateToSendTrans);
                         emit(pInfo->rateActuallySentSignal, pInfo->rateSentOnPath);
-                        emit(pInfo->timeToNextSendSignal, pInfo->timeToNextSend);
+                        // emit(pInfo->timeToNextSendSignal, pInfo->timeToNextSend);
                         emit(pInfo->sumOfTransUnitsInFlightSignal, 
                                 pInfo->sumOfTransUnitsInFlight);
                         emit(pInfo->windowSignal, pInfo->window);
                         emit(pInfo->priceLastSeenSignal, pInfo->priceLastSeen);
-                        emit(pInfo->isSendTimerSetSignal, pInfo->isSendTimerSet);
+                        // emit(pInfo->isSendTimerSetSignal, pInfo->isSendTimerSet);
                     }
                 }
-               emit(numTimedOutAtSenderSignals[it], statNumTimedOutAtSender[it]);
+               // emit(numTimedOutAtSenderSignals[it], statNumTimedOutAtSender[it]);
                emit(demandEstimatePerDestSignals[it], nodeToDestInfo[it].demand);
                emit(numWaitingPerDestSignals[it], 
                        nodeToDestInfo[it].transWaitingToBeSent.size()); 
@@ -853,7 +853,7 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         int nextNode = path[1];
         nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + 1;
 
-        if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
+        // if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
 
         // increment amount in inflght and other info on last transaction on this path
         p->nValue += 1;

@@ -719,7 +719,7 @@ void routerNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
          simsignal_t muRemoteSignal;
 
          emit(p->nValueSignal, p->lastNValue);
-         emit(p->xLocalSignal, p->xLocal);
+         // emit(p->xLocalSignal, p->xLocal);
          emit(p->inFlightSumSignal, p->lastSumInFlight);
          emit(p->balSumSignal, p->lastBalSum);
          emit(p->lambdaSignal, p->lambda);
@@ -748,10 +748,11 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
 
          emit(nodeToPaymentChannel[node].balancePerChannelSignal, nodeToPaymentChannel[node].balance);
 
-         emit(nodeToPaymentChannel[node].numProcessedPerChannelSignal, nodeToPaymentChannel[node].statNumProcessed);
+         // emit(nodeToPaymentChannel[node].numProcessedPerChannelSignal, 
+         // nodeToPaymentChannel[node].statNumProcessed);
          nodeToPaymentChannel[node].statNumProcessed = 0;
 
-         emit(nodeToPaymentChannel[node].numSentPerChannelSignal, nodeToPaymentChannel[node].statNumSent);
+         // emit(nodeToPaymentChannel[node].numSentPerChannelSignal, nodeToPaymentChannel[node].statNumSent);
          nodeToPaymentChannel[node].statNumSent = 0;
 
 

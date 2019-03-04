@@ -695,8 +695,8 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
             
             emit(p->numInQueuePerChannelSignal, (p->queuedTransUnits).size());
             emit(p->balancePerChannelSignal, p->balance);
-            emit(p->numProcessedPerChannelSignal, p->statNumProcessed);
-            emit(p->numSentPerChannelSignal, p->statNumSent);
+            // emit(p->numProcessedPerChannelSignal, p->statNumProcessed);
+            // emit(p->numSentPerChannelSignal, p->statNumSent);
             
             p->statNumProcessed = 0;
             p->statNumSent = 0;
@@ -710,6 +710,7 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
                for (auto p: nodeToShortestPathsMap[it]) {
                    PathInfo *pathInfo = &(nodeToShortestPathsMap[it][p.first]);
                    if (_signalsEnabled) {
+                       // TODO: move to waterfilling file
                        emit(pathInfo->bottleneckPerDestPerPathSignal, pathInfo->bottleneck);
                        emit(pathInfo->probabilityPerDestPerPathSignal, pathInfo->probability);
                    }
