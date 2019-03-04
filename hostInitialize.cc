@@ -129,38 +129,6 @@ vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, 
     return kRoutes;
 }
 
-
-vector<vector<int>> getKShortestRoutesLNDBaseline(int sender, int receiver, int k){
-    int landmark;
-    vector<int> pathSenderToLandmark;
-    vector<int> pathLandmarkToReceiver;
-    vector<tuple<int, vector<int>>> routesWithLength = {};
-    vector<vector<int>> kRoutes = {};
-    //int numPaths = minInt(_landmarks.size(), k);
-    for (int i=0; i< _landmarks.size(); i++){
-
-        landmark = _landmarks[i];
-        pathSenderToLandmark = breadthFirstSearch(sender, landmark); //use breadth first search
-        pathLandmarkToReceiver = breadthFirstSearch(landmark, receiver); //use breadth first search
-        //if we couldn't find a path, dont append anything 
-        if ( (pathSenderToLandmark.size()>=2) && (pathLandmarkToReceiver.size()>=2)) 
-        {
-            pathSenderToLandmark.insert(pathSenderToLandmark.end(), pathLandmarkToReceiver.begin() + 1, pathLandmarkToReceiver.end() );
-            routesWithLength.push_back(make_tuple(pathSenderToLandmark.size(), pathSenderToLandmark));
-        }
-    }
-    sort(routesWithLength.begin(), routesWithLength.end()); //automatically sorts accending first field, then asecending second field
-    routesWithLength.resize(k);//truncates to k
-    for (int i=0; i< routesWithLength.size(); i++)
-    {
-        kRoutes.push_back(get<1>(routesWithLength[i]));
-    }
-    return kRoutes;
-}
-
-
-
-
 void printChannels(){
     printf("print of channels\n" );
     for (auto i : _channels){

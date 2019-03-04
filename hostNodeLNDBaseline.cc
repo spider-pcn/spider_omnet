@@ -39,7 +39,7 @@ void hostNodeLNDBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
 
         // if destination hasn't been encountered, find paths
         if (nodeToShortestPathsMap.count(destNode) == 0 ){
-            vector<vector<int>> kShortestRoutes = getKShortestRoutesLNDBaseline(transMsg->getSender(), 
+            vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(), 
                     destNode, _kValue);
             initializePathInfoLNDBaseline(kShortestRoutes, destNode);
         }
