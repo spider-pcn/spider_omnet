@@ -146,7 +146,7 @@ def generate_graph(size, graph_type):
 # generate extra end host nodes if need be
 # make the first line list of landmarks for this topology
 def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts,\
-        randomize_bal=False):
+        randomize_init_bal=False, random_channel_capacity=False):
     f1 = open(output_filename, "w+")
 
     offset = G.number_of_nodes()
@@ -187,12 +187,17 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
 
         f1.write(str(e[0]) + "r " + str(e[1]) +  "r ")
         f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
-        if randomize_bal:
-            one_end_bal = random.randint(1, balance_per_channel)
-            other_end_bal = balance_per_channel - one_end_bal
+        if random_channel_capacity:
+            balance_for_this_channel = random.randint(balance_per_channel/2, 3 * balance_per_channel/2)
+        else:
+            balance_for_this_channel = balance_per_channel
+
+        if randomize_init_bal:
+            one_end_bal = random.randint(1, balance_for_this_channel)
+            other_end_bal = balance_for_this_channel - one_end_bal
             f1.write(str(one_end_bal) + " " + str(other_end_bal) + "\n")
         else:
-            f1.write(str(balance_per_channel/2) + " " + str(balance_per_channel/2) + "\n")
+            f1.write(str(balance_for_this_channel_channel/2) + " " + str(balance_for_this_channel/2) + "\n")
 
     # generate extra end host nodes
     if separate_end_hosts: 
@@ -219,8 +224,10 @@ parser.add_argument('--network-name', type=str, dest='network_name', \
         help='name of the output ned filename', default='simpleNet')
 parser.add_argument('--separate-end-hosts', action='store_true', \
         help='do you need separate end hosts that only send transactions')
-parser.add_argument('--randomize-start-bal', action='store_true', \
-        help='Do not start from pergect balance, but rather randomize it')
+parser.add_argument('--randomize-start-bal', type=bool, dest='randomize_start_bal', \
+        help='Do not start from pergect balance, but rather randomize it', default=False)
+parser.add_argument('--random-channel-capacity', type=bool, dest='random_channel_capacity', \
+        help='Give channels a random balance between bal/2 and bal', default=False)
 routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting']
 
 
@@ -256,7 +263,7 @@ else:
 
 
 print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename, \
-        args.separate_end_hosts, args.randomize_start_bal)
+        args.separate_end_hosts, args.randomize_start_bal, args.random_channel_capacity)
 network_base = os.path.basename(args.network_name)
 
 for routing_alg in routing_alg_list:

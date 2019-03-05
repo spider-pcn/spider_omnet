@@ -21,8 +21,8 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
 demand_scale=("10" "20" "30")
 path_choices_dep_list=( "waterfilling" "smoothWaterfilling")
 path_choices_indep_list=( "shortestPath" )
-random_init_bal=true
-random_capacity=false
+random_init_bal=false
+random_capacity=true
 
 #path_choices_dep_list=( "priceSchemeWindow")
 #path_choices_indep_list=(  )
@@ -98,9 +98,8 @@ do
             --balance-per-channel $balance\
             --separate-end-hosts \
             --delay-per-channel $delay\
-            --randomize-start-bal 
-                #$random_init_bal\
-            #--random-capacity $random_capacity 
+            --randomize-start-bal $random_init_bal\
+            --random-channel-capacity $random_capacity 
 
     # figure out payment graph/workload topology
     if [ ${prefix[i]:0:9} == "five_line" ]; then
@@ -217,7 +216,7 @@ do
                 -c ${network}_${routing_scheme}_demand${scale}_${numPathChoices} -n ${PATH_NAME}\
                 > ${output_file}.txt &
             pids+=($!)
-          done 
+         done 
         done
         wait # for all algorithms to complete for this demand
 
@@ -226,14 +225,16 @@ do
         payment_graph_type='circ' 
         if [ "$timeoutEnabled" = true ] ; then timeout="timeouts"; else timeout="no_timeouts"; fi
         if [ "$random_init_bal" = true ] ; then suffix="randomInitBal_"; else suffix=""; fi
+        if [ "$random_capacity" = true ]; then sufix="${suffix}randomCapacity_"; fi
+        echo $suffix
         graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix[i]}_delay${delay}_demand${scale}0_${suffix}
         vec_file_prefix=${PATH_NAME}results/${prefix[i]}_${payment_graph_type}_net_
         
         #routing schemes where number of path choices doesn't matter
         for routing_scheme in "${path_choices_indep_list[@]}"  #silentWhispers
         do
-            vec_file_path=${vec_file_prefix}${routing_scheme}-#0.vec
-            sca_file_path=${vec_file_prefix}${routing_scheme}-#0.sca
+            vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}-#0.vec
+            sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}-#0.sca
 
 
             python scripts/generate_analysis_plots_for_single_run.py \
@@ -251,8 +252,8 @@ do
         do
           for numPathChoices in 4
             do
-                vec_file_path=${vec_file_prefix}${routing_scheme}_${numPathChoices}-#0.vec
-                sca_file_path=${vec_file_prefix}${routing_scheme}_${numPathChoices}-#0.sca
+                vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${numPathChoices}-#0.vec
+                sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${numPathChoices}-#0.sca
 
 
                 python scripts/generate_analysis_plots_for_single_run.py \

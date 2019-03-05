@@ -381,7 +381,8 @@ def plot_per_payment_channel_stats(args, text_to_add):
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "inFlightSum", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "inFlightSum")
 
-    print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + args.save + "_per_channel_info.pdf"
+    print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
+            os.path.basename(args.save) + "_per_channel_info.pdf"
     
 
 
@@ -465,8 +466,8 @@ def plot_per_src_dest_stats(args, text_to_add):
             plot_relevant_stats(data_to_plot, pdf, "Demand Estimate per Path")
 
  
-    print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + \
-            args.save + "_per_src_dest_stats.pdf"
+    print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
+            os.path.basename(args.save) + "_per_src_dest_stats.pdf"
 
 
 
