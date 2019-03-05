@@ -3,7 +3,7 @@ PATH_NAME="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulatio
 GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
 num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
-    "10" "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
+    "10" "20" "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
 
 balance=100
 
@@ -12,17 +12,20 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sw_10_routers" "sw_20_routers" "sw_40_routers" "sw_60_routers" "sw_80_routers"  \
     "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
     "sw_800_routers" "sw_1000_routers"\
-    "sf_10_routers" \
+    "sf_10_routers" "sf_20_routers" \
     "sf_40_routers" "sf_60_routers" "sf_80_routers"  \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
     "random_30_routers" "sw_sparse_40_routers")
 
-demand_scale=("5")
-#path_choices_dep_list=( "priceSchemeWindow" "waterfilling" "smoothWaterfilling")
-#path_choices_indep_list=( "shortestPath" )
-path_choices_dep_list=( "priceSchemeWindow")
-path_choices_indep_list=(  )
+demand_scale=("10" "20" "30")
+path_choices_dep_list=( "waterfilling" "smoothWaterfilling")
+path_choices_indep_list=( "shortestPath" )
+random_init_bal=true
+random_capacity=false
+
+#path_choices_dep_list=( "priceSchemeWindow")
+#path_choices_indep_list=(  )
 
 
 #general parameters that do not affect config names
@@ -57,7 +60,7 @@ mkdir -p ${PATH_NAME}
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=( 6 )
+array=( 9 10 20 21 )
 for i in "${array[@]}" 
 do
     network="${prefix[i]}_circ_net"
@@ -95,7 +98,9 @@ do
             --balance-per-channel $balance\
             --separate-end-hosts \
             --delay-per-channel $delay\
-            #--randomize-start-bal
+            --randomize-start-bal 
+                #$random_init_bal\
+            #--random-capacity $random_capacity 
 
     # figure out payment graph/workload topology
     if [ ${prefix[i]:0:9} == "five_line" ]; then
@@ -126,7 +131,7 @@ do
                 --graph-topo $payment_graph_topo \
                 --payment-graph-dag-percentage 0\
                 --topo-filename $topofile\
-                --experiment-time 4000 \
+                --experiment-time $simulationLength \
                 --balance-per-channel $balance\
                 --generate-json-also \
                 --timeout-value 5 \
@@ -137,7 +142,7 @@ do
         # routing schemes where number of path choices doesn't matter
         for routing_scheme in "${path_choices_indep_list[@]}" 
         do
-          output_file=outputs/${prefix[i]}_circ_${routing_scheme}
+          output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0
           inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}.ini
 
           # create the ini file with specified parameters
@@ -168,7 +173,7 @@ do
           # if you add more choices for the number of paths you might run out of cores/memory
           for numPathChoices in 4
           do
-            output_file=outputs/${prefix[i]}_circ_${routing_scheme}
+            output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0
             inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}.ini
 
             if [[ $routing_scheme =~ .*Window.* ]]; then
@@ -220,7 +225,8 @@ do
         # TODO: add plotting script
         payment_graph_type='circ' 
         if [ "$timeoutEnabled" = true ] ; then timeout="timeouts"; else timeout="no_timeouts"; fi
-        graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix[i]}_delay${delay}_demand${scale}0_
+        if [ "$random_init_bal" = true ] ; then suffix="randomInitBal_"; else suffix=""; fi
+        graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix[i]}_delay${delay}_demand${scale}0_${suffix}
         vec_file_prefix=${PATH_NAME}results/${prefix[i]}_${payment_graph_type}_net_
         
         #routing schemes where number of path choices doesn't matter

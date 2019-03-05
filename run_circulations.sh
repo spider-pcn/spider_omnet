@@ -121,5 +121,5 @@ do
         pids+=($!)
       done 
     done
+    wait
 done
-wait
