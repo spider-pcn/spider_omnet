@@ -473,7 +473,7 @@ parser.add_argument('--generate-json-also', action="store_true", help="do you ne
         for the custom topology")
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 parser.add_argument('--timeout-value', type=float, help='generic time out for all transactions', default=5)
-
+parser.add_argument('--scale-amount', type=int, help='how much to scale the mean deamnd by', default=5)
 
 
 args = parser.parse_args()
@@ -489,7 +489,7 @@ generate_json_also = args.generate_json_also
 graph_topo = args.graph_topo
 balance = args.balance_per_channel
 timeout_value = args.timeout_value
-
+SCALE_AMOUNT = args.scale_amount
 
 
 # generate workloads
