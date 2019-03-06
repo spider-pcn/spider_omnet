@@ -17,7 +17,7 @@ parser.add_argument('--timeout-clear-rate', type=str, help='rate of clearing dat
 parser.add_argument('--timeout-enabled', type=str, help='are timeouts enabled?', dest='timeoutEnabled', default='true')
 parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, LP, silentWhispers, smoothWaterfilling, priceScheme], else will default to waterfilling', dest='routingScheme', default='default')
 parser.add_argument('--num-path-choices', type=str, help='number of path choices', dest='numPathChoices', default='default')
-parser.add_argument('--demand-scale', type=int, help='how much has demand been scaled up by', dest='demandScale', default=5)
+parser.add_argument('--demand-scale', type=int, help='how much has demand been scaled up by', dest='demandScale')
 
 
 # price based scheme parameters
@@ -46,7 +46,9 @@ args = parser.parse_args()
 configname = os.path.basename(args.network_name)
 
 if args.routingScheme != 'default':
-    configname = configname + "_" + args.routingScheme + "_demand" + str(args.demandScale)
+    configname = configname + "_" + args.routingScheme
+if args.demandScale != None:
+    configname += "_demand" + str(args.demandScale)
 
 #arg parse might support a cleaner way to deal with this
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
