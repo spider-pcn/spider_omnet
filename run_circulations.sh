@@ -39,16 +39,16 @@ cp routerNode.ned ${PATH_NAME}
 
 for (( i=0; i<${arraylength}; i++));
 do 
-    workloadname="${prefix[i]}_circ"
+    workloadname="${prefix[i]}_circ_demand${scale}"
     topofile="${PATH_NAME}${prefix[i]}_topo.txt"
     workload="${PATH_NAME}$workloadname"
     network=${prefix[i]}_circ_net
 
-#    #routing schemes where number of path choices doesn't matter
+    #routing schemes where number of path choices doesn't matter
     for routing_scheme in "${path_choices_indep_list[@]}" 
     do
-      output_file=outputs/${prefix[i]}_circ_${routing_scheme}
-      inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}.ini
+      output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0
+      inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}.ini
 
       # create the ini file with specified parameters
       python scripts/create_ini_file.py \
@@ -62,11 +62,12 @@ do
               --stat-collection-rate $statCollectionRate\
               --timeout-clear-rate $timeoutClearRate\
               --timeout-enabled $timeoutEnabled\
-              --routing-scheme ${routing_scheme}
+              --routing-scheme ${routing_scheme}\
+              --demand-scale ${scale}
 
 
       # run the omnetexecutable with the right parameters
-      ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme} -n ${PATH_NAME}\
+      ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme}_demand${scale}  -n ${PATH_NAME}\
             > ${output_file}.txt & 
     done
 
@@ -77,8 +78,8 @@ do
       # if you add more choices for the number of paths you might run out of cores/memory
       for numPathChoices in 4
       do
-        output_file=outputs/${prefix[i]}_circ_${routing_scheme}
-        inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}.ini
+        output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0
+        inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}0.ini
 
         if [[ $routing_scheme =~ .*Window.* ]]; then
             windowEnabled=true
@@ -110,16 +111,17 @@ do
                 --min-rate $minPriceRate\
                 --tau $tau\
                 --normalizer $normalizer \
-                --window-enabled $windowEnabled 
+                --window-enabled $windowEnabled \
+                --demand-scale ${scale}
 
 
         # run the omnetexecutable with the right parameters
         # in the background
         ./spiderNet -u Cmdenv -f ${inifile}\
-            -c ${network}_${routing_scheme}_${numPathChoices} -n ${PATH_NAME}\
+            -c ${network}_${routing_scheme}_demand${scale}_${numPathChoices} -n ${PATH_NAME}\
             > ${output_file}.txt &
         pids+=($!)
       done 
     done
-    wait
 done
+wait

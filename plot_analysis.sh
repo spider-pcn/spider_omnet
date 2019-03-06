@@ -38,8 +38,8 @@ do
     #routing schemes where number of path choices doesn't matter
     for routing_scheme in "${path_choices_indep_list[@]}"  #silentWhispers
     do
-        vec_file_path=${vec_file_prefix}${routing_scheme}-#0.vec
-        sca_file_path=${vec_file_prefix}${routing_scheme}-#0.sca
+        vec_file_path=${vec_file_prefix}${routing_scheme}_demand${demand}-#0.vec
+        sca_file_path=${vec_file_prefix}${routing_scheme}_demand${demand}-#0.sca
 
 
         python scripts/generate_analysis_plots_for_single_run.py \
@@ -57,8 +57,8 @@ do
     do
       for numPathChoices in 4
         do
-            vec_file_path=${vec_file_prefix}${routing_scheme}_${numPathChoices}-#0.vec
-            sca_file_path=${vec_file_prefix}${routing_scheme}_${numPathChoices}-#0.sca
+            vec_file_path=${vec_file_prefix}${routing_scheme}_demand${demand}_${numPathChoices}-#0.vec
+            sca_file_path=${vec_file_prefix}${routing_scheme}_demand${demand}_${numPathChoices}-#0.sca
 
 
             python scripts/generate_analysis_plots_for_single_run.py \

@@ -239,8 +239,9 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                         plt.plot(time, window_val, label=label_name, linestyle="--", color=c)
                     
                     label_name = str(path)
+                    start = int(len(values)/4)
                     plt.plot(time, values, \
-                            label=label_name + "(" + str(np.average(values[80:])) + ")", color=c)
+                            label=label_name + "(" + str(np.average(values[start:])) + ")", color=c)
                 plt.title(signal_type + " " + str(router) + "->" + str(channel))
                 plt.xlabel("Time")
                 plt.ylabel(signal_type)
@@ -254,8 +255,10 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                 time = [t[0] for t in info]
                 values = [t[1] for t in info]
                 label_name = str(router) + "->" + str(channel)
+
+                start = int(len(values)/4)
                 plt.plot(time, values, label=label_name + \
-                        "(" + str(np.average(values[80:])) + ")")
+                        "(" + str(np.average(values[start:])) + ")")
                 if compute_router_wealth:
                     channel_bal_timeseries.append((time, values))
                 i += 1

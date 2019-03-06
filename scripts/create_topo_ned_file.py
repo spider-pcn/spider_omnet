@@ -197,7 +197,7 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
             other_end_bal = balance_for_this_channel - one_end_bal
             f1.write(str(one_end_bal) + " " + str(other_end_bal) + "\n")
         else:
-            f1.write(str(balance_for_this_channel_channel/2) + " " + str(balance_for_this_channel/2) + "\n")
+            f1.write(str(balance_for_this_channel/2) + " " + str(balance_for_this_channel/2) + "\n")
 
     # generate extra end host nodes
     if separate_end_hosts: 
@@ -224,15 +224,16 @@ parser.add_argument('--network-name', type=str, dest='network_name', \
         help='name of the output ned filename', default='simpleNet')
 parser.add_argument('--separate-end-hosts', action='store_true', \
         help='do you need separate end hosts that only send transactions')
-parser.add_argument('--randomize-start-bal', type=bool, dest='randomize_start_bal', \
-        help='Do not start from pergect balance, but rather randomize it', default=False)
-parser.add_argument('--random-channel-capacity', type=bool, dest='random_channel_capacity', \
-        help='Give channels a random balance between bal/2 and bal', default=False)
+parser.add_argument('--randomize-start-bal', type=str, dest='randomize_start_bal', \
+        help='Do not start from pergect balance, but rather randomize it', default='False')
+parser.add_argument('--random-channel-capacity', type=str, dest='random_channel_capacity', \
+        help='Give channels a random balance between bal/2 and bal', default='False')
 routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting']
 
 
 args = parser.parse_args()
-
+np.random.seed(SEED)
+random.seed(SEED)
 
 # generate graph and print topology and ned file
 if args.num_nodes <= 5 and args.graph_type == 'simple_topologies':
@@ -261,6 +262,8 @@ else:
     G = simple_line_graph
     args.separate_end_hosts = False
 
+args.randomize_start_bal = args.randomize_start_bal == 'true'
+args.random_channel_capacity = args.random_channel_capacity == 'true'
 
 print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename, \
         args.separate_end_hosts, args.randomize_start_bal, args.random_channel_capacity)

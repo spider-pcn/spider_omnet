@@ -225,7 +225,7 @@ do
         payment_graph_type='circ' 
         if [ "$timeoutEnabled" = true ] ; then timeout="timeouts"; else timeout="no_timeouts"; fi
         if [ "$random_init_bal" = true ] ; then suffix="randomInitBal_"; else suffix=""; fi
-        if [ "$random_capacity" = true ]; then sufix="${suffix}randomCapacity_"; fi
+        if [ "$random_capacity" = true ]; then suffix="${suffix}randomCapacity_"; fi
         echo $suffix
         graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix[i]}_delay${delay}_demand${scale}0_${suffix}
         vec_file_prefix=${PATH_NAME}results/${prefix[i]}_${payment_graph_type}_net_
@@ -272,9 +272,9 @@ do
         done
 
         # STEP 5: cleanup        
-        #rm ${PATH_NAME}${prefix[i]}_circ*_demand${scale}.ini
+        rm ${PATH_NAME}${prefix[i]}_circ*_demand${scale}.ini
         #rm ${workload}_workload.txt
-        #rm ${workload}.json
+        rm ${workload}.json
     done
     #rm $topofile
 done

@@ -1004,7 +1004,6 @@ void hostNodeBase::initialize() {
             PaymentChannel temp =  {};
             temp.gate = curOutGate;
 
-            cout << "owner module issue" <<  nextGate->getOwner();
             bool isHost = nextGate->getOwnerModule()->par("isHost");
             int key = nextGate->getOwnerModule()->getIndex();
             if (!isHost){
@@ -1016,7 +1015,6 @@ void hostNodeBase::initialize() {
         curOutGate = nextGate;
     } while (i < gateSize);
 
-    cout << "initialized all gates";
 
     //initialize everything for adjacent nodes/nodes with payment channel to me
     for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
