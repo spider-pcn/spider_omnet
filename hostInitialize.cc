@@ -445,6 +445,41 @@ vector<int> dijkstra(int src,  int dest)
     return getPath(parent, dest);
 }
 
+
+
+vector<int> breadthFirstSearchByGraph(int sender, int receiver, map<int, vector<int>> graph){
+    //TODO: fix, and add to header
+    deque<vector<int>> nodesToVisit;
+    bool visitedNodes[_numNodes];
+    for (int i=0; i<_numNodes; i++){
+        visitedNodes[i] =false;
+    }
+    visitedNodes[sender] = true;
+
+    vector<int> temp;
+    temp.push_back(sender);
+    nodesToVisit.push_back(temp);
+
+    while ((int)nodesToVisit.size()>0){
+        vector<int> current = nodesToVisit[0];
+        nodesToVisit.pop_front();
+        int lastNode = current.back();
+        for (int i=0; i<(int)graph[lastNode].size();i++){
+            if (!visitedNodes[graph[lastNode][i]]){
+                temp = current; // assignment copies in case of vector
+                temp.push_back(graph[lastNode][i]);
+                nodesToVisit.push_back(temp);
+                visitedNodes[graph[lastNode][i]] = true;
+                if (graph[lastNode][i]==receiver)
+                    return temp;
+            } //end if (!visitedNodes[graph[lastNode][i]])
+        }//end for (i)
+    }//end while
+    vector<int> empty = {};
+    return empty;
+}
+
+
 vector<int> breadthFirstSearch(int sender, int receiver){
     deque<vector<int>> nodesToVisit;
     bool visitedNodes[_numNodes];

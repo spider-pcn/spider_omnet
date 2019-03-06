@@ -6,6 +6,8 @@ vector<string> split(string str, char delimiter);
 
 vector<int> breadthFirstSearch(int sender, int receiver);
 
+vector<int> breadthFirstSearchByGraph(int sender, int receiver, map<int, vector<int>> graph);
+
 void generateChannelsBalancesMap(string);
 
 void setNumNodes(string); //TODO: set numRouterNodes and numHostNodes
