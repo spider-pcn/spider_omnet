@@ -1,7 +1,45 @@
 #include "hostNodeBase.h"
 #include <queue>
 
+#define MSGSIZE 100
+
+//global parameters
+map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
+map<int, set<int>> _destList;
+int _numNodes;
+int _numRouterNodes;
+int _numHostNodes;
+double _maxTravelTime;
+double _statRate;
+double _clearRate;
+int _kValue;
+double _simulationLength;
+
+
+ //adjacency list format of graph edges of network
+map<int, vector<pair<int,int>>> _channels;
+
+//map of balances for each edge; key = <int,int> is <source, destination>
+map<tuple<int,int>,double> _balances;
+
+// controls algorithm and what is outputted
+bool _waterfillingEnabled;
+bool _timeoutEnabled;
+bool _loggingEnabled;
+bool _signalsEnabled;
+bool _priceSchemeEnabled;
+bool _landmarkRoutingEnabled;
 bool _windowEnabled;
+
+// for all precision errors
+double _epsilon; 
+
+
+//global parameters for fixed size queues
+bool _hasQueueCapacity;
+int _queueCapacity;
+
+
 
 Define_Module(hostNodeBase);
 

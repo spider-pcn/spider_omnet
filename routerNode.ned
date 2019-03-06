@@ -25,13 +25,13 @@ simple routerNode
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
 		
 		//price scheme payment channel specific signals
-		@signal[nValuePerChannel*](type="long"); 
+		@signal[nValuePerChannel*](type="double"); 
 		@statisticTemplate[nValuePerChannelTemplate](record=vector, stats);
 		
-		@signal[inFlightSumPerChannel*](type="long"); 
+		@signal[inFlightSumPerChannel*](type="double"); 
 		@statisticTemplate[inFlightSumPerChannelTemplate](record=vector, stats);
 		
-                @signal[balSumPerChannel*](type="long"); 
+                @signal[balSumPerChannel*](type="double"); 
 		@statisticTemplate[balSumPerChannelTemplate](record=vector, stats);
 		
                 @signal[xLocalPerChannel*](type="double"); 

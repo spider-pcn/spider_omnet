@@ -42,6 +42,7 @@ struct LaterTransUnit
 
 //global parameters
 extern map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
+extern map<int, set<int>> _destList;
 extern int _numNodes;
 //number of nodes in network
 extern int _numRouterNodes;

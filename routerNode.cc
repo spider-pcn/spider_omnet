@@ -799,7 +799,7 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
    //remove transaction from incoming_trans_units
    if (_priceSchemeEnabled)
        nodeToPaymentChannel[prevNode].balSum += nodeToPaymentChannel[prevNode].balance/
-           nodeToPaymentChannel[prevNode].incomingTransUnits.size();
+           max(double(nodeToPaymentChannel[prevNode].incomingTransUnits.size()), 1.0);
 
    double newBalance = nodeToPaymentChannel[prevNode].balance + uMsg->getAmount();
    nodeToPaymentChannel[prevNode].balance =  newBalance;       

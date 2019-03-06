@@ -28,6 +28,7 @@ class hostNodeBase : public cSimpleModule {
         int index; // node identifier
         map<int, PaymentChannel> nodeToPaymentChannel;
         map<int, DestInfo> nodeToDestInfo; //one structure per destination;
+        set<int> destList; // list of destinations with non zero demand
              
         //TODO: incorporate the signals into nodeToDestInfo
         // statistic collection related variables

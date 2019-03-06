@@ -111,7 +111,7 @@ simple hostNodePriceScheme
 		@statisticTemplate[rateFailedPerDestTemplate](record=vector, stats);
 		
 		//price scheme payment channel specific signals
-		@signal[nValuePerChannel*](type="long"); 
+		@signal[nValuePerChannel*](type="double"); 
 		@statisticTemplate[nValuePerChannelTemplate](record=vector, stats);
 		
 		@signal[xLocalPerChannel*](type="double"); 

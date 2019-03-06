@@ -424,7 +424,7 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
         
         // per destination statistics
         for (auto it = 0; it < _numHostNodes; it++){ 
-            if (it != getIndex()) {
+            if (it != getIndex() && _destList[myIndex()].count(it) > 0) {
                 if (nodeToShortestPathsMap.count(it) > 0) {
                     for (auto p: nodeToShortestPathsMap[it]){
                         int pathIndex = p.first;
@@ -433,15 +433,12 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
                         //signals for price scheme per path
                         emit(pInfo->rateToSendTransSignal, pInfo->rateToSendTrans);
                         emit(pInfo->rateActuallySentSignal, pInfo->rateSentOnPath);
-                        // emit(pInfo->timeToNextSendSignal, pInfo->timeToNextSend);
                         emit(pInfo->sumOfTransUnitsInFlightSignal, 
                                 pInfo->sumOfTransUnitsInFlight);
                         emit(pInfo->windowSignal, pInfo->window);
                         emit(pInfo->priceLastSeenSignal, pInfo->priceLastSeen);
-                        // emit(pInfo->isSendTimerSetSignal, pInfo->isSendTimerSet);
                     }
                 }
-               // emit(numTimedOutAtSenderSignals[it], statNumTimedOutAtSender[it]);
                emit(demandEstimatePerDestSignals[it], nodeToDestInfo[it].demand);
                emit(numWaitingPerDestSignals[it], 
                        nodeToDestInfo[it].transWaitingToBeSent.size()); 
@@ -526,7 +523,7 @@ void hostNodePriceScheme::handleUpdateMessage(routerMsg* msg) {
    
     //increment the balance sum to reflect the current balance sum
     // double newBalance = prevChannel->balance + uMsg->getAmount();
-    prevChannel->balSum += prevChannel->balance/prevChannel->incomingTransUnits.size();
+    prevChannel->balSum += prevChannel->balance/max(double(prevChannel->incomingTransUnits.size()), 1.0);
 
     hostNodeBase::handleUpdateMessage(msg);
 }
@@ -927,12 +924,6 @@ void hostNodePriceScheme::initializePriceProbes(vector<vector<int>> kShortestPat
 
         //initialize signals
         simsignal_t signal;
-        signal = registerSignalPerDestPath("rateAttempted", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].rateAttemptedPerDestPerPathSignal = signal;
-
-        signal = registerSignalPerDestPath("rateAttempted", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].rateCompletedPerDestPerPathSignal = signal;
-
         signal = registerSignalPerDestPath("rateToSendTrans", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].rateToSendTransSignal = signal;
 
@@ -950,9 +941,6 @@ void hostNodePriceScheme::initializePriceProbes(vector<vector<int>> kShortestPat
       
         signal = registerSignalPerDestPath("priceLastSeen", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].priceLastSeenSignal = signal;
-
-        signal = registerSignalPerDestPath("isSendTimerSet", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].isSendTimerSetSignal = signal;
    }
 }
 
@@ -1028,34 +1016,24 @@ void hostNodePriceScheme::initialize() {
         signal = registerSignalPerChannel("nValue", key);
         nodeToPaymentChannel[key].nValueSignal = signal;
         
-        signal = registerSignalPerChannel("xLocal", key);
-        nodeToPaymentChannel[key].xLocalSignal = signal;
-        
         signal = registerSignalPerChannel("muLocal", key);
         nodeToPaymentChannel[key].muLocalSignal = signal;
 
         signal = registerSignalPerChannel("lambda", key);
         nodeToPaymentChannel[key].lambdaSignal = signal;
-
-        signal = registerSignalPerChannel("muRemote", key);
-        nodeToPaymentChannel[key].muRemoteSignal = signal;
     }
 
     //initialize signals with all other nodes in graph
+    // that there is demand for
     for (int i = 0; i < _numHostNodes; ++i) {
-        simsignal_t signal;
-        signal = registerSignalPerDest("pathPerTrans", i, "");
-        pathPerTransPerDestSignals.push_back(signal);
-
-        signal = registerSignalPerDest("demandEstimate", i, "");
-        demandEstimatePerDestSignals.push_back(signal);
+        if (_destList[myIndex()].count(i) > 0) {
+            simsignal_t signal;
+            signal = registerSignalPerDest("demandEstimate", i, "");
+            demandEstimatePerDestSignals.push_back(signal);
         
-        signal = registerSignalPerDest("numWaiting", i, "_Total");
-        numWaitingPerDestSignals.push_back(signal);
-
-        signal = registerSignalPerDest("numTimedOutAtSender", i, "_Total");
-        numTimedOutAtSenderSignals.push_back(signal);
-        statNumTimedOutAtSender.push_back(0);
+            signal = registerSignalPerDest("numWaiting", i, "_Total");
+            numWaitingPerDestSignals.push_back(signal);
+        }
     }
 
 
