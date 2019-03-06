@@ -154,18 +154,6 @@ void routerNode::initialize()
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       nodeToPaymentChannel[key].numInQueuePerChannelSignal = signal;
 
-      //numProcessedPerChannel signal
-      if (key<_numHostNodes){
-         sprintf(signalName, "numProcessedPerChannel(host %d)", key);
-      }
-      else{
-         sprintf(signalName, "numProcessedPerChannel(router %d [%d])", key-_numHostNodes, key);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numProcessedPerChannelTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToPaymentChannel[key].numProcessedPerChannelSignal = signal;
-
       //statNumProcessed int
       nodeToPaymentChannel[key].statNumProcessed = 0;
 
@@ -182,18 +170,6 @@ void routerNode::initialize()
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       nodeToPaymentChannel[key].balancePerChannelSignal = signal;
 
-      //numSentPerChannel signal
-      if (key<_numHostNodes){
-         sprintf(signalName, "numSentPerChannel(host %d)", key);
-      }
-      else{
-         sprintf(signalName, "numSentPerChannel(router %d [%d])", key-_numHostNodes, key);
-      }
-      signal = registerSignal(signalName);
-      statisticTemplate = getProperties()->get("statisticTemplate", "numSentPerChannelTemplate");
-      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToPaymentChannel[key].numSentPerChannelSignal = signal;
-
       //InflightPerChannel signal
       if (key<_numHostNodes){
          sprintf(signalName, "numInflightPerChannel(host %d)", key);
@@ -206,10 +182,6 @@ void routerNode::initialize()
       statisticTemplate = getProperties()->get("statisticTemplate", "numInflightPerChannelTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       nodeToPaymentChannel[key].numInflightPerChannelSignal = signal;
-
-
-      //statNumSent int
-      nodeToPaymentChannel[key].statNumSent = 0;
 
 
       if (_priceSchemeEnabled){
@@ -248,17 +220,6 @@ void routerNode::initialize()
          nodeToPaymentChannel[key].balSumSignal = signal;
 
          if (key<_numHostNodes) {
-            sprintf(signalName, "xLocalPerChannel(host %d)", key);
-         }
-         else {
-            sprintf(signalName, "xLocalPerChannel(router %d [%d])", key - _numHostNodes, key);
-         }
-         signal = registerSignal(signalName);
-         statisticTemplate = getProperties()->get("statisticTemplate", "xLocalPerChannelTemplate");
-         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-         nodeToPaymentChannel[key].xLocalSignal = signal;
-
-         if (key<_numHostNodes) {
             sprintf(signalName, "lambdaPerChannel(host %d)", key);
          }
          else {
@@ -280,17 +241,6 @@ void routerNode::initialize()
          statisticTemplate = getProperties()->get("statisticTemplate", "muLocalPerChannelTemplate");
          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
          nodeToPaymentChannel[key].muLocalSignal = signal;
-
-         if (key<_numHostNodes) {
-            sprintf(signalName, "muRemotePerChannel(host %d)", key);
-         }
-         else {
-            sprintf(signalName, "muRemotePerChannel(router %d [%d])", key - _numHostNodes, key);
-         }
-         signal = registerSignal(signalName);
-         statisticTemplate = getProperties()->get("statisticTemplate", "muRemotePerChannelTemplate");
-         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-         nodeToPaymentChannel[key].muRemoteSignal = signal;
       }
 
    }
@@ -710,22 +660,11 @@ void routerNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
          int node = it->first; //key
 
          PaymentChannel* p = &(nodeToPaymentChannel[node]);
-
-         //statistics for price scheme per payment channel
-         simsignal_t nValueSignal;
-         simsignal_t xLocalSignal;
-         simsignal_t lambdaSignal;
-         simsignal_t muLocalSignal;
-         simsignal_t muRemoteSignal;
-
          emit(p->nValueSignal, p->lastNValue);
-         // emit(p->xLocalSignal, p->xLocal);
          emit(p->inFlightSumSignal, p->lastSumInFlight);
          emit(p->balSumSignal, p->lastBalSum);
          emit(p->lambdaSignal, p->lambda);
          emit(p->muLocalSignal, p->muLocal);
-         emit(p->muRemoteSignal, p->muRemote);
-
       }
    } // end if (_loggingEnabled)
 }
@@ -747,14 +686,6 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
          emit(nodeToPaymentChannel[node].numInQueuePerChannelSignal, (nodeToPaymentChannel[node].queuedTransUnits).size());
 
          emit(nodeToPaymentChannel[node].balancePerChannelSignal, nodeToPaymentChannel[node].balance);
-
-         // emit(nodeToPaymentChannel[node].numProcessedPerChannelSignal, 
-         // nodeToPaymentChannel[node].statNumProcessed);
-         nodeToPaymentChannel[node].statNumProcessed = 0;
-
-         // emit(nodeToPaymentChannel[node].numSentPerChannelSignal, nodeToPaymentChannel[node].statNumSent);
-         nodeToPaymentChannel[node].statNumSent = 0;
-
 
          // compute number in flight and report that too - hack right now that just sums the number of entries in the map
          emit(nodeToPaymentChannel[node].numInflightPerChannelSignal, 
@@ -844,9 +775,6 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
       sendUpdateMessage(uMsg);
 
    }
-
-   //increment signal numProcessed
-   nodeToPaymentChannel[prevNode].statNumProcessed = nodeToPaymentChannel[prevNode].statNumProcessed+1;
    forwardAckMessage(ttmsg);
 }
 
