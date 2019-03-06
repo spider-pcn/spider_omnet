@@ -34,7 +34,7 @@ for (( i=0; i<${arraylength}; i++));
 do 
 
     if [ "$timeoutEnabled" = true ] ; then timeout="timeouts"; else timeout="no_timeouts"; fi
-    graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix[i]}_delay${delay}_demand${demand}_
+    graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix[i]}_delay${delay}_demand${demand}0_
     vec_file_prefix=${PATH_NAME}results/${prefix[i]}_${payment_graph_type}_net_
 
     #routing schemes where number of path choices doesn't matter

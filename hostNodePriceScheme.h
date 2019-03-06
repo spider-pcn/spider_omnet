@@ -13,10 +13,10 @@ class hostNodePriceScheme : public hostNodeBase {
     private:
         // price scheme specific signals
         vector<simsignal_t> probabilityPerDestSignals = {};
-        vector<simsignal_t> numWaitingPerDestSignals = {};
+        map<int, simsignal_t> numWaitingPerDestSignals = {};
         vector<simsignal_t> numTimedOutAtSenderSignals = {};
         vector<simsignal_t> pathPerTransPerDestSignals = {};
-        vector<simsignal_t> demandEstimatePerDestSignals = {};
+        map<int, simsignal_t> demandEstimatePerDestSignals = {};
 
 
     protected:

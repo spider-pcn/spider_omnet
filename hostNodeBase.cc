@@ -783,7 +783,7 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
                emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
                emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
                emit(numPendingPerDestSignals[it], destNodeToNumTransPending[it]);
-               int frac = ((100*statNumCompleted[it])/(max(statNumArrived[it],1)));
+               double frac = ((100*statNumCompleted[it])/(max(statNumArrived[it],1)));
                emit(fracSuccessfulPerDestSignals[it],frac);
            }
        }

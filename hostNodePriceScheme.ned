@@ -64,7 +64,7 @@ simple hostNodePriceScheme
  		@signal[numWaitingPerDest*](type="unsigned long");  
 		@statisticTemplate[numWaitingPerDestTemplate](record=vector, stats);  
 	
-		@signal[fracSuccessfulPerDest*](type="long");  
+		@signal[fracSuccessfulPerDest*](type="double");  
 		@statisticTemplate[fracSuccessfulPerDestTemplate](record=vector, stats);   
 		
 		@signal[pathPerTransPerDest*](type="long");  

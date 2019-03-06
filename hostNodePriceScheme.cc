@@ -439,8 +439,9 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
                         emit(pInfo->priceLastSeenSignal, pInfo->priceLastSeen);
                     }
                 }
-               emit(demandEstimatePerDestSignals[it], nodeToDestInfo[it].demand);
-               emit(numWaitingPerDestSignals[it], 
+
+                emit(demandEstimatePerDestSignals[it], nodeToDestInfo[it].demand);
+                emit(numWaitingPerDestSignals[it], 
                        nodeToDestInfo[it].transWaitingToBeSent.size()); 
             }        
         }
@@ -1029,10 +1030,10 @@ void hostNodePriceScheme::initialize() {
         if (_destList[myIndex()].count(i) > 0) {
             simsignal_t signal;
             signal = registerSignalPerDest("demandEstimate", i, "");
-            demandEstimatePerDestSignals.push_back(signal);
+            demandEstimatePerDestSignals[i] = signal;
         
             signal = registerSignalPerDest("numWaiting", i, "_Total");
-            numWaitingPerDestSignals.push_back(signal);
+            numWaitingPerDestSignals[i] = signal;
         }
     }
 
