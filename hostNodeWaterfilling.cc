@@ -24,16 +24,6 @@ void hostNodeWaterfilling::initialize(){
         _smoothWaterfillingEnabled = par("smoothWaterfillingEnabled");
     }
 
-    //initialize WF specific signals with all other nodes in graph
-    for (int i = 0; i < _numHostNodes; ++i) {
-        simsignal_t signal;
-        signal = registerSignalPerDest("pathPerTrans", i, "");
-        pathPerTransPerDestSignals.push_back(signal);
-
-        signal = registerSignalPerDest("numTimedOutAtSender", i, "_Total");
-        numTimedOutAtSenderSignals.push_back(signal);
-        statNumTimedOutAtSender.push_back(0);
-    }
 }
 
 /* responsible for generating one HTLC for a particular path 
@@ -460,6 +450,32 @@ void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
     hostNodeBase::handleAckMessage(ttmsg);
 }
 
+/* handler for the statistic message triggered every x seconds to also
+ * output the wf stats in addition to the default
+ */
+void hostNodeWaterfilling::handleStatMessage(routerMsg* ttmsg){
+    if (_signalsEnabled && _smoothWaterfillingEnabled) {     
+        // per destination statistics
+        for (auto it = 0; it < _numHostNodes; it++){ 
+            if (it != getIndex() && _destList[myIndex()].count(it) > 0) {
+                if (nodeToShortestPathsMap.count(it) > 0) {
+                    for (auto p: nodeToShortestPathsMap[it]){
+                        int pathIndex = p.first;
+                        PathInfo *pInfo = &(p.second);
+
+                        emit(pInfo->bottleneckPerDestPerPathSignal, pInfo->bottleneck);
+                        emit(pInfo->probabilityPerDestPerPathSignal, pInfo->probability);
+                    }
+                }
+            }        
+        }
+    } 
+
+    // call the base method to output rest of the stats
+    hostNodeBase::handleStatMessage(ttmsg);
+}
+
+
 /* initialize probes along the paths specified to the destination node
  * and set up all the state in the table that maintains bottleneck balance
  * information across all paths to all destinations
@@ -476,19 +492,19 @@ void hostNodeWaterfilling::initializeProbes(vector<vector<int>> kShortestPaths, 
 
         //initialize signals
         simsignal_t signal;
-        signal = registerSignalPerDestPath("bottleneck", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].bottleneckPerDestPerPathSignal = signal;
-
         signal = registerSignalPerDestPath("rateCompleted", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].rateCompletedPerDestPerPathSignal = signal;
 
-        signal = registerSignalPerDestPath("probability", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].probabilityPerDestPerPathSignal = signal;
+        if (_smoothWaterfillingEnabled) {
+            signal = registerSignalPerDestPath("probability", pathIdx, destNode);
+            nodeToShortestPathsMap[destNode][pathIdx].probabilityPerDestPerPathSignal = signal;
+
+            signal = registerSignalPerDestPath("bottleneck", pathIdx, destNode);
+            nodeToShortestPathsMap[destNode][pathIdx].bottleneckPerDestPerPathSignal = signal;
+        }
 
         signal = registerSignalPerDestPath("rateAttempted", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].rateAttemptedPerDestPerPathSignal = signal;
-
-
 
         // generate a probe message on this path
         routerMsg * msg = generateProbeMessage(destNode, pathIdx, kShortestPaths[pathIdx]);
@@ -701,5 +717,6 @@ int hostNodeWaterfilling::updatePathProbabilities(vector<double> bottleneckBalan
     }
     return sampleFromDistribution(probabilities);
 }
+
 
 

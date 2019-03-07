@@ -15,9 +15,7 @@ class hostNodeWaterfilling : public hostNodeBase {
         map<int, double> destNodeToLastMeasurementTime = {};
 
         // waterfilling specific signals
-        vector<simsignal_t> probabilityPerDestSignals = {};
-        vector<simsignal_t> pathPerTransPerDestSignals = {};  
-        vector<simsignal_t> numTimedOutAtSenderSignals = {};
+        map<int, simsignal_t> probabilityPerDestSignals = {};
 
     protected:
         virtual void initialize() override;
@@ -36,6 +34,7 @@ class hostNodeWaterfilling : public hostNodeBase {
         virtual void handleClearStateMessage(routerMsg *msg) override;
         virtual void handleAckMessageTimeOut(routerMsg *msg) override;
         virtual void handleAckMessageSpecialized(routerMsg *msg) override;
+        virtual void handleStatMessage(routerMsg *msg) override;
         
 
         /**** CORE LOGIC ****/

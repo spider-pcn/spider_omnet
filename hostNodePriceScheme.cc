@@ -100,7 +100,6 @@ routerMsg *hostNodePriceScheme::generateTriggerTransactionSendMessage(vector<int
         int pathIndex, int destNode) {
     char msgname[MSGSIZE];
     sprintf(msgname, "tic-%d-to-%d (path %d) transactionSendMsg", myIndex(), destNode, pathIndex);
-    cout << msgname << endl;
     transactionSendMsg *tsMsg = new transactionSendMsg(msgname);
     tsMsg->setPathIndex(pathIndex);
     tsMsg->setTransactionPath(path);

@@ -32,16 +32,16 @@ class hostNodeBase : public cSimpleModule {
              
         //TODO: incorporate the signals into nodeToDestInfo
         // statistic collection related variables
-        vector<int> statNumFailed = {};
-        vector<int> statRateFailed = {};
-        vector<int> statNumCompleted = {};
-        vector<int> statNumArrived = {};
-        vector<int> statRateCompleted = {};
-        vector<int> statRateAttempted = {};
-        vector<int> statNumTimedOut = {};
-        vector<int> statNumTimedOutAtSender = {};
-        vector<int> statRateArrived = {};
-        vector<double> statProbabilities = {};
+        map<int, int> statNumFailed = {};
+        map<int, int> statRateFailed = {};
+        map<int, int> statNumCompleted = {};
+        map<int, int> statNumArrived = {};
+        map<int, int> statRateCompleted = {};
+        map<int, int> statRateAttempted = {};
+        map<int, int> statNumTimedOut = {};
+        map<int, int> statNumTimedOutAtSender = {};
+        map<int, int> statRateArrived = {};
+        map<int, double> statProbabilities = {};
         int numCleared = 0;
 
         //store shortest paths 
@@ -56,16 +56,16 @@ class hostNodeBase : public cSimpleModule {
         simsignal_t completionTimeSignal;
         simsignal_t numClearedSignal;
 
-        vector<simsignal_t> rateCompletedPerDestSignals = {};
-        vector<simsignal_t> rateAttemptedPerDestSignals = {};
-        vector<simsignal_t> rateArrivedPerDestSignals = {};
-        vector<simsignal_t> numCompletedPerDestSignals = {};
-        vector<simsignal_t> numArrivedPerDestSignals = {};
-        vector<simsignal_t> numTimedOutPerDestSignals = {};
-        vector<simsignal_t> numPendingPerDestSignals = {};       
-        vector<simsignal_t> rateFailedPerDestSignals = {};
-        vector<simsignal_t> numFailedPerDestSignals = {};
-        vector<simsignal_t> fracSuccessfulPerDestSignals = {};
+        map<int, simsignal_t> rateCompletedPerDestSignals = {};
+        map<int, simsignal_t> rateAttemptedPerDestSignals = {};
+        map<int, simsignal_t> rateArrivedPerDestSignals = {};
+        map<int, simsignal_t> numCompletedPerDestSignals = {};
+        map<int, simsignal_t> numArrivedPerDestSignals = {};
+        map<int, simsignal_t> numTimedOutPerDestSignals = {};
+        map<int, simsignal_t> numPendingPerDestSignals = {};       
+        map<int, simsignal_t> rateFailedPerDestSignals = {};
+        map<int, simsignal_t> numFailedPerDestSignals = {};
+        map<int, simsignal_t> fracSuccessfulPerDestSignals = {};
 
         //set of transaction units WITH timeouts, that we already received acks for
         set<int> successfulDoNotSendTimeOut = {};       

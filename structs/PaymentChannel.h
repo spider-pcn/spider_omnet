@@ -50,9 +50,7 @@ public:
     int statNumProcessed;
     int statNumSent;
     simsignal_t numInQueuePerChannelSignal;
-    simsignal_t numProcessedPerChannelSignal;
     simsignal_t balancePerChannelSignal;
-    simsignal_t numSentPerChannelSignal;
     simsignal_t numInflightPerChannelSignal;
 
 };
