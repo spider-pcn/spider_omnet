@@ -3,16 +3,10 @@ PATH_NAME="benchmarks/"
 GRAPH_PATH="scripts/figures/"
 
 #prefix=("two_node" "three_node" "four_node" "five_node") 
-<<<<<<< HEAD
-# prefix=("two_node_imbalance" "two_node_capacity") #"sw_sparse_40_routers" "sf_40_routers")
-#     #"sw_400_routers" "sf_400_routers")
-#     #"sw_1000_routers" "sf_1000_routers")
-prefix=("sw_40_routers" "sf_40_routers")
-=======
-prefix=( "hotnets" "sf_10_routers")  #"sw_sparse_40_routers" "sf_40_routers")
+# prefix=( "hotnets" "sf_10_routers")  #"sw_sparse_40_routers" "sf_40_routers")
     #"sw_400_routers" "sf_400_routers")
     #"sw_1000_routers" "sf_1000_routers")
->>>>>>> 5761e102c75e915984e0cd8d545d68b63e0a0a7a
+prefix=("sw_40_routers" "sf_40_routers") 
 
 arraylength=${#prefix[@]}
 
