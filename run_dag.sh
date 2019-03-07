@@ -6,16 +6,17 @@ prefix=("sw_40_routers" "sf_40_routers")
     #"sw_1000_routers" "sf_1000_routers")
 
 arraylength=${#prefix[@]}
-dag_percentage=("1" "5" "25")
+dag_percentage=("0" "5" "25")
 
 #general parameters that do not affect config names
 simulationLength=1000
 statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
-signalsEnabled=false
+signalsEnabled=true
 loggingEnabled=false
-routing_scheme_list=("smoothWaterfilling" "waterfilling" "shortestPath")
+# routing_scheme_list=("smoothWaterfilling" "waterfilling" "shortestPath")
+routing_scheme_list=("shortestPath")
 
 
 eta=0.02

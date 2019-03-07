@@ -3,9 +3,10 @@ PATH_NAME="benchmarks/"
 GRAPH_PATH="scripts/figures/"
 
 #prefix=("two_node" "three_node" "four_node" "five_node") 
-prefix=("two_node_imbalance" "two_node_capacity") #"sw_sparse_40_routers" "sf_40_routers")
-    #"sw_400_routers" "sf_400_routers")
-    #"sw_1000_routers" "sf_1000_routers")
+# prefix=("two_node_imbalance" "two_node_capacity") #"sw_sparse_40_routers" "sf_40_routers")
+#     #"sw_400_routers" "sf_400_routers")
+#     #"sw_1000_routers" "sf_1000_routers")
+prefix=("sw_40_routers" "sf_40_routers")
 
 arraylength=${#prefix[@]}
 
@@ -16,14 +17,16 @@ timeoutClearRate=1
 timeoutEnabled=true
 
 payment_graph_type=circ # or dagx where x is the percentage of dag
+payment_graph_type=dag0
 if [ "$payment_graph_type" = "circ" ]; then 
     PATH_NAME=${PATH_NAME}circulations/ 
 else 
-    PATH_NAME=${PATH_NAME}${payment_graph_type}
+    PATH_NAME=${PATH_NAME}${payment_graph_type}/
 fi
 
 delay=30ms
-routing_scheme_list=("smoothWaterfilling" "waterfilling" "shortestPath")
+# routing_scheme_list=("smoothWaterfilling" "waterfilling" "shortestPath")
+routing_scheme_list=("shortestPath")
 
 
 for (( i=0; i<${arraylength}; i++));
@@ -47,7 +50,7 @@ do
               --save ${graph_op_prefix}${routing_scheme} \
               --balance \
               --queue_info --timeouts --frac_completed \
-              --inflight --path --timeouts_sender \
+              --inflight --timeouts_sender \
               --waiting --bottlenecks
         fi
     done
@@ -69,7 +72,7 @@ do
                   --balance \
                   --queue_info --timeouts --frac_completed \
                   --frac_completed_window \
-                  --inflight --path --timeouts_sender \
+                  --inflight --timeouts_sender \
                   --waiting --bottlenecks --probabilities \
                   --mu_local --lambda --x_local \
                   --rate_to_send --price --mu_remote --demand
