@@ -22,7 +22,7 @@ demand_scale=("10" "20" "30")
 path_choices_dep_list=( "waterfilling" "smoothWaterfilling")
 path_choices_indep_list=( "shortestPath" )
 random_init_bal=false
-random_capacity=true
+random_capacity=false
 
 #path_choices_dep_list=( "priceSchemeWindow")
 #path_choices_indep_list=(  )
@@ -40,12 +40,15 @@ loggingEnabled=false
 eta=0.2
 alpha=0.4
 kappa=0.2
-updateQueryTime=1.5
+updateQueryTime=1
 minPriceRate=0.25
 zeta=0.01
 rho=0.04
 tau=10
 normalizer=100
+xi=1
+routerQueueDrainTime=1
+serviceArrivalWindow=100
 
 cp hostNodeBase.ned ${PATH_NAME}
 cp hostNodeWaterfilling.ned ${PATH_NAME}
@@ -208,7 +211,10 @@ do
                     --tau $tau\
                     --normalizer $normalizer \
                     --window-enabled $windowEnabled\
-                    --demand-scale $scale 
+                    --demand-scale $scale\
+                    --xi $xi\
+                    --router-queue-drain-time $routerQueueDrainTime\
+                    --service-arrival-window $serviceArrivalWindow
 
 
             # run the omnetexecutable with the right parameters

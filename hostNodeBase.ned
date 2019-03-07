@@ -27,7 +27,10 @@ simple hostNodeBase
                 double rhoValue = default(0.05);
                 double minRate = default(0.25);
                 double updateQueryTime = default(0.8);
-
+                double xi = default(1);
+                int serviceArrivalWindow = default(100);
+                int routerQueueDrainTime = default(1);
+                
                 double tau = default(10);
                 double normalizer = default(100);
 
