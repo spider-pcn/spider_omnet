@@ -8,6 +8,8 @@ bool sortPrunedChannelsFunction(tuple<simtime_t, tuple<int,int>> x, tuple<simtim
 double _restorePeriod;
 int _numAttemptsLNDBaseline;
 
+/*initializeMyChannels - makes copy of global _channels data structure, without 
+delay, as paths are calculated using BFS (not weight ed edges) */
 void hostNodeLNDBaseline::initializeMyChannels(){
     //not going to store delay, because using BFS to find shortest paths
     _myChannels = {};
@@ -22,7 +24,8 @@ void hostNodeLNDBaseline::initializeMyChannels(){
     }
 }
 
-
+/* generates next path, but adding in the edges whose retore times are over, then running
+BFS on _myChannels */
 vector<int>  hostNodeLNDBaseline::generateNextPath(int destNodePath){
 
     if (_prunedChannelsHeap.size() > 0){
@@ -47,6 +50,8 @@ vector<int>  hostNodeLNDBaseline::generateNextPath(int destNodePath){
     return resultPath;       
 }
 
+/* given source and destination, will remove edge from _myChannels, and if already removed, will
+update the time pruned */
 void hostNodeLNDBaseline::pruneEdge(int sourceNode, int destNode){
     //prune edge if not already pruned.
     tuple<int, int> edgeTuple = make_tuple(sourceNode, destNode);        
@@ -75,6 +80,7 @@ void hostNodeLNDBaseline::pruneEdge(int sourceNode, int destNode){
     }
 }
 
+/* helper function for sorting heap by prune time */
 bool sortPrunedChannelsFunction(tuple<simtime_t, tuple<int,int>> x, tuple<simtime_t, tuple<int, int>> y){
     simtime_t xTime = get<0>(x);
     simtime_t yTime = get<0>(y);
@@ -104,6 +110,7 @@ void hostNodeLNDBaseline::initialize(){
     make_heap(_prunedChannelsHeap.begin(), _prunedChannelsHeap.end(), sortPrunedChannelsFunction);
 }
 
+/* generateAckMessage that encapsulates transaction message to use for reattempts */
 routerMsg *hostNodeLNDBaseline::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     int sender = (ttmsg->getRoute())[0];
     int receiver = (ttmsg->getRoute())[(ttmsg->getRoute()).size() -1];
@@ -184,6 +191,7 @@ void hostNodeLNDBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
 }
 
 
+/* handles ack messages, handles case where current route is length 0, and generateNextPath returns route length 0 by automatically failing the transaction */
 void hostNodeLNDBaseline::handleAckMessageSpecialized(routerMsg *msg)
 {
     ackMsg *aMsg = check_and_cast<ackMsg *>(msg->getEncapsulatedPacket());
