@@ -24,7 +24,7 @@ public:
     double lambda; //Price due to load ($\lambda$)
     double sumInFlight;// total number in flight over the last T seconds
     double lastSumInFlight; 
-    double balSum; // sum of balances across the last T seconds of update messages
+    double balSum = -1; // sum of balances across the last T seconds of update messages
     double lastBalSum;
 
     double lastLambdaGrad = 0; // for accelerated gradient descent

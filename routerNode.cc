@@ -369,11 +369,15 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
    double balSumRemote = puMsg->getBalSum();
    int sender = ttmsg->getRoute()[0];
 
+   PaymentChannel *neighborChannel = &(nodeToPaymentChannel[sender]);
+
    //Update $\lambda$, $mu_local$ and $mu_remote$
-   double xLocal = nodeToPaymentChannel[sender].xLocal;
-   int nLocal = nodeToPaymentChannel[sender].lastNValue;
-   double inflightLocal = nodeToPaymentChannel[sender].lastSumInFlight;
-   double balSumLocal = nodeToPaymentChannel[sender].lastBalSum;
+   double xLocal = neighborChannel->xLocal;
+   int nLocal = neighborChannel->lastNValue;
+   double inflightLocal = neighborChannel->lastSumInFlight;
+   double balSumLocal = neighborChannel->lastBalSum;
+   if (balSumLocal == -1)
+       balSumLocal = neighborChannel->balance/max(double(neighborChannel->incomingTransUnits.size()), 1.0);
 
    double cValue = nodeToPaymentChannel[sender].totalCapacity;
    double oldLambda = nodeToPaymentChannel[sender].lambda;
@@ -443,15 +447,19 @@ void routerNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
 
    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ 
        //iterate through all channels
-       PaymentChannel *neighborChannel = &(nodeToPaymentChannel[it->first]);
+      PaymentChannel *neighborChannel = &(nodeToPaymentChannel[it->first]);
       neighborChannel->xLocal =  neighborChannel->nValue / _tUpdate;
+      double balSum = neighborChannel->lastBalSum;
+      if (balSum == -1)
+          balSum = neighborChannel->balance/max(double(neighborChannel->incomingTransUnits.size()), 1.0);
+      
       routerMsg * priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue,
-             neighborChannel->balSum, neighborChannel->sumInFlight, it->first);
+             balSum, neighborChannel->sumInFlight, it->first);
       neighborChannel->lastNValue = neighborChannel->nValue;
       neighborChannel->nValue = 0;
 
       neighborChannel->lastBalSum = neighborChannel->balSum;
-      neighborChannel->balSum = 0;
+      neighborChannel->balSum = -1;
 
       neighborChannel->lastSumInFlight = neighborChannel->sumInFlight;
       neighborChannel->sumInFlight = 0;
@@ -797,9 +805,12 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
    //increment the in flight funds back
    
    //remove transaction from incoming_trans_units
-   if (_priceSchemeEnabled)
+   if (_priceSchemeEnabled) {
+       if (nodeToPaymentChannel[prevNode].balSum == -1)
+          nodeToPaymentChannel[prevNode].balSum = 0;  
        nodeToPaymentChannel[prevNode].balSum += nodeToPaymentChannel[prevNode].balance/
            max(double(nodeToPaymentChannel[prevNode].incomingTransUnits.size()), 1.0);
+   }
 
    double newBalance = nodeToPaymentChannel[prevNode].balance + uMsg->getAmount();
    nodeToPaymentChannel[prevNode].balance =  newBalance;       

@@ -101,14 +101,6 @@ do
             --randomize-start-bal $random_init_bal\
             --random-channel-capacity $random_capacity 
 
-    # figure out payment graph/workload topology
-    if [ ${prefix[i]:0:9} == "five_line" ]; then
-        payment_graph_topo="simple_line"
-    elif [ ${prefix[i]:0:4} == "five" ]; then
-        payment_graph_topo="hardcoded_circ"
-    elif [ ${prefix[i]:0:7} == "hotnets" ]; then
-        payment_graph_topo="hotnets_topo"
-    fi
 
     # create workload files and run different demand levels
     for scale in "${demand_scale[@]}"
@@ -119,6 +111,15 @@ do
         workload="${PATH_NAME}$workloadname"
         inifile="${PATH_NAME}${workloadname}_default.ini"
         payment_graph_topo="custom"
+        
+        # figure out payment graph/workload topology
+        if [ ${prefix[i]:0:9} == "five_line" ]; then
+            payment_graph_topo="simple_line"
+        elif [ ${prefix[i]:0:4} == "five" ]; then
+            payment_graph_topo="hardcoded_circ"
+        elif [ ${prefix[i]:0:7} == "hotnets" ]; then
+            payment_graph_topo="hotnets_topo"
+        fi
 
         echo $network
         echo $topofile
@@ -222,6 +223,7 @@ do
 
         # STEP 4: plot everything for this demand
         # TODO: add plotting script
+        echo "Plotting"
         payment_graph_type='circ' 
         if [ "$timeoutEnabled" = true ] ; then timeout="timeouts"; else timeout="no_timeouts"; fi
         if [ "$random_init_bal" = true ] ; then suffix="randomInitBal_"; else suffix=""; fi
@@ -272,9 +274,9 @@ do
         done
 
         # STEP 5: cleanup        
-        rm ${PATH_NAME}${prefix[i]}_circ*_demand${scale}.ini
+        #rm ${PATH_NAME}${prefix[i]}_circ*_demand${scale}.ini
         #rm ${workload}_workload.txt
-        rm ${workload}.json
+        #rm ${workload}.json
     done
     #rm $topofile
 done

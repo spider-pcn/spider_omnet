@@ -524,6 +524,8 @@ void hostNodePriceScheme::handleUpdateMessage(routerMsg* msg) {
    
     //increment the balance sum to reflect the current balance sum
     // double newBalance = prevChannel->balance + uMsg->getAmount();
+    if (prevChannel->balSum == -1)
+        prevChannel->balSum = 0;
     prevChannel->balSum += prevChannel->balance/max(double(prevChannel->incomingTransUnits.size()), 1.0);
 
     hostNodeBase::handleUpdateMessage(msg);
@@ -570,14 +572,19 @@ void hostNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
             printNodeToPaymentChannel();
             endSimulation();
         }
-        
-        routerMsg * priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue, neighborChannel->balSum,
+       
+        double balSum = neighborChannel->lastBalSum;
+        // no updates received
+        if (balSum == -1) 
+            balSum = neighborChannel->balance/max(double(neighborChannel->incomingTransUnits.size()), 1.0);
+
+        routerMsg * priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue, balSum,
                 neighborChannel->sumInFlight, it->first);
         neighborChannel->lastNValue = neighborChannel->nValue;
         neighborChannel->nValue = 0;
 
         neighborChannel->lastBalSum = neighborChannel->balSum;
-        neighborChannel->balSum = 0;
+        neighborChannel->balSum = -1;
 
         neighborChannel->lastSumInFlight = neighborChannel->sumInFlight;
         neighborChannel->sumInFlight = 0;
@@ -623,7 +630,11 @@ void hostNodePriceScheme::handlePriceUpdateMessage(routerMsg* ttmsg){
     double xLocal = neighborChannel->xLocal;
     int nLocal = neighborChannel->lastNValue;
     double inflightLocal = neighborChannel->lastSumInFlight;
+
     double balSumLocal = neighborChannel->lastBalSum;
+    // no balances received
+    if (balSumLocal == -1) 
+        balSumLocal = neighborChannel->balance/max(double(neighborChannel->incomingTransUnits.size()), 1.0);
 
     double cValue = neighborChannel->totalCapacity;
     double oldLambda = neighborChannel->lambda;
