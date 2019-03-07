@@ -223,28 +223,19 @@ routerMsg *hostNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     if (!isSuccess){
         aMsg->setFailedHopNum((route.size()-1) - ttmsg->getHopCount());
     }
- 
-     //no need to set secret - not modelled
+
+    //no need to set secret - not modelled
     reverse(route.begin(), route.end());
     msg->setRoute(route);
-    
+
     //need to reverse path from current hop number in case of partial failure
     msg->setHopCount((route.size()-1) - ttmsg->getHopCount());
-    
+
     msg->setMessageType(ACK_MSG); 
     ttmsg->decapsulate();
-    if (_lndBaselineEnabled)
-    {
-        aMsg->encapsulate(transMsg);
-        msg->encapsulate(aMsg);
-        delete ttmsg;
-    }
-    else
-    {
-        delete transMsg;
-        delete ttmsg;
-        msg->encapsulate(aMsg);
-    }
+    delete transMsg;
+    delete ttmsg;
+    msg->encapsulate(aMsg);
     return msg;
 }
 
