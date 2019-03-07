@@ -210,6 +210,17 @@ void routerNode::initialize()
          nodeToPaymentChannel[key].serviceRateSignal = signal;
 
          if (key<_numHostNodes) {
+            sprintf(signalName, "inflightOutgoingPerChannel(host %d)", key);
+         }
+         else {
+            sprintf(signalName, "inflightOutgoingPerChannel(router %d [%d])", key - _numHostNodes, key);
+         }
+         signal = registerSignal(signalName);
+         statisticTemplate = getProperties()->get("statisticTemplate", "inflightOutgoingPerChannelTemplate");
+         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+         nodeToPaymentChannel[key].inflightOutgoingSignal = signal;
+
+         if (key<_numHostNodes) {
             sprintf(signalName, "lambdaPerChannel(host %d)", key);
          }
          else {
@@ -658,6 +669,7 @@ void routerNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
 
          PaymentChannel* p = &(nodeToPaymentChannel[node]);
          emit(p->nValueSignal, p->lastNValue);
+         emit(p->inflightOutgoingSignal, p->outgoingTransUnits.size());
          emit(p->serviceRateSignal, p->serviceRate);
          emit(p->lambdaSignal, p->lambda);
          emit(p->muLocalSignal, p->muLocal);

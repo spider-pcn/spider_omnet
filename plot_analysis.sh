@@ -70,7 +70,7 @@ do
               --frac_completed_window \
               --inflight --timeouts_sender \
               --waiting --bottlenecks --probabilities \
-              --mu_local --lambda --n_local --bal_sum --inflight_sum \
+              --mu_local --lambda --n_local --service_rate --inflight_outgoing \
               --rate_to_send --price --mu_remote --demand \
               --rate_sent --amt_inflight_per_path
           done

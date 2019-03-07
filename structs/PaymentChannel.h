@@ -38,7 +38,7 @@ public:
     simsignal_t nValueSignal;
     simsignal_t xLocalSignal;
     simsignal_t serviceRateSignal;
-    simsignal_t inFlightSignal;
+    simsignal_t inflightOutgoingSignal;
     simsignal_t lambdaSignal;
     simsignal_t muLocalSignal;
     simsignal_t muRemoteSignal;

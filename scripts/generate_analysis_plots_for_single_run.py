@@ -72,12 +72,12 @@ parser.add_argument('--x_local',
 parser.add_argument('--n_local',
         action='store_true',
         help='Plot the per channel number of txns when price based scheme is used')
-parser.add_argument('--bal_sum',
+parser.add_argument('--service_rate',
         action='store_true',
-        help='Plot the per channel sum over update messages of balance when price based scheme is used')
-parser.add_argument('--inflight_sum',
+        help='Plot the per channel ratio of arrival to service rate when price based scheme is used')
+parser.add_argument('--inflight_outgoing',
         action='store_true',
-        help='Plot the per channel sum of txns sent out over this time interval related price when price based scheme is used')
+        help='Plot the per channel number of outgoing txns price when price based scheme is used')
 parser.add_argument('--rate_to_send',
         action='store_true',
         help='Plot the per path rate to send when price based scheme is used')
@@ -376,13 +376,13 @@ def plot_per_payment_channel_stats(args, text_to_add):
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "nValue", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "nValue")
 
-        if args.bal_sum:
-            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "balSum", True, is_both=False)
-            plot_relevant_stats(data_to_plot, pdf, "balSum")
+        if args.service_rate:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "serviceRate", True, is_both=False)
+            plot_relevant_stats(data_to_plot, pdf, "ratio of arrival to service rates")
 
-        if args.inflight_sum:
-            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "inFlightSum", True, is_both=False)
-            plot_relevant_stats(data_to_plot, pdf, "inFlightSum")
+        if args.inflight_outgoing:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "inflightOutgoing", True, is_both=False)
+            plot_relevant_stats(data_to_plot, pdf, "inflight outgoing on channel")
 
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
             os.path.basename(args.save) + "_per_channel_info.pdf"
