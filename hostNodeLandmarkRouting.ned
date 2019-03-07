@@ -1,4 +1,4 @@
-simple hostNode
+simple hostNodeLandmarkRouting
 {
 	parameters:
 	    bool isHost = true;
@@ -17,6 +17,7 @@ simple hostNode
 		bool waterfillingEnabled = default(false);
 		bool priceSchemeEnabled = default(false);
 		bool smoothWaterfillingEnabled = default(false);
+                bool windowEnabled = default(false);
 		int numPathChoices = default(4);
 
                 double alpha = default(0.01);

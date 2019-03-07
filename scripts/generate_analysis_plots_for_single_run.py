@@ -10,6 +10,7 @@ from parse_sca_files import *
 from matplotlib.backends.backend_pdf import PdfPages
 from cycler import cycler
 from config import *
+from itertools import cycle
 
 parser = argparse.ArgumentParser('Analysis Plots')
 parser.add_argument('--vec_file',
@@ -68,9 +69,24 @@ parser.add_argument('--mu_remote',
 parser.add_argument('--x_local',
         action='store_true',
         help='Plot the per channel rate of sending related price when price based scheme is used')
+parser.add_argument('--n_local',
+        action='store_true',
+        help='Plot the per channel number of txns when price based scheme is used')
+parser.add_argument('--bal_sum',
+        action='store_true',
+        help='Plot the per channel sum over update messages of balance when price based scheme is used')
+parser.add_argument('--inflight_sum',
+        action='store_true',
+        help='Plot the per channel sum of txns sent out over this time interval related price when price based scheme is used')
 parser.add_argument('--rate_to_send',
         action='store_true',
-        help='Plot the per channel rate to send when price based scheme is used')
+        help='Plot the per path rate to send when price based scheme is used')
+parser.add_argument('--rate_sent',
+        action='store_true',
+        help='Plot the per path rate actually sent when price based scheme is used')
+parser.add_argument('--amt_inflight_per_path',
+        action='store_true',
+        help='Plot the per path amt inflight when price based scheme is used')
 parser.add_argument('--price',
         action='store_true',
         help='Plot the per channel price to send when price based scheme is used')
@@ -193,7 +209,7 @@ def aggregate_frac_successful_info(success, attempted):
 
 # plots every router's signal_type info in a new pdf page
 # and add a router wealth plot separately
-def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per_path_info=False):
+def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per_path_info=False, window_info=None):
     color_opts = ['#fa9e9e', '#a4e0f9', '#57a882', '#ad62aa']
     router_wealth_info =[]
     
@@ -201,21 +217,36 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
         channel_bal_timeseries = []
         plt.figure()
         plt.rc('axes', prop_cycle = (cycler('color', ['r', 'g', 'b', 'y', 'c', 'm', 'y', 'k']) +
-            cycler('linestyle', ['-', '--', ':', '-.', '-', '--', ':', '-.'])))
+            cycler('linestyle', ['-']*8)))
+                #, '--', ':', '-.', '-', '--', ':', '-.'])))
+        
         
         i = 0
         for channel, info in channel_info.items():
             # plot one plot per src dest pair and multiple lines per path
             if per_path_info:
+                color_cycle_for_path = cycle(['r', 'g', 'b', 'y', 'c', 'm', 'y', 'k'])
                 for path, path_signals in info.items():
                     time = [t[0] for t in path_signals]
                     values = [t[1] for t in path_signals]
+                    
+                    c = next(color_cycle_for_path)
+
+                    if window_info is not None:
+                        window_signals = window_info[router][channel][path]
+                        window_val = [t[1] for t in window_signals]
+                        label_name = str(path) + "_Window"
+                        plt.plot(time, window_val, label=label_name, linestyle="--", color=c)
+                    
                     label_name = str(path)
-                    plt.plot(time, values, label=label_name)
+                    start = int(len(values)/4)
+                    plt.plot(time, values, \
+                            label=label_name + "(" + str(np.average(values[start:])) + ")", color=c)
                 plt.title(signal_type + " " + str(router) + "->" + str(channel))
                 plt.xlabel("Time")
                 plt.ylabel(signal_type)
                 plt.legend()
+                plt.grid()
                 pdf.savefig()  # saves the current figure into a pdf page
                 plt.close()
 
@@ -224,7 +255,10 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                 time = [t[0] for t in info]
                 values = [t[1] for t in info]
                 label_name = str(router) + "->" + str(channel)
-                plt.plot(time, values, label=label_name)
+
+                start = int(len(values)/4)
+                plt.plot(time, values, label=label_name + \
+                        "(" + str(np.average(values[start:])) + ")")
                 if compute_router_wealth:
                     channel_bal_timeseries.append((time, values))
                 i += 1
@@ -245,6 +279,7 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
             plt.xlabel("Time")
             plt.ylabel(signal_type)
             plt.legend()
+            plt.grid()
             pdf.savefig()  # saves the current figure into a pdf page
             plt.close()
 
@@ -256,6 +291,7 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
         plt.xlabel("Time")
         plt.ylabel("Router Wealth")
         plt.legend()
+        plt.grid()
         pdf.savefig()  # saves the current figure into a pdf page
         plt.close()
 
@@ -335,9 +371,21 @@ def plot_per_payment_channel_stats(args, text_to_add):
         if args.x_local:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "xLocal", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "xLocal")
+        
+        if args.n_local:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "nValue", True, is_both=False)
+            plot_relevant_stats(data_to_plot, pdf, "nValue")
 
+        if args.bal_sum:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "balSum", True, is_both=False)
+            plot_relevant_stats(data_to_plot, pdf, "balSum")
 
-    print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + args.save + "_per_channel_info.pdf"
+        if args.inflight_sum:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "inFlightSum", True, is_both=False)
+            plot_relevant_stats(data_to_plot, pdf, "inFlightSum")
+
+    print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
+            os.path.basename(args.save) + "_per_channel_info.pdf"
     
 
 
@@ -400,6 +448,18 @@ def plot_per_src_dest_stats(args, text_to_add):
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateToSendTrans", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Rate to send per path", per_path_info=True)
 
+        if args.rate_sent:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateSent", False, True)
+            plot_relevant_stats(data_to_plot, pdf, "Rate actually sent per path", per_path_info=True)
+        
+        if args.amt_inflight_per_path:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, \
+                    "sumOfTransUnitsInFlight", False, True)
+            window_info = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, \
+                    "window", False, True)
+            plot_relevant_stats(data_to_plot, pdf, "Amount Inflight/Window per path", per_path_info=True, \
+                    window_info=window_info)
+        
         if args.price:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "priceLastSeen", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Price per path", per_path_info=True)
@@ -409,8 +469,8 @@ def plot_per_src_dest_stats(args, text_to_add):
             plot_relevant_stats(data_to_plot, pdf, "Demand Estimate per Path")
 
  
-    print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/" + \
-            args.save + "_per_src_dest_stats.pdf"
+    print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
+            os.path.basename(args.save) + "_per_src_dest_stats.pdf"
 
 
 

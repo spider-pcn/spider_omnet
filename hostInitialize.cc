@@ -57,7 +57,8 @@ vector<int> getRoute(int sender, int receiver){
       printf("] \n");
 
     */
-
+    
+   updateMaxTravelTime(route);
    return route;
 
 
@@ -216,7 +217,10 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
     */
 
       route = dijkstraInputGraph(sender, receiver, tempChannels);
-      //cout << "route length is " << route.size() << endl;
+      /*cout << "route " << it << " between " << sender << " and " << receiver 
+          << " is ";
+      printVector(route);*/
+      // cout << "route length is " << route.size() << endl;
 
      
       if (route.size() <= 1){
@@ -805,6 +809,7 @@ void generateChannelsBalancesMap(string topologyFile) {
 void generateTransUnitList(string workloadFile){
    string line;
    ifstream myfile (workloadFile);
+   double lastTime = -1; 
    if (myfile.is_open())
    {
       while ( getline (myfile,line) )
@@ -827,16 +832,25 @@ void generateTransUnitList(string workloadFile){
              timeOut = 5.0;
          }
 
+         if (timeSent > lastTime)
+             lastTime = timeSent;
+
          // instantiate all the transUnits that need to be sent
          TransUnit tempTU = TransUnit(amount, timeSent, sender, receiver, priorityClass, hasTimeOut, timeOut);
 
          // push the transUnit into a priority queue indexed by the sender, 
          _transUnitList[sender].push(tempTU);
+         _destList[sender].insert(receiver);
 
       }
    		//cout << "finished generateTransUnitList" << endl;
 		
       myfile.close();
+      if (lastTime + 5 < _simulationLength) {
+          cout << "Insufficient txns" << endl;
+          assert(false);
+      }
+
    }
 
    else cout << "Unable to open file" << workloadFile << endl;

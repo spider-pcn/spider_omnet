@@ -27,7 +27,7 @@ def parse_node_name(node_name, max_router, max_host):
 
 
 # take the topology file in a specific format and write it to a ned file
-def write_ned_file(topo_filename, output_filename, network_name):
+def write_ned_file(topo_filename, output_filename, network_name, routing_alg):
     # topo_filename must be a text file where each line contains the ids of two neighbouring nodes that 
     # have a payment channel between them, relative delays in each direction,  initial balance on each 
     # end (see sample-topology.txt)
@@ -78,10 +78,15 @@ def write_ned_file(topo_filename, output_filename, network_name):
     max_host = max_host + 1
 
     # generic routerNode and hostNode definition that every network will have
+    print routing_alg
+    if (routing_alg == 'shortestPath'):
+        host_node_type = 'hostNodeBase'
+    else:
+        host_node_type = 'hostNode' + routing_alg[0].upper() + routing_alg[1:]
     outfile.write("import routerNode;\n")
-    outfile.write("import hostNode;\n\n")
+    outfile.write("import " + host_node_type + ";\n\n")
 
-    outfile.write("network " + network_name + "\n")
+    outfile.write("network " + network_name + "_" + routing_alg + "\n")
     outfile.write("{\n")
 
     # This script (meant for a simpler datacenter topology) just assigns the same link delay to all links.
@@ -90,7 +95,7 @@ def write_ned_file(topo_filename, output_filename, network_name):
     outfile.write('\tparameters:\n\t\tdouble linkDelay @unit("s") = default(100us);\n')
     outfile.write('\t\tdouble linkDataRate @unit("Gbps") = default(1Gbps);\n')
     outfile.write('\tsubmodules:\n')
-    outfile.write('\t\thost['+str(max_host)+']: hostNode {} \n')
+    outfile.write('\t\thost['+str(max_host)+']: ' + host_node_type + ' {} \n')
     outfile.write('\t\trouter['+str(max_router)+']: routerNode {} \n')
     outfile.write('connections: \n')
 
@@ -141,7 +146,7 @@ def generate_graph(size, graph_type):
 # generate extra end host nodes if need be
 # make the first line list of landmarks for this topology
 def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts,\
-        randomize_bal=False):
+        randomize_init_bal=False, random_channel_capacity=False):
     f1 = open(output_filename, "w+")
 
     offset = G.number_of_nodes()
@@ -182,12 +187,17 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
 
         f1.write(str(e[0]) + "r " + str(e[1]) +  "r ")
         f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
-        if randomize_bal:
-            one_end_bal = random.randint(1, balance_per_channel)
-            other_end_bal = balance_per_channel - one_end_bal
+        if random_channel_capacity:
+            balance_for_this_channel = random.randint(balance_per_channel/2, 3 * balance_per_channel/2)
+        else:
+            balance_for_this_channel = balance_per_channel
+
+        if randomize_init_bal:
+            one_end_bal = random.randint(1, balance_for_this_channel)
+            other_end_bal = balance_for_this_channel - one_end_bal
             f1.write(str(one_end_bal) + " " + str(other_end_bal) + "\n")
         else:
-            f1.write(str(balance_per_channel/2) + " " + str(balance_per_channel/2) + "\n")
+            f1.write(str(balance_for_this_channel/2) + " " + str(balance_for_this_channel/2) + "\n")
 
     # generate extra end host nodes
     if separate_end_hosts: 
@@ -214,12 +224,16 @@ parser.add_argument('--network-name', type=str, dest='network_name', \
         help='name of the output ned filename', default='simpleNet')
 parser.add_argument('--separate-end-hosts', action='store_true', \
         help='do you need separate end hosts that only send transactions')
-parser.add_argument('--randomize-start-bal', action='store_true', \
-        help='Do not start from pergect balance, but rather randomize it')
+parser.add_argument('--randomize-start-bal', type=str, dest='randomize_start_bal', \
+        help='Do not start from pergect balance, but rather randomize it', default='False')
+parser.add_argument('--random-channel-capacity', type=str, dest='random_channel_capacity', \
+        help='Give channels a random balance between bal/2 and bal', default='False')
+routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting']
 
 
 args = parser.parse_args()
-
+np.random.seed(SEED)
+random.seed(SEED)
 
 # generate graph and print topology and ned file
 if args.num_nodes <= 5 and args.graph_type == 'simple_topologies':
@@ -229,6 +243,8 @@ if args.num_nodes <= 5 and args.graph_type == 'simple_topologies':
         G = three_node_graph
     elif args.num_nodes == 4:
         G = four_node_graph
+    elif 'line' in args.network_name:
+        G = five_line_graph
     else:
         G = five_node_graph
 elif args.graph_type in ['small_world', 'scale_free', 'tree', 'random']:
@@ -246,11 +262,16 @@ else:
     G = simple_line_graph
     args.separate_end_hosts = False
 
+args.randomize_start_bal = args.randomize_start_bal == 'true'
+args.random_channel_capacity = args.random_channel_capacity == 'true'
 
 print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename, \
-        args.separate_end_hosts, args.randomize_start_bal)
+        args.separate_end_hosts, args.randomize_start_bal, args.random_channel_capacity)
 network_base = os.path.basename(args.network_name)
-write_ned_file(args.topo_filename, args.network_name + '.ned', network_base)
+
+for routing_alg in routing_alg_list:
+    write_ned_file(args.topo_filename, args.network_name + '_' + routing_alg + '.ned', \
+            network_base, routing_alg)
 
 
 

@@ -16,10 +16,16 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
     # define start and end nodes and amounts
     # edge a->b in payment graph appears in index i as start_nodes[i]=a, and end_nodes[i]=b
     if payment_graph_topo == 'hotnets_topo':
-        start_nodes = [0,3,0,1,2,3,2,4]
-        end_nodes = [4,0,1,3,1,2,4,2]
-        amt_relative = [1,2,1,2,1,2,2,1]
-        amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+        if circ_frac == 1:
+            start_nodes = [0, 1, 2, 2, 3, 3, 4]
+            end_nodes = [1, 3, 1, 4, 2, 0, 2]
+            amt_relative = [1, 2, 1, 1, 1, 1, 1]
+            amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+        else:
+            start_nodes = [0,3,0,1,2,3,2,4]
+            end_nodes = [4,0,1,3,1,2,4,2]
+            amt_relative = [1,2,1,2,1,2,2,1]
+            amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
         graph = hotnets_topo_graph
 
     elif payment_graph_topo == 'simple_deadlock':
@@ -30,11 +36,19 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         graph = simple_deadlock_graph
 
     elif payment_graph_topo == 'simple_line':
-        start_nodes = [0,3]
-        end_nodes = [3,0]
-        amt_relative = [1,1]
+        if "five" in filename:
+            num_nodes = 5
+            graph = five_line_graph
+        else:
+            num_nodes = 3
+            graph = simple_line_graph
+        print num_nodes
+
+        start_nodes = [0, num_nodes - 1]
+        end_nodes = [num_nodes - 1, 0]
+        amt_relative = [MEAN_RATE, MEAN_RATE]
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
-        graph = simple_line_graph
+
     elif payment_graph_topo == 'hardcoded_circ':
         start_nodes = [0, 1, 2, 3, 4]
         end_nodes = [1, 2, 3, 4, 0]
@@ -294,6 +308,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
     print "generated workload" 
+    print demand_dict
 
     if generate_json_also:
         generate_json_files(filename + '.json', whole_graph, inside_graph, start_nodes, end_nodes, amt_absolute)
@@ -459,7 +474,7 @@ parser.add_argument('--generate-json-also', action="store_true", help="do you ne
         for the custom topology")
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 parser.add_argument('--timeout-value', type=float, help='generic time out for all transactions', default=5)
-
+parser.add_argument('--scale-amount', type=int, help='how much to scale the mean deamnd by', default=5)
 
 
 args = parser.parse_args()
@@ -475,7 +490,7 @@ generate_json_also = args.generate_json_also
 graph_topo = args.graph_topo
 balance = args.balance_per_channel
 timeout_value = args.timeout_value
-
+SCALE_AMOUNT = args.scale_amount
 
 
 # generate workloads

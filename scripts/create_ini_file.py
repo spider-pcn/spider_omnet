@@ -12,10 +12,13 @@ parser.add_argument('--stat-collection-rate', type=str, help='rate of collecting
         default='0.2')
 parser.add_argument('--signals-enabled', type=str, help='are signals enabled?', dest='signalsEnabled', default='false')
 parser.add_argument('--logging-enabled', type=str, help='is logging enabled?', dest='loggingEnabled', default='false')
+parser.add_argument('--window-enabled', type=str, help='is window enabled?', dest='windowEnabled', default='false')
 parser.add_argument('--timeout-clear-rate', type=str, help='rate of clearing data after timeouts', dest='timeoutClearRate', default='0.5')
 parser.add_argument('--timeout-enabled', type=str, help='are timeouts enabled?', dest='timeoutEnabled', default='true')
 parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, LP, silentWhispers, smoothWaterfilling, priceScheme], else will default to waterfilling', dest='routingScheme', default='default')
 parser.add_argument('--num-path-choices', type=str, help='number of path choices', dest='numPathChoices', default='default')
+parser.add_argument('--demand-scale', type=int, help='how much has demand been scaled up by', dest='demandScale', default=5)
+
 
 # price based scheme parameters
 parser.add_argument('--eta', type=float, help='step size for mu', dest='eta', default=0.01)
@@ -43,17 +46,24 @@ args = parser.parse_args()
 configname = os.path.basename(args.network_name)
 
 if args.routingScheme != 'default':
-    configname = configname + "_" + args.routingScheme
+    configname = configname + "_" + args.routingScheme + "_demand" + str(args.demandScale)
 
 #arg parse might support a cleaner way to deal with this
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
-        'smoothWaterfilling'] :
+        'smoothWaterfilling', 'priceSchemeWindow'] :
     if args.routingScheme != 'default':
         print "******************"
         print "WARNING: ill-specified routing scheme, defaulting to waterfilling,",\
             "with no special config generated"
         print "******************"
     args.routingScheme = 'waterfilling'
+
+if args.routingScheme == 'smoothWaterfilling':
+    modifiedRoutingScheme = 'waterfilling'
+elif "Window" in args.routingScheme:
+    modifiedRoutingScheme = args.routingScheme[:-6]
+else:
+    modifiedRoutingScheme = args.routingScheme
 
 if args.numPathChoices != 'default':
     configname = configname + "_" + args.numPathChoices
@@ -63,13 +73,14 @@ else:
 f = open(args.ini_filename, "w+")
 f.write("[General]\n\n")
 f.write("[Config " +  configname + "]\n")
-f.write("network = " + os.path.basename(args.network_name) + "\n")
+f.write("network = " + os.path.basename(args.network_name) + "_" + modifiedRoutingScheme + "\n")
 f.write("**.topologyFile = \"" + args.topo_filename + "\"\n")
 f.write("**.workloadFile = \"" + args.workload_filename + "\"\n")
 f.write("**.simulationLength = " + args.simulationLength + "\n")
 f.write("**.statRate = " + args.statRate + "\n")
 f.write("**.signalsEnabled = " + args.signalsEnabled + "\n")
 f.write("**.loggingEnabled = " + args.loggingEnabled + "\n")
+f.write("**.windowEnabled = " + args.windowEnabled + "\n")
 f.write("**.timeoutClearRate = " + args.timeoutClearRate + "\n")
 f.write("**.timeoutEnabled = " + args.timeoutEnabled + "\n")
 f.write("**.numPathChoices = " + args.numPathChoices + "\n")
@@ -77,7 +88,7 @@ f.write("**.numPathChoices = " + args.numPathChoices + "\n")
 
 if args.routingScheme in ['waterfilling', 'smoothWaterfilling']:
     f.write("**.waterfillingEnabled = true\n")
-if args.routingScheme == 'priceScheme':
+if 'priceScheme' in args.routingScheme:
     f.write("**.priceSchemeEnabled = true\n")
     f.write("**.eta = " + str(args.eta) + "\n")
     f.write("**.kappa = " + str(args.kappa) + "\n")
