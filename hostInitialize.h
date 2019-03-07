@@ -40,3 +40,5 @@ void updateMaxTravelTime(vector<int> route);
 void printChannels();
 
 void printVector(vector<int> v);
+
+void printChannels(map<int, vector<int>> channels);

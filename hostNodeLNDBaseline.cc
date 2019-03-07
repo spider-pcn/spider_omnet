@@ -5,7 +5,7 @@
 Define_Module(hostNodeLNDBaseline);
 
 bool sortPrunedChannelsFunction(tuple<simtime_t, tuple<int,int>> x, tuple<simtime_t, tuple<int, int>> y);
- 
+
 
 //instaniate global parameter for hostNodeLNDBaseline
 double _restorePeriod;
@@ -13,8 +13,8 @@ int _numAttemptsLNDBaseline;
 
 void hostNodeLNDBaseline::initializeMyChannels(){
     //not going to store delay, because using BFS to find shortest paths
+    _myChannels = {};
     for (auto nodeIter: _channels){
-        _myChannels = {};
         int node = nodeIter.first;
         _myChannels[node] = {};
         vector<pair<int, int>> edgeDelayVec = nodeIter.second;
@@ -31,13 +31,14 @@ vector<int>  hostNodeLNDBaseline::generateNextPath(int destNodePath){
 
     if (_prunedChannelsHeap.size() > 0){
         tuple<simtime_t, tuple<int, int>> currentEdge =  _prunedChannelsHeap.front();
-            
-        while (_prunedChannelsHeap.size()>0 && get<0>(currentEdge) + _restorePeriod < simTime()){
+
+        cout << "generateNextPath0" << endl;
+        while (_prunedChannelsHeap.size()>0 && (get<0>(currentEdge) + _restorePeriod < simTime())){
             //add back to _myChannels
             int sourceNode = get<0>(get<1>(currentEdge));
             int destNode = get<1>(get<1>(currentEdge));
             _myChannels[sourceNode].push_back(destNode);
-            
+
             //erase, and make sure to restore heap properties
             pop_heap(_prunedChannelsHeap.begin(), _prunedChannelsHeap.end(), sortPrunedChannelsFunction);
             _prunedChannelsHeap.pop_back();        
@@ -45,10 +46,12 @@ vector<int>  hostNodeLNDBaseline::generateNextPath(int destNodePath){
             if (_prunedChannelsHeap.size()>0)
                 currentEdge =  _prunedChannelsHeap.front();
 
-
         }
     }
+    cout << "generate next path 1 "<< endl;
     vector<int> resultPath = breadthFirstSearchByGraph(myIndex(),destNodePath, _myChannels);
+    printVector(resultPath);
+    cout << "generate next path 2"  << endl;
     return resultPath;       
 
 }
@@ -59,7 +62,14 @@ void hostNodeLNDBaseline::pruneEdge(int sourceNode, int destNode){
 
     auto iter = find(_myChannels[sourceNode].begin(), _myChannels[sourceNode].end(), destNode); 
     if (iter != _myChannels[sourceNode].end() )
-    { //if already pruned, update the simtime and "resort" the heap
+    {
+        //prune edge and add to heap
+        _myChannels[sourceNode].erase(iter);
+        //vector<tuple<simtime_t, tuple<int, int>>> _prunedChannelsHeap;
+        _prunedChannelsHeap.push_back(make_tuple(simTime(), make_tuple(sourceNode, destNode)));
+        push_heap(_prunedChannelsHeap.begin(), _prunedChannelsHeap.end(), sortPrunedChannelsFunction);
+    }
+    else{ //if already pruned, update the simtime and "resort" the heap
         auto iterHeap = find_if(_prunedChannelsHeap.begin(),
                 _prunedChannelsHeap.end(),
                 [&edgeTuple](const tuple<simtime_t, tuple<int,int>>& p)
@@ -71,16 +81,6 @@ void hostNodeLNDBaseline::pruneEdge(int sourceNode, int destNode){
             make_heap(_prunedChannelsHeap.begin(), _prunedChannelsHeap.end(), sortPrunedChannelsFunction);
             //make_heap again because of deletion    
         }
-        else{
-            cout << "pruned edge not found in _prunedChannelsHeap list" << endl;
-            endSimulation();
-        }
-    }
-    else{
-        _myChannels[sourceNode].erase(iter);
-        //vector<tuple<simtime_t, tuple<int, int>>> _prunedChannelsHeap;
-        _prunedChannelsHeap.push_back(make_tuple(simTime(), make_tuple(sourceNode, destNode)));
-        push_heap(_prunedChannelsHeap.begin(), _prunedChannelsHeap.end(), sortPrunedChannelsFunction);
     }
 }
 
@@ -103,8 +103,9 @@ void hostNodeLNDBaseline::initialize(){
         signal = registerSignalPerDest("pathPerTrans", i, "");
         pathPerTransPerDestSignals.push_back(signal);
     }
-    
+
     _restorePeriod = 1.0;
+    _numAttemptsLNDBaseline = 4;
     //initialize my channels
     initializeMyChannels(); //std objects do a deep copy
 
@@ -148,28 +149,35 @@ void hostNodeLNDBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
 
         // if destination hasn't been encountered, find paths
         /*
-        if (nodeToShortestPathsMap.count(destNode) == 0 ){
-            vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(), 
-                    destNode, _kValue);
-            initializePathInfoLNDBaseline(kShortestRoutes, destNode);
-        }
-        */
+           if (nodeToShortestPathsMap.count(destNode) == 0 ){
+           vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(), 
+           destNode, _kValue);
+           initializePathInfoLNDBaseline(kShortestRoutes, destNode);
+           }
+         */
         vector<int> newRoute = generateNextPath(destNode);
         transMsg->setPathIndex(-1);
-        if (nodeToShortestPathsMap[destNode].size()>0)
+        if (newRoute.size()>0)
         {
+            cout << "sent on path" << endl;
+            printVector(newRoute);
             transMsg->setPathIndex(0);
-            ttmsg->setRoute(nodeToShortestPathsMap[destNode][0].path);
+            ttmsg->setRoute(newRoute);
             handleTransactionMessage(ttmsg);
         }
         else
         {
+            cout << "failed on path" << endl;
+            printVector(newRoute);
             routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
             handleAckMessageSpecialized(failedAckMsg);
         }
     }
-    else
+    else{
+        cout << "not self message trans" << endl;
         handleTransactionMessage(ttmsg);
+    }
+
 }
 
 
@@ -200,39 +208,58 @@ void hostNodeLNDBaseline::handleAckMessageSpecialized(routerMsg *msg)
 
     //get current index; increment it, see if there is a path for the incremented index
     int numPathsAttempted = aMsg->getPathIndex() + 1;
-    if (aMsg->getIsSuccess())
+    if (aMsg->getIsSuccess() || numPathsAttempted == _numAttemptsLNDBaseline)
     {
+        cout << "a0" << endl;
         aMsg->decapsulate();
         delete transMsg;
+        cout << "a1" << endl;
         if (_signalsEnabled)
             emit (pathPerTransPerDestSignals[aMsg->getReceiver()], numPathsAttempted);
         hostNodeBase::handleAckMessageSpecialized(msg);
     }
     else
+
     {
+        cout << "here0" << endl;
         int newIndex = aMsg->getPathIndex() + 1;
-        if (newIndex >= _numAttemptsLNDBaseline)
-        { //no paths attempts left, fail the transaction, broadcast number of paths attempted
-            aMsg->decapsulate();
-            delete transMsg;
-            if (_signalsEnabled)
-                emit(pathPerTransPerDestSignals[aMsg->getReceiver()], numPathsAttempted);
-            hostNodeBase::handleAckMessageSpecialized(msg);
-        }
-        else
-        {
+        if (msg->getRoute().size()>0)
+        {        //prune edge
+
+            cout << "here1" << endl;
+            //TODO: grab from what hop count it failed at.
+            int failedHopNum = aMsg->getFailedHopNum();
+            int failedSource = msg->getRoute()[failedHopNum];
+            cout << "here2" << endl;
+            int failedDest = msg->getRoute()[failedHopNum-1];
+            pruneEdge(failedSource, failedDest);
+            cout << "here3" << endl;
+            cout << "pruned source: " << failedSource << "; pruned dest:" << failedDest << endl;
+            printChannels(_myChannels);
+
             char msgname[MSGSIZE];
             sprintf(msgname, "tic-%d-to-%d transactionMsg", transMsg->getSender(), transMsg->getReceiver());
             routerMsg* ttmsg = new routerMsg(msgname);
             transMsg->setPathIndex(newIndex);
             vector<int> newRoute = generateNextPath(transMsg->getReceiver());
+            cout << "path attempt " << newIndex << ": ";
+            printVector(newRoute);
+            cout << "old route: ";
+            printVector(msg->getRoute());
+
             if (newRoute.size() == 0)
             {
+                statNumFailed[aMsg->getReceiver()] = statNumFailed[aMsg->getReceiver()] + 1;
+                statRateFailed[aMsg->getReceiver()] = statRateFailed[aMsg->getReceiver()] + 1;
                 aMsg->decapsulate();
                 delete transMsg;
                 if (_signalsEnabled)
                     emit(pathPerTransPerDestSignals[aMsg->getReceiver()], numPathsAttempted);
-                hostNodeBase::handleAckMessageSpecialized(msg);
+                msg->decapsulate();
+                delete aMsg;
+                delete msg;
+
+
                 return;
             }
             ttmsg->setRoute(newRoute);
@@ -246,8 +273,22 @@ void hostNodeLNDBaseline::handleAckMessageSpecialized(routerMsg *msg)
 
             ttmsg->encapsulate(transMsg);
             handleTransactionMessage(ttmsg, true);
+
+        }
+        else
+        {                          statNumFailed[aMsg->getReceiver()] = statNumFailed[aMsg->getReceiver()] + 1;
+            statRateFailed[aMsg->getReceiver()] = statRateFailed[aMsg->getReceiver()] + 1;
+            aMsg->decapsulate();
+            delete transMsg;
+            if (_signalsEnabled)
+                emit(pathPerTransPerDestSignals[aMsg->getReceiver()], numPathsAttempted);
+            msg->decapsulate();
+            delete aMsg;
+            delete msg;
+
+
         }
     }
-    return;
+
 }
 

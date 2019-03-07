@@ -387,6 +387,15 @@ void dijkstraInputGraphTemp(int src,  int dest, map<int, vector<pair<int,int>>> 
     return;// getPath(parent, dest);
 }
 
+void printChannels(map<int, vector<int>> channels){
+    for (auto a: channels){
+        cout << a.first << ": ";
+        printVector(a.second);
+        cout << endl;
+    }
+
+}
+
 // Function that implements Dijkstra's  single source shortest path algorithm for a graph represented
 // using adjacency matrix representation
 vector<int> dijkstra(int src,  int dest)
@@ -448,8 +457,17 @@ vector<int> dijkstra(int src,  int dest)
 
 
 vector<int> breadthFirstSearchByGraph(int sender, int receiver, map<int, vector<int>> graph){
+    // print graph
+    for (auto node: graph){
+        cout << node.first << ": ";
+        printVector(node.second);
+        cout <<endl;
+
+    }
+
+
     //TODO: fix, and add to header
-    deque<vector<int>> nodesToVisit;
+    deque<vector<int>> nodesToVisit = {};
     bool visitedNodes[_numNodes];
     for (int i=0; i<_numNodes; i++){
         visitedNodes[i] =false;
