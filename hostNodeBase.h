@@ -125,14 +125,14 @@ class hostNodeBase : public cSimpleModule {
         virtual void handleClearStateMessage(routerMsg *msg);
         
         // message forwarders
-        virtual bool forwardTransactionMessage(routerMsg *msg);
+        virtual bool forwardTransactionMessage(routerMsg *msg, simtime_t arrivalTime);
         virtual void forwardMessage(routerMsg *msg);
 
         // core simulator functions
         virtual void initialize() override;
         virtual void finish() override;
         virtual void processTransUnits(int dest, 
-                vector<tuple<int, double , routerMsg *, Id>>& q);
+                vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q);
         virtual void deleteMessagesInQueues();
              
         

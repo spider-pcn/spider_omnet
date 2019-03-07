@@ -16,7 +16,7 @@
 packet priceUpdateMsg
 {
     double nLocal;
-    double balSum;
-    double sumInFlight;
+    double serviceRate;
+    int queueSize;
 }
 

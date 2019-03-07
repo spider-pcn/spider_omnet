@@ -24,8 +24,8 @@
  * packet priceUpdateMsg
  * {
  *     double nLocal;
- *     double balSum;
- *     double sumInFlight;
+ *     double serviceRate;
+ *     int queueSize;
  * }
  * </pre>
  */
@@ -33,8 +33,8 @@ class priceUpdateMsg : public ::omnetpp::cPacket
 {
   protected:
     double nLocal;
-    double balSum;
-    double sumInFlight;
+    double serviceRate;
+    int queueSize;
 
   private:
     void copy(const priceUpdateMsg& other);
@@ -55,10 +55,10 @@ class priceUpdateMsg : public ::omnetpp::cPacket
     // field getter/setter methods
     virtual double getNLocal() const;
     virtual void setNLocal(double nLocal);
-    virtual double getBalSum() const;
-    virtual void setBalSum(double balSum);
-    virtual double getSumInFlight() const;
-    virtual void setSumInFlight(double sumInFlight);
+    virtual double getServiceRate() const;
+    virtual void setServiceRate(double serviceRate);
+    virtual int getQueueSize() const;
+    virtual void setQueueSize(int queueSize);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const priceUpdateMsg& obj) {obj.parsimPack(b);}

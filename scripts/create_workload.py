@@ -73,7 +73,8 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
             demand_dict_dag = dag_demand(list(graph), mean=MEAN_RATE, \
                     std_dev=CIRCULATION_STD_DEV)
                     
-        demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) +                                 dag_frac * demand_dict_dag.get(key, 0) \
+        demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + 
+                dag_frac * demand_dict_dag.get(key, 0) \
                 for key in set(demand_dict_circ) | set(demand_dict_dag) } 
 
 

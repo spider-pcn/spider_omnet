@@ -82,6 +82,9 @@ extern double _alpha; //parameter for rate updates
 extern double _minPriceRate; // minimum rate to assign to all nodes when computing projections and such
 extern double _delta; // round trip propagation delay
 extern double _avgDelay;
+extern double _xi; // how fast you want to drain the queue relative to network rtt - want this to be less than 1
+extern double _routerQueueDrainTime;
+extern int _serviceArrivalWindow;
 
 extern bool _signalsEnabled;
 extern bool _loggingEnabled;
