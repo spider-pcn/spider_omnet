@@ -22,10 +22,7 @@ demand_scale=("10" "20" "30")
 path_choices_dep_list=( "waterfilling" "smoothWaterfilling")
 path_choices_indep_list=( "shortestPath" )
 random_init_bal=false
-random_capacity=true
-
-#path_choices_dep_list=( "priceSchemeWindow")
-#path_choices_indep_list=(  )
+random_capacity=false
 
 
 #general parameters that do not affect config names

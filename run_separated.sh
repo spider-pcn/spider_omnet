@@ -227,6 +227,7 @@ run_schemes()
             #rm ${workload}.json
         done
         #rm $topofile
+        wait
     done
 }
 

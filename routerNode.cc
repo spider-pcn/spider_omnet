@@ -763,7 +763,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
    (*outgoingTransUnits).erase(make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex()));
 
    if (aMsg->getIsSuccess() == false){
-      if (aMsg->getFailedHopNum() != myIndex()) {
+      if (aMsg->getFailedHopNum() < ttmsg->getHopCount()) {
           //increment payment back to outgoing channel
           double updatedBalance = nodeToPaymentChannel[prevNode].balance + aMsg->getAmount();
           nodeToPaymentChannel[prevNode].balanceEWMA = 
@@ -970,6 +970,10 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //
    aMsg->setHasTimeOut(hasTimeOut);
    aMsg->setHtlcIndex(transMsg->getHtlcIndex());
    aMsg->setPathIndex(transMsg->getPathIndex());
+
+    if (!isSuccess) {
+       aMsg->setFailedHopNum((ttmsg->getRoute().size()-1) - ttmsg->getHopCount());
+    }
 
       //no need to set secret;
      vector<int> route = ttmsg->getRoute();

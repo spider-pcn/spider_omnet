@@ -27,5 +27,7 @@ class hostNodeLandmarkRouting : public hostNodeBase {
                int  destNode);
         virtual void initializeLandmarkRoutingProbes(routerMsg * msg, 
                int transactionId, int destNode);
+
+        virtual void finish() override;
 };
 #endif

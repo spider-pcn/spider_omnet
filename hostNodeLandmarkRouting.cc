@@ -133,6 +133,7 @@ void hostNodeLandmarkRouting::handleTransactionMessageSpecialized(routerMsg* ttm
         return;
     }
     else {
+        cout << "entering this case " << endl;
         assert(false);
     }
 }
@@ -145,7 +146,9 @@ void hostNodeLandmarkRouting::handleTransactionMessageSpecialized(routerMsg* ttm
  */
 void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
     probeMsg *pMsg = check_and_cast<probeMsg *>(ttmsg->getEncapsulatedPacket());
-    if (simTime()> _simulationLength ){
+    int transactionId = pMsg->getTransactionId();
+
+    if (simTime() > _simulationLength ){
         ttmsg->decapsulate();
         delete pMsg;
         delete ttmsg;
@@ -159,24 +162,18 @@ void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
        //store times into private map, delete message
        int pathIdx = pMsg->getPathIndex();
        int destNode = pMsg->getReceiver();
-       int transactionId = pMsg->getTransactionId();
        double bottleneck = minVectorElemDouble(pMsg->getPathBalances());
+       ProbeInfo *probeInfo = &(transactionIdToProbeInfoMap[transactionId]);
        
-       transactionIdToProbeInfoMap[transactionId].probeReturnTimes[pathIdx] = simTime();
-       transactionIdToProbeInfoMap[transactionId].numProbesWaiting = 
-           transactionIdToProbeInfoMap[transactionId].numProbesWaiting - 1;
-       transactionIdToProbeInfoMap[transactionId].probeBottlenecks[pathIdx] = bottleneck;
-
-       //check to see if all probes are back
-       //cout << "transactionId: " << pMsg->getTransactionId();
-       //cout << "numProbesWaiting: " 
-       // << transactionIdToProbeInfoMap[transactionId].numProbesWaiting << endl;
+       probeInfo->probeReturnTimes[pathIdx] = simTime();
+       probeInfo->numProbesWaiting -= 1; 
+       probeInfo->probeBottlenecks[pathIdx] = bottleneck;
 
        // once all probes are back
-       if (transactionIdToProbeInfoMap[transactionId].numProbesWaiting == 0){ 
+       if (probeInfo->numProbesWaiting == 0){ 
            // find total number of paths
            int numPathsPossible = 0;
-           for (auto bottleneck: transactionIdToProbeInfoMap[transactionId].probeBottlenecks){
+           for (auto bottleneck: probeInfo->probeBottlenecks){
                if (bottleneck > 0){
                    numPathsPossible++;
                }
@@ -184,9 +181,9 @@ void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
 
            // construct probabilities to sample from 
            vector<double> probabilities;
-           for (auto bottleneck: transactionIdToProbeInfoMap[transactionId].probeBottlenecks){
+           for (auto bottleneck: probeInfo->probeBottlenecks){
                 if (bottleneck > 0) {
-                    probabilities.push_back(1/numPathsPossible);
+                    probabilities.push_back(1.0/numPathsPossible);
                 }
                 else{
                     probabilities.push_back(0);
@@ -196,13 +193,12 @@ void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
 
            // send transaction on this path
            transactionMsg *transMsg = check_and_cast<transactionMsg*>(
-                   transactionIdToProbeInfoMap[transactionId].messageToSend->
-                   getEncapsulatedPacket());
+                   probeInfo->messageToSend->getEncapsulatedPacket());
            //cout << "sent transaction on path: ";
            //printVector(nodeToShortestPathsMap[transMsg->getReceiver()][indexToUse].path);
-           transactionIdToProbeInfoMap[transactionId].messageToSend->
+           probeInfo->messageToSend->
                setRoute(nodeToShortestPathsMap[transMsg->getReceiver()][indexToUse].path);
-           handleTransactionMessage(transactionIdToProbeInfoMap[transactionId].messageToSend, true /*revisit*/);
+           handleTransactionMessage(probeInfo->messageToSend, true /*revisit*/);
            transactionIdToProbeInfoMap.erase(transactionId);
        }
        
@@ -271,4 +267,18 @@ void hostNodeLandmarkRouting::initializeLandmarkRoutingProbes(routerMsg * msg, i
     return;
 }
 
+/* function that is called at the end of the simulation that
+ * deletes any remaining messages in transactionIdToProbeInfoMap
+ */
+void hostNodeLandmarkRouting::finish() {
+    for (auto it = transactionIdToProbeInfoMap.begin(); it != transactionIdToProbeInfoMap.end(); it++) {
+        ProbeInfo *probeInfo = &(it->second);
+        transactionMsg *transMsg = check_and_cast<transactionMsg*>(
+            probeInfo->messageToSend->getEncapsulatedPacket());
+        probeInfo->messageToSend->decapsulate();
+        delete transMsg;
+        delete probeInfo->messageToSend;
+    }
+    hostNodeBase::finish();
+}
 
