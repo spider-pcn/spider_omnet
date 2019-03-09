@@ -13,6 +13,8 @@ void generateTransUnitList(string);
 vector<int> getRoute(int sender, int receiver);
 bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
       const tuple<int,double, routerMsg*, Id, simtime_t> &b);
+bool sortFIFO(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
+      const tuple<int,double, routerMsg*, Id, simtime_t> &b);
 map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> channels, vector<int> route);
 vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k);
 vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, int k);

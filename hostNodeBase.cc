@@ -511,7 +511,7 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
             // add to queue and process in order of queue
             (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
                   ttmsg, key, simTime()));
-            push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
+            push_heap((*q).begin(), (*q).end(), sortFIFO);
             processTransUnits(nextNode, *q);
         }
     }
@@ -634,11 +634,12 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
     else { 
         routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), 
                 prevNode, aMsg->getAmount(), aMsg->getHtlcIndex() );
+        nodeToPaymentChannel[prevNode].numUpdateMessages += 1;
         forwardMessage(uMsg);
     }
     
     // stats
-    simtime_t timeTakenInMilli = 1000*(simTime() - aMsg->getTimeSent());
+    // simtime_t timeTakenInMilli = 1000*(simTime() - aMsg->getTimeSent());
     // if (_signalsEnabled) emit(completionTimeSignal, timeTakenInMilli);
     
     //delete ack message
@@ -819,7 +820,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                 
                 // resort the queue based on priority
                 make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), 
-                        sortPriorityThenAmtFunction);
+                        sortFIFO);
             }
 
             // remove from incoming TransUnits from the previous node
@@ -1052,7 +1053,7 @@ void hostNodeBase::initialize() {
 
         //initialize queuedTransUnits
         vector<tuple<int, double , routerMsg *, Id, simtime_t>> temp;
-        make_heap(temp.begin(), temp.end(), sortPriorityThenAmtFunction);
+        make_heap(temp.begin(), temp.end(), sortFIFO);
         nodeToPaymentChannel[key].queuedTransUnits = temp;
 
         //register PerChannel signals

@@ -134,7 +134,7 @@ void routerNode::initialize()
 
       //initialize queuedTransUnits
       vector<tuple<int, double , routerMsg *, Id, simtime_t>> temp;
-      make_heap(temp.begin(), temp.end(), sortPriorityThenAmtFunction);
+      make_heap(temp.begin(), temp.end(), sortFIFO);
       nodeToPaymentChannel[key].queuedTransUnits = temp;
 
       //register signals
@@ -576,7 +576,7 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                }
             }
 
-            make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
+            make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortFIFO);
             //find next in incoming
             iterIncoming = find_if((*incomingTransUnits).begin(),
                   (*incomingTransUnits).end(),
@@ -927,7 +927,7 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
    else{
       (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
                ttmsg, make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex()), simTime()));
-      push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
+      push_heap((*q).begin(), (*q).end(), sortFIFO);
       processTransUnits(nextNode, *q);
    }
 }

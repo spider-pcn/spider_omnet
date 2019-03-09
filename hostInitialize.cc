@@ -875,4 +875,14 @@ bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, Id, simtime
    return true;
 }
 
+
+/*
+ * sortFunction - to do FIFO sorting 
+ */
+bool sortFIFO(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
+      const tuple<int,double, routerMsg*, Id, simtime_t> &b)
+{
+    return (get<4>(a) > get<4>(b));
+}
+
 #endif
