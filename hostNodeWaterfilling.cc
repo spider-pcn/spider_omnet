@@ -8,7 +8,7 @@ double _ewmaFactor;
 double _Tau;
 double _Normalizer;
 bool _smoothWaterfillingEnabled;
-#define SMALLEST_INDIVISIBLE_UNIT 1
+#define SMALLEST_INDIVISIBLE_UNIT 0.1
 
 Define_Module(hostNodeWaterfilling);
 
@@ -584,7 +584,7 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg, bo
    
         // send all of the remaining amount beyond the indivisible unit on one path
         // the highest bal path as long as it has non zero balance
-        if (remainingAmt > 0 && pq.size()>0 ) {
+        if (remainingAmt > 0  && pq.size()>0 ) {
             highestBal = get<0>(pq.top());
             highestBalIdx = get<1>(pq.top());
                

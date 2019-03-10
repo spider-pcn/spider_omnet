@@ -1197,11 +1197,22 @@ void hostNodeBase::finish() {
 
     for (int it = 0; it < _numHostNodes; ++it) {
         if (_destList[myIndex()].count(it) > 0) {
-            emit(rateCompletedPerDestSignals[it], statRateCompleted[it]);
-            emit(rateAttemptedPerDestSignals[it], statRateAttempted[it]);
-            emit(rateArrivedPerDestSignals[it], statRateArrived[it]);
-
             char buffer[30];
+            sprintf(buffer, "rateCompleted %d -> %d", myIndex(), it);
+            recordScalar(buffer, statRateCompleted[it]);
+            sprintf(buffer, "amtCompleted %d -> %d", myIndex(), it);
+            recordScalar(buffer, statAmtCompleted[it]);
+
+            sprintf(buffer, "rateAttempted %d -> %d", myIndex(), it);
+            recordScalar(buffer, statRateAttempted[it]);
+            sprintf(buffer, "amtAttempted  %d -> %d", myIndex(), it);
+            recordScalar(buffer, statAmtAttempted[it]);
+
+            sprintf(buffer, "rateArrived %d -> %d", myIndex(), it);
+            recordScalar(buffer, statRateArrived[it]);
+            sprintf(buffer, "amtArrived  %d -> %d", myIndex(), it);
+            recordScalar(buffer, statAmtArrived[it]);
+
             sprintf(buffer, "completionTime %d -> %d ", myIndex(), it);
             recordScalar(buffer, statCompletionTimes[it]/statRateCompleted[it]);
         }

@@ -169,7 +169,7 @@ void hostNodeLandmarkRouting::handleTimeOutMessage(routerMsg* ttmsg){
                     << "; pathIndex: " << pathIndex << endl;
             }
             
-            if (transPathToAckState[key].amtSent != transPathToAckState[key].amtReceived) {
+            if (transPathToAckState[key].amtSent > transPathToAckState[key].amtReceived + _epsilon) {
                 routerMsg* lrTimeOutMsg = generateTimeOutMessageForPath(
                     nodeToShortestPathsMap[destination][p.first].path, 
                     transactionId, destination);
@@ -219,8 +219,8 @@ void hostNodeLandmarkRouting::handleAckMessageSpecialized(routerMsg* ttmsg) {
         (transToAmtLeftToComplete[transactionId]).amtReceived += aMsg->getAmount();
         statAmtCompleted[receiver] += aMsg->getAmount();
 
-        if (transToAmtLeftToComplete[transactionId].amtReceived == 
-                transToAmtLeftToComplete[transactionId].amtSent) {
+        if (transToAmtLeftToComplete[transactionId].amtReceived >=  
+                transToAmtLeftToComplete[transactionId].amtSent - _epsilon) {
             nodeToShortestPathsMap[receiver][pathIndex].statRateCompleted += 1;
 
             if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) {
