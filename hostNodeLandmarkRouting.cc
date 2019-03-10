@@ -369,7 +369,23 @@ void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
 /* function to compute a random split across all the paths for landmark routing
  */
 bool hostNodeLandmarkRouting::randomSplit(double totalAmt, vector<double> bottlenecks, vector<double> &amtPerPath) {
-    return false;
+    vector<double> randomParts;
+    for (int i = 0; i < bottlenecks.size() - 1; i++){
+        randomParts.push_back(rand() / (RAND_MAX + 1.));
+    }
+    randomParts.push_back(1);
+    sort(randomParts.begin(), randomParts.end());
+
+    amtPerPath[0] = totalAmt * randomParts[0];
+    if (amtPerPath[0] > bottlenecks[0])
+        return false;
+
+    for (int i = 1; i < bottlenecks.size(); i++) {
+        amtPerPath[i] = totalAmt*(randomParts[i] - randomParts[i - 1]);
+        if (amtPerPath[i] > bottlenecks[i])
+            return false;
+    }
+    return true;
 }
 
 /* initializes the table with the paths to use for Landmark Routing, everything else as 
