@@ -2,26 +2,6 @@
 #define INITIALIZE_H
 #include "hostInitialize.h"
 
-void printVector(vector<int> v){
-    for (auto temp : v) {
-        cout << temp << ", ";
-    }
-    cout << endl;
-}
-
-double minVectorElemDouble(vector<double> v){
-    double min = v[0];
-    for (double d: v){
-        if (d < min)
-            min=d;
-    }
-    return min;
-}
-
-double maxDouble(double x, double y){
-    if (x>y) return x;
-    return y;
-}
 
 bool probesRecent(map<int, PathInfo> probes){
     for (auto iter : probes){
@@ -32,40 +12,192 @@ bool probesRecent(map<int, PathInfo> probes){
     return true;
 }
 
-/*get_route- take in sender and receiver graph indicies, and returns
- *  BFS shortest path from sender to receiver in form of node indicies,
- *  includes sender and reciever as first and last entry
+
+/* generate_channels_balances_map - reads from file and constructs adjacency list of graph topology (channels), and hash map
+ *      of directed edges to initial balances, modifies global maps in place
+ *      each line of file is of form
+ *      [node1] [node2] [1->2 delay] [2->1 delay] [balance at node1 end] [balance at node2 end]
  */
-vector<int> getRoute(int sender, int receiver){
-    vector<int> route = dijkstraInputGraph(sender, receiver, _channels);
-    updateMaxTravelTime(route);
-    return route;
-}
-
-
-
-template <class T,class S> struct pair_equal_to : binary_function <T,pair<T,S>,bool> {
-    bool operator() (const T& y, const pair<T,S>& x) const
+void generateChannelsBalancesMap(string topologyFile) {
+    string line;
+    ifstream myfile (topologyFile);
+    int lineNum = 0;
+    int numEdges = 0;
+    double sumDelays = 0.0;
+    if (myfile.is_open())
     {
-        return x.first==y;
-    }
-};
+        while ( getline (myfile,line) )
+        {
+            lineNum++;
+            vector<string> data = split(line, ' ');
+            // parse all the landmarks from the first line
+            if (lineNum == 1) {
+                for (auto node : data) {
+                    char nodeType = node.back();
+                    int nodeNum = stoi((node).substr(0,node.size()-1)); 
+                    if (nodeType == 'r') {
+                        nodeNum = nodeNum + _numHostNodes;
+                    }
+                    _landmarks.push_back(nodeNum);
+                    _landmarksWithConnectivityList.push_back(make_tuple(_channels[nodeNum].size(), nodeNum));
+                }
+                // don't do anything else
+                continue;
+            }
+            //generate _channels - adjacency map
+            char node1type = data[0].back();
+            char node2type = data[1].back();
 
-/* removeRoute - function used to remove paths found to get k shortest disjoint paths
- */
-map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> channels, vector<int> route){
-    int start, end;
-    for (int i=0; i< (route.size() -1); i++){
-        start = route[i];
-        end = route[i+1];
-        //only erase if edge is between two router nodes
-        if (start >= _numHostNodes && end >= _numHostNodes) {
-            vector< pair <int, int> >::iterator it = find_if(channels[start].begin(),channels[start].end(),bind1st(pair_equal_to<int,int>(),end));
-            channels[start].erase(it);
+            if (_loggingEnabled) {
+                cout <<"node2type: " << node2type << endl;
+                cout <<"node1type: " << node1type << endl;
+                cout << "data size" << data.size() << endl;
+            }
+
+            int node1 = stoi((data[0]).substr(0,data[0].size()-1)); //
+            if (node1type == 'r')
+                node1 = node1 + _numHostNodes;
+
+            int node2 = stoi(data[1].substr(0,data[1].size()-1)); //
+            if (node2type == 'r')
+                node2 = node2 + _numHostNodes;
+
+            int delay1to2 = stoi(data[2]);
+            int delay2to1 = stoi(data[3]);
+            if (_channels.count(node1)==0){ //node 1 is not in map
+                vector<pair<int,int>> tempVector = {};
+                tempVector.push_back(make_pair(node2,delay1to2));
+                _channels[node1] = tempVector;
+            }
+            else //(node1 is in map)
+                _channels[node1].push_back(make_pair(node2,delay1to2));
+
+            if (_channels.count(node2)==0){ //node 1 is not in map
+                vector<pair<int,int>> tempVector = {make_pair(node1,delay2to1)};
+                _channels[node2] = tempVector;
+            }
+            else //(node2 is in map)
+                _channels[node2].push_back(make_pair(node1, delay2to1));
+
+            sumDelays += delay1to2 + delay2to1;
+            numEdges += 2;
+            //generate _balances map
+            double balance1 = stod( data[4]);
+            double balance2 = stod( data[5]);
+            _balances[make_tuple(node1,node2)] = balance1;
+            _balances[make_tuple(node2,node1)] = balance2;
+            data = split(line, ' ');
         }
+
+        myfile.close();
+        _avgDelay = sumDelays/numEdges;
     }
-    return channels;
+    else 
+        cout << "Unable to open file " << topologyFile << endl;
+
+    cout << "finished generateChannelsBalancesMap" << endl;
+    return;
 }
+
+
+/* set_num_nodes -
+ */
+void setNumNodes(string topologyFile){
+    int maxHostNode = -1;
+    int maxRouterNode = -1;
+    string line;
+    int lineNum = 0;
+    ifstream myfile (topologyFile);
+    if (myfile.is_open())
+    {
+        while ( getline (myfile,line) )
+        {
+            lineNum++;
+            // skip landmark line
+            if (lineNum == 1) {
+                continue;
+            }
+            vector<string> data = split(line, ' ');
+            //generate channels - adjacency map
+            char node1type = data[0].back();
+            //  cout <<"node1type: " << node1type << endl;
+            char node2type = data[1].back();
+            //   cout <<"node2type: " << node2type << endl;
+
+            int node1 = stoi((data[0]).substr(0,data[0].size()-1)); //
+            if (node1type == 'r' && node1 > maxRouterNode){
+                maxRouterNode = node1;
+                //node1 = node1+ _numHostNodes;
+            }
+            else if (node1type == 'e' && node1 > maxHostNode){
+                maxHostNode = node1;
+            }
+
+            int node2 = stoi(data[1].substr(0,data[1].size()-1)); //
+            if (node2type == 'r' && node2 > maxRouterNode){
+                maxRouterNode = node2;
+                //node2 = node2 + _numHostNodes;
+            }
+            else if (node2type == 'e' && node2 > maxHostNode){
+                maxHostNode = node2;
+            }
+        }
+        myfile.close();
+    }
+    else 
+        cout << "Unable to open file" << topologyFile << endl;
+    _numHostNodes = maxHostNode + 1;
+    _numRouterNodes = maxRouterNode + 1;
+    _numNodes = _numHostNodes + _numRouterNodes;
+    return;
+}
+
+/*
+ *  generate_trans_unit_list - reads from file and generates global transaction unit job list.
+ *      each line of file is of form:
+ *      [amount] [timeSent] [sender] [receiver] [priorityClass]
+ */
+//Radhika: do we need to pass global variables as arguments?
+void generateTransUnitList(string workloadFile){
+    string line;
+    ifstream myfile (workloadFile);
+    if (myfile.is_open())
+    {
+        while ( getline (myfile,line) )
+        {
+            vector<string> data = split(line, ' ');
+
+            //data[0] = amount, data[1] = timeSent, data[2] = sender, data[3] = receiver, data[4] = priority class; (data[5] = time out)
+            double amount = stod(data[0]);
+            double timeSent = stod(data[1]);
+            int sender = stoi(data[2]);
+            int receiver = stoi(data[3]);
+            int priorityClass = stoi(data[4]);
+            double timeOut=-1;
+            double hasTimeOut = _timeoutEnabled;
+            if (data.size()>5 && _timeoutEnabled){
+                timeOut = stoi(data[5]);
+                //cout << "timeOut: " << timeOut << endl;
+            }
+            else if (_timeoutEnabled) {
+                timeOut = 5.0;
+            }
+
+            // instantiate all the transUnits that need to be sent
+            TransUnit tempTU = TransUnit(amount, timeSent, sender, receiver, priorityClass, hasTimeOut, timeOut);
+
+            // push the transUnit into a priority queue indexed by the sender, 
+            _transUnitList[sender].push(tempTU);
+
+        }
+        //cout << "finished generateTransUnitList" << endl;
+        myfile.close();
+    }
+    else 
+        cout << "Unable to open file" << workloadFile << endl;
+    return;
+}
+
 
 /* updateMaxTravelTime - calculate max travel time, called on each new route, and updates _maxTravelTime value
  */
@@ -99,47 +231,17 @@ void updateMaxTravelTime(vector<int> route){
     return;
 }
 
-int minInt(int x, int y){
-    if (x< y) return x;
-    return y;
+
+/*get_route- take in sender and receiver graph indicies, and returns
+ *  BFS shortest path from sender to receiver in form of node indicies,
+ *  includes sender and reciever as first and last entry
+ */
+vector<int> getRoute(int sender, int receiver){
+    vector<int> route = dijkstraInputGraph(sender, receiver, _channels);
+    updateMaxTravelTime(route);
+    return route;
 }
 
-vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, int k){
-    int landmark;
-    vector<int> pathSenderToLandmark;
-    vector<int> pathLandmarkToReceiver;
-    vector<vector<int>> kRoutes = {};
-    int numPaths = minInt(_landmarksWithConnectivityList.size(), k);
-    for (int i=0; i< numPaths; i++){
-        landmark = get<1>(_landmarksWithConnectivityList[i]);
-        pathSenderToLandmark = breadthFirstSearch(sender, landmark); //use breadth first search
-        pathLandmarkToReceiver = breadthFirstSearch(landmark, receiver); //use breadth first search
-
-        //if we couldn't find a path to the n (< k) -th most connected landmark, can skip and look at m (> k) -th most connected 
-        if ((pathSenderToLandmark.size()<2 || pathLandmarkToReceiver.size()<2) && numPaths < _landmarksWithConnectivityList.size())
-        {
-            numPaths++;
-            continue;
-        }
-        else{
-            pathSenderToLandmark.insert(pathSenderToLandmark.end(), pathLandmarkToReceiver.begin() + 1, pathLandmarkToReceiver.end() );
-            kRoutes.push_back(pathSenderToLandmark);
-        }
-    }
-    return kRoutes;
-}
-
-void printChannels(){
-    printf("print of channels\n" );
-    for (auto i : _channels){
-        printf("key: %d [",i.first);
-        for (auto k: i.second){
-            printf("(%d, %d) ",get<0>(k), get<1>(k));
-        }
-        printf("] \n");
-    }
-    cout<<endl;
-}
 
 vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
     //do searching without regard for channel capacities, DFS right now
@@ -171,6 +273,135 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
     return shortestRoutes;
 }
 
+
+vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, int k){
+    int landmark;
+    vector<int> pathSenderToLandmark;
+    vector<int> pathLandmarkToReceiver;
+    vector<vector<int>> kRoutes = {};
+    int numPaths = minInt(_landmarksWithConnectivityList.size(), k);
+    for (int i=0; i< numPaths; i++){
+        landmark = get<1>(_landmarksWithConnectivityList[i]);
+        pathSenderToLandmark = breadthFirstSearch(sender, landmark); //use breadth first search
+        pathLandmarkToReceiver = breadthFirstSearch(landmark, receiver); //use breadth first search
+
+        //if we couldn't find a path to the n (< k) -th most connected landmark, can skip and look at m (> k) -th most connected 
+        if ((pathSenderToLandmark.size()<2 || pathLandmarkToReceiver.size()<2) && numPaths < _landmarksWithConnectivityList.size())
+        {
+            numPaths++;
+            continue;
+        }
+        else{
+            pathSenderToLandmark.insert(pathSenderToLandmark.end(), pathLandmarkToReceiver.begin() + 1, pathLandmarkToReceiver.end() );
+            kRoutes.push_back(pathSenderToLandmark);
+        }
+    }
+    return kRoutes;
+}
+
+
+
+vector<int> breadthFirstSearchByGraph(int sender, int receiver, map<int, vector<int>> graph){
+    // print graph
+    for (auto node: graph){
+        cout << node.first << ": ";
+        printVector(node.second);
+        cout <<endl;
+
+    }
+
+
+    //TODO: fix, and add to header
+    deque<vector<int>> nodesToVisit = {};
+    bool visitedNodes[_numNodes];
+    for (int i=0; i<_numNodes; i++){
+        visitedNodes[i] =false;
+    }
+    visitedNodes[sender] = true;
+
+    vector<int> temp;
+    temp.push_back(sender);
+    nodesToVisit.push_back(temp);
+
+    while ((int)nodesToVisit.size()>0){
+        vector<int> current = nodesToVisit[0];
+        nodesToVisit.pop_front();
+        int lastNode = current.back();
+        for (int i=0; i<(int)graph[lastNode].size();i++){
+            if (!visitedNodes[graph[lastNode][i]]){
+                temp = current; // assignment copies in case of vector
+                temp.push_back(graph[lastNode][i]);
+                nodesToVisit.push_back(temp);
+                visitedNodes[graph[lastNode][i]] = true;
+                if (graph[lastNode][i]==receiver)
+                    return temp;
+            } //end if (!visitedNodes[graph[lastNode][i]])
+        }//end for (i)
+    }//end while
+    vector<int> empty = {};
+    return empty;
+}
+
+
+vector<int> breadthFirstSearch(int sender, int receiver){
+    deque<vector<int>> nodesToVisit;
+    bool visitedNodes[_numNodes];
+    for (int i=0; i<_numNodes; i++){
+        visitedNodes[i] =false;
+    }
+    visitedNodes[sender] = true;
+
+    vector<int> temp;
+    temp.push_back(sender);
+    nodesToVisit.push_back(temp);
+
+    while ((int)nodesToVisit.size()>0){
+        vector<int> current = nodesToVisit[0];
+        nodesToVisit.pop_front();
+        int lastNode = current.back();
+        for (int i=0; i<(int)_channels[lastNode].size();i++){
+            if (!visitedNodes[_channels[lastNode][i].first]){
+                temp = current; // assignment copies in case of vector
+                temp.push_back(_channels[lastNode][i].first);
+                nodesToVisit.push_back(temp);
+                visitedNodes[_channels[lastNode][i].first] = true;
+                if (_channels[lastNode][i].first==receiver)
+                    return temp;
+            } //end if (!visitedNodes[_channels[lastNode][i]])
+        }//end for (i)
+    }//end while
+    vector<int> empty = {};
+    return empty;
+}
+
+
+
+template <class T,class S> struct pair_equal_to : binary_function <T,pair<T,S>,bool> {
+    bool operator() (const T& y, const pair<T,S>& x) const
+    {
+        return x.first==y;
+    }
+};
+
+/* removeRoute - function used to remove paths found to get k shortest disjoint paths
+ */
+map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> channels, vector<int> route){
+    int start, end;
+    for (int i=0; i< (route.size() -1); i++){
+        start = route[i];
+        end = route[i+1];
+        //only erase if edge is between two router nodes
+        if (start >= _numHostNodes && end >= _numHostNodes) {
+            vector< pair <int, int> >::iterator it = find_if(channels[start].begin(),channels[start].end(),bind1st(pair_equal_to<int,int>(),end));
+            channels[start].erase(it);
+        }
+    }
+    return channels;
+}
+int minInt(int x, int y){
+    if (x< y) return x;
+    return y;
+}
 /* split - same as split function in python, convert string into vector of strings using delimiter
  */
 vector<string> split(string str, char delimiter){
@@ -386,16 +617,6 @@ void dijkstraInputGraphTemp(int src,  int dest, map<int, vector<pair<int,int>>> 
         printf("[%i]: %i,  ", ka, parent[ka] );
     return;// getPath(parent, dest);
 }
-
-void printChannels(map<int, vector<int>> channels){
-    for (auto a: channels){
-        cout << a.first << ": ";
-        printVector(a.second);
-        cout << endl;
-    }
-
-}
-
 // Function that implements Dijkstra's  single source shortest path algorithm for a graph represented
 // using adjacency matrix representation
 vector<int> dijkstra(int src,  int dest)
@@ -454,133 +675,6 @@ vector<int> dijkstra(int src,  int dest)
     return getPath(parent, dest);
 }
 
-
-
-vector<int> breadthFirstSearchByGraph(int sender, int receiver, map<int, vector<int>> graph){
-    // print graph
-    for (auto node: graph){
-        cout << node.first << ": ";
-        printVector(node.second);
-        cout <<endl;
-
-    }
-
-
-    //TODO: fix, and add to header
-    deque<vector<int>> nodesToVisit = {};
-    bool visitedNodes[_numNodes];
-    for (int i=0; i<_numNodes; i++){
-        visitedNodes[i] =false;
-    }
-    visitedNodes[sender] = true;
-
-    vector<int> temp;
-    temp.push_back(sender);
-    nodesToVisit.push_back(temp);
-
-    while ((int)nodesToVisit.size()>0){
-        vector<int> current = nodesToVisit[0];
-        nodesToVisit.pop_front();
-        int lastNode = current.back();
-        for (int i=0; i<(int)graph[lastNode].size();i++){
-            if (!visitedNodes[graph[lastNode][i]]){
-                temp = current; // assignment copies in case of vector
-                temp.push_back(graph[lastNode][i]);
-                nodesToVisit.push_back(temp);
-                visitedNodes[graph[lastNode][i]] = true;
-                if (graph[lastNode][i]==receiver)
-                    return temp;
-            } //end if (!visitedNodes[graph[lastNode][i]])
-        }//end for (i)
-    }//end while
-    vector<int> empty = {};
-    return empty;
-}
-
-
-vector<int> breadthFirstSearch(int sender, int receiver){
-    deque<vector<int>> nodesToVisit;
-    bool visitedNodes[_numNodes];
-    for (int i=0; i<_numNodes; i++){
-        visitedNodes[i] =false;
-    }
-    visitedNodes[sender] = true;
-
-    vector<int> temp;
-    temp.push_back(sender);
-    nodesToVisit.push_back(temp);
-
-    while ((int)nodesToVisit.size()>0){
-        vector<int> current = nodesToVisit[0];
-        nodesToVisit.pop_front();
-        int lastNode = current.back();
-        for (int i=0; i<(int)_channels[lastNode].size();i++){
-            if (!visitedNodes[_channels[lastNode][i].first]){
-                temp = current; // assignment copies in case of vector
-                temp.push_back(_channels[lastNode][i].first);
-                nodesToVisit.push_back(temp);
-                visitedNodes[_channels[lastNode][i].first] = true;
-                if (_channels[lastNode][i].first==receiver)
-                    return temp;
-            } //end if (!visitedNodes[_channels[lastNode][i]])
-        }//end for (i)
-    }//end while
-    vector<int> empty = {};
-    return empty;
-}
-
-/* set_num_nodes -
- */
-void setNumNodes(string topologyFile){
-    int maxHostNode = -1;
-    int maxRouterNode = -1;
-    string line;
-    int lineNum = 0;
-    ifstream myfile (topologyFile);
-    if (myfile.is_open())
-    {
-        while ( getline (myfile,line) )
-        {
-            lineNum++;
-            // skip landmark line
-            if (lineNum == 1) {
-                continue;
-            }
-            vector<string> data = split(line, ' ');
-            //generate channels - adjacency map
-            char node1type = data[0].back();
-            //  cout <<"node1type: " << node1type << endl;
-            char node2type = data[1].back();
-            //   cout <<"node2type: " << node2type << endl;
-
-            int node1 = stoi((data[0]).substr(0,data[0].size()-1)); //
-            if (node1type == 'r' && node1 > maxRouterNode){
-                maxRouterNode = node1;
-                //node1 = node1+ _numHostNodes;
-            }
-            else if (node1type == 'e' && node1 > maxHostNode){
-                maxHostNode = node1;
-            }
-
-            int node2 = stoi(data[1].substr(0,data[1].size()-1)); //
-            if (node2type == 'r' && node2 > maxRouterNode){
-                maxRouterNode = node2;
-                //node2 = node2 + _numHostNodes;
-            }
-            else if (node2type == 'e' && node2 > maxHostNode){
-                maxHostNode = node2;
-            }
-        }
-        myfile.close();
-    }
-    else 
-        cout << "Unable to open file" << topologyFile << endl;
-    _numHostNodes = maxHostNode + 1;
-    _numRouterNodes = maxRouterNode + 1;
-    _numNodes = _numHostNodes + _numRouterNodes;
-    return;
-}
-
 bool sortHighToLowConnectivity(tuple<int,int> x, tuple<int,int> y){
     if (get<0>(x) > get<0>(y)) 
         return true;
@@ -588,139 +682,6 @@ bool sortHighToLowConnectivity(tuple<int,int> x, tuple<int,int> y){
         return false;
     else
         return get<1>(x) < get<1>(y);
-}
-
-
-/* generate_channels_balances_map - reads from file and constructs adjacency list of graph topology (channels), and hash map
- *      of directed edges to initial balances, modifies global maps in place
- *      each line of file is of form
- *      [node1] [node2] [1->2 delay] [2->1 delay] [balance at node1 end] [balance at node2 end]
- */
-void generateChannelsBalancesMap(string topologyFile) {
-    string line;
-    ifstream myfile (topologyFile);
-    int lineNum = 0;
-    int numEdges = 0;
-    double sumDelays = 0.0;
-    if (myfile.is_open())
-    {
-        while ( getline (myfile,line) )
-        {
-            lineNum++;
-            vector<string> data = split(line, ' ');
-            // parse all the landmarks from the first line
-            if (lineNum == 1) {
-                for (auto node : data) {
-                    char nodeType = node.back();
-                    int nodeNum = stoi((node).substr(0,node.size()-1)); 
-                    if (nodeType == 'r') {
-                        nodeNum = nodeNum + _numHostNodes;
-                    }
-                    _landmarks.push_back(nodeNum);
-                    _landmarksWithConnectivityList.push_back(make_tuple(_channels[nodeNum].size(), nodeNum));
-                }
-                // don't do anything else
-                continue;
-            }
-            //generate _channels - adjacency map
-            char node1type = data[0].back();
-            char node2type = data[1].back();
-
-            if (_loggingEnabled) {
-                cout <<"node2type: " << node2type << endl;
-                cout <<"node1type: " << node1type << endl;
-                cout << "data size" << data.size() << endl;
-            }
-
-            int node1 = stoi((data[0]).substr(0,data[0].size()-1)); //
-            if (node1type == 'r')
-                node1 = node1 + _numHostNodes;
-
-            int node2 = stoi(data[1].substr(0,data[1].size()-1)); //
-            if (node2type == 'r')
-                node2 = node2 + _numHostNodes;
-
-            int delay1to2 = stoi(data[2]);
-            int delay2to1 = stoi(data[3]);
-            if (_channels.count(node1)==0){ //node 1 is not in map
-                vector<pair<int,int>> tempVector = {};
-                tempVector.push_back(make_pair(node2,delay1to2));
-                _channels[node1] = tempVector;
-            }
-            else //(node1 is in map)
-                _channels[node1].push_back(make_pair(node2,delay1to2));
-
-            if (_channels.count(node2)==0){ //node 1 is not in map
-                vector<pair<int,int>> tempVector = {make_pair(node1,delay2to1)};
-                _channels[node2] = tempVector;
-            }
-            else //(node2 is in map)
-                _channels[node2].push_back(make_pair(node1, delay2to1));
-
-            sumDelays += delay1to2 + delay2to1;
-            numEdges += 2;
-            //generate _balances map
-            double balance1 = stod( data[4]);
-            double balance2 = stod( data[5]);
-            _balances[make_tuple(node1,node2)] = balance1;
-            _balances[make_tuple(node2,node1)] = balance2;
-            data = split(line, ' ');
-        }
-
-        myfile.close();
-        _avgDelay = sumDelays/numEdges;
-    }
-    else 
-        cout << "Unable to open file " << topologyFile << endl;
-
-    cout << "finished generateChannelsBalancesMap" << endl;
-    return;
-}
-
-/*
- *  generate_trans_unit_list - reads from file and generates global transaction unit job list.
- *      each line of file is of form:
- *      [amount] [timeSent] [sender] [receiver] [priorityClass]
- */
-//Radhika: do we need to pass global variables as arguments?
-void generateTransUnitList(string workloadFile){
-    string line;
-    ifstream myfile (workloadFile);
-    if (myfile.is_open())
-    {
-        while ( getline (myfile,line) )
-        {
-            vector<string> data = split(line, ' ');
-
-            //data[0] = amount, data[1] = timeSent, data[2] = sender, data[3] = receiver, data[4] = priority class; (data[5] = time out)
-            double amount = stod(data[0]);
-            double timeSent = stod(data[1]);
-            int sender = stoi(data[2]);
-            int receiver = stoi(data[3]);
-            int priorityClass = stoi(data[4]);
-            double timeOut=-1;
-            double hasTimeOut = _timeoutEnabled;
-            if (data.size()>5 && _timeoutEnabled){
-                timeOut = stoi(data[5]);
-                //cout << "timeOut: " << timeOut << endl;
-            }
-            else if (_timeoutEnabled) {
-                timeOut = 5.0;
-            }
-
-            // instantiate all the transUnits that need to be sent
-            TransUnit tempTU = TransUnit(amount, timeSent, sender, receiver, priorityClass, hasTimeOut, timeOut);
-
-            // push the transUnit into a priority queue indexed by the sender, 
-            _transUnitList[sender].push(tempTU);
-
-        }
-        //cout << "finished generateTransUnitList" << endl;
-        myfile.close();
-    }
-    else 
-        cout << "Unable to open file" << workloadFile << endl;
-    return;
 }
 
 /*
@@ -739,5 +700,55 @@ bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, Id> &a,
     }
     return true;
 }
+
+
+double minVectorElemDouble(vector<double> v){
+    double min = v[0];
+    for (double d: v){
+        if (d < min)
+            min=d;
+    }
+    return min;
+}
+
+
+
+double maxDouble(double x, double y){
+    if (x>y) return x;
+    return y;
+}
+
+
+void printChannels(){
+    printf("print of channels\n" );
+    for (auto i : _channels){
+        printf("key: %d [",i.first);
+        for (auto k: i.second){
+            printf("(%d, %d) ",get<0>(k), get<1>(k));
+        }
+        printf("] \n");
+    }
+    cout<<endl;
+}
+
+
+void printVector(vector<int> v){
+    for (auto temp : v) {
+        cout << temp << ", ";
+    }
+    cout << endl;
+}
+
+
+void printChannels(map<int, vector<int>> channels){
+    for (auto a: channels){
+        cout << a.first << ": ";
+        printVector(a.second);
+        cout << endl;
+    }
+
+}
+
+
 
 #endif

@@ -12,7 +12,6 @@ void updateMaxTravelTime(vector<int> route);
 vector<int> getRoute(int sender, int receiver);
 vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k);
 vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, int k);
-vector<vector<int>> getKShortestRoutesLNDBaseline(int sender, int receiver, int k);
 
 //search functions
 vector<int> breadthFirstSearch(int sender, int receiver);
@@ -33,3 +32,4 @@ double maxDouble(double x, double y);
 void printChannels();
 void printVector(vector<int> v);
 void printChannels(map<int, vector<int>> channels);
+int minInt(int x, int y);
