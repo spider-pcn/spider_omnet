@@ -95,10 +95,13 @@ void hostNodeLandmarkRouting::handleTransactionMessageSpecialized(routerMsg* ttm
 
     // if its at the sender, initiate probes, when they come back,
     // call normal handleTransactionMessage
-    if (ttmsg->isSelfMessage()) { 
-        statNumArrived[destination] += 1; 
-        statRateArrived[destination] += 1; 
-        statRateAttempted[destination] += 1; 
+    if (ttmsg->isSelfMessage()) {
+        if (transMsg->getTimeSent() >= _transStatStart && 
+            transMsg->getTimeSent() <= _transStatEnd) {
+            statNumArrived[destination] += 1; 
+            statRateArrived[destination] += 1; 
+            statRateAttempted[destination] += 1; 
+        }
 
         // if destination hasn't been encountered, find paths
         if (nodeToShortestPathsMap.count(destNode) == 0 ){

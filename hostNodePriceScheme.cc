@@ -293,8 +293,12 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     if (simTime() == transMsg->getTimeSent()) {
         destNodeToNumTransPending[destNode]  += 1;
         nodeToDestInfo[destNode].transSinceLastInterval += 1;
-        statNumArrived[destNode] += 1; 
-        statRateArrived[destNode] += 1; 
+
+        if (transMsg->getTimeSent() >= _transStatStart && 
+            transMsg->getTimeSent() <= _transStatEnd) {
+            statNumArrived[destNode] += 1; 
+            statRateArrived[destNode] += 1; 
+        }
     }
 
     // initiate price probes if it is a new destination
@@ -351,7 +355,11 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                     // record stats on sent units for payment channel, destination and path
                     int nextNode = pathInfo->path[1];
                     nodeToPaymentChannel[nextNode].nValue += 1;
-                    statRateAttempted[destNode] += 1;
+                    
+                    if (transMsg->getTimeSent() >= _transStatStart && 
+                            transMsg->getTimeSent() <= _transStatEnd)
+                        statRateAttempted[destNode] += 1;
+                    
                     pathInfo->nValue += 1;
                     pathInfo->statRateAttempted += 1;
                     pathInfo->sumOfTransUnitsInFlight += transMsg->getAmount();
@@ -461,13 +469,17 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
     int destNode = ttmsg->getRoute()[0];
     int transactionId = aMsg->getTransactionId();
     
-    if (aMsg->getIsSuccess()==false){
+    if (aMsg->getIsSuccess()==false && aMsg->getTimeSent() >= _transStatStart && 
+            aMsg->getTimeSent() <= _transStatEnd){
         statNumFailed[destNode] += 1;
         statRateFailed[destNode] += 1;
     }
     else {
-        statNumCompleted[destNode] += 1;
-        statRateCompleted[destNode] += 1;
+        if (aMsg->getTimeSent() >= _transStatStart && 
+            aMsg->getTimeSent() <= _transStatEnd){
+            statNumCompleted[destNode] += 1;
+            statRateCompleted[destNode] += 1;
+        }
         nodeToShortestPathsMap[destNode][pathIndex].statRateCompleted += 1;
     }
 
@@ -885,7 +897,11 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
 
         // update the number attempted to this destination and on this path
         p->statRateAttempted = p->statRateAttempted + 1;
-        statRateAttempted[destNode] += 1;
+
+        if (transMsg->getTimeSent() >= _transStatStart && 
+            transMsg->getTimeSent() <= _transStatEnd){
+            statRateAttempted[destNode] += 1;
+        }
 
         //Update the  “time when next transaction can be sent” 
         double bound = _reschedulingEnabled ? _epsilon : 1.0;

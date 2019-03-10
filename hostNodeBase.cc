@@ -14,6 +14,8 @@ double _statRate;
 double _clearRate;
 int _kValue;
 double _simulationLength;
+double _transStatStart;
+double  _transStatEnd;
 
 
  //adjacency list format of graph edges of network
@@ -459,7 +461,8 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
     int destination = transMsg->getReceiver();
     int transactionId = transMsg->getTransactionId();
     
-    if (!revisit) {
+    if (!revisit && transMsg->getTimeSent() >= _transStatStart && 
+            transMsg->getTimeSent() <= _transStatEnd) {
         statRateArrived[destination] += 1;
         statRateAttempted[destination] += 1;
     }
@@ -591,10 +594,12 @@ void hostNodeBase::handleAckMessageSpecialized(routerMsg* ttmsg) {
     int destNode = ttmsg->getRoute()[0];
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
 
-    if (aMsg->getIsSuccess()==false) {
+    if (aMsg->getIsSuccess()==false && aMsg->getTimeSent() >= _transStatStart && 
+            aMsg->getTimeSent() <= _transStatEnd) {
         statRateFailed[destNode] = statRateFailed[destNode] + 1;
     }
-    else {
+    else if (aMsg->getTimeSent() >= _transStatStart && 
+            aMsg->getTimeSent() <= _transStatEnd) {
         statRateCompleted[destNode] = statRateCompleted[destNode] + 1;
     }
     hostNodeBase::handleAckMessage(ttmsg);
@@ -735,30 +740,27 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
                    PathInfo *pathInfo = &(nodeToShortestPathsMap[it][p.first]);
                    
                    //emit rateCompleted per path
-                   emit(pathInfo->rateCompletedPerDestPerPathSignal, 
-                           pathInfo->statRateCompleted);
+                   pathInfo->statRateAttempted = 0;
                    pathInfo->statRateCompleted = 0;
                    
                    //emit rateAttempted per path
-                   emit(pathInfo->rateAttemptedPerDestPerPathSignal, 
+                   if (_signalsEnabled) {
+                       emit(pathInfo->rateAttemptedPerDestPerPathSignal, 
                            pathInfo->statRateAttempted);
-                   pathInfo->statRateAttempted = 0;
+                       emit(pathInfo->rateCompletedPerDestPerPathSignal, 
+                           pathInfo->statRateCompleted);
+                   }
                }
            }
-           emit(rateAttemptedPerDestSignals[it], statRateAttempted[it]);
-           statRateAttempted[it] = 0;
-           
-           emit(rateArrivedPerDestSignals[it], statRateArrived[it]);
-           statRateArrived[it] = 0;
-           
-           emit(rateCompletedPerDestSignals[it], statRateCompleted[it]);
-           statRateCompleted[it] = 0;
 
            if (_signalsEnabled) {
                if (_hasQueueCapacity){
                    emit(rateFailedPerDestSignals[it], statRateFailed[it]);
                }
-
+               emit(rateCompletedPerDestSignals[it], statRateCompleted[it]);
+               emit(rateAttemptedPerDestSignals[it], statRateAttempted[it]);
+               emit(rateArrivedPerDestSignals[it], statRateArrived[it]);
+               
                emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
                emit(numPendingPerDestSignals[it], destNodeToNumTransPending[it]);
                double frac = ((100*statNumCompleted[it])/(max(statNumArrived[it],1)));
@@ -979,6 +981,8 @@ void hostNodeBase::initialize() {
         _hasQueueCapacity = false;
         _queueCapacity = 0;
 
+        _transStatStart = 5000;
+        _transStatEnd = 7000;
 
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");
         if (_landmarkRoutingEnabled){
