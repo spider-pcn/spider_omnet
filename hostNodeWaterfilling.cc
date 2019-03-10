@@ -436,6 +436,9 @@ void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
             aMsg->getTimeSent() <= _transStatEnd) {
                 statNumCompleted[receiver] += 1; 
                 statRateCompleted[receiver] += 1;
+
+                double timeTaken = simTime().dbl() - aMsg->getTimeSent();
+                statCompletionTimes[receiver] += timeTaken * 1000;
             }
             
             // erase transaction from map 

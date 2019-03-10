@@ -479,6 +479,10 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
             aMsg->getTimeSent() <= _transStatEnd){
             statNumCompleted[destNode] += 1;
             statRateCompleted[destNode] += 1;
+
+            // stats
+            double timeTaken = simTime().dbl() - aMsg->getTimeSent();
+            statCompletionTimes[destNode] += timeTaken * 1000;
         }
         nodeToShortestPathsMap[destNode][pathIndex].statRateCompleted += 1;
     }

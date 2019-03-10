@@ -601,6 +601,10 @@ void hostNodeBase::handleAckMessageSpecialized(routerMsg* ttmsg) {
     else if (aMsg->getTimeSent() >= _transStatStart && 
             aMsg->getTimeSent() <= _transStatEnd) {
         statRateCompleted[destNode] = statRateCompleted[destNode] + 1;
+
+        // stats
+        double timeTaken = simTime().dbl() - aMsg->getTimeSent();
+        statCompletionTimes[destNode] += timeTaken * 1000;
     }
     hostNodeBase::handleAckMessage(ttmsg);
 }
@@ -642,9 +646,7 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
         forwardMessage(uMsg);
     }
     
-    // stats
-    simtime_t timeTakenInMilli = 1000*(simTime() - aMsg->getTimeSent());
-    // if (_signalsEnabled) emit(completionTimeSignal, timeTakenInMilli);
+
     
     //delete ack message
     ttmsg->decapsulate();
@@ -1093,6 +1095,8 @@ void hostNodeBase::initialize() {
             signal = registerSignalPerDest("rateFailed", i, "");
             rateFailedPerDestSignals[i] = signal;
             statRateFailed[i] = 0;
+
+            statCompletionTimes[i] = 0;
         }
     }
     
