@@ -11,7 +11,7 @@ simple hostNodeLNDBaseline
 		bool signalsEnabled = default(false);
 		bool loggingEnabled = default(false);
 
-		bool timeoutEnabled = default(true);
+		bool timeoutEnabled = default(false);
 		double timeoutClearRate = default(0.5);
 
 		bool waterfillingEnabled = default(false);
@@ -141,10 +141,10 @@ simple hostNodeLNDBaseline
 		@signal[isSendTimerSetPerDestPerPath*](type="long"); 
 		@statisticTemplate[isSendTimerSetPerDestPerPathTemplate](record=vector, stats);
 		
-		
-		
-
-	gates:
+		@signal[numPathsPerTransPerDest*](type="long");  
+		@statisticTemplate[numPathsPerTransPerDestTemplate](record=vector, stats);   
+	
+        gates:
 		input in[];
 		output out[];
 }

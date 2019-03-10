@@ -668,7 +668,6 @@ void generateChannelsBalancesMap(string topologyFile) {
         }
 
         myfile.close();
-        sort ( _landmarksWithConnectivityList.begin(),  _landmarksWithConnectivityList.end(), sortHighToLowConnectivity);
         _avgDelay = sumDelays/numEdges;
     }
     else 

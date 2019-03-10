@@ -20,6 +20,7 @@
 #include <deque>
 #include <map>
 #include <fstream>
+#include <list>
 #include "structs/PaymentChannel.h"
 #include "structs/PathInfo.h"
 #include "structs/TransUnit.h"
