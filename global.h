@@ -95,3 +95,6 @@ extern double _epsilon;
 extern bool _nesterov;
 extern bool _secondOrderOptimization;
 
+extern double _transStatStart;
+extern double _transStatEnd;
+

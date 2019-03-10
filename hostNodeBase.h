@@ -42,6 +42,7 @@ class hostNodeBase : public cSimpleModule {
         map<int, int> statNumTimedOutAtSender = {};
         map<int, int> statRateArrived = {};
         map<int, double> statProbabilities = {};
+        map<int, double> statCompletionTimes = {};
         int numCleared = 0;
 
         //store shortest paths 

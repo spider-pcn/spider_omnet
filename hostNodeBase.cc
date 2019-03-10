@@ -1118,6 +1118,19 @@ void hostNodeBase::initialize() {
  */
 void hostNodeBase::finish() {
     deleteMessagesInQueues();
+
+    for (int it = 0; it < _numHostNodes; ++it) {
+        if (_destList[myIndex()].count(it) > 0) {
+            emit(rateCompletedPerDestSignals[it], statRateCompleted[it]);
+            emit(rateAttemptedPerDestSignals[it], statRateAttempted[it]);
+            emit(rateArrivedPerDestSignals[it], statRateArrived[it]);
+
+            char buffer[30];
+            sprintf(buffer, "completionTime %d -> %d ", myIndex(), it);
+            recordScalar(buffer, statCompletionTimes[it]/statRateCompleted[it]);
+        }
+    }
+
     if (myIndex() == 0) {
         // can be done on a per node basis also if need be
         // all in seconds
