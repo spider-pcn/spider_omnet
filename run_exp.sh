@@ -37,18 +37,18 @@ signalsEnabled=true
 loggingEnabled=false
 
 # scheme specific parameters
-eta=0.2
-alpha=0.4
-kappa=0.2
-updateQueryTime=1
+eta=0.05
+alpha=0.1
+kappa=0.05
+updateQueryTime=1.5
 minPriceRate=0.25
 zeta=0.01
 rho=0.04
 tau=10
 normalizer=100
 xi=1
-routerQueueDrainTime=1
-serviceArrivalWindow=100
+routerQueueDrainTime=5
+serviceArrivalWindow=300
 
 cp hostNodeBase.ned ${PATH_NAME}
 cp hostNodeWaterfilling.ned ${PATH_NAME}
@@ -273,8 +273,8 @@ do
                   --frac_completed_window \
                   --inflight --timeouts_sender \
                   --waiting --bottlenecks --probabilities \
-                  --mu_local --lambda --n_local --service_rate --inflight_outgoing \
-                  --rate_to_send --price --mu_remote --demand \
+                  --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
+                  --inflight_incoming --rate_to_send --price --mu_remote --demand \
                   --rate_sent --amt_inflight_per_path
               done
         done

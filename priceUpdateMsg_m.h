@@ -25,6 +25,7 @@
  * {
  *     double nLocal;
  *     double serviceRate;
+ *     double arrivalRate;
  *     int queueSize;
  * }
  * </pre>
@@ -34,6 +35,7 @@ class priceUpdateMsg : public ::omnetpp::cPacket
   protected:
     double nLocal;
     double serviceRate;
+    double arrivalRate;
     int queueSize;
 
   private:
@@ -57,6 +59,8 @@ class priceUpdateMsg : public ::omnetpp::cPacket
     virtual void setNLocal(double nLocal);
     virtual double getServiceRate() const;
     virtual void setServiceRate(double serviceRate);
+    virtual double getArrivalRate() const;
+    virtual void setArrivalRate(double arrivalRate);
     virtual int getQueueSize() const;
     virtual void setQueueSize(int queueSize);
 };

@@ -183,6 +183,7 @@ priceUpdateMsg::priceUpdateMsg(const char *name, short kind) : ::omnetpp::cPacke
 {
     this->nLocal = 0;
     this->serviceRate = 0;
+    this->arrivalRate = 0;
     this->queueSize = 0;
 }
 
@@ -207,6 +208,7 @@ void priceUpdateMsg::copy(const priceUpdateMsg& other)
 {
     this->nLocal = other.nLocal;
     this->serviceRate = other.serviceRate;
+    this->arrivalRate = other.arrivalRate;
     this->queueSize = other.queueSize;
 }
 
@@ -215,6 +217,7 @@ void priceUpdateMsg::parsimPack(omnetpp::cCommBuffer *b) const
     ::omnetpp::cPacket::parsimPack(b);
     doParsimPacking(b,this->nLocal);
     doParsimPacking(b,this->serviceRate);
+    doParsimPacking(b,this->arrivalRate);
     doParsimPacking(b,this->queueSize);
 }
 
@@ -223,6 +226,7 @@ void priceUpdateMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     ::omnetpp::cPacket::parsimUnpack(b);
     doParsimUnpacking(b,this->nLocal);
     doParsimUnpacking(b,this->serviceRate);
+    doParsimUnpacking(b,this->arrivalRate);
     doParsimUnpacking(b,this->queueSize);
 }
 
@@ -244,6 +248,16 @@ double priceUpdateMsg::getServiceRate() const
 void priceUpdateMsg::setServiceRate(double serviceRate)
 {
     this->serviceRate = serviceRate;
+}
+
+double priceUpdateMsg::getArrivalRate() const
+{
+    return this->arrivalRate;
+}
+
+void priceUpdateMsg::setArrivalRate(double arrivalRate)
+{
+    this->arrivalRate = arrivalRate;
 }
 
 int priceUpdateMsg::getQueueSize() const
@@ -321,7 +335,7 @@ const char *priceUpdateMsgDescriptor::getProperty(const char *propertyname) cons
 int priceUpdateMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 3+basedesc->getFieldCount() : 3;
+    return basedesc ? 4+basedesc->getFieldCount() : 4;
 }
 
 unsigned int priceUpdateMsgDescriptor::getFieldTypeFlags(int field) const
@@ -336,8 +350,9 @@ unsigned int priceUpdateMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<3) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<4) ? fieldTypeFlags[field] : 0;
 }
 
 const char *priceUpdateMsgDescriptor::getFieldName(int field) const
@@ -351,9 +366,10 @@ const char *priceUpdateMsgDescriptor::getFieldName(int field) const
     static const char *fieldNames[] = {
         "nLocal",
         "serviceRate",
+        "arrivalRate",
         "queueSize",
     };
-    return (field>=0 && field<3) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<4) ? fieldNames[field] : nullptr;
 }
 
 int priceUpdateMsgDescriptor::findField(const char *fieldName) const
@@ -362,7 +378,8 @@ int priceUpdateMsgDescriptor::findField(const char *fieldName) const
     int base = basedesc ? basedesc->getFieldCount() : 0;
     if (fieldName[0]=='n' && strcmp(fieldName, "nLocal")==0) return base+0;
     if (fieldName[0]=='s' && strcmp(fieldName, "serviceRate")==0) return base+1;
-    if (fieldName[0]=='q' && strcmp(fieldName, "queueSize")==0) return base+2;
+    if (fieldName[0]=='a' && strcmp(fieldName, "arrivalRate")==0) return base+2;
+    if (fieldName[0]=='q' && strcmp(fieldName, "queueSize")==0) return base+3;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -377,9 +394,10 @@ const char *priceUpdateMsgDescriptor::getFieldTypeString(int field) const
     static const char *fieldTypeStrings[] = {
         "double",
         "double",
+        "double",
         "int",
     };
-    return (field>=0 && field<3) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<4) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **priceUpdateMsgDescriptor::getFieldPropertyNames(int field) const
@@ -448,7 +466,8 @@ std::string priceUpdateMsgDescriptor::getFieldValueAsString(void *object, int fi
     switch (field) {
         case 0: return double2string(pp->getNLocal());
         case 1: return double2string(pp->getServiceRate());
-        case 2: return long2string(pp->getQueueSize());
+        case 2: return double2string(pp->getArrivalRate());
+        case 3: return long2string(pp->getQueueSize());
         default: return "";
     }
 }
@@ -465,7 +484,8 @@ bool priceUpdateMsgDescriptor::setFieldValueAsString(void *object, int field, in
     switch (field) {
         case 0: pp->setNLocal(string2double(value)); return true;
         case 1: pp->setServiceRate(string2double(value)); return true;
-        case 2: pp->setQueueSize(string2long(value)); return true;
+        case 2: pp->setArrivalRate(string2double(value)); return true;
+        case 3: pp->setQueueSize(string2long(value)); return true;
         default: return false;
     }
 }

@@ -17,6 +17,7 @@ packet priceUpdateMsg
 {
     double nLocal;
     double serviceRate;
+    double arrivalRate;
     int queueSize;
 }
 

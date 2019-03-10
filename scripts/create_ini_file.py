@@ -29,7 +29,8 @@ parser.add_argument('--update-query-time', type=float, help='time of update and 
         dest='updateQueryTime', default=0.8)
 parser.add_argument('--zeta', type=float, help='memory factor with demand estimation', dest='zeta', default=0.01)
 parser.add_argument('--xi', type=float, help='factor to weigh queue draining', dest='xi', default=1)
-parser.add_argument('--router-queue-drain-time', type=int, help='time to drain queue', dest='routerQueueDrainTime', default=1)
+parser.add_argument('--router-queue-drain-time', type=float, help='time to drain queue (seconds)', 
+        dest='routerQueueDrainTime', default=1)
 parser.add_argument('--service-arrival-window', type=int, help='number of packets to track arrival/service', 
         dest='serviceArrivalWindow', default=100)
 

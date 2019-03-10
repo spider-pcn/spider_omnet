@@ -834,10 +834,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                 
                 while (iterIncoming != (*incomingTransUnits).end()){
                     iterIncoming = (*incomingTransUnits).erase(iterIncoming);
-                    // TODO: remove?
-                    // tuple<int, int> tempId = make_tuple(transactionId, 
-                    // get<1>(iterIncoming->first));
-                    //
+
                     iterIncoming = find_if((*incomingTransUnits).begin(),
                          (*incomingTransUnits).end(),
                         [&transactionId](const pair<tuple<int, int >, double> & p)
@@ -1136,6 +1133,7 @@ void hostNodeBase::finish() {
 void hostNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
     bool successful = true;
     while((int)q.size() > 0 && successful) {
+        pop_heap(q.begin(), q.end(), sortFIFO);
         successful = forwardTransactionMessage(get<2>(q.back()), get<4>(q.back()));
         if (successful){
             q.pop_back();

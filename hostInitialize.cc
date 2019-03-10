@@ -882,7 +882,7 @@ bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, Id, simtime
 bool sortFIFO(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
       const tuple<int,double, routerMsg*, Id, simtime_t> &b)
 {
-    return (get<4>(a) > get<4>(b));
+    return (get<4>(a).dbl() > get<4>(b).dbl());
 }
 
 #endif

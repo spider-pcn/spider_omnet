@@ -30,9 +30,15 @@ simple routerNode
 		
                 @signal[serviceRatePerChannel*](type="double"); 
 		@statisticTemplate[serviceRatePerChannelTemplate](record=vector, stats);
-		
+				
+                @signal[arrivalRatePerChannel*](type="double"); 
+		@statisticTemplate[arrivalRatePerChannelTemplate](record=vector, stats);
+                
                 @signal[inflightOutgoingPerChannel*](type="long"); 
 		@statisticTemplate[inflightOutgoingPerChannelTemplate](record=vector, stats);
+
+                @signal[inflightIncomingPerChannel*](type="long"); 
+		@statisticTemplate[inflightIncomingPerChannelTemplate](record=vector, stats);
                 
                 @signal[xLocalPerChannel*](type="double"); 
 		@statisticTemplate[xLocalPerChannelTemplate](record=vector, stats);

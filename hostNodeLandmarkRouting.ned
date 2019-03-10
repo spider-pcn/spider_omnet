@@ -29,7 +29,7 @@ simple hostNodeLandmarkRouting
                 double updateQueryTime = default(0.8);
                 double xi = default(1);
                 int serviceArrivalWindow = default(100);
-                int routerQueueDrainTime = default(1);
+                double routerQueueDrainTime = default(1);
                 
                 double tau = default(10);
                 double normalizer = default(100);

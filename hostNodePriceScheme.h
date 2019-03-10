@@ -22,7 +22,8 @@ class hostNodePriceScheme : public hostNodeBase {
     protected:
         // message generators
         virtual routerMsg *generateTriggerPriceUpdateMessage();
-        virtual routerMsg *generatePriceUpdateMessage(double nLocal, double serviceRate, int queueSize, int reciever);
+        virtual routerMsg *generatePriceUpdateMessage(double nLocal, double serviceRate, double arrivalRate, 
+                int queueSize, int reciever);
         virtual routerMsg *generateTriggerPriceQueryMessage();
         virtual routerMsg *generatePriceQueryMessage(vector<int> route, int routeIndex);
         virtual routerMsg *generateTriggerTransactionSendMessage(vector<int> route, 
