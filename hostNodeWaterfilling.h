@@ -20,10 +20,6 @@ class hostNodeWaterfilling : public hostNodeBase {
     protected:
         virtual void initialize() override;
         // message generating functions
-        virtual routerMsg *generateWaterfillingTransactionMessage(double amt,
-                vector<int> path, int pathIndex, transactionMsg * transMsg);
-        virtual routerMsg *generateTimeOutMessage(vector<int> path, 
-                int transactionId, int receiver);
         virtual routerMsg *generateProbeMessage(int destNode, int pathIdx, vector<int> path);
 
         // message handlers
@@ -49,7 +45,7 @@ class hostNodeWaterfilling : public hostNodeBase {
         virtual void forwardProbeMessage(routerMsg *msg);
 
         // splits transactions and decides which paths they should use
-        virtual void splitTransactionForWaterfilling(routerMsg * ttMsg);
+        virtual void splitTransactionForWaterfilling(routerMsg * ttMsg, bool firstAttempt);
 
         // helper functions
         virtual int updatePathProbabilities(vector<double> bottleneckBalances, int destNode);

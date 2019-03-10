@@ -22,3 +22,6 @@ double maxDouble(double x, double y);
 void updateMaxTravelTime(vector<int> route);
 void printChannels();
 void printVector(vector<int> v);
+
+double getTotalAmount(map<Id, double> v);
+double getTotalAmount(vector<tuple<int, double, routerMsg*, Id >> queue);

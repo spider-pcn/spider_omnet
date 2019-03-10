@@ -33,10 +33,14 @@ class hostNodeBase : public cSimpleModule {
         //TODO: incorporate the signals into nodeToDestInfo
         // statistic collection related variables
         map<int, int> statNumFailed = {};
+        map<int, int> statAmtFailed = {};
         map<int, int> statRateFailed = {};
         map<int, int> statNumCompleted = {};
+        map<int, int> statAmtCompleted = {};
         map<int, int> statNumArrived = {};
         map<int, int> statRateCompleted = {};
+        map<int, int> statAmtArrived = {};
+        map<int, int> statAmtAttempted = {};
         map<int, int> statRateAttempted = {};
         map<int, int> statNumTimedOut = {};
         map<int, int> statNumTimedOutAtSender = {};
@@ -99,13 +103,16 @@ class hostNodeBase : public cSimpleModule {
         virtual simsignal_t registerSignalPerDest(string signalStart, int destNode, 
                 string suffix);
 
-        // generators for the standard messages 
+        // generators for the standard messages
+        virtual routerMsg* generateTransactionMessageForPath(double amt, 
+                vector<int> path, int pathIndex, transactionMsg* transMsg);
         virtual routerMsg *generateTransactionMessage(TransUnit TransUnit);
         virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true);
         virtual routerMsg *generateUpdateMessage(int transId, 
                 int receiver, double amount, int htlcIndex);        
         virtual routerMsg *generateStatMessage();
         virtual routerMsg *generateClearStateMessage();
+        virtual routerMsg* generateTimeOutMessageForPath(vector<int> path, int transactionId, int receiver);
         virtual routerMsg *generateTimeOutMessage(routerMsg *transMsg);
       
 

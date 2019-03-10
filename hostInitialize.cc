@@ -2,6 +2,20 @@
 #define INITIALIZE_H
 #include "hostInitialize.h"
 
+
+
+/* adds up everything in the vector and returns it */
+double getTotalAmount(map<Id, double> v) {
+    auto sumAmt = [&] (double sum, map<Id, double>::value_type&p) { return sum + p.second; };
+    return accumulate(begin(v), end(v), 0.0, sumAmt);
+}
+
+/* adds up everything in the vector and returns it */
+double getTotalAmount(vector<tuple<int, double, routerMsg*, Id >> queue) {
+    return accumulate(begin(queue), end(queue), 0.0, 
+            [](double sum, tuple<int, double, routerMsg*, Id>&p) { return sum + get<1>(p); });
+}
+
 void printVector(vector<int> v){
    for (auto temp : v){
       cout << temp << ", ";

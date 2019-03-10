@@ -192,6 +192,50 @@ simsignal_t hostNodeBase::registerSignalPerDest(string signalStart, int destNode
 
 /****** MESSAGE GENERATORS **********/
 
+/* responsible for generating one HTLC for a particular path 
+ * for any algorithm  after the path has been decided by 
+ * some function that does splitTransaction
+ */
+routerMsg* hostNodeBase::generateTransactionMessageForPath(double amt, 
+        vector<int> path, int pathIndex, transactionMsg* transMsg) {
+    char msgname[MSGSIZE];
+    sprintf(msgname, "tic-%d-to-%d split-transMsg", myIndex(), transMsg->getReceiver());
+    
+    transactionMsg *msg = new transactionMsg(msgname);
+    msg->setAmount(amt);
+    msg->setOriginalAmount(amt);
+    msg->setTimeSent(transMsg->getTimeSent());
+    msg->setSender(transMsg->getSender());
+    msg->setReceiver(transMsg->getReceiver());
+    msg->setPriorityClass(transMsg->getPriorityClass());
+    msg->setHasTimeOut(transMsg->getHasTimeOut());
+    msg->setPathIndex(pathIndex);
+    msg->setTimeOut(transMsg->getTimeOut());
+    msg->setTransactionId(transMsg->getTransactionId());
+
+    // find htlc for txn
+    int transactionId = transMsg->getTransactionId();    
+    int htlcIndex = 0;
+    if (transactionIdToNumHtlc.count(transactionId) == 0) {
+        transactionIdToNumHtlc[transactionId] = 1;
+    }
+    else {
+        htlcIndex =  transactionIdToNumHtlc[transactionId];
+        transactionIdToNumHtlc[transactionId] = transactionIdToNumHtlc[transactionId] + 1;
+    }
+    msg->setHtlcIndex(htlcIndex);
+
+    // routerMsg on the outside
+    sprintf(msgname, "tic-%d-to-%d split-routerTransMsg", myIndex(), transMsg->getReceiver());
+    routerMsg *rMsg = new routerMsg(msgname);
+    rMsg->setRoute(path);
+    rMsg->setHopCount(0);
+    rMsg->setMessageType(TRANSACTION_MSG);
+    rMsg->encapsulate(msg);
+    return rMsg;
+
+} 
+
 /* Main function responsible for using TransUnit object and 
  * returning corresponding routerMsg message with encapsulated transactionMsg inside.
  *      note: calls get_route function to get route from sender to receiver
@@ -202,6 +246,7 @@ routerMsg *hostNodeBase::generateTransactionMessage(TransUnit unit) {
     
     transactionMsg *msg = new transactionMsg(msgname);
     msg->setAmount(unit.amount);
+    msg->setOriginalAmount(unit.amount);
     msg->setTimeSent(unit.timeSent);
     msg->setSender(unit.sender);
     msg->setReceiver(unit.receiver);
@@ -329,6 +374,30 @@ routerMsg *hostNodeBase::generateClearStateMessage(){
     rMsg->setMessageType(CLEAR_STATE_MSG);
     return rMsg;
 }
+
+/* special type of time out message for waterfilling, etd. designed for a specific path so that
+ * such messages will be sent on all paths considered for waterfilling
+ */
+routerMsg* hostNodeBase::generateTimeOutMessageForPath(vector<int> path, 
+        int transactionId, int receiver){
+    char msgname[MSGSIZE];
+    sprintf(msgname, "tic-%d-to-%d path-timeOutMsg", myIndex(), receiver);
+    timeOutMsg *msg = new timeOutMsg(msgname);
+
+    msg->setReceiver(receiver);
+    msg->setTransactionId(transactionId);
+
+    sprintf(msgname, "tic-%d-to-%d path-router-timeOutMsg", myIndex(), receiver);
+    routerMsg *rMsg = new routerMsg(msgname);
+    rMsg->setRoute(path);
+
+    rMsg->setHopCount(0);
+    rMsg->setMessageType(TIME_OUT_MSG);
+    rMsg->encapsulate(msg);
+    return rMsg;
+}
+
+
 
 
 /* responsible for generating the generic time out message 
@@ -464,7 +533,9 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
     if (!revisit && transMsg->getTimeSent() >= _transStatStart && 
             transMsg->getTimeSent() <= _transStatEnd) {
         statRateArrived[destination] += 1;
+        statAmtArrived[destination] += transMsg->getAmount();
         statRateAttempted[destination] += 1;
+        statAmtAttempted[destination] += transMsg->getAmount();
     }
     
     // if it is at the destination
@@ -597,10 +668,12 @@ void hostNodeBase::handleAckMessageSpecialized(routerMsg* ttmsg) {
     if (aMsg->getIsSuccess()==false && aMsg->getTimeSent() >= _transStatStart && 
             aMsg->getTimeSent() <= _transStatEnd) {
         statRateFailed[destNode] = statRateFailed[destNode] + 1;
+        statAmtFailed[destNode] += aMsg->getAmount();
     }
     else if (aMsg->getTimeSent() >= _transStatStart && 
             aMsg->getTimeSent() <= _transStatEnd) {
         statRateCompleted[destNode] = statRateCompleted[destNode] + 1;
+        statAmtCompleted[destNode] += aMsg->getAmount();
 
         // stats
         double timeTaken = simTime().dbl() - aMsg->getTimeSent();
@@ -729,7 +802,7 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
         for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
             PaymentChannel *p = &(it->second);
             
-            emit(p->numInQueuePerChannelSignal, (p->queuedTransUnits).size());
+            emit(p->amtInQueuePerChannelSignal, getTotalAmount(p->queuedTransUnits));
             emit(p->balancePerChannelSignal, p->balance);
         }
     }
@@ -1058,7 +1131,7 @@ void hostNodeBase::initialize() {
         //register PerChannel signals
         simsignal_t signal;
         signal = registerSignalPerChannel("numInQueue", key);
-        nodeToPaymentChannel[key].numInQueuePerChannelSignal = signal;
+        nodeToPaymentChannel[key].amtInQueuePerChannelSignal = signal;
 
         signal = registerSignalPerChannel("balance", key);
         nodeToPaymentChannel[key].balancePerChannelSignal = signal;
@@ -1071,16 +1144,19 @@ void hostNodeBase::initialize() {
             signal = registerSignalPerDest("rateCompleted", i, "_Total");
             rateCompletedPerDestSignals[i] = signal;
             statRateCompleted[i] = 0;
+            statAmtCompleted[i] = 0;
             statNumCompleted[i] = 0;
 
             signal = registerSignalPerDest("rateAttempted", i, "_Total");
             rateAttemptedPerDestSignals[i] = signal;
             statRateAttempted[i] = 0;
+            statAmtAttempted[i] = 0;
 
             signal = registerSignalPerDest("rateArrived", i, "_Total");
             rateArrivedPerDestSignals[i] = signal;
             statRateArrived[i] = 0;
             statNumArrived[i] = 0;
+            statAmtArrived[i] = 0;
 
             signal = registerSignalPerDest("numTimedOut", i, "_Total");
             numTimedOutPerDestSignals[i] = signal;
@@ -1095,7 +1171,7 @@ void hostNodeBase::initialize() {
             signal = registerSignalPerDest("rateFailed", i, "");
             rateFailedPerDestSignals[i] = signal;
             statRateFailed[i] = 0;
-
+            statAmtFailed[i] = 0;
             statCompletionTimes[i] = 0;
         }
     }

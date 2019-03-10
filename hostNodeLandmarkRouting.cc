@@ -99,9 +99,14 @@ void hostNodeLandmarkRouting::handleTransactionMessageSpecialized(routerMsg* ttm
         if (transMsg->getTimeSent() >= _transStatStart && 
             transMsg->getTimeSent() <= _transStatEnd) {
             statNumArrived[destination] += 1; 
-            statRateArrived[destination] += 1; 
-            statRateAttempted[destination] += 1; 
+            statRateArrived[destination] += 1;
+            statAmtArrived[destination] += transMsg->getAmount();
         }
+
+        AckState * s = new AckState();
+        s->amtReceived = 0;
+        s->amtSent = transMsg->getAmount();
+        transToAmtLeftToComplete[transMsg->getTransactionId()] = *s;
 
         // if destination hasn't been encountered, find paths
         if (nodeToShortestPathsMap.count(destNode) == 0 ){
@@ -142,10 +147,131 @@ void hostNodeLandmarkRouting::handleTransactionMessageSpecialized(routerMsg* ttm
 }
 
 
+/* handles the special time out mechanism for waterfilling which is responsible
+ * for sending time out messages on all paths that may have seen this txn and 
+ * marking the txn as cancelled
+ */
+void hostNodeLandmarkRouting::handleTimeOutMessage(routerMsg* ttmsg){
+    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
+
+    if (ttmsg->isSelfMessage()) { 
+        //is at the sender
+        int transactionId = toutMsg->getTransactionId();
+        int destination = toutMsg->getReceiver();
+       
+        for (auto p : (nodeToShortestPathsMap[destination])){
+            int pathIndex = p.first;
+            tuple<int,int> key = make_tuple(transactionId, pathIndex);
+            if(_loggingEnabled) {
+                cout << "transPathToAckState.count(key): " 
+                   << transPathToAckState.count(key) << endl;
+                cout << "transactionId: " << transactionId 
+                    << "; pathIndex: " << pathIndex << endl;
+            }
+            
+            if (transPathToAckState[key].amtSent != transPathToAckState[key].amtReceived) {
+                routerMsg* lrTimeOutMsg = generateTimeOutMessageForPath(
+                    nodeToShortestPathsMap[destination][p.first].path, 
+                    transactionId, destination);
+                // TODO: what if a transaction on two different paths have same next hop?
+                int nextNode = (lrTimeOutMsg->getRoute())[lrTimeOutMsg->getHopCount()+1];
+                CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
+                        simTime(), -1, nextNode, destination);
+                canceledTransactions.insert(ct);
+                forwardMessage(lrTimeOutMsg);
+            }
+            else {
+                transPathToAckState.erase(key);
+            }
+        }
+        delete ttmsg;
+    }
+    else{
+        // at the receiver
+        CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),
+                (ttmsg->getRoute())[ttmsg->getHopCount()-1], -1, toutMsg->getReceiver());
+        canceledTransactions.insert(ct);
+        ttmsg->decapsulate();
+        delete toutMsg;
+        delete ttmsg;
+    }
+}
+
+
+/* specialized ack handler that does the routine for handling acks
+ * across paths. In particular, collects/updates stats for this path alone
+ * NOTE: acks are on the reverse path relative to the original sender
+ */
+void hostNodeLandmarkRouting::handleAckMessageSpecialized(routerMsg* ttmsg) {
+    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
+    int receiver = aMsg->getReceiver();
+    int pathIndex = aMsg->getPathIndex();
+    int transactionId = aMsg->getTransactionId();
+    tuple<int,int> key = make_tuple(transactionId, pathIndex);
+    
+    if (transToAmtLeftToComplete.count(transactionId) == 0){
+        cout << "error, transaction " << transactionId 
+          <<" htlc index:" << aMsg->getHtlcIndex() 
+          << " acknowledged at time " << simTime() 
+          << " wasn't written to transToAmtLeftToComplete" << endl;
+    }
+    else {
+        (transToAmtLeftToComplete[transactionId]).amtReceived += aMsg->getAmount();
+        statAmtCompleted[receiver] += aMsg->getAmount();
+
+        if (transToAmtLeftToComplete[transactionId].amtReceived == 
+                transToAmtLeftToComplete[transactionId].amtSent) {
+            nodeToShortestPathsMap[receiver][pathIndex].statRateCompleted += 1;
+
+            if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) {
+                statNumCompleted[receiver] += 1; 
+                statRateCompleted[receiver] += 1;
+
+                double timeTaken = simTime().dbl() - aMsg->getTimeSent();
+                statCompletionTimes[receiver] += timeTaken * 1000;
+            }
+
+            transToAmtLeftToComplete.erase(aMsg->getTransactionId());
+        }
+       
+        //increment transaction amount ack on a path. 
+        transPathToAckState[key].amtReceived += aMsg->getAmount();
+    }
+    hostNodeBase::handleAckMessage(ttmsg);
+}
+
+
+/* handler that clears additional state particular to lr 
+ * when a cancelled transaction is deemed no longer completeable
+ * in particular it clears the state that tracks how much of a
+ * transaction is still pending
+ * calls the base class's handler after its own handler
+ */
+void hostNodeLandmarkRouting::handleClearStateMessage(routerMsg *ttmsg) {
+    for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); it++){
+        int transactionId = get<0>(*it);
+        simtime_t msgArrivalTime = get<1>(*it);
+        int prevNode = get<2>(*it);
+        int nextNode = get<3>(*it);
+        int destNode = get<4>(*it);
+        
+        if (simTime() > (msgArrivalTime + _maxTravelTime)){
+            for (auto p : nodeToShortestPathsMap[destNode]) {
+                int pathIndex = p.first;
+                tuple<int,int> key = make_tuple(transactionId, pathIndex);
+                if (transPathToAckState.count(key) != 0) {
+                    transPathToAckState.erase(key);
+                }
+            }
+        }
+    }
+    hostNodeBase::handleClearStateMessage(ttmsg);
+}
+
 /* handle Probe Message for Landmark Routing 
  * In essence, is waiting for all the probes, finding those paths 
- * with non-zero bottleneck balance and choosing one randomly from 
- * those to send the txn on
+ * with non-zero bottleneck balance and splitting the transaction
+ * amongst them
  */
 void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
     probeMsg *pMsg = check_and_cast<probeMsg *>(ttmsg->getEncapsulatedPacket());
@@ -181,28 +307,48 @@ void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
                    numPathsPossible++;
                }
            }
-
-           // construct probabilities to sample from 
-           vector<double> probabilities;
-           for (auto bottleneck: probeInfo->probeBottlenecks){
-                if (bottleneck > 0) {
-                    probabilities.push_back(1.0/numPathsPossible);
-                }
-                else{
-                    probabilities.push_back(0);
-                }
-            }
-           int indexToUse = sampleFromDistribution(probabilities); 
-
-           // send transaction on this path
+           
            transactionMsg *transMsg = check_and_cast<transactionMsg*>(
                    probeInfo->messageToSend->getEncapsulatedPacket());
-           //cout << "sent transaction on path: ";
-           //printVector(nodeToShortestPathsMap[transMsg->getReceiver()][indexToUse].path);
-           probeInfo->messageToSend->
-               setRoute(nodeToShortestPathsMap[transMsg->getReceiver()][indexToUse].path);
-           handleTransactionMessage(probeInfo->messageToSend, true /*revisit*/);
+           vector<double> amtPerPath(probeInfo->probeBottlenecks.size());
+
+           if (numPathsPossible > 0 && 
+                   randomSplit(transMsg->getAmount(), probeInfo->probeBottlenecks, amtPerPath)) {
+               statRateAttempted[destNode] += 1;
+               statAmtAttempted[destNode] += transMsg->getAmount();
+               for (int i = 0; i < amtPerPath.size(); i++) {
+                   double amt = amtPerPath[i];
+                   if (amt > 0) {
+                       tuple<int,int> key = make_tuple(transMsg->getTransactionId(), i); 
+                       //update the data structure keeping track of how much sent and received on each path
+                       if (transPathToAckState.count(key) == 0){
+                           AckState temp = {};
+                           temp.amtSent = amt;
+                           temp.amtReceived = 0;
+                           transPathToAckState[key] = temp;
+                        }
+                        else {
+                            transPathToAckState[key].amtSent =  transPathToAckState[key].amtSent + amt;
+                        }
+
+                       // send a new transaction on that path with that amount
+                       PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][i]);
+                       routerMsg* lrMsg = generateTransactionMessageForPath(amt, 
+                               pathInfo->path, i, transMsg); 
+                       handleTransactionMessage(lrMsg, true /*revisit*/);
+                   }
+               }
+           } 
+           else {
+               statRateFailed[destNode] += 1;
+               statAmtFailed[destNode] += transMsg->getAmount();
+           }
+
+           probeInfo->messageToSend->decapsulate();
+           delete transMsg;
+           delete probeInfo->messageToSend;
            transactionIdToProbeInfoMap.erase(transactionId);
+           transToAmtLeftToComplete.erase(transactionId);
        }
        
        ttmsg->decapsulate();
@@ -220,6 +366,11 @@ void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
    }
 }
 
+/* function to compute a random split across all the paths for landmark routing
+ */
+bool hostNodeLandmarkRouting::randomSplit(double totalAmt, vector<double> bottlenecks, vector<double> &amtPerPath) {
+    return false;
+}
 
 /* initializes the table with the paths to use for Landmark Routing, everything else as 
  * to how many probes are in progress is initialized when probes are sent

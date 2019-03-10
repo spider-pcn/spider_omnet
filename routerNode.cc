@@ -152,7 +152,7 @@ void routerNode::initialize()
       signal = registerSignal(signalName);
       statisticTemplate = getProperties()->get("statisticTemplate", "numInQueuePerChannelTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToPaymentChannel[key].numInQueuePerChannelSignal = signal;
+      nodeToPaymentChannel[key].amtInQueuePerChannelSignal = signal;
 
       //statNumProcessed int
       nodeToPaymentChannel[key].statNumProcessed = 0;
@@ -691,14 +691,14 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
 
          int node = it->first; //key
 
-         emit(nodeToPaymentChannel[node].numInQueuePerChannelSignal, (nodeToPaymentChannel[node].queuedTransUnits).size());
+         emit(nodeToPaymentChannel[node].amtInQueuePerChannelSignal, getTotalAmount(nodeToPaymentChannel[node].queuedTransUnits));
 
          emit(nodeToPaymentChannel[node].balancePerChannelSignal, nodeToPaymentChannel[node].balance);
 
          // compute number in flight and report that too - hack right now that just sums the number of entries in the map
          emit(nodeToPaymentChannel[node].numInflightPerChannelSignal, 
-                 nodeToPaymentChannel[node].incomingTransUnits.size() +
-                 nodeToPaymentChannel[node].outgoingTransUnits.size());
+                 getTotalAmount(nodeToPaymentChannel[node].incomingTransUnits) +
+                 getTotalAmount(nodeToPaymentChannel[node].outgoingTransUnits));
 
       }
    }
@@ -893,7 +893,7 @@ void routerNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){ //increm
 
    //not a self-message, add to incoming_trans_units
    int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
-   nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + 1;
+   nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + transMsg->getAmount();
 
 }
 
