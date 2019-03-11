@@ -174,7 +174,6 @@ void hostNodeLndBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
         transMsg->setPathIndex(-1);
         if (newRoute.size()>0)
         {
-            printVector(newRoute);
             transMsg->setPathIndex(0);
             ttmsg->setRoute(newRoute);
             handleTransactionMessage(ttmsg);
