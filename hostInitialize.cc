@@ -319,13 +319,13 @@ vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, 
 
 
 vector<int> breadthFirstSearchByGraph(int sender, int receiver, map<int, vector<int>> graph){
-    // print graph
+    /* print graph
     for (auto node: graph){
         cout << node.first << ": ";
         printVector(node.second);
         cout <<endl;
 
-    }
+    }*/
 
 
     //TODO: fix, and add to header
@@ -608,10 +608,10 @@ void dijkstraInputGraphTemp(int src,  int dest, map<int, vector<pair<int,int>>> 
         // Update dist value of the adjacent vertices of the picked vertex.
         for (vectIter = channels[u].begin(); vectIter != channels[u].end(); vectIter++){
 
-            for (int ka=0; ka<_numNodes; ka++){
+            /*for (int ka=0; ka<_numNodes; ka++){
                 printf("[%i]: %i,  ", ka, parent[ka] );
 
-            }
+            }*/
             // Update dist[v] only if is not in sptSet, there is an edge from u to v, and
             // total weight of path from src to v through u is smaller than current value of dist[v]
 
@@ -628,8 +628,8 @@ void dijkstraInputGraphTemp(int src,  int dest, map<int, vector<pair<int,int>>> 
 
     // print the constructed
     // distance array
-    for (int ka=0; ka<_numNodes; ka++)
-        printf("[%i]: %i,  ", ka, parent[ka] );
+    /*for (int ka=0; ka<_numNodes; ka++)
+        printf("[%i]: %i,  ", ka, parent[ka] );*/
     return;// getPath(parent, dest);
 }
 // Function that implements Dijkstra's  single source shortest path algorithm for a graph represented
