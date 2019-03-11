@@ -50,6 +50,7 @@ normalizer=100
 cp hostNodeBase.ned ${PATH_NAME}
 cp hostNodeWaterfilling.ned ${PATH_NAME}
 cp hostNodeLandmarkRouting.ned ${PATH_NAME}
+cp hostNodeLndBaseline.ned ${PATH_NAME}
 cp hostNodePriceScheme.ned ${PATH_NAME}
 cp routerNode.ned ${PATH_NAME}
 
@@ -256,6 +257,7 @@ plot_schemes()
 
 
                 python scripts/generate_analysis_plots_for_single_run.py \
+                  --detail $signalsEnabled \
                   --vec_file ${vec_file_path} \
                   --sca_file ${sca_file_path} \
                   --save ${graph_op_prefix}${routing_scheme} \
@@ -275,6 +277,7 @@ plot_schemes()
 
 
                     python scripts/generate_analysis_plots_for_single_run.py \
+                      --detail $signalsEnabled \
                       --vec_file ${vec_file_path} \
                       --sca_file ${sca_file_path} \
                       --save ${graph_op_prefix}${routing_scheme}_final \

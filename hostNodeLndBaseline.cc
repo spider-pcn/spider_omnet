@@ -231,10 +231,10 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
 
     int numPathsAttempted = aMsg->getPathIndex() + 1;
     if (aMsg->getIsSuccess() || numPathsAttempted == _numAttemptsLndBaseline || 
-            (_timeoutEnabled && iter != canceledTrans.end())) //no more attempts allowed
+            (_timeoutEnabled && iter != canceledTransactions.end())) //no more attempts allowed
     {
-        if (iter != canceledTrans.end())
-            canceledTrans.erase(it);
+        if (iter != canceledTransactions.end())
+            canceledTransactions.erase(iter);
 
         aMsg->decapsulate();
         delete transMsg;

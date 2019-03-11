@@ -1061,8 +1061,8 @@ void hostNodeBase::initialize() {
         _hasQueueCapacity = false;
         _queueCapacity = 0;
 
-        _transStatStart = 500;
-        _transStatEnd = 700;
+        _transStatStart = 5000;
+        _transStatEnd = 7000;
 
         _lndBaselineEnabled = par("lndBaselineEnabled");
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");

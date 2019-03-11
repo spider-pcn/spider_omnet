@@ -18,7 +18,7 @@ timeoutEnabled=true
 demand=400
 
 payment_graph_type=circ # or dagx where x is the percentage of dag
-payment_graph_type=dag0
+# payment_graph_type=dag0
 if [ "$payment_graph_type" = "circ" ]; then 
     PATH_NAME=${PATH_NAME}circulations/ 
 else 
