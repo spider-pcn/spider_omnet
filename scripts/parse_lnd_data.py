@@ -25,7 +25,7 @@ def read_file(filename):
                 print "nodes for edge ", n1, "->", n2, "not found"
                 continue
 
-            lnd_graph.add_edge(n1_id, n2_id)
+            lnd_graph.add_edge(n1_id, n2_id, capacity=cap)
 
     print "Number of nodes in lnd graph:", lnd_graph.number_of_nodes()
     print "Number of edge in lnd graph:", lnd_graph.number_of_edges()
