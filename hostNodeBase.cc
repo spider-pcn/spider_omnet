@@ -32,6 +32,7 @@ bool _signalsEnabled;
 bool _priceSchemeEnabled;
 bool _landmarkRoutingEnabled;
 bool _windowEnabled;
+bool _lndBaselineEnabled;
 
 // for all precision errors
 double _epsilon; 
@@ -1060,7 +1061,7 @@ void hostNodeBase::initialize() {
         _transStatStart = 5000;
         _transStatEnd = 7000;
 
-        _lndBaselineEnabled = par("lndBaselineEnabled);
+        _lndBaselineEnabled = par("lndBaselineEnabled");
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");
                                   
         if (_landmarkRoutingEnabled || _lndBaselineEnabled){
