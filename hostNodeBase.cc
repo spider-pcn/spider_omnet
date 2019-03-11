@@ -110,7 +110,7 @@ void hostNodeBase::generateNextTransaction() {
       
       routerMsg *msg = generateTransactionMessage(j); //TODO: flag to whether to calculate path
 
-      if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled){
+      if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled || _lndBaselineEnabled){
          vector<int> blankPath = {};
          //Radhika TODO: maybe no need to compute path to begin with?
          msg->setRoute(blankPath);
@@ -310,14 +310,14 @@ routerMsg *hostNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     if (!isSuccess){
         aMsg->setFailedHopNum((route.size()-1) - ttmsg->getHopCount());
     }
- 
-     //no need to set secret - not modelled
+
+    //no need to set secret - not modelled
     reverse(route.begin(), route.end());
     msg->setRoute(route);
-    
+
     //need to reverse path from current hop number in case of partial failure
     msg->setHopCount((route.size()-1) - ttmsg->getHopCount());
-    
+
     msg->setMessageType(ACK_MSG); 
     ttmsg->decapsulate();
     delete transMsg;
@@ -662,6 +662,7 @@ void hostNodeBase::handleTimeOutMessage(routerMsg* ttmsg){
  * NOTE: acks are on the reverse path relative to the original sender
  */
 void hostNodeBase::handleAckMessageSpecialized(routerMsg* ttmsg) { 
+
     int destNode = ttmsg->getRoute()[0];
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
 
@@ -1055,12 +1056,14 @@ void hostNodeBase::initialize() {
 
         _hasQueueCapacity = false;
         _queueCapacity = 0;
-
+      
         _transStatStart = 5000;
         _transStatEnd = 7000;
 
+        _lndBaselineEnabled = par("lndBaselineEnabled);
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");
-        if (_landmarkRoutingEnabled){
+                                  
+        if (_landmarkRoutingEnabled || _lndBaselineEnabled){
             _hasQueueCapacity = true;
             _queueCapacity = 0;
             _timeoutEnabled = false;

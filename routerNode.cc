@@ -971,10 +971,9 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //
    aMsg->setHtlcIndex(transMsg->getHtlcIndex());
    aMsg->setPathIndex(transMsg->getPathIndex());
 
-    if (!isSuccess) {
-       aMsg->setFailedHopNum((ttmsg->getRoute().size()-1) - ttmsg->getHopCount());
-    }
-
+   if (!isSuccess) {
+      aMsg->setFailedHopNum((ttmsg->getRoute().size()-1) - ttmsg->getHopCount());
+   }
       //no need to set secret;
      vector<int> route = ttmsg->getRoute();
      //route.resize(ttmsg->getHopCount() + 1); //don't resize, might mess up destination
@@ -984,13 +983,21 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //
      msg->setHopCount((route.size()-1) - ttmsg->getHopCount());
 
      //need to reverse path from current hop number in case of partial failure
-     msg->setMessageType(ACK_MSG); //now an ack message
-     // remove encapsulated packet
-     ttmsg->decapsulate();
-     delete transMsg;
-     delete ttmsg;
-     msg->encapsulate(aMsg);
-     return msg;
+     msg->setMessageType(ACK_MSG);
+       ttmsg->decapsulate();
+       if (_lndBaselineEnabled)
+       {
+           aMsg->encapsulate(transMsg);
+           msg->encapsulate(aMsg);
+           delete ttmsg;
+       }
+       else
+       {
+           delete transMsg;
+           delete ttmsg;
+           msg->encapsulate(aMsg);
+       }
+       return msg;
 }
 
 

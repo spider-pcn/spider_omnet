@@ -142,9 +142,6 @@ class hostNodeBase : public cSimpleModule {
         virtual void processTransUnits(int dest, 
                 vector<tuple<int, double , routerMsg *, Id>>& q);
         virtual void deleteMessagesInQueues();
-             
-        
-
 };
 
 #endif

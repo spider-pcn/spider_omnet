@@ -5,7 +5,7 @@
 #include "hostNodeWaterfilling.h"
 #include "hostNodePriceScheme.h"
 #include "hostNodeLandmarkRouting.h"
-
+#include "hostNodeLNDBaseline.h"
 
 using namespace std;
 using namespace omnetpp;
