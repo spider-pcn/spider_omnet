@@ -176,15 +176,15 @@ void hostNodeLandmarkRouting::handleTimeOutMessage(routerMsg* ttmsg){
             }
             
             if (transPathToAckState[key].amtSent > transPathToAckState[key].amtReceived + _epsilon) {
-                routerMsg* lrTimeOutMsg = generateTimeOutMessageForPath(
+                /*routerMsg* lrTimeOutMsg = generateTimeOutMessageForPath(
                     nodeToShortestPathsMap[destination][p.first].path, 
-                    transactionId, destination);
+                    transactionId, destination);*/
                 // TODO: what if a transaction on two different paths have same next hop?
                 int nextNode = (lrTimeOutMsg->getRoute())[lrTimeOutMsg->getHopCount()+1];
                 CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
                         simTime(), -1, nextNode, destination);
                 canceledTransactions.insert(ct);
-                forwardMessage(lrTimeOutMsg);
+                // forwardMessage(lrTimeOutMsg);
             }
             else {
                 transPathToAckState.erase(key);
@@ -214,18 +214,21 @@ void hostNodeLandmarkRouting::handleAckMessageTimeOut(routerMsg* ttmsg){
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
     int transactionId = aMsg->getTransactionId();
 
-    double totalAmtReceived = (transToAmtLeftToComplete[transactionId]).amtReceived +
-        aMsg->getAmount();
-    if (totalAmtReceived != transToAmtLeftToComplete[transactionId].amtSent) 
-        return;
-    
-    auto iter = find_if(canceledTransactions.begin(),
-         canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-         { return get<0>(p) == transactionId; });
-    
-    if (iter!=canceledTransactions.end()) {
-        canceledTransactions.erase(iter);
+    if (aMsg->getIsSuccess()) {
+        double totalAmtReceived = (transToAmtLeftToComplete[transactionId]).amtReceived +
+            aMsg->getAmount();
+        
+        if (totalAmtReceived != transToAmtLeftToComplete[transactionId].amtSent) 
+            return;
+        
+        auto iter = find_if(canceledTransactions.begin(),
+             canceledTransactions.end(),
+             [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
+             { return get<0>(p) == transactionId; });
+        
+        if (iter!=canceledTransactions.end()) {
+            canceledTransactions.erase(iter);
+        }
     }
 }
 
@@ -240,38 +243,40 @@ void hostNodeLandmarkRouting::handleAckMessageSpecialized(routerMsg* ttmsg) {
     int pathIndex = aMsg->getPathIndex();
     int transactionId = aMsg->getTransactionId();
     tuple<int,int> key = make_tuple(transactionId, pathIndex);
-    
-    if (transToAmtLeftToComplete.count(transactionId) == 0){
-        cout << "error, transaction " << transactionId 
-          <<" htlc index:" << aMsg->getHtlcIndex() 
-          << " acknowledged at time " << simTime() 
-          << " wasn't written to transToAmtLeftToComplete for amount " <<  aMsg->getAmount() << endl;
-    }
-    else {
-        (transToAmtLeftToComplete[transactionId]).amtReceived += aMsg->getAmount();
-        if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) {
-            statAmtCompleted[receiver] += aMsg->getAmount();
+   
+    if (aMsg->getIsSuccess()) { 
+        if (transToAmtLeftToComplete.count(transactionId) == 0){
+            cout << "error, transaction " << transactionId 
+              <<" htlc index:" << aMsg->getHtlcIndex() 
+              << " acknowledged at time " << simTime() 
+              << " wasn't written to transToAmtLeftToComplete for amount " <<  aMsg->getAmount() << endl;
         }
-        
-        double amtReceived = transToAmtLeftToComplete[transactionId].amtReceived;
-        double amtSent = transToAmtLeftToComplete[transactionId].amtSent;
-
-        if (amtReceived < amtSent + _epsilon && amtReceived > amtSent -_epsilon) {
-            nodeToShortestPathsMap[receiver][pathIndex].statRateCompleted += 1;
-
+        else {
+            (transToAmtLeftToComplete[transactionId]).amtReceived += aMsg->getAmount();
             if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) {
-                statNumCompleted[receiver] += 1; 
-                statRateCompleted[receiver] += 1;
-
-                double timeTaken = simTime().dbl() - aMsg->getTimeSent();
-                statCompletionTimes[receiver] += timeTaken * 1000;
+                statAmtCompleted[receiver] += aMsg->getAmount();
             }
+            
+            double amtReceived = transToAmtLeftToComplete[transactionId].amtReceived;
+            double amtSent = transToAmtLeftToComplete[transactionId].amtSent;
 
-            transToAmtLeftToComplete.erase(aMsg->getTransactionId());
+            if (amtReceived < amtSent + _epsilon && amtReceived > amtSent -_epsilon) {
+                nodeToShortestPathsMap[receiver][pathIndex].statRateCompleted += 1;
+
+                if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) {
+                    statNumCompleted[receiver] += 1; 
+                    statRateCompleted[receiver] += 1;
+
+                    double timeTaken = simTime().dbl() - aMsg->getTimeSent();
+                    statCompletionTimes[receiver] += timeTaken * 1000;
+                }
+
+                transToAmtLeftToComplete.erase(aMsg->getTransactionId());
+            }
+           
+            //increment transaction amount ack on a path. 
+            transPathToAckState[key].amtReceived += aMsg->getAmount();
         }
-       
-        //increment transaction amount ack on a path. 
-        transPathToAckState[key].amtReceived += aMsg->getAmount();
     }
     hostNodeBase::handleAckMessage(ttmsg);
 }

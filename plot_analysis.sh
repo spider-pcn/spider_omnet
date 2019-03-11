@@ -58,10 +58,12 @@ do
     do
       for numPathChoices in 4
         do
+            echo "HELLO"
             vec_file_path=${vec_file_prefix}${routing_scheme}_demand${demand}_${numPathChoices}-#0.vec
             sca_file_path=${vec_file_prefix}${routing_scheme}_demand${demand}_${numPathChoices}-#0.sca
 
             python scripts/generate_analysis_plots_for_single_run.py \
+              --detail true \
               --vec_file ${vec_file_path} \
               --sca_file ${sca_file_path} \
               --save ${graph_op_prefix}${routing_scheme}_final \

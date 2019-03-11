@@ -667,7 +667,7 @@ void hostNodeBase::handleAckMessageSpecialized(routerMsg* ttmsg) {
     int destNode = ttmsg->getRoute()[0];
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
 
-    if (aMsg->getIsSuccess()==false && aMsg->getTimeSent() >= _transStatStart && 
+    if (aMsg->getIsSuccess() == false && aMsg->getTimeSent() >= _transStatStart && 
             aMsg->getTimeSent() <= _transStatEnd) {
         statRateFailed[destNode] = statRateFailed[destNode] + 1;
         statAmtFailed[destNode] += aMsg->getAmount();
@@ -742,17 +742,20 @@ void hostNodeBase::handleAckMessageTimeOut(routerMsg* ttmsg){
     int transactionId = aMsg->getTransactionId();
     
     //TODO: what if there are multiple HTLC's per transaction? 
-    auto iter = find_if(canceledTransactions.begin(),
-         canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-         { return get<0>(p) == transactionId; });
-    
-    if (iter!=canceledTransactions.end()) {
-        canceledTransactions.erase(iter);
-    }
+
 
     // only if it isn't waterfilling
-    successfulDoNotSendTimeOut.insert(aMsg->getTransactionId());
+    if (aMsg->getIsSuccess()){
+        auto iter = find_if(canceledTransactions.begin(),
+                canceledTransactions.end(),
+            [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
+            { return get<0>(p) == transactionId; });
+    
+        if (iter!=canceledTransactions.end()) {
+            canceledTransactions.erase(iter);
+        }
+        successfulDoNotSendTimeOut.insert(aMsg->getTransactionId());
+    }
 }
 
 
@@ -1057,9 +1060,9 @@ void hostNodeBase::initialize() {
 
         _hasQueueCapacity = false;
         _queueCapacity = 0;
-      
-        _transStatStart = 5000;
-        _transStatEnd = 7000;
+
+        _transStatStart = 500;
+        _transStatEnd = 700;
 
         _lndBaselineEnabled = par("lndBaselineEnabled");
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");

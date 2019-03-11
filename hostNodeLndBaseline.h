@@ -6,7 +6,7 @@
 using namespace std;
 using namespace omnetpp;
 
-class hostNodeLNDBaseline : public hostNodeBase {
+class hostNodeLndBaseline : public hostNodeBase {
 
     private:
 

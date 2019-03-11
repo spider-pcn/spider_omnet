@@ -72,7 +72,7 @@ def parse_sca_files(filename):
             else:
                 sum_arrived += value
 
-    return parameters, sum_completed/sum_arrived, sum_completed/sum_attempted
+    return parameters, sum_completed/max(sum_arrived, 1.0), sum_completed/max(sum_attempted, 1.0)
 
 def parse_overall_stat_line(line):
     data = shlex.split(line)

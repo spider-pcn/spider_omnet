@@ -228,7 +228,7 @@ parser.add_argument('--randomize-start-bal', type=str, dest='randomize_start_bal
         help='Do not start from pergect balance, but rather randomize it', default='False')
 parser.add_argument('--random-channel-capacity', type=str, dest='random_channel_capacity', \
         help='Give channels a random balance between bal/2 and bal', default='False')
-routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting']
+routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting', 'lndBaseline']
 
 
 args = parser.parse_args()
