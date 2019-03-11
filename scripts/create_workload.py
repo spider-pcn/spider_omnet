@@ -10,16 +10,22 @@ from config import *
 
 # generates the start and end nodes for a fixed set of topologies - hotnets/line/simple graph
 def generate_workload_standard(filename, payment_graph_topo, workload_type, total_time, \
-        exp_size, txn_size_mean, timeout_value, generate_json_also, circ_frac, std_workload=True):
+        log_normal, txn_size_mean, timeout_value, generate_json_also, circ_frac, std_workload=True):
     # by default ASSUMES NO END HOSTS
 
     # define start and end nodes and amounts
     # edge a->b in payment graph appears in index i as start_nodes[i]=a, and end_nodes[i]=b
     if payment_graph_topo == 'hotnets_topo':
-        start_nodes = [0,3,0,1,2,3,2,4]
-        end_nodes = [4,0,1,3,1,2,4,2]
-        amt_relative = [1,2,1,2,1,2,2,1]
-        amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+        if circ_frac == 1:
+            start_nodes = [0, 1, 2, 2, 3, 3, 4]
+            end_nodes = [1, 3, 1, 4, 2, 0, 2]
+            amt_relative = [1, 2, 1, 1, 1, 1, 1]
+            amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+        else:
+            start_nodes = [0,3,0,1,2,3,2,4]
+            end_nodes = [4,0,1,3,1,2,4,2]
+            amt_relative = [1,2,1,2,1,2,2,1]
+            amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
         graph = hotnets_topo_graph
 
     elif payment_graph_topo == 'simple_deadlock':
@@ -30,11 +36,19 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         graph = simple_deadlock_graph
 
     elif payment_graph_topo == 'simple_line':
-        start_nodes = [0,3]
-        end_nodes = [3,0]
-        amt_relative = [1,1]
+        if "five" in filename:
+            num_nodes = 5
+            graph = five_line_graph
+        else:
+            num_nodes = 3
+            graph = simple_line_graph
+        print num_nodes
+
+        start_nodes = [0, num_nodes - 1]
+        end_nodes = [num_nodes - 1, 0]
+        amt_relative = [MEAN_RATE, MEAN_RATE]
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
-        graph = simple_line_graph
+
     elif payment_graph_topo == 'hardcoded_circ':
         start_nodes = [0, 1, 2, 3, 4]
         end_nodes = [1, 2, 3, 4, 0]
@@ -58,7 +72,8 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         if dag_frac > 0:
             demand_dict_dag = dag_demand(list(graph), mean=MEAN_RATE, \
                     std_dev=CIRCULATION_STD_DEV)
-        demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
+                    
+        demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) +                                 dag_frac * demand_dict_dag.get(key, 0) \
                 for key in set(demand_dict_circ) | set(demand_dict_dag) } 
 
 
@@ -73,7 +88,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         generate_json_files(filename + '.json', graph, graph, start_nodes, end_nodes, amt_absolute)
 
     write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, total_time, exp_size, txn_size_mean, timeout_value)
+            workload_type, total_time, log_normal, txn_size_mean, timeout_value)
 
 
 
@@ -85,7 +100,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
 # write to file - assume no priority for now
 # transaction sizes are either constant or exponentially distributed around their mean
 def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
-        workload_type, total_time, exp_size, txn_size_mean, timeout_value, mode="w", start_time=0):
+        workload_type, total_time, log_normal, txn_size_mean, timeout_value, mode="w", start_time=0):
     outfile = open(filename, mode)
 
     if distribution == 'uniform':
@@ -94,7 +109,15 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
             cur_time = 0
             while cur_time < total_time:
                 rate = amt_absolute[k]
-                txn_size = np.random_exponential(txn_size_mean) if exp_size else txn_size_mean
+                
+                if log_normal:
+                    txn_size = MIN_TXN_SIZE/10
+                    while (txn_size < MIN_TXN_SIZE or txn_size > MAX_TXN_SIZE):
+                        txn_power = np.random.normal(loc=LOG_NORMAL_MEAN, scale=LOG_NORMAL_SCALE)
+                        txn_size = round(10 ** txn_power, 1) 
+                else:
+                    txn_size = txn_size_mean
+
                 outfile.write(str(txn_size) + " " + str(cur_time + start_time) + " " + str(start_nodes[k]) + \
                         " " + str(end_nodes[k]) + " 0 " + str(timeout_value) + "\n")
                 cur_time += (1.0 / rate)
@@ -107,9 +130,17 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
             beta = (1.0) / (1.0 * rate)
             # if the rate is higher, given pair will have more transactions in a single second
             while current_time < total_time:
-                txn_size = np.random_exponential(txn_size_mean) if exp_size else txn_size_mean
-                outfile.write(str(txn_size) + " " + str(current_time + start_time) + " " + str(start_nodes[k]) + \
-                        " " + str(end_nodes[k]) + " 0 " + str(timeout_value) + "\n")
+
+                if log_normal:
+                    txn_size = MIN_TXN_SIZE/10
+                    while (txn_size < MIN_TXN_SIZE or txn_size > MAX_TXN_SIZE):
+                        txn_power = np.random.normal(loc=LOG_NORMAL_SCALE, scale=LOG_NORMAL_SCALE)
+                        txn_size = round(10 ** txn_power, 1) 
+                else:
+                    txn_size = txn_size_mean
+
+                outfile.write(str(txn_size) + " " + str(current_time + start_time) + " " + str(start_nodes[k]) \
+                        + " " + str(end_nodes[k]) + " 0 " + str(timeout_value) + "\n")
                 time_incr = np.random.exponential(beta)
                 current_time = current_time + time_incr 
 
@@ -209,7 +240,7 @@ def generate_json_files(filename, graph, inside_graph, start_nodes, end_nodes, a
 # either be exponentially distributed or constant size
 def generate_workload_for_provided_topology(filename, inside_graph, whole_graph, end_host_map, \
         workload_type, total_time, \
-        exp_size, txn_size_mean, timeout_value, generate_json_also, circ_frac):
+        log_normal, txn_size_mean, timeout_value, generate_json_also, circ_frac):
     num_nodes = inside_graph.number_of_nodes()
     start_nodes, end_nodes, amt_relative = [], [], []
     
@@ -246,12 +277,12 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
         write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, 100, exp_size, txn_size_mean, timeout_value)
+            workload_type, 100, log_normal, txn_size_mean, timeout_value)
 
         # 25% dag on the second 100 seconds
         start_nodes, end_nodes, amt_relative = [], [], []
-        circ_frac = 0.75
-        dag_frac = 0.25
+        # circ_frac = 0.75
+        # dag_frac = 0.25
         demand_dict = dict()
         demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
             for key in set(demand_dict_circ) | set(demand_dict_dag) } 
@@ -262,7 +293,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
         write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, 100, exp_size, txn_size_mean, timeout_value, "a", start_time = 100)
+            workload_type, 100, log_normal, txn_size_mean, timeout_value, "a", start_time = 100)
 
         # nothing for 100 seconds, then circulation again for 100
         start_nodes, end_nodes, amt_relative = [], [], []
@@ -273,7 +304,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
         write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, 100, exp_size, txn_size_mean, timeout_value, "a", start_time = 300)
+            workload_type, 100, log_normal, txn_size_mean, timeout_value, "a", start_time = 300)
 
         return
 
@@ -299,7 +330,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         generate_json_files(filename + '.json', whole_graph, inside_graph, start_nodes, end_nodes, amt_absolute)
 
     write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, total_time, exp_size, txn_size_mean, timeout_value)
+            workload_type, total_time, log_normal, txn_size_mean, timeout_value)
 
 
 # parse a given line of edge relationships from the topology file
@@ -454,12 +485,12 @@ parser.add_argument('--experiment-time', dest='total_time', type=int, \
         help='time to generate txns for', default=30)
 parser.add_argument('--txn-size-mean', dest='txn_size_mean', type=int, \
         help='mean_txn_size', default=1)
-parser.add_argument('--exp_size', action='store_true', help='should txns be exponential in size')
+parser.add_argument('--log-normal', action='store_true', help='should txns be exponential in size')
 parser.add_argument('--generate-json-also', action="store_true", help="do you need to generate json file also \
         for the custom topology")
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 parser.add_argument('--timeout-value', type=float, help='generic time out for all transactions', default=5)
-
+parser.add_argument('--scale-amount', type=int, help='how much to scale the mean deamnd by', default=5)
 
 
 args = parser.parse_args()
@@ -469,13 +500,13 @@ circ_frac = (100 - args.payment_graph_dag_percentage) / 100.0
 distribution = args.interval_distribution
 total_time = args.total_time
 txn_size_mean = args.txn_size_mean
-exp_size = args.exp_size
+log_normal = args.log_normal
 topo_filename = args.topo_filename
 generate_json_also = args.generate_json_also
 graph_topo = args.graph_topo
 balance = args.balance_per_channel
 timeout_value = args.timeout_value
-
+SCALE_AMOUNT = args.scale_amount
 
 
 # generate workloads
@@ -483,11 +514,11 @@ np.random.seed(SEED)
 random.seed(SEED)
 if graph_topo != 'custom':
     generate_workload_standard(output_prefix, graph_topo, distribution, \
-            total_time, exp_size, txn_size_mean, timeout_value, generate_json_also, circ_frac)
+            total_time, log_normal, txn_size_mean, timeout_value, generate_json_also, circ_frac)
 elif topo_filename is None:
     raise Exception("Topology needed for custom file")
 else:
     whole_graph, inside_graph, end_host_map = parse_topo(topo_filename)
     generate_workload_for_provided_topology(output_prefix, inside_graph, whole_graph, end_host_map,\
-            distribution, total_time, exp_size,\
+            distribution, total_time, log_normal,\
             txn_size_mean, timeout_value, generate_json_also, circ_frac)

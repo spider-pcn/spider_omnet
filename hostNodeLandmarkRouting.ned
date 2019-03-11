@@ -17,6 +17,9 @@ simple hostNodeLandmarkRouting
 		bool waterfillingEnabled = default(false);
 		bool priceSchemeEnabled = default(false);
 		bool smoothWaterfillingEnabled = default(false);
+                bool windowEnabled = default(false);
+                bool landmarkRoutingEnabled = default(false);
+                bool lndBaselineEnabled = default(false);
 		int numPathChoices = default(4);
 
                 double alpha = default(0.01);

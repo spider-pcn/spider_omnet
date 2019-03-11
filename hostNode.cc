@@ -36,9 +36,7 @@ double _epsilon;
 bool _hasQueueCapacity;
 int _queueCapacity;
 
-
 #define MSGSIZE 100
-
 
 int hostNode::myIndex(){
    return getIndex();

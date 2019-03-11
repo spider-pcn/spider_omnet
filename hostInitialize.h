@@ -33,3 +33,6 @@ void printChannels();
 void printVector(vector<int> v);
 void printChannels(map<int, vector<int>> channels);
 int minInt(int x, int y);
+
+double getTotalAmount(map<Id, double> v);
+double getTotalAmount(vector<tuple<int, double, routerMsg*, Id >> queue);

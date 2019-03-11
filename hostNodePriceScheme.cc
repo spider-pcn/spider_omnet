@@ -38,7 +38,7 @@ routerMsg *hostNodePriceScheme::generateTriggerPriceUpdateMessage(){
  * tells you to update your price to be sent to your neighbor to tell
  * them your xLocal value
  */
-routerMsg * hostNodePriceScheme::generatePriceUpdateMessage(double xLocal, int receiver){
+routerMsg * hostNodePriceScheme::generatePriceUpdateMessage(double nLocal, double balSum, double inflight, int receiver){
     char msgname[MSGSIZE];
     sprintf(msgname, "tic-%d-to-%d priceUpdateMsg", myIndex(), receiver);
     routerMsg *rMsg = new routerMsg(msgname);
@@ -49,7 +49,10 @@ routerMsg * hostNodePriceScheme::generatePriceUpdateMessage(double xLocal, int r
     rMsg->setMessageType(PRICE_UPDATE_MSG);
     
     priceUpdateMsg *puMsg = new priceUpdateMsg(msgname);
-    puMsg->setXLocal(xLocal);
+    puMsg->setNLocal(nLocal);
+    puMsg->setBalSum(balSum);
+    puMsg->setSumInFlight(inflight);
+
     rMsg->encapsulate(puMsg);
     return rMsg;
 }
@@ -96,7 +99,7 @@ routerMsg * hostNodePriceScheme::generatePriceQueryMessage(vector<int> path, int
 routerMsg *hostNodePriceScheme::generateTriggerTransactionSendMessage(vector<int> path, 
         int pathIndex, int destNode) {
     char msgname[MSGSIZE];
-    sprintf(msgname, "tic-%d-to-%d transactionSendMsg", myIndex(), destNode);
+    sprintf(msgname, "tic-%d-to-%d (path %d) transactionSendMsg", myIndex(), destNode, pathIndex);
     transactionSendMsg *tsMsg = new transactionSendMsg(msgname);
     tsMsg->setPathIndex(pathIndex);
     tsMsg->setTransactionPath(path);
@@ -290,8 +293,12 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     if (simTime() == transMsg->getTimeSent()) {
         destNodeToNumTransPending[destNode]  += 1;
         nodeToDestInfo[destNode].transSinceLastInterval += 1;
-        statNumArrived[destNode] += 1; 
-        statRateArrived[destNode] += 1; 
+
+        if (transMsg->getTimeSent() >= _transStatStart && 
+            transMsg->getTimeSent() <= _transStatEnd) {
+            statNumArrived[destNode] += 1; 
+            statRateArrived[destNode] += 1; 
+        }
     }
 
     // initiate price probes if it is a new destination
@@ -335,17 +342,24 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
             for (auto p: nodeToShortestPathsMap[destNode]) {
                 int pathIndex = p.first;
                 PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
-                double window = max(pathInfo->rateToSendTrans * pathInfo->rttMin, _minWindow);
+                pathInfo->window = max(pathInfo->rateToSendTrans * pathInfo->rttMin, _minWindow);
                 
-                if (pathInfo->rateToSendTrans > 0 && simTime() > pathInfo->timeToNextSend &&
-                        pathInfo->sumOfTransUnitsInFlight < window) {
+                if (pathInfo->rateToSendTrans > 0 && simTime() > pathInfo->timeToNextSend && 
+                        (!_windowEnabled || 
+                         (_windowEnabled && pathInfo->sumOfTransUnitsInFlight < pathInfo->window))) {
+                    
                     ttmsg->setRoute(pathInfo->path);
-                    int nextNode = pathInfo->path[1];
+                    transMsg->setPathIndex(pathIndex);
                     handleTransactionMessage(ttmsg, true /*revisit*/);
 
                     // record stats on sent units for payment channel, destination and path
+                    int nextNode = pathInfo->path[1];
                     nodeToPaymentChannel[nextNode].nValue += 1;
-                    statRateAttempted[destNode] += 1;
+                    
+                    if (transMsg->getTimeSent() >= _transStatStart && 
+                            transMsg->getTimeSent() <= _transStatEnd)
+                        statRateAttempted[destNode] += 1;
+                    
                     pathInfo->nValue += 1;
                     pathInfo->statRateAttempted += 1;
                     pathInfo->sumOfTransUnitsInFlight += transMsg->getAmount();
@@ -368,7 +382,7 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                         scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
                     }
                     
-                    if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
+                    // if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
                     return;
                 }
             }
@@ -409,7 +423,7 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
             simsignal_t muRemoteSignal;
 
             emit(p->nValueSignal, p->nValue);
-            emit(p->xLocalSignal, p->xLocal);
+            // emit(p->xLocalSignal, p->xLocal);
             emit(p->lambdaSignal, p->lambda);
             emit(p->muLocalSignal, p->muLocal);
             emit(p->muRemoteSignal, p->muRemote);
@@ -417,7 +431,7 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
         
         // per destination statistics
         for (auto it = 0; it < _numHostNodes; it++){ 
-            if (it != getIndex()) {
+            if (it != getIndex() && _destList[myIndex()].count(it) > 0) {
                 if (nodeToShortestPathsMap.count(it) > 0) {
                     for (auto p: nodeToShortestPathsMap[it]){
                         int pathIndex = p.first;
@@ -426,16 +440,15 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
                         //signals for price scheme per path
                         emit(pInfo->rateToSendTransSignal, pInfo->rateToSendTrans);
                         emit(pInfo->rateActuallySentSignal, pInfo->rateSentOnPath);
-                        emit(pInfo->timeToNextSendSignal, pInfo->timeToNextSend);
                         emit(pInfo->sumOfTransUnitsInFlightSignal, 
                                 pInfo->sumOfTransUnitsInFlight);
+                        emit(pInfo->windowSignal, pInfo->window);
                         emit(pInfo->priceLastSeenSignal, pInfo->priceLastSeen);
-                        emit(pInfo->isSendTimerSetSignal, pInfo->isSendTimerSet);
                     }
                 }
-               emit(numTimedOutAtSenderSignals[it], statNumTimedOutAtSender[it]);
-               emit(demandEstimatePerDestSignals[it], nodeToDestInfo[it].demand);
-               emit(numWaitingPerDestSignals[it], 
+
+                emit(demandEstimatePerDestSignals[it], nodeToDestInfo[it].demand);
+                emit(numWaitingPerDestSignals[it], 
                        nodeToDestInfo[it].transWaitingToBeSent.size()); 
             }        
         }
@@ -456,13 +469,21 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
     int destNode = ttmsg->getRoute()[0];
     int transactionId = aMsg->getTransactionId();
     
-    if (aMsg->getIsSuccess()==false){
+    if (aMsg->getIsSuccess()==false && aMsg->getTimeSent() >= _transStatStart && 
+            aMsg->getTimeSent() <= _transStatEnd){
         statNumFailed[destNode] += 1;
         statRateFailed[destNode] += 1;
     }
     else {
-        statNumCompleted[destNode] += 1;
-        statRateCompleted[destNode] += 1;
+        if (aMsg->getTimeSent() >= _transStatStart && 
+            aMsg->getTimeSent() <= _transStatEnd){
+            statNumCompleted[destNode] += 1;
+            statRateCompleted[destNode] += 1;
+
+            // stats
+            double timeTaken = simTime().dbl() - aMsg->getTimeSent();
+            statCompletionTimes[destNode] += timeTaken * 1000;
+        }
         nodeToShortestPathsMap[destNode][pathIndex].statRateCompleted += 1;
     }
 
@@ -474,7 +495,6 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
     destNodeToNumTransPending[destNode] -= 1;     
     hostNodeBase::handleAckMessage(ttmsg);
 }
-
 
 /* handler for the clear state message that deals with
  * transactions that will no longer be completed
@@ -509,6 +529,38 @@ void hostNodePriceScheme::handleClearStateMessage(routerMsg *ttmsg) {
 }
 
 
+/* specialized  update Message that accumulates the balance information 
+ * across update messages over a time interval
+ */
+void hostNodePriceScheme::handleUpdateMessage(routerMsg* msg) {
+    int prevNode = msg->getRoute()[msg->getHopCount()-1];
+    updateMsg *uMsg = check_and_cast<updateMsg *>(msg->getEncapsulatedPacket());
+    PaymentChannel *prevChannel = &(nodeToPaymentChannel[prevNode]);
+   
+    //increment the balance sum to reflect the current balance sum
+    // double newBalance = prevChannel->balance + uMsg->getAmount();
+    if (prevChannel->balSum == -1)
+        prevChannel->balSum = 0;
+    prevChannel->balSum += prevChannel->balance/max(double(prevChannel->incomingTransUnits.size()), 1.0);
+
+    hostNodeBase::handleUpdateMessage(msg);
+}
+
+
+/*
+ *  Specialized handler for forward Transaction that updates how much 
+ *  has been sent in flight on this payment channel
+ *  over this interval
+ */
+bool hostNodePriceScheme::forwardTransactionMessage(routerMsg *msg) {
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
+    int nextDest = msg->getRoute()[msg->getHopCount()+1];
+    PaymentChannel *neighbor = &(nodeToPaymentChannel[nextDest]);
+    neighbor->sumInFlight += transMsg->getAmount();
+
+    hostNodeBase::forwardTransactionMessage(msg); 
+}
+
 
 
 /* handler for the trigger message that regularly fires to indicate
@@ -528,17 +580,29 @@ void hostNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
 
     // go through all the payment channels and recompute the arrival rate of 
     // transactions for all of them
-    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++) {
+    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++ ) {
         PaymentChannel *neighborChannel = &(nodeToPaymentChannel[it->first]);      
         neighborChannel->xLocal = neighborChannel->nValue / _tUpdate;
-        neighborChannel->nValue = 0;
-        
         if (it->first < 0){
             printNodeToPaymentChannel();
             endSimulation();
         }
-        
-        routerMsg * priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->xLocal, it->first);
+       
+        double balSum = neighborChannel->lastBalSum;
+        // no updates received
+        if (balSum == -1) 
+            balSum = neighborChannel->balance/max(double(neighborChannel->incomingTransUnits.size()), 1.0);
+
+        routerMsg * priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue, balSum,
+                neighborChannel->sumInFlight, it->first);
+        neighborChannel->lastNValue = neighborChannel->nValue;
+        neighborChannel->nValue = 0;
+
+        neighborChannel->lastBalSum = neighborChannel->balSum;
+        neighborChannel->balSum = -1;
+
+        neighborChannel->lastSumInFlight = neighborChannel->sumInFlight;
+        neighborChannel->sumInFlight = 0;
         forwardMessage(priceUpdateMsg);
     }
     
@@ -571,12 +635,22 @@ void hostNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
  */
 void hostNodePriceScheme::handlePriceUpdateMessage(routerMsg* ttmsg){
     priceUpdateMsg *puMsg = check_and_cast<priceUpdateMsg *>(ttmsg->getEncapsulatedPacket());
-    double xRemote = puMsg->getXLocal();
+    double nRemote = puMsg->getNLocal();
+    double inflightRemote = puMsg->getSumInFlight();
+    double balSumRemote = puMsg->getBalSum();
     int sender = ttmsg->getRoute()[0];
+    
     PaymentChannel *neighborChannel = &(nodeToPaymentChannel[sender]);
-
     //Update $\lambda$, $mu_local$ and $mu_remote$
     double xLocal = neighborChannel->xLocal;
+    int nLocal = neighborChannel->lastNValue;
+    double inflightLocal = neighborChannel->lastSumInFlight;
+
+    double balSumLocal = neighborChannel->lastBalSum;
+    // no balances received
+    if (balSumLocal == -1) 
+        balSumLocal = neighborChannel->balance/max(double(neighborChannel->incomingTransUnits.size()), 1.0);
+
     double cValue = neighborChannel->totalCapacity;
     double oldLambda = neighborChannel->lambda;
     double oldMuLocal = neighborChannel->muLocal;
@@ -592,26 +666,28 @@ void hostNodePriceScheme::handlePriceUpdateMessage(routerMsg* ttmsg){
          double yMuLocal = neighborChannel->yMuLocal;
          double yMuRemote = neighborChannel->yMuRemote;
 
-         double yLambdaNew = oldLambda + _eta*(xLocal + xRemote - (cValue/_delta));
+         double yLambdaNew = oldLambda + _eta*(nLocal + nRemote - inflightLocal -inflightRemote 
+                - balSumLocal - balSumRemote);
          newLambda = yLambdaNew + _rhoLambda*(yLambdaNew - yLambda); 
          neighborChannel->yLambda = yLambdaNew;
 
-         double yMuLocalNew = oldMuLocal + _kappa*(xLocal - xRemote);
+         double yMuLocalNew = oldMuLocal + _kappa*(nLocal - nRemote);
          newMuLocal = yMuLocalNew + _rhoMu*(yMuLocalNew - yMuLocal);
          neighborChannel->yMuLocal = yMuLocalNew;
 
-         double yMuRemoteNew = oldMuRemote + _kappa*(xRemote - xLocal);
+         double yMuRemoteNew = oldMuRemote + _kappa*(nRemote - nLocal);
          newMuRemote = yMuRemoteNew + _rhoMu*(yMuRemoteNew - yMuRemote);
          neighborChannel->yMuRemote = yMuRemoteNew;
      } 
      else if (_secondOrderOptimization) {
          double lastLambdaGrad = neighborChannel->lastLambdaGrad;
-         double newLambdaGrad = xLocal + xRemote - (cValue/_delta);
+         double newLambdaGrad = nLocal + nRemote - inflightLocal -inflightRemote 
+                - balSumLocal - balSumRemote;
          newLambda = oldLambda +  _eta*newLambdaGrad + _rhoLambda*(newLambdaGrad - lastLambdaGrad);
          neighborChannel->lastLambdaGrad = newLambdaGrad;
 
          double lastMuLocalGrad = neighborChannel->lastMuLocalGrad;
-         double newMuLocalGrad = xLocal - xRemote;
+         double newMuLocalGrad = nLocal - nRemote;
          newMuLocal = oldMuLocal + _kappa*newMuLocalGrad + 
              _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
          newMuRemote = oldMuRemote - _kappa*newMuLocalGrad - 
@@ -619,9 +695,10 @@ void hostNodePriceScheme::handlePriceUpdateMessage(routerMsg* ttmsg){
          neighborChannel->lastMuLocalGrad = newMuLocalGrad;
      } 
      else {
-         newLambda = oldLambda +  _eta*(xLocal + xRemote - (cValue/_delta));
-         newMuLocal = oldMuLocal + _kappa*(xLocal - xRemote);
-         newMuRemote = oldMuRemote + _kappa*(xRemote - xLocal); 
+         newLambda = oldLambda +  _eta*(nLocal + nRemote - inflightLocal -inflightRemote 
+                - balSumLocal - balSumRemote);
+         newMuLocal = oldMuLocal + _kappa*(nLocal - nRemote);
+         newMuRemote = oldMuRemote + _kappa*(nRemote - nLocal); 
      }
      
      neighborChannel->lambda = maxDouble(newLambda, 0);
@@ -684,7 +761,7 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
         double lambda = nodeToPaymentChannel[nextNode].lambda;
         double muLocal = nodeToPaymentChannel[nextNode].muLocal;
         double muRemote = nodeToPaymentChannel[nextNode].muRemote;
-        double zNew =  zOld + (2 * lambda) + muLocal  - muRemote;
+        double zNew =  zOld;// + (2 * lambda) + muLocal  - muRemote;
         pqMsg->setZValue(zNew);
         forwardMessage(ttmsg);
     }
@@ -705,7 +782,7 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
         int routeIndex = pqMsg->getPathIndex();
 
         PathInfo *p = &(nodeToShortestPathsMap[destNode][routeIndex]);
-        double oldRate = p->rateSentOnPath;
+        double oldRate = p->rateToSendTrans;
 
         // Nesterov's gradient descent equation
         // and other speeding up mechanisms
@@ -716,14 +793,15 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
           p->yRateToSendTrans = yNew;
           preProjectionRate = yNew + _rho*(yNew - yPrev);
         } else {
-          preProjectionRate  = oldRate + _alpha*(1-zValue);
+          preProjectionRate  = oldRate + _alpha*(1 - zValue);
         }
 
         p->priceLastSeen = zValue;
-        p->rateToSendTrans = maxDouble(preProjectionRate, _minPriceRate);
-        updateTimers(destNode, routeIndex, p->rateToSendTrans);
+        // p->rateToSendTrans = maxDouble(preProjectionRate, _minPriceRate);
+        // updateTimers(destNode, routeIndex, p->rateToSendTrans);
 
-        /* compute the projection of this new rate along with old rates
+        // compute the projection of this new rate along with old rates
+        double sumRates = 0.0;
         vector<PathRateTuple> pathRateTuples;
         for (auto p : nodeToShortestPathsMap[destNode]) {
             int pathIndex = p.first;
@@ -733,12 +811,19 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
             } else {
                 rate = preProjectionRate;
             }
+            sumRates += p.second.rateToSendTrans;
               
             PathRateTuple newTuple = make_tuple(pathIndex, rate);
             pathRateTuples.push_back(newTuple);
         }
-        vector<PathRateTuple> projectedRates = pathRateTuples;
-            //computeProjection(pathRateTuples, nodeToDestInfo[destNode].demand);
+
+        int queueSize = nodeToDestInfo[destNode].transWaitingToBeSent.size();
+        double drainTime = 100.0; // seconds
+        double bias = nodeToDestInfo[destNode].demand - sumRates; 
+        // get<1>(pathRateTuples[routeIndex]) += _alpha * bias;
+
+        vector<PathRateTuple> projectedRates = 
+            computeProjection(pathRateTuples, 1.1*nodeToDestInfo[destNode].demand /*+ queueSize/drainTime*/);
 
         // reassign all path's rates to the projected rates and 
         // make sure it is atleast minPriceRate for every path
@@ -752,7 +837,7 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
             else
                 nodeToShortestPathsMap[destNode][pathIndex].rateToSendTrans = 
                 maxDouble(newRate, _minPriceRate);
-        }*/
+        }
               
         //delete both messages
         ttmsg->decapsulate();
@@ -773,10 +858,10 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
     int pathIndex = tsMsg->getPathIndex();
     int destNode = tsMsg->getReceiver();
     PathInfo* p = &(nodeToShortestPathsMap[destNode][pathIndex]);
-    double window = max(p->rateToSendTrans * p->rttMin, _minWindow);
+    p->window = max(p->rateToSendTrans * p->rttMin, _minWindow);
 
-    if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0 && 
-            p->sumOfTransUnitsInFlight < window){
+    if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0 && (!_windowEnabled || 
+            (_windowEnabled && p->sumOfTransUnitsInFlight < p->window))){
         //remove the transaction $tu$ at the head of the queue
         routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
         nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
@@ -792,7 +877,7 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         int nextNode = path[1];
         nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + 1;
 
-        if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
+        // if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
 
         // increment amount in inflght and other info on last transaction on this path
         p->nValue += 1;
@@ -816,7 +901,11 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
 
         // update the number attempted to this destination and on this path
         p->statRateAttempted = p->statRateAttempted + 1;
-        statRateAttempted[destNode] += 1;
+
+        if (transMsg->getTimeSent() >= _transStatStart && 
+            transMsg->getTimeSent() <= _transStatEnd){
+            statRateAttempted[destNode] += 1;
+        }
 
         //Update the  “time when next transaction can be sent” 
         double bound = _reschedulingEnabled ? _epsilon : 1.0;
@@ -834,7 +923,7 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         //no trans to send
         // don't turn off timers
         PathInfo* p = &(nodeToShortestPathsMap[destNode][pathIndex]);
-        double rateToSendTrans = p->rateToSendTrans;
+        double rateToSendTrans = max(p->rateToSendTrans, _epsilon);
         double lastTxnSize = p->lastTransSize;
         p->timeToNextSend = simTime() +
                 max(lastTxnSize/rateToSendTrans, _epsilon);
@@ -860,17 +949,12 @@ void hostNodePriceScheme::initializePriceProbes(vector<vector<int>> kShortestPat
         temp.rateToSendTrans = _minPriceRate;
         temp.yRateToSendTrans = _minPriceRate;
         // TODO: change this to something sensible
-        temp.rttMin = kShortestPaths[pathIdx].size() * _delta;
+        temp.rttMin = (kShortestPaths[pathIdx].size() - 1) * 2 * _avgDelay/1000.0;
+        cout << temp.rttMin << " is rtt for path " << pathIdx << endl;
         nodeToShortestPathsMap[destNode][pathIdx] = temp;
 
         //initialize signals
         simsignal_t signal;
-        signal = registerSignalPerDestPath("rateAttempted", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].rateAttemptedPerDestPerPathSignal = signal;
-
-        signal = registerSignalPerDestPath("rateAttempted", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].rateCompletedPerDestPerPathSignal = signal;
-
         signal = registerSignalPerDestPath("rateToSendTrans", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].rateToSendTransSignal = signal;
 
@@ -882,12 +966,12 @@ void hostNodePriceScheme::initializePriceProbes(vector<vector<int>> kShortestPat
 
         signal = registerSignalPerDestPath("sumOfTransUnitsInFlight", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].sumOfTransUnitsInFlightSignal = signal;
+
+        signal = registerSignalPerDestPath("window", pathIdx, destNode);
+        nodeToShortestPathsMap[destNode][pathIdx].windowSignal = signal;
       
         signal = registerSignalPerDestPath("priceLastSeen", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].priceLastSeenSignal = signal;
-
-        signal = registerSignalPerDestPath("isSendTimerSet", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].isSendTimerSetSignal = signal;
    }
 }
 
@@ -948,6 +1032,7 @@ void hostNodePriceScheme::initialize() {
         _zeta = par("zeta"); // ewma for d_ij every source dest demand
         _minPriceRate = par("minRate");
         _rho = _rhoLambda = _rhoMu = par("rhoValue");
+        _windowEnabled = par("windowEnabled");
     }
 
     for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter) {
@@ -962,34 +1047,24 @@ void hostNodePriceScheme::initialize() {
         signal = registerSignalPerChannel("nValue", key);
         nodeToPaymentChannel[key].nValueSignal = signal;
         
-        signal = registerSignalPerChannel("xLocal", key);
-        nodeToPaymentChannel[key].xLocalSignal = signal;
-        
         signal = registerSignalPerChannel("muLocal", key);
         nodeToPaymentChannel[key].muLocalSignal = signal;
 
         signal = registerSignalPerChannel("lambda", key);
         nodeToPaymentChannel[key].lambdaSignal = signal;
-
-        signal = registerSignalPerChannel("muRemote", key);
-        nodeToPaymentChannel[key].muRemoteSignal = signal;
     }
 
     //initialize signals with all other nodes in graph
+    // that there is demand for
     for (int i = 0; i < _numHostNodes; ++i) {
-        simsignal_t signal;
-        signal = registerSignalPerDest("pathPerTrans", i, "");
-        pathPerTransPerDestSignals.push_back(signal);
-
-        signal = registerSignalPerDest("demandEstimate", i, "");
-        demandEstimatePerDestSignals.push_back(signal);
+        if (_destList[myIndex()].count(i) > 0) {
+            simsignal_t signal;
+            signal = registerSignalPerDest("demandEstimate", i, "");
+            demandEstimatePerDestSignals[i] = signal;
         
-        signal = registerSignalPerDest("numWaiting", i, "_Total");
-        numWaitingPerDestSignals.push_back(signal);
-
-        signal = registerSignalPerDest("numTimedOutAtSender", i, "_Total");
-        numTimedOutAtSenderSignals.push_back(signal);
-        statNumTimedOutAtSender.push_back(0);
+            signal = registerSignalPerDest("numWaiting", i, "_Total");
+            numWaitingPerDestSignals[i] = signal;
+        }
     }
 
 

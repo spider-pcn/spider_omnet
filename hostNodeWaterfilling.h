@@ -15,17 +15,11 @@ class hostNodeWaterfilling : public hostNodeBase {
         map<int, double> destNodeToLastMeasurementTime = {};
 
         // waterfilling specific signals
-        vector<simsignal_t> probabilityPerDestSignals = {};
-        vector<simsignal_t> pathPerTransPerDestSignals = {};  
-        vector<simsignal_t> numTimedOutAtSenderSignals = {};
+        map<int, simsignal_t> probabilityPerDestSignals = {};
 
     protected:
         virtual void initialize() override;
         // message generating functions
-        virtual routerMsg *generateWaterfillingTransactionMessage(double amt,
-                vector<int> path, int pathIndex, transactionMsg * transMsg);
-        virtual routerMsg *generateTimeOutMessage(vector<int> path, 
-                int transactionId, int receiver);
         virtual routerMsg *generateProbeMessage(int destNode, int pathIdx, vector<int> path);
 
         // message handlers
@@ -36,6 +30,7 @@ class hostNodeWaterfilling : public hostNodeBase {
         virtual void handleClearStateMessage(routerMsg *msg) override;
         virtual void handleAckMessageTimeOut(routerMsg *msg) override;
         virtual void handleAckMessageSpecialized(routerMsg *msg) override;
+        virtual void handleStatMessage(routerMsg *msg) override;
         
 
         /**** CORE LOGIC ****/
@@ -50,7 +45,7 @@ class hostNodeWaterfilling : public hostNodeBase {
         virtual void forwardProbeMessage(routerMsg *msg);
 
         // splits transactions and decides which paths they should use
-        virtual void splitTransactionForWaterfilling(routerMsg * ttMsg);
+        virtual void splitTransactionForWaterfilling(routerMsg * ttMsg, bool firstAttempt);
 
         // helper functions
         virtual int updatePathProbabilities(vector<double> bottleneckBalances, int destNode);

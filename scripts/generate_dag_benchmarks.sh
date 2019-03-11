@@ -1,7 +1,7 @@
 #!/bin/bash
 PATH_PREFIX="../benchmarks/"
 
-num_nodes=("2" "2" "3" "4" "5" "10" "0" "0" "10" "20" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
+num_nodes=("2" "2" "3" "4" "5" "10" "0" "0" "10" "20" "40" "60" "80" "100" "200" "400" "600" "800" "1000" "20"\
     "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
 
 balance=100
@@ -11,7 +11,7 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "hotnets" "lnd_dec4_2018" "lnd_dec28_2018" \
     "sw_10_routers" "sw_20_routers" "sw_40_routers" "sw_60_routers" "sw_80_routers"  \
     "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
-    "sw_800_routers" "sw_1000_routers"\
+    "sw_800_routers" "sw_1000_routers" "sf_20_routers"\
     "sf_40_routers" "sf_60_routers" "sf_80_routers"  \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
@@ -25,7 +25,7 @@ PYTHON="/usr/bin/python"
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
-array=( 10 19 32 )
+array=( 10 20 )
 for i in "${array[@]}";
 do 
     for (( j=0; j<${#dag_percent[@]}; j++ ));

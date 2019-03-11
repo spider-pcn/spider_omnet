@@ -3,6 +3,40 @@
 #include "hostInitialize.h"
 
 
+/* adds up everything in the vector and returns it */
+double getTotalAmount(map<Id, double> v) {
+    auto sumAmt = [&] (double sum, map<Id, double>::value_type&p) { return sum + p.second; };
+    return accumulate(begin(v), end(v), 0.0, sumAmt);
+}
+
+/* adds up everything in the vector and returns it */
+double getTotalAmount(vector<tuple<int, double, routerMsg*, Id >> queue) {
+    return accumulate(begin(queue), end(queue), 0.0, 
+            [](double sum, tuple<int, double, routerMsg*, Id>&p) { return sum + get<1>(p); });
+}
+
+void printVector(vector<int> v){
+   for (auto temp : v){
+      cout << temp << ", ";
+   }
+   cout << endl;
+}
+
+double minVectorElemDouble(vector<double> v){
+   double min = v[0];
+   for (double d: v){
+      if (d<min){
+         min=d;
+      }
+   }
+   return min;
+}
+
+double maxDouble(double x, double y){
+    if (x>y) return x;
+    return y;
+}
+
 bool probesRecent(map<int, PathInfo> probes){
     for (auto iter : probes){
         int key = iter.first;
@@ -273,6 +307,13 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
     return shortestRoutes;
 }
 
+bool vectorContains(vector<int> smallVector, vector<vector<int>> bigVector) {
+    for (auto v : bigVector) {
+        if (v == smallVector)
+            return true;
+    }
+    return false;
+}
 
 vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, int k){
     int landmark;
@@ -284,17 +325,17 @@ vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, 
         landmark = get<1>(_landmarksWithConnectivityList[i]);
         pathSenderToLandmark = breadthFirstSearch(sender, landmark); //use breadth first search
         pathLandmarkToReceiver = breadthFirstSearch(landmark, receiver); //use breadth first search
-
-        //if we couldn't find a path to the n (< k) -th most connected landmark, can skip and look at m (> k) -th most connected 
-        if ((pathSenderToLandmark.size()<2 || pathLandmarkToReceiver.size()<2) && numPaths < _landmarksWithConnectivityList.size())
-        {
-            numPaths++;
-            continue;
-        }
-        else{
-            pathSenderToLandmark.insert(pathSenderToLandmark.end(), pathLandmarkToReceiver.begin() + 1, pathLandmarkToReceiver.end() );
+			
+			  pathSenderToLandmark.insert(pathSenderToLandmark.end(), 
+                    pathLandmarkToReceiver.begin() + 1, pathLandmarkToReceiver.end());
+        if ((pathSenderToLandmark.size() < 2 ||  pathLandmarkToReceiver.size() < 2 || 
+                    vectorContains(pathSenderToLandmark, kRoutes))) { 
+            if (numPaths < _landmarksWithConnectivityList.size()) {
+                numPaths++;
+            }
+        } else {
             kRoutes.push_back(pathSenderToLandmark);
-        }
+        } 
     }
     return kRoutes;
 }
@@ -373,8 +414,6 @@ vector<int> breadthFirstSearch(int sender, int receiver){
     vector<int> empty = {};
     return empty;
 }
-
-
 
 template <class T,class S> struct pair_equal_to : binary_function <T,pair<T,S>,bool> {
     bool operator() (const T& y, const pair<T,S>& x) const
@@ -740,13 +779,68 @@ void printVector(vector<int> v){
 }
 
 
+/*
+ *  generate_trans_unit_list - reads from file and generates global transaction unit job list.
+ *      each line of file is of form:
+ *      [amount] [timeSent] [sender] [receiver] [priorityClass]
+ */
+//Radhika: do we need to pass global variables as arguments?
+void generateTransUnitList(string workloadFile){
+   string line;
+   ifstream myfile (workloadFile);
+   double lastTime = -1; 
+   if (myfile.is_open())
+   {
+      while ( getline (myfile,line) )
+      {
+         vector<string> data = split(line, ' ');
+
+         //data[0] = amount, data[1] = timeSent, data[2] = sender, data[3] = receiver, data[4] = priority class; (data[5] = time out)
+         double amount = stod(data[0]);
+         double timeSent = stod(data[1]);
+         int sender = stoi(data[2]);
+         int receiver = stoi(data[3]);
+         int priorityClass = stoi(data[4]);
+         double timeOut=-1;
+         double hasTimeOut = _timeoutEnabled;
+         if (data.size()>5 && _timeoutEnabled){
+            timeOut = stoi(data[5]);
+            //cout << "timeOut: " << timeOut << endl;
+         }
+         else if (_timeoutEnabled) {
+             timeOut = 5.0;
+         }
+
+         if (timeSent > lastTime)
+             lastTime = timeSent;
+
+         // instantiate all the transUnits that need to be sent
+         TransUnit tempTU = TransUnit(amount, timeSent, sender, receiver, priorityClass, hasTimeOut, timeOut);
+
+         // push the transUnit into a priority queue indexed by the sender, 
+         _transUnitList[sender].push(tempTU);
+         _destList[sender].insert(receiver);
+
+      }
+   		//cout << "finished generateTransUnitList" << endl;
+		
+      myfile.close();
+      if (lastTime + 5 < _simulationLength) {
+          cout << "Insufficient txns" << endl;
+          assert(false);
+      }
+
+   }
+
+   else cout << "Unable to open file" << workloadFile << endl;
+   return;
+
 void printChannels(map<int, vector<int>> channels){
     for (auto a: channels){
         cout << a.first << ": ";
         printVector(a.second);
         cout << endl;
     }
-
 }
 
 

@@ -13,16 +13,16 @@ class hostNodePriceScheme : public hostNodeBase {
     private:
         // price scheme specific signals
         vector<simsignal_t> probabilityPerDestSignals = {};
-        vector<simsignal_t> numWaitingPerDestSignals = {};
+        map<int, simsignal_t> numWaitingPerDestSignals = {};
         vector<simsignal_t> numTimedOutAtSenderSignals = {};
         vector<simsignal_t> pathPerTransPerDestSignals = {};
-        vector<simsignal_t> demandEstimatePerDestSignals = {};
+        map<int, simsignal_t> demandEstimatePerDestSignals = {};
 
 
     protected:
         // message generators
         virtual routerMsg *generateTriggerPriceUpdateMessage();
-        virtual routerMsg *generatePriceUpdateMessage(double xLocal, int dest);
+        virtual routerMsg *generatePriceUpdateMessage(double nLocal, double balSum, double sumInFlight, int dest);
         virtual routerMsg *generateTriggerPriceQueryMessage();
         virtual routerMsg *generatePriceQueryMessage(vector<int> route, int routeIndex);
         virtual routerMsg *generateTriggerTransactionSendMessage(vector<int> route, 
@@ -40,7 +40,9 @@ class hostNodePriceScheme : public hostNodeBase {
         virtual void handleStatMessage(routerMsg *msg) override;
         virtual void handleAckMessageSpecialized(routerMsg* ttmsg) override;
         virtual void handleClearStateMessage(routerMsg *msg) override;
-        
+        virtual void handleUpdateMessage(routerMsg *msg) override;
+        virtual bool forwardTransactionMessage(routerMsg *msg) override;
+
         // special messages for priceScheme
         virtual void handleTriggerPriceUpdateMessage(routerMsg *msg);
         virtual void handlePriceUpdateMessage(routerMsg* ttmsg);

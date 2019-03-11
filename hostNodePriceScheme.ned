@@ -17,7 +17,11 @@ simple hostNodePriceScheme
 		bool waterfillingEnabled = default(false);
 		bool priceSchemeEnabled = default(false);
 		bool smoothWaterfillingEnabled = default(false);
-		int numPathChoices = default(4);
+                bool windowEnabled = default(false);
+                bool landmarkRoutingEnabled = default(false);
+                bool lndBaselineEnabled = default(false);
+		
+                int numPathChoices = default(4);
 
                 double alpha = default(0.01);
                 double kappa = default(0.01);
@@ -63,7 +67,7 @@ simple hostNodePriceScheme
  		@signal[numWaitingPerDest*](type="unsigned long");  
 		@statisticTemplate[numWaitingPerDestTemplate](record=vector, stats);  
 	
-		@signal[fracSuccessfulPerDest*](type="long");  
+		@signal[fracSuccessfulPerDest*](type="double");  
 		@statisticTemplate[fracSuccessfulPerDestTemplate](record=vector, stats);   
 		
 		@signal[pathPerTransPerDest*](type="long");  
@@ -110,7 +114,7 @@ simple hostNodePriceScheme
 		@statisticTemplate[rateFailedPerDestTemplate](record=vector, stats);
 		
 		//price scheme payment channel specific signals
-		@signal[nValuePerChannel*](type="long"); 
+		@signal[nValuePerChannel*](type="double"); 
 		@statisticTemplate[nValuePerChannelTemplate](record=vector, stats);
 		
 		@signal[xLocalPerChannel*](type="double"); 
@@ -137,7 +141,10 @@ simple hostNodePriceScheme
 		
 		@signal[sumOfTransUnitsInFlightPerDestPerPath*](type="double"); 
 		@statisticTemplate[sumOfTransUnitsInFlightPerDestPerPathTemplate](record=vector, stats);
-		
+			
+        	@signal[windowPerDestPerPath*](type="double"); 
+		@statisticTemplate[windowPerDestPerPathTemplate](record=vector, stats);
+
 		@signal[priceLastSeenPerDestPerPath*](type="double"); 
 		@statisticTemplate[priceLastSeenPerDestPerPathTemplate](record=vector, stats);
 		

@@ -47,6 +47,13 @@ five_node_graph.add_edge(2, 3)
 five_node_graph.add_edge(3, 4)
 five_node_graph.add_edge(4, 0)
 
+# five node line
+five_line_graph = nx.Graph()
+five_line_graph.add_edge(0, 1)
+five_line_graph.add_edge(1, 2)
+five_line_graph.add_edge(2, 3)
+five_line_graph.add_edge(3, 4)
+
 # Filenames for Kaggle data
 KAGGLE_PATH = './data/'
 KAGGLE_AMT_DIST_FILENAME = KAGGLE_PATH + 'amt_dist.npy'
@@ -55,10 +62,12 @@ KAGGLE_TIME_DIST_FILENAME = KAGGLE_PATH + 'time_dist.npy'
 
 # CONSTANTS
 SEED = 23
-SCALE_AMOUNT = 5
+SCALE_AMOUNT = 30
 MEAN_RATE = 10
 CIRCULATION_STD_DEV = 2
 LARGE_BALANCE = 1000000000
+MIN_TXN_SIZE = 0.1
+MAX_TXN_SIZE = 10
 
 EC2_INSTANCE_ADDRESS="ec2-18-213-2-219.compute-1.amazonaws.com"
 PORT_NUMBER=8000
@@ -67,6 +76,8 @@ PORT_NUMBER=8000
 ENDHOST_LND_ONE_WAY_CAPACITY = 1000000000
 ROUTER_CAPACITY = 100
 LND_FILE_PATH = "../lnd_data/"
+LOG_NORMAL_MEAN=0.0
+LOG_NORMAL_SCALE=0.5
 
 
 
@@ -91,6 +102,7 @@ INTERESTING_SIGNALS["rateCompleted"] = ["rateCompletedPerDest_Total"]
 INTERESTING_SIGNALS["rateArrived"] = ["rateArrivedPerDest_Total"]
 INTERESTING_SIGNALS["rateToSendTrans"] = ["rateToSendTransPerDestPerPath"]
 INTERESTING_SIGNALS["rateSent"] = ["rateSentPerDestPerPath"]
+INTERESTING_SIGNALS["window"] = ["windowPerDestPerPath"]
 INTERESTING_SIGNALS["sumOfTransUnitsInFlight"] = ["sumOfTransUnitsInFlightPerDestPerPath"]
 INTERESTING_SIGNALS["priceLastSeen"] = ["priceLastSeenPerDestPerPath"]
 
@@ -104,11 +116,12 @@ for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", \
     per_dest_list.append(signal + "PerDest")
 per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", \
         "rateToSendTransPerDestPerPath", "rateSentPerDestPerPath", \
-        "sumOfTransUnitsInFlightPerDestPerPath", \
+        "sumOfTransUnitsInFlightPerDestPerPath", "windowPerDestPerPath", \
         "priceLastSeenPerDestPerPath", "numTimedOutPerDest"])
 
 per_channel_list = []
-for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "numSent", "muRemote", "numInflight"]:
+for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "nValue", "balSum", "inFlightSum", \
+        "numSent", "muRemote", "numInflight"]:
     INTERESTING_SIGNALS[signal] = signal + "PerChannel"
     per_channel_list.append(signal + "PerChannel")
 

@@ -38,7 +38,7 @@ class routerNode : public cSimpleModule
       virtual routerMsg *generateStatMessage();
       virtual routerMsg *generateClearStateMessage();
       virtual routerMsg *generateTriggerPriceUpdateMessage();
-      virtual routerMsg *generatePriceUpdateMessage(double xLocal, int reciever);
+      virtual routerMsg *generatePriceUpdateMessage(double nLocal, double balSum, double sumInFlight, int reciever);
 
 
       virtual void checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits, int node);

@@ -191,6 +191,7 @@ transactionMsg::transactionMsg(const char *name, short kind) : ::omnetpp::cPacke
     this->timeOut = 0;
     this->htlcIndex = 0;
     this->pathIndex = 0;
+    this->originalAmount = 0;
 }
 
 transactionMsg::transactionMsg(const transactionMsg& other) : ::omnetpp::cPacket(other)
@@ -222,6 +223,7 @@ void transactionMsg::copy(const transactionMsg& other)
     this->timeOut = other.timeOut;
     this->htlcIndex = other.htlcIndex;
     this->pathIndex = other.pathIndex;
+    this->originalAmount = other.originalAmount;
 }
 
 void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -237,6 +239,7 @@ void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->timeOut);
     doParsimPacking(b,this->htlcIndex);
     doParsimPacking(b,this->pathIndex);
+    doParsimPacking(b,this->originalAmount);
 }
 
 void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -252,6 +255,7 @@ void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->timeOut);
     doParsimUnpacking(b,this->htlcIndex);
     doParsimUnpacking(b,this->pathIndex);
+    doParsimUnpacking(b,this->originalAmount);
 }
 
 double transactionMsg::getAmount() const
@@ -354,6 +358,16 @@ void transactionMsg::setPathIndex(int pathIndex)
     this->pathIndex = pathIndex;
 }
 
+double transactionMsg::getOriginalAmount() const
+{
+    return this->originalAmount;
+}
+
+void transactionMsg::setOriginalAmount(double originalAmount)
+{
+    this->originalAmount = originalAmount;
+}
+
 class transactionMsgDescriptor : public omnetpp::cClassDescriptor
 {
   private:
@@ -419,7 +433,7 @@ const char *transactionMsgDescriptor::getProperty(const char *propertyname) cons
 int transactionMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 10+basedesc->getFieldCount() : 10;
+    return basedesc ? 11+basedesc->getFieldCount() : 11;
 }
 
 unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
@@ -441,8 +455,9 @@ unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<10) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<11) ? fieldTypeFlags[field] : 0;
 }
 
 const char *transactionMsgDescriptor::getFieldName(int field) const
@@ -464,8 +479,9 @@ const char *transactionMsgDescriptor::getFieldName(int field) const
         "timeOut",
         "htlcIndex",
         "pathIndex",
+        "originalAmount",
     };
-    return (field>=0 && field<10) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<11) ? fieldNames[field] : nullptr;
 }
 
 int transactionMsgDescriptor::findField(const char *fieldName) const
@@ -482,6 +498,7 @@ int transactionMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='t' && strcmp(fieldName, "timeOut")==0) return base+7;
     if (fieldName[0]=='h' && strcmp(fieldName, "htlcIndex")==0) return base+8;
     if (fieldName[0]=='p' && strcmp(fieldName, "pathIndex")==0) return base+9;
+    if (fieldName[0]=='o' && strcmp(fieldName, "originalAmount")==0) return base+10;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -504,8 +521,9 @@ const char *transactionMsgDescriptor::getFieldTypeString(int field) const
         "double",
         "int",
         "int",
+        "double",
     };
-    return (field>=0 && field<10) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<11) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **transactionMsgDescriptor::getFieldPropertyNames(int field) const
@@ -582,6 +600,7 @@ std::string transactionMsgDescriptor::getFieldValueAsString(void *object, int fi
         case 7: return double2string(pp->getTimeOut());
         case 8: return long2string(pp->getHtlcIndex());
         case 9: return long2string(pp->getPathIndex());
+        case 10: return double2string(pp->getOriginalAmount());
         default: return "";
     }
 }
@@ -606,6 +625,7 @@ bool transactionMsgDescriptor::setFieldValueAsString(void *object, int field, in
         case 7: pp->setTimeOut(string2double(value)); return true;
         case 8: pp->setHtlcIndex(string2long(value)); return true;
         case 9: pp->setPathIndex(string2long(value)); return true;
+        case 10: pp->setOriginalAmount(string2double(value)); return true;
         default: return false;
     }
 }

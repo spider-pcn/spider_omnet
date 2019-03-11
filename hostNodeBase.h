@@ -28,19 +28,25 @@ class hostNodeBase : public cSimpleModule {
         int index; // node identifier
         map<int, PaymentChannel> nodeToPaymentChannel;
         map<int, DestInfo> nodeToDestInfo; //one structure per destination;
+        set<int> destList; // list of destinations with non zero demand
              
         //TODO: incorporate the signals into nodeToDestInfo
         // statistic collection related variables
-        vector<int> statNumFailed = {};
-        vector<int> statRateFailed = {};
-        vector<int> statNumCompleted = {};
-        vector<int> statNumArrived = {};
-        vector<int> statRateCompleted = {};
-        vector<int> statRateAttempted = {};
-        vector<int> statNumTimedOut = {};
-        vector<int> statNumTimedOutAtSender = {};
-        vector<int> statRateArrived = {};
-        vector<double> statProbabilities = {};
+        map<int, int> statNumFailed = {};
+        map<int, double> statAmtFailed = {};
+        map<int, int> statRateFailed = {};
+        map<int, int> statNumCompleted = {};
+        map<int, double> statAmtCompleted = {};
+        map<int, int> statNumArrived = {};
+        map<int, int> statRateCompleted = {};
+        map<int, double> statAmtArrived = {};
+        map<int, double> statAmtAttempted = {};
+        map<int, int> statRateAttempted = {};
+        map<int, int> statNumTimedOut = {};
+        map<int, int> statNumTimedOutAtSender = {};
+        map<int, int> statRateArrived = {};
+        map<int, double> statProbabilities = {};
+        map<int, double> statCompletionTimes = {};
         int numCleared = 0;
 
         //store shortest paths 
@@ -55,16 +61,16 @@ class hostNodeBase : public cSimpleModule {
         simsignal_t completionTimeSignal;
         simsignal_t numClearedSignal;
 
-        vector<simsignal_t> rateCompletedPerDestSignals = {};
-        vector<simsignal_t> rateAttemptedPerDestSignals = {};
-        vector<simsignal_t> rateArrivedPerDestSignals = {};
-        vector<simsignal_t> numCompletedPerDestSignals = {};
-        vector<simsignal_t> numArrivedPerDestSignals = {};
-        vector<simsignal_t> numTimedOutPerDestSignals = {};
-        vector<simsignal_t> numPendingPerDestSignals = {};       
-        vector<simsignal_t> rateFailedPerDestSignals = {};
-        vector<simsignal_t> numFailedPerDestSignals = {};
-        vector<simsignal_t> fracSuccessfulPerDestSignals = {};
+        map<int, simsignal_t> rateCompletedPerDestSignals = {};
+        map<int, simsignal_t> rateAttemptedPerDestSignals = {};
+        map<int, simsignal_t> rateArrivedPerDestSignals = {};
+        map<int, simsignal_t> numCompletedPerDestSignals = {};
+        map<int, simsignal_t> numArrivedPerDestSignals = {};
+        map<int, simsignal_t> numTimedOutPerDestSignals = {};
+        map<int, simsignal_t> numPendingPerDestSignals = {};       
+        map<int, simsignal_t> rateFailedPerDestSignals = {};
+        map<int, simsignal_t> numFailedPerDestSignals = {};
+        map<int, simsignal_t> fracSuccessfulPerDestSignals = {};
 
         //set of transaction units WITH timeouts, that we already received acks for
         set<int> successfulDoNotSendTimeOut = {};       
@@ -97,13 +103,16 @@ class hostNodeBase : public cSimpleModule {
         virtual simsignal_t registerSignalPerDest(string signalStart, int destNode, 
                 string suffix);
 
-        // generators for the standard messages 
+        // generators for the standard messages
+        virtual routerMsg* generateTransactionMessageForPath(double amt, 
+                vector<int> path, int pathIndex, transactionMsg* transMsg);
         virtual routerMsg *generateTransactionMessage(TransUnit TransUnit);
         virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true);
         virtual routerMsg *generateUpdateMessage(int transId, 
                 int receiver, double amount, int htlcIndex);        
         virtual routerMsg *generateStatMessage();
         virtual routerMsg *generateClearStateMessage();
+        virtual routerMsg* generateTimeOutMessageForPath(vector<int> path, int transactionId, int receiver);
         virtual routerMsg *generateTimeOutMessage(routerMsg *transMsg);
       
 

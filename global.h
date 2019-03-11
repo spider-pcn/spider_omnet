@@ -43,6 +43,7 @@ struct LaterTransUnit
 
 //global parameters
 extern map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
+extern map<int, set<int>> _destList;
 extern int _numNodes;
 //number of nodes in network
 extern int _numRouterNodes;
@@ -63,6 +64,8 @@ extern bool _lndBaselineEnabled;
 extern int _numAttemptsLNDBaseline;
 //for lndbaseline
 extern double _restorePeriod; 
+
+extern bool _windowEnabled;
 
 extern vector<tuple<int,int>> _landmarksWithConnectivityList;//pair: (number of edges, node number)
 
@@ -96,4 +99,7 @@ extern double _epsilon;
 
 extern bool _nesterov;
 extern bool _secondOrderOptimization;
+
+extern double _transStatStart;
+extern double _transStatEnd;
 
