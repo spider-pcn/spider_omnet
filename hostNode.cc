@@ -1,5 +1,5 @@
 #include "hostNode.h"
-#include <queue>
+
 int hostNode::myIndex(){
    return getIndex();
 }

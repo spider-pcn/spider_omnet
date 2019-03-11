@@ -20,6 +20,7 @@
 #include <deque>
 #include <map>
 #include <fstream>
+#include <list>
 #include "structs/PaymentChannel.h"
 #include "structs/PathInfo.h"
 #include "structs/TransUnit.h"
@@ -59,6 +60,10 @@ extern bool _timeoutEnabled;
 extern int _kValue; //for k shortest paths
 extern double _simulationLength;
 extern bool _landmarkRoutingEnabled;
+extern bool _lndBaselineEnabled;
+extern int _numAttemptsLNDBaseline;
+//for lndbaseline
+extern double _restorePeriod; 
 
 extern bool _windowEnabled;
 
@@ -94,4 +99,7 @@ extern double _epsilon;
 
 extern bool _nesterov;
 extern bool _secondOrderOptimization;
+
+extern double _transStatStart;
+extern double _transStatEnd;
 

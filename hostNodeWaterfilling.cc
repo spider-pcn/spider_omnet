@@ -8,7 +8,7 @@ double _ewmaFactor;
 double _Tau;
 double _Normalizer;
 bool _smoothWaterfillingEnabled;
-#define SMALLEST_INDIVISIBLE_UNIT 1
+#define SMALLEST_INDIVISIBLE_UNIT 0.1
 
 Define_Module(hostNodeWaterfilling);
 
@@ -26,70 +26,7 @@ void hostNodeWaterfilling::initialize(){
 
 }
 
-/* responsible for generating one HTLC for a particular path 
- * for waterfilling after the path has been decided by 
- * splitTransaction
- */
-routerMsg* hostNodeWaterfilling::generateWaterfillingTransactionMessage(double amt, 
-        vector<int> path, int pathIndex, transactionMsg* transMsg) {
-    char msgname[MSGSIZE];
-    sprintf(msgname, "tic-%d-to-%d water-transMsg", myIndex(), transMsg->getReceiver());
-    
-    transactionMsg *msg = new transactionMsg(msgname);
-    msg->setAmount(amt);
-    msg->setTimeSent(transMsg->getTimeSent());
-    msg->setSender(transMsg->getSender());
-    msg->setReceiver(transMsg->getReceiver());
-    msg->setPriorityClass(transMsg->getPriorityClass());
-    msg->setHasTimeOut(transMsg->getHasTimeOut());
-    msg->setPathIndex(pathIndex);
-    msg->setTimeOut(transMsg->getTimeOut());
-    msg->setTransactionId(transMsg->getTransactionId());
 
-    // find htlc for txn
-    int transactionId = transMsg->getTransactionId();    
-    int htlcIndex = 0;
-    if (transactionIdToNumHtlc.count(transactionId) == 0) {
-        transactionIdToNumHtlc[transactionId] = 1;
-    }
-    else {
-        htlcIndex =  transactionIdToNumHtlc[transactionId];
-        transactionIdToNumHtlc[transactionId] = transactionIdToNumHtlc[transactionId] + 1;
-    }
-    msg->setHtlcIndex(htlcIndex);
-
-    // routerMsg on the outside
-    sprintf(msgname, "tic-%d-to-%d water-routerTransMsg", myIndex(), transMsg->getReceiver());
-    routerMsg *rMsg = new routerMsg(msgname);
-    rMsg->setRoute(path);
-    rMsg->setHopCount(0);
-    rMsg->setMessageType(TRANSACTION_MSG);
-    rMsg->encapsulate(msg);
-    return rMsg;
-
-} 
-
-/* special type of time out message for waterfilling designed for a specific path so that
- * such messages will be sent on all paths considered for waterfilling
- */
-routerMsg* hostNodeWaterfilling::generateTimeOutMessage(vector<int> path, 
-        int transactionId, int receiver){
-    char msgname[MSGSIZE];
-    sprintf(msgname, "tic-%d-to-%d water-timeOutMsg", myIndex(), receiver);
-    timeOutMsg *msg = new timeOutMsg(msgname);
-
-    msg->setReceiver(receiver);
-    msg->setTransactionId(transactionId);
-
-    sprintf(msgname, "tic-%d-to-%d water-router-timeOutMsg", myIndex(), receiver);
-    routerMsg *rMsg = new routerMsg(msgname);
-    rMsg->setRoute(path);
-
-    rMsg->setHopCount(0);
-    rMsg->setMessageType(TIME_OUT_MSG);
-    rMsg->encapsulate(msg);
-    return rMsg;
-}
 
 
 /* generates the probe message for a particular destination and a particur path
@@ -187,8 +124,11 @@ void hostNodeWaterfilling::handleTransactionMessageSpecialized(routerMsg* ttmsg)
         // transaction received at sender
         //If transaction seen for first time, update stats.
         if (simTime() == transMsg->getTimeSent()) { 
-            statNumArrived[destNode] += 1; 
-            statRateArrived[destNode] += 1; 
+            if (transMsg->getTimeSent() >= _transStatStart && transMsg->getTimeSent() <= _transStatEnd) {
+                statNumArrived[destNode] += 1; 
+                statRateArrived[destNode] += 1;
+                statAmtArrived[destNode] += transMsg->getAmount();
+            }
             destNodeToNumTransPending[destNode] += 1; 
             
             AckState * s = new AckState();
@@ -210,9 +150,9 @@ void hostNodeWaterfilling::handleTransactionMessageSpecialized(routerMsg* ttmsg)
             bool recent = probesRecent(nodeToShortestPathsMap[destNode]);
             if (recent){
                 if ((!_timeoutEnabled) || (simTime() < (transMsg->getTimeSent() + transMsg->getTimeOut()))) { 
-                    splitTransactionForWaterfilling(ttmsg);
+                    splitTransactionForWaterfilling(ttmsg, transMsg->getAmount() == transMsg->getOriginalAmount());
                     double amtRemaining = transMsg->getAmount();
-                    if (amtRemaining > 0) {
+                    if (amtRemaining > 0 + _epsilon) {
                         scheduleAt(simTime() + waitTime, ttmsg);
                     }
                     else {
@@ -266,7 +206,7 @@ void hostNodeWaterfilling::handleTimeOutMessage(routerMsg* ttmsg){
             }
             
             if (transPathToAckState[key].amtSent != transPathToAckState[key].amtReceived) {
-                routerMsg* waterTimeOutMsg = generateTimeOutMessage(
+                routerMsg* waterTimeOutMsg = generateTimeOutMessageForPath(
                     nodeToShortestPathsMap[destination][p.first].path, 
                     transactionId, destination);
                 // TODO: what if a transaction on two different paths have same next hop?
@@ -396,8 +336,12 @@ void hostNodeWaterfilling::handleClearStateMessage(routerMsg *ttmsg) {
 void hostNodeWaterfilling::handleAckMessageTimeOut(routerMsg* ttmsg){
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
     int transactionId = aMsg->getTransactionId();
+
+    double totalAmtReceived = (transToAmtLeftToComplete[transactionId]).amtReceived +
+        aMsg->getAmount();
+    if (totalAmtReceived != transToAmtLeftToComplete[transactionId].amtSent) 
+        return;
     
-    //TODO: what if there are multiple HTLC's per transaction? 
     auto iter = find_if(canceledTransactions.begin(),
          canceledTransactions.end(),
          [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
@@ -427,11 +371,19 @@ void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
     else {
         (transToAmtLeftToComplete[transactionId]).amtReceived += aMsg->getAmount();
         nodeToShortestPathsMap[receiver][pathIndex].statRateCompleted += 1;
+        if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) 
+            statAmtCompleted[receiver] += aMsg->getAmount();
 
-        if (transToAmtLeftToComplete[transactionId].amtReceived == 
-                transToAmtLeftToComplete[transactionId].amtSent) {
-            statNumCompleted[receiver] += 1; 
-            statRateCompleted[receiver] += 1;
+        if (transToAmtLeftToComplete[transactionId].amtReceived > 
+                transToAmtLeftToComplete[transactionId].amtSent - _epsilon) {
+            if (aMsg->getTimeSent() >= _transStatStart && 
+            aMsg->getTimeSent() <= _transStatEnd) {
+                statNumCompleted[receiver] += 1; 
+                statRateCompleted[receiver] += 1;
+
+                double timeTaken = simTime().dbl() - aMsg->getTimeSent();
+                statCompletionTimes[receiver] += timeTaken * 1000;
+            }
             
             // erase transaction from map 
             // NOTE: still keeping it in the per path map (transPathToAckState)
@@ -491,20 +443,22 @@ void hostNodeWaterfilling::initializeProbes(vector<vector<int>> kShortestPaths, 
         nodeToShortestPathsMap[destNode][pathIdx].probability = 1.0 / kShortestPaths.size();
 
         //initialize signals
-        simsignal_t signal;
-        signal = registerSignalPerDestPath("rateCompleted", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].rateCompletedPerDestPerPathSignal = signal;
+        if (_signalsEnabled) {
+            simsignal_t signal;
+            signal = registerSignalPerDestPath("rateCompleted", pathIdx, destNode);
+            nodeToShortestPathsMap[destNode][pathIdx].rateCompletedPerDestPerPathSignal = signal;
 
-        if (_smoothWaterfillingEnabled) {
-            signal = registerSignalPerDestPath("probability", pathIdx, destNode);
-            nodeToShortestPathsMap[destNode][pathIdx].probabilityPerDestPerPathSignal = signal;
+            if (_smoothWaterfillingEnabled) {
+                signal = registerSignalPerDestPath("probability", pathIdx, destNode);
+                nodeToShortestPathsMap[destNode][pathIdx].probabilityPerDestPerPathSignal = signal;
 
-            signal = registerSignalPerDestPath("bottleneck", pathIdx, destNode);
-            nodeToShortestPathsMap[destNode][pathIdx].bottleneckPerDestPerPathSignal = signal;
+                signal = registerSignalPerDestPath("bottleneck", pathIdx, destNode);
+                nodeToShortestPathsMap[destNode][pathIdx].bottleneckPerDestPerPathSignal = signal;
+            }
+
+            signal = registerSignalPerDestPath("rateAttempted", pathIdx, destNode);
+            nodeToShortestPathsMap[destNode][pathIdx].rateAttemptedPerDestPerPathSignal = signal;
         }
-
-        signal = registerSignalPerDestPath("rateAttempted", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].rateAttemptedPerDestPerPathSignal = signal;
 
         // generate a probe message on this path
         routerMsg * msg = generateProbeMessage(destNode, pathIdx, kShortestPaths[pathIdx]);
@@ -557,7 +511,7 @@ void hostNodeWaterfilling::forwardProbeMessage(routerMsg *msg){
  * probabilities based on the bottleneck balances in the smooth waterfilling 
  * case
  */
-void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg){
+void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg, bool firstAttempt){
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
     int destNode = transMsg->getReceiver();
     double remainingAmt = transMsg->getAmount();
@@ -576,7 +530,7 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg){
         double bottleneck = (iter.second).bottleneck;
         double inflight = (iter.second).sumOfTransUnitsInFlight;
         bottleneckList.push_back(bottleneck);
-        if (_loggingEnabled) cout << bottleneck << " (" << key  << "," 
+        if (_loggingEnabled) cout << bottleneck - inflight << " (" << key  << "," 
             << iter.second.lastUpdated<<"), ";
         
         pq.push(make_pair(bottleneck - inflight, key)); 
@@ -609,31 +563,48 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg){
         // normal waterfilling - start filling with the path
         // with highest bottleneck balance and fill it till you get to 
         // the next path and so on
-        while(pq.size()>0 && remainingAmt > SMALLEST_INDIVISIBLE_UNIT){
+        if (pq.size() == 0) {
+            cout << "PATHS NOT FOUND to " << destNode << "WHEN IT SHOULD HAVE BEEN";
+            throw std::exception();
+        }
+
+        while(pq.size()>0 && remainingAmt >= SMALLEST_INDIVISIBLE_UNIT){
             highestBal = get<0>(pq.top());
+            if (highestBal <= 0) 
+                break;
+            
             highestBalIdx = get<1>(pq.top());
             pq.pop();
-            
-            if (pq.size()==0) {
-                secHighestBal=0;
+
+            if (pq.size() == 0) {
+                secHighestBal = 0;
             }
             else {
                 secHighestBal = get<0>(pq.top());
             }
             diffToSend = highestBal - secHighestBal;
-            amtToSend = min(remainingAmt / (pathMap.size() + 1), diffToSend);
 
-            for (auto p: pathMap){
-                pathMap[p.first] = p.second + amtToSend;
-                remainingAmt = remainingAmt - amtToSend;
+
+            pathMap[highestBalIdx] = 0.0;
+            double amtAddedInThisRound = 0.0;
+            double maxForThisRound = pathMap.size() * diffToSend;
+            while (remainingAmt > _epsilon && amtAddedInThisRound < maxForThisRound) {
+                for (auto p: pathMap){
+                    pathMap[p.first] += SMALLEST_INDIVISIBLE_UNIT;
+                    remainingAmt = remainingAmt - SMALLEST_INDIVISIBLE_UNIT;
+                    amtAddedInThisRound += SMALLEST_INDIVISIBLE_UNIT;
+                    /*cout << " adding to path " << p.first << "remainingAmt " << remainingAmt 
+                        << " amt added in this round " << amtAddedInThisRound << endl;*/
+                    if (remainingAmt < _epsilon || amtAddedInThisRound >= maxForThisRound) {
+                        break;
+                    }
+                }
             }
-            pathMap[highestBalIdx] = amtToSend;
-            remainingAmt = remainingAmt - amtToSend;
         }
    
         // send all of the remaining amount beyond the indivisible unit on one path
         // the highest bal path as long as it has non zero balance
-        if (remainingAmt > 0 && pq.size()>0 ) {
+        if (remainingAmt > _epsilon  && pq.size()>0 ) {
             highestBal = get<0>(pq.top());
             highestBalIdx = get<1>(pq.top());
                
@@ -641,15 +612,27 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg){
                 pathMap[highestBalIdx] = pathMap[highestBalIdx] + remainingAmt;
                 remainingAmt = 0;
             }
-        } 
-        else {
-            cout << "PATHS NOT FOUND to " << destNode << "WHEN IT SHOULD HAVE BEEN";
-            throw std::exception();
         }
+
+        if (remainingAmt < _epsilon) 
+            remainingAmt = 0;
+
+      /*cout << "path assignments for " << transMsg->getAmount() << endl;
+      for (auto p:pathMap) {
+          cout << "path " << p.first << "amt " << p.second << ", " ;
+      }
+      cout  << endl;*/
     }
     
-    if (remainingAmt == 0) {
-       statRateAttempted[destNode] = statRateAttempted[destNode] + 1;
+    if (remainingAmt < transMsg->getAmount()  && transMsg->getTimeSent() >= _transStatStart && 
+            transMsg->getTimeSent() <= _transStatEnd) {
+        if (firstAttempt) 
+            statRateAttempted[destNode] = statRateAttempted[destNode] + 1;
+        statAmtAttempted[destNode] += (transMsg->getAmount() - remainingAmt);
+    }
+    if (remainingAmt > transMsg->getAmount()) {
+        cout << "remaining amount magically became higher than original amount" << endl;
+        throw std::exception();
     }
     transMsg->setAmount(remainingAmt);
     
@@ -657,10 +640,10 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg){
         int pathIndex = p.first;
         double amtOnPath = p.second;
         if (amtOnPath > 0){
-            tuple<int,int> key = make_tuple(transMsg->getTransactionId(), pathIndex); 
-
+            tuple<int,int> key = make_tuple(transMsg->getTransactionId(), pathIndex);
+            
             //update the data structure keeping track of how much sent and received on each path
-            if (transPathToAckState.count(key) == 0){
+            if (transPathToAckState.count(key) == 0) {
                 AckState temp = {};
                 temp.amtSent = amtOnPath;
                 temp.amtReceived = 0;
@@ -671,7 +654,7 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg){
             }
             
             PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
-            routerMsg* waterMsg = generateWaterfillingTransactionMessage(amtOnPath, 
+            routerMsg* waterMsg = generateTransactionMessageForPath(amtOnPath, 
                  pathInfo->path, pathIndex, transMsg);
             
             // if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);

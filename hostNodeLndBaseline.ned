@@ -1,4 +1,4 @@
-simple hostNodeBase
+simple hostNodeLndBaseline
 {
 	parameters:
 	    bool isHost = true;
@@ -11,16 +11,15 @@ simple hostNodeBase
 		bool signalsEnabled = default(false);
 		bool loggingEnabled = default(false);
 
-		bool timeoutEnabled = default(true);
+		bool timeoutEnabled = default(false);
 		double timeoutClearRate = default(0.5);
 
 		bool waterfillingEnabled = default(false);
 		bool priceSchemeEnabled = default(false);
 		bool smoothWaterfillingEnabled = default(false);
+                bool windowEnabled = default(false);
                 bool landmarkRoutingEnabled = default(false);
                 bool lndBaselineEnabled = default(false);
-
-                bool windowEnabled = default(false);
 		int numPathChoices = default(4);
 
                 double alpha = default(0.01);
@@ -35,7 +34,7 @@ simple hostNodeBase
                 double normalizer = default(100);
 
 		
-		@signal[completionTime](type="simtime_t"); 
+		@signal[completionTime](type="long"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 
 		
 		@signal[numCleared](type="long"); 
@@ -43,7 +42,7 @@ simple hostNodeBase
 		
 		@display("i=block/routing"); 
 
-		@signal[numInQueuePerChannel*](type="unsigned long"); 
+		@signal[numInQueuePerChannel*](type="long"); // note an asterisk and the type of emitted values  
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
 
 		@signal[numProcessedPerChannel*](type="long");  
@@ -67,7 +66,7 @@ simple hostNodeBase
  		@signal[numWaitingPerDest*](type="long");  
 		@statisticTemplate[numWaitingPerDestTemplate](record=vector, stats);  
 	
-		@signal[fracSuccessfulPerDest*](type="long");  
+		@signal[fracSuccessfulPerDest*](type="double");  
 		@statisticTemplate[fracSuccessfulPerDestTemplate](record=vector, stats);   
 		
 		@signal[pathPerTransPerDest*](type="long");  
@@ -91,7 +90,7 @@ simple hostNodeBase
 		@signal[numArrivedPerDest*](type="long"); 
 		@statisticTemplate[numArrivedPerDestTemplate](record=vector, stats);   
 
-		@signal[balancePerChannel*](type="double"); 
+		@signal[balancePerChannel*](type="long"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
 		
 		@signal[bottleneckPerDestPerPath*](type="long"); 
@@ -145,10 +144,10 @@ simple hostNodeBase
 		@signal[isSendTimerSetPerDestPerPath*](type="long"); 
 		@statisticTemplate[isSendTimerSetPerDestPerPathTemplate](record=vector, stats);
 		
-		
-		
-
-	gates:
+		@signal[numPathsPerTransPerDest*](type="long");  
+		@statisticTemplate[numPathsPerTransPerDestTemplate](record=vector, stats);   
+	
+        gates:
 		input in[];
 		output out[];
 }
