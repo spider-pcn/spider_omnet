@@ -183,7 +183,6 @@ vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, 
                 numPaths++;
             }
         } else {
-            printVector(pathSenderToLandmark);
             kRoutes.push_back(pathSenderToLandmark);
         } 
     }

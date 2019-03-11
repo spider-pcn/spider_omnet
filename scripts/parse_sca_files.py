@@ -9,6 +9,7 @@ def parse_sca_parameter_line(line):
     return scalar + " " + value + "\n"
 
 
+
 # parse one line of statistic and update the 
 def parse_sca_stat_line(line):
     info = shlex.split(line)
@@ -73,7 +74,61 @@ def parse_sca_files(filename):
 
     return parameters, sum_completed/sum_arrived, sum_completed/sum_attempted
 
+def parse_overall_stat_line(line):
+    data = shlex.split(line)
+    scalar_name = data[len(data) - 2]
+    parts = scalar_name.split()
+    stat_type = parts[0]
+    sender = int(parts[1])
+    receiver = int(parts[3])
+    value = data[len(data) - 1]
+    return sender, receiver, stat_type, value
 
+def parse_sca_files_overall(filename):
+    parameters = ""
+    stats = dict()
+    with open(filename) as f:
+        line = f.readline()
+        while line:
+            if line.startswith("scalar") and "->" in line:
+                sender, receiver, stat_name, value = parse_overall_stat_line(line)
+                temp = stats.get((sender, receiver), [])
+                temp.append((stat_name, value))
+                stats[sender, receiver] = temp
+            line = f.readline()
+
+    # compute completion as a fraction of arrival and attempte
+    vol_attempted, num_attempted = 0.0, 0.0
+    vol_arrived, num_arrived = 0.0, 0.0
+    vol_completed, num_completed = 0.0, 0.0
+    completion_time = 0.0
+
+
+    for src_dst_pair, stat in stats.items():
+        for s in stat:
+            stat_type = s[0]
+            value = float(s[1])
+
+            if stat_type == "rateAttempted":
+                num_attempted += value
+            elif stat_type == "amtAttempted":
+                vol_attempted += value
+            elif stat_type == "rateCompleted":
+                num_completed += value
+            elif stat_type == "amtArrived":
+                vol_arrived += value
+            elif stat_type == "amtCompleted":
+                vol_completed += value
+            elif stat_type == "rateArrived":
+                num_arrived += value
+            else:
+                completion_time += value
+
+    print "Stats for ", filename
+    print " Success ratio over arrived: ", num_completed/num_arrived, " over attempted", num_completed/num_attempted
+    print " Success volume  over arrived: ", vol_completed/vol_arrived, \
+            " over attempted", vol_completed/vol_attempted
+    print " Avg completion time ", completion_time/num_completed
 
 
 

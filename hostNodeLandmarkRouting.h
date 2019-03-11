@@ -21,6 +21,7 @@ class hostNodeLandmarkRouting : public hostNodeBase {
         virtual void handleMessage(cMessage* msg) override;
         virtual void handleTransactionMessageSpecialized(routerMsg *msg) override;
         virtual void handleTimeOutMessage(routerMsg *msg) override;
+        virtual void handleAckMessageTimeOut(routerMsg *msg) override;
         virtual void handleAckMessageSpecialized(routerMsg *msg) override;
         virtual void handleClearStateMessage(routerMsg *msg) override;
         virtual void handleProbeMessage(routerMsg *msg);

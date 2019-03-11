@@ -30,7 +30,7 @@ simulationLength=3000
 statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
-signalsEnabled=true
+signalsEnabled=false
 loggingEnabled=false
 
 # scheme specific parameters
@@ -132,7 +132,8 @@ do
                 --balance-per-channel $balance\
                 --generate-json-also \
                 --timeout-value 5 \
-                --scale-amount $scale
+                --scale-amount $scale \
+                --log-normal
 
 
         # STEP 3: run the experiment
@@ -237,6 +238,7 @@ do
 
 
             python scripts/generate_analysis_plots_for_single_run.py \
+              --detail $signalsEnabled \
               --vec_file ${vec_file_path} \
               --sca_file ${sca_file_path} \
               --save ${graph_op_prefix}${routing_scheme} \
@@ -256,6 +258,7 @@ do
 
 
                 python scripts/generate_analysis_plots_for_single_run.py \
+                  --detail $signalsEnabled \
                   --vec_file ${vec_file_path} \
                   --sca_file ${sca_file_path} \
                   --save ${graph_op_prefix}${routing_scheme}_final \

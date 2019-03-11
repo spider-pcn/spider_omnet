@@ -115,7 +115,6 @@ run_schemes()
         # create workload files and run different demand levels
         for scale in "${demand_scale[@]}"
         do
-
             # generate the graph first to ned file
             workloadname="${prefix[i]}_circ_demand${scale}"
             workload="${PATH_NAME}$workloadname"

@@ -158,6 +158,12 @@ void hostNodeLandmarkRouting::handleTimeOutMessage(routerMsg* ttmsg){
         //is at the sender
         int transactionId = toutMsg->getTransactionId();
         int destination = toutMsg->getReceiver();
+
+        if (transToAmtLeftToComplete.count(transactionId) == 0) {
+                delete ttmsg;
+                return;
+        }
+
        
         for (auto p : (nodeToShortestPathsMap[destination])){
             int pathIndex = p.first;
@@ -198,6 +204,32 @@ void hostNodeLandmarkRouting::handleTimeOutMessage(routerMsg* ttmsg){
 }
 
 
+/* handles to logic for ack messages in the presence of timeouts
+ * in particular, removes the transaction from the cancelled txns
+ * to mark that it has been received 
+ * it uses the transAmtSent vs Received to detect if txn is complete
+ * and therefore is different from the base class 
+ */
+void hostNodeLandmarkRouting::handleAckMessageTimeOut(routerMsg* ttmsg){
+    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
+    int transactionId = aMsg->getTransactionId();
+
+    double totalAmtReceived = (transToAmtLeftToComplete[transactionId]).amtReceived +
+        aMsg->getAmount();
+    if (totalAmtReceived != transToAmtLeftToComplete[transactionId].amtSent) 
+        return;
+    
+    auto iter = find_if(canceledTransactions.begin(),
+         canceledTransactions.end(),
+         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
+         { return get<0>(p) == transactionId; });
+    
+    if (iter!=canceledTransactions.end()) {
+        canceledTransactions.erase(iter);
+    }
+}
+
+
 /* specialized ack handler that does the routine for handling acks
  * across paths. In particular, collects/updates stats for this path alone
  * NOTE: acks are on the reverse path relative to the original sender
@@ -213,14 +245,18 @@ void hostNodeLandmarkRouting::handleAckMessageSpecialized(routerMsg* ttmsg) {
         cout << "error, transaction " << transactionId 
           <<" htlc index:" << aMsg->getHtlcIndex() 
           << " acknowledged at time " << simTime() 
-          << " wasn't written to transToAmtLeftToComplete" << endl;
+          << " wasn't written to transToAmtLeftToComplete for amount " <<  aMsg->getAmount() << endl;
     }
     else {
         (transToAmtLeftToComplete[transactionId]).amtReceived += aMsg->getAmount();
-        statAmtCompleted[receiver] += aMsg->getAmount();
+        if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) {
+            statAmtCompleted[receiver] += aMsg->getAmount();
+        }
+        
+        double amtReceived = transToAmtLeftToComplete[transactionId].amtReceived;
+        double amtSent = transToAmtLeftToComplete[transactionId].amtSent;
 
-        if (transToAmtLeftToComplete[transactionId].amtReceived >=  
-                transToAmtLeftToComplete[transactionId].amtSent - _epsilon) {
+        if (amtReceived < amtSent + _epsilon && amtReceived > amtSent -_epsilon) {
             nodeToShortestPathsMap[receiver][pathIndex].statRateCompleted += 1;
 
             if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) {
@@ -314,8 +350,11 @@ void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
 
            if (numPathsPossible > 0 && 
                    randomSplit(transMsg->getAmount(), probeInfo->probeBottlenecks, amtPerPath)) {
-               statRateAttempted[destNode] += 1;
-               statAmtAttempted[destNode] += transMsg->getAmount();
+               if (transMsg->getTimeSent() >= _transStatStart && transMsg->getTimeSent() <= _transStatEnd) {
+                   statRateAttempted[destNode] += 1;
+                   statAmtAttempted[destNode] += transMsg->getAmount();
+               }
+
                for (int i = 0; i < amtPerPath.size(); i++) {
                    double amt = amtPerPath[i];
                    if (amt > 0) {
@@ -340,15 +379,17 @@ void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
                }
            } 
            else {
-               statRateFailed[destNode] += 1;
-               statAmtFailed[destNode] += transMsg->getAmount();
+                if (transMsg->getTimeSent() >= _transStatStart && transMsg->getTimeSent() <= _transStatEnd) {
+                    statRateFailed[destNode] += 1;
+                    statAmtFailed[destNode] += transMsg->getAmount();
+                }
+               transToAmtLeftToComplete.erase(transactionId);
            }
 
            probeInfo->messageToSend->decapsulate();
            delete transMsg;
            delete probeInfo->messageToSend;
            transactionIdToProbeInfoMap.erase(transactionId);
-           transToAmtLeftToComplete.erase(transactionId);
        }
        
        ttmsg->decapsulate();

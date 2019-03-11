@@ -33,14 +33,14 @@ class hostNodeBase : public cSimpleModule {
         //TODO: incorporate the signals into nodeToDestInfo
         // statistic collection related variables
         map<int, int> statNumFailed = {};
-        map<int, int> statAmtFailed = {};
+        map<int, double> statAmtFailed = {};
         map<int, int> statRateFailed = {};
         map<int, int> statNumCompleted = {};
-        map<int, int> statAmtCompleted = {};
+        map<int, double> statAmtCompleted = {};
         map<int, int> statNumArrived = {};
         map<int, int> statRateCompleted = {};
-        map<int, int> statAmtArrived = {};
-        map<int, int> statAmtAttempted = {};
+        map<int, double> statAmtArrived = {};
+        map<int, double> statAmtAttempted = {};
         map<int, int> statRateAttempted = {};
         map<int, int> statNumTimedOut = {};
         map<int, int> statNumTimedOutAtSender = {};

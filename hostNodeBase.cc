@@ -1129,47 +1129,54 @@ void hostNodeBase::initialize() {
         nodeToPaymentChannel[key].queuedTransUnits = temp;
 
         //register PerChannel signals
-        simsignal_t signal;
-        signal = registerSignalPerChannel("numInQueue", key);
-        nodeToPaymentChannel[key].amtInQueuePerChannelSignal = signal;
+        if (_signalsEnabled) {
+            simsignal_t signal;
+            signal = registerSignalPerChannel("numInQueue", key);
+            nodeToPaymentChannel[key].amtInQueuePerChannelSignal = signal;
 
-        signal = registerSignalPerChannel("balance", key);
-        nodeToPaymentChannel[key].balancePerChannelSignal = signal;
+            signal = registerSignalPerChannel("balance", key);
+            nodeToPaymentChannel[key].balancePerChannelSignal = signal;
+        }
     }
 
     //initialize signals with all other nodes in graph
     for (int i = 0; i < _numHostNodes; ++i) {
         if (_destList[myIndex()].count(i) > 0) {
             simsignal_t signal;
-            signal = registerSignalPerDest("rateCompleted", i, "_Total");
-            rateCompletedPerDestSignals[i] = signal;
+            if (_signalsEnabled) {
+                signal = registerSignalPerDest("rateCompleted", i, "_Total");
+                rateCompletedPerDestSignals[i] = signal;
+                signal = registerSignalPerDest("rateAttempted", i, "_Total");
+                rateAttemptedPerDestSignals[i] = signal;
+                signal = registerSignalPerDest("rateArrived", i, "_Total");
+                rateArrivedPerDestSignals[i] = signal;
+                signal = registerSignalPerDest("numTimedOut", i, "_Total");
+                numTimedOutPerDestSignals[i] = signal;
+
+                signal = registerSignalPerDest("numPending", i, "_Total");
+                numPendingPerDestSignals[i] = signal;
+                
+                signal = registerSignalPerDest("fracSuccessful", i, "_Total");
+                fracSuccessfulPerDestSignals[i] = signal;
+
+                signal = registerSignalPerDest("rateFailed", i, "");
+                rateFailedPerDestSignals[i] = signal;
+            }
+
             statRateCompleted[i] = 0;
             statAmtCompleted[i] = 0;
             statNumCompleted[i] = 0;
 
-            signal = registerSignalPerDest("rateAttempted", i, "_Total");
-            rateAttemptedPerDestSignals[i] = signal;
             statRateAttempted[i] = 0;
             statAmtAttempted[i] = 0;
 
-            signal = registerSignalPerDest("rateArrived", i, "_Total");
-            rateArrivedPerDestSignals[i] = signal;
             statRateArrived[i] = 0;
             statNumArrived[i] = 0;
             statAmtArrived[i] = 0;
 
-            signal = registerSignalPerDest("numTimedOut", i, "_Total");
-            numTimedOutPerDestSignals[i] = signal;
+
             statNumTimedOut[i] = 0;;
 
-            signal = registerSignalPerDest("numPending", i, "_Total");
-            numPendingPerDestSignals[i] = signal;
-            
-            signal = registerSignalPerDest("fracSuccessful", i, "_Total");
-            fracSuccessfulPerDestSignals[i] = signal;
-
-            signal = registerSignalPerDest("rateFailed", i, "");
-            rateFailedPerDestSignals[i] = signal;
             statRateFailed[i] = 0;
             statAmtFailed[i] = 0;
             statCompletionTimes[i] = 0;
