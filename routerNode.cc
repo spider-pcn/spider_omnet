@@ -133,8 +133,8 @@ void routerNode::initialize()
       nodeToPaymentChannel[key].muRemote = 0;
 
       //initialize queuedTransUnits
-      vector<tuple<int, double , routerMsg *, Id>> temp;
-      make_heap(temp.begin(), temp.end(), sortPriorityThenAmtFunction);
+      vector<tuple<int, double , routerMsg *, Id, simtime_t>> temp;
+      make_heap(temp.begin(), temp.end(), sortFIFO);
       nodeToPaymentChannel[key].queuedTransUnits = temp;
 
       //register signals
@@ -197,27 +197,50 @@ void routerNode::initialize()
          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
          nodeToPaymentChannel[key].nValueSignal = signal;
 
-         if (key<_numHostNodes) {
-            sprintf(signalName, "inFlightSumPerChannel(host %d)", key);
-         }
-         else {
-            sprintf(signalName, "inFlightSumPerChannel(router %d [%d])", key - _numHostNodes, key);
-         }
-         signal = registerSignal(signalName);
-         statisticTemplate = getProperties()->get("statisticTemplate", "inFlightSumPerChannelTemplate");
-         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-         nodeToPaymentChannel[key].inFlightSumSignal = signal;
 
          if (key<_numHostNodes) {
-            sprintf(signalName, "balSumPerChannel(host %d)", key);
+            sprintf(signalName, "serviceRatePerChannel(host %d)", key);
          }
          else {
-            sprintf(signalName, "balSumPerChannel(router %d [%d])", key - _numHostNodes, key);
+            sprintf(signalName, "serviceRatePerChannel(router %d [%d])", key - _numHostNodes, key);
          }
          signal = registerSignal(signalName);
-         statisticTemplate = getProperties()->get("statisticTemplate", "balSumPerChannelTemplate");
+         statisticTemplate = getProperties()->get("statisticTemplate", "serviceRatePerChannelTemplate");
          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-         nodeToPaymentChannel[key].balSumSignal = signal;
+         nodeToPaymentChannel[key].serviceRateSignal = signal;
+
+         if (key<_numHostNodes) {
+            sprintf(signalName, "arrivalRatePerChannel(host %d)", key);
+         }
+         else {
+            sprintf(signalName, "arrivalRatePerChannel(router %d [%d])", key - _numHostNodes, key);
+         }
+         signal = registerSignal(signalName);
+         statisticTemplate = getProperties()->get("statisticTemplate", "arrivalRatePerChannelTemplate");
+         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+         nodeToPaymentChannel[key].arrivalRateSignal = signal;
+
+         if (key<_numHostNodes) {
+            sprintf(signalName, "inflightOutgoingPerChannel(host %d)", key);
+         }
+         else {
+            sprintf(signalName, "inflightOutgoingPerChannel(router %d [%d])", key - _numHostNodes, key);
+         }
+         signal = registerSignal(signalName);
+         statisticTemplate = getProperties()->get("statisticTemplate", "inflightOutgoingPerChannelTemplate");
+         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+         nodeToPaymentChannel[key].inflightOutgoingSignal = signal;
+
+         if (key<_numHostNodes) {
+            sprintf(signalName, "inflightIncomingPerChannel(host %d)", key);
+         }
+         else {
+            sprintf(signalName, "inflightIncomingPerChannel(router %d [%d])", key - _numHostNodes, key);
+         }
+         signal = registerSignal(signalName);
+         statisticTemplate = getProperties()->get("statisticTemplate", "inflightIncomingPerChannelTemplate");
+         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+         nodeToPaymentChannel[key].inflightIncomingSignal = signal;
 
          if (key<_numHostNodes) {
             sprintf(signalName, "lambdaPerChannel(host %d)", key);
@@ -352,8 +375,9 @@ void routerNode::handlePriceQueryMessage(routerMsg* ttmsg){
       double muRemote = nodeToPaymentChannel[nextNode].muRemote;
       double zNew = zOld;
 
-      if (ttmsg->getHopCount() < ttmsg->getRoute().size() - 2)
+      if (ttmsg->getHopCount() < ttmsg->getRoute().size() - 2) {
         zNew += (2 * lambda) + muLocal  - muRemote;
+      }
       pqMsg->setZValue(zNew);
       forwardMessage(ttmsg);
    }
@@ -363,27 +387,48 @@ void routerNode::handlePriceQueryMessage(routerMsg* ttmsg){
 }
 
 void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
-   priceUpdateMsg *puMsg = check_and_cast<priceUpdateMsg *>(ttmsg->getEncapsulatedPacket());
-   double nRemote = puMsg->getNLocal();
-   double inflightRemote = puMsg->getSumInFlight();
-   double balSumRemote = puMsg->getBalSum();
-   int sender = ttmsg->getRoute()[0];
+    priceUpdateMsg *puMsg = check_and_cast<priceUpdateMsg *>(ttmsg->getEncapsulatedPacket());
+    double nRemote = puMsg->getNLocal();
+    double serviceRateRemote = puMsg->getServiceRate();
+    double arrivalRateRemote = puMsg->getArrivalRate();
+    int qRemote = puMsg->getQueueSize();
+    int sender = ttmsg->getRoute()[0];
+    PaymentChannel *neighborChannel = &(nodeToPaymentChannel[sender]);
+    int inflightRemote = neighborChannel->incomingTransUnits.size() + serviceRateRemote * _avgDelay/1000 ; 
 
-   PaymentChannel *neighborChannel = &(nodeToPaymentChannel[sender]);
-
-   //Update $\lambda$, $mu_local$ and $mu_remote$
-   double xLocal = neighborChannel->xLocal;
-   int nLocal = neighborChannel->lastNValue;
-   double inflightLocal = neighborChannel->lastSumInFlight;
-   double balSumLocal = neighborChannel->lastBalSum;
-   if (balSumLocal == -1)
-       balSumLocal = neighborChannel->balance/max(double(neighborChannel->incomingTransUnits.size()), 1.0);
-
+    double xLocal = neighborChannel->xLocal;
+    double updateRateLocal = neighborChannel->updateRate;
+    int nLocal = neighborChannel->lastNValue;
+    int inflightLocal = neighborChannel->outgoingTransUnits.size() + updateRateLocal* _avgDelay/1000.0;
+    int qLocal = neighborChannel->lastQueueSize;
+    double serviceRateLocal = neighborChannel->serviceRate;
+    double arrivalRateLocal = neighborChannel->arrivalRate;
+ 
    double cValue = nodeToPaymentChannel[sender].totalCapacity;
    double oldLambda = nodeToPaymentChannel[sender].lambda;
    double oldMuLocal = nodeToPaymentChannel[sender].muLocal;
    double oldMuRemote = nodeToPaymentChannel[sender].muRemote;
 
+    double newLambdaGrad = inflightLocal*arrivalRateLocal/serviceRateLocal + 
+        inflightRemote * arrivalRateRemote/serviceRateRemote + 2*_xi*min(qLocal, qRemote) - 0.9*cValue;
+     /*if (sender >= _numHostNodes && (oldLambda > 0 || newLambdaGrad > 0)) {
+        cout << "to sender " << sender << " from  " << myIndex() << " at time " << simTime();
+        cout << " old lambda" << oldLambda << " new lambda grad "
+            << newLambdaGrad << " service rate local " << serviceRateLocal << 
+       " service rate remote " << serviceRateRemote << " arrival rate local " << arrivalRateLocal 
+      << " arrival rate remote " << arrivalRateRemote << "extra term " << serviceRateRemote * _avgDelay/1000 
+      << " inflightLocal " << inflightLocal <<
+      "inflightRemote " << inflightRemote << "cValue " << cValue  << "updateRateLocal " << updateRateLocal
+      << "qLocal" << qLocal << "qRemote" << qRemote << endl; 
+     } */
+        
+    double newMuLocalGrad = nLocal - nRemote + qLocal*_tUpdate/_routerQueueDrainTime -
+        qRemote*_tUpdate/_routerQueueDrainTime;
+    /*cout << " to sender " << sender << " from " << myIndex() << " at time " << simTime();
+    cout << "nLocal " << nLocal << " nRemote " << nRemote << " qlocal and term " << qLocal 
+        << " " << qLocal * _tUpdate / _routerQueueDrainTime << "qRemote " << qRemote
+        << " " << qLocal * _tUpdate / _routerQueueDrainTime << endl;*/
+    
     // Nesterov's gradient descent equation
     // and other speeding up mechanisms
     double newLambda = 0.0;
@@ -394,37 +439,32 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
         double yMuLocal = nodeToPaymentChannel[sender].yMuLocal;
         double yMuRemote = nodeToPaymentChannel[sender].yMuRemote;
 
-        double yLambdaNew = oldLambda + _eta*(nLocal + nRemote - inflightLocal -inflightRemote 
-                - balSumLocal - balSumRemote);
+        double yLambdaNew = oldLambda + _eta*newLambdaGrad;
         newLambda = yLambdaNew + _rhoLambda*(yLambdaNew - yLambda); 
         nodeToPaymentChannel[sender].yLambda = yLambdaNew;
 
-        double yMuLocalNew = oldMuLocal + _kappa*(nLocal - nRemote);
+        double yMuLocalNew = oldMuLocal + _kappa*newMuLocalGrad;
         newMuLocal = yMuLocalNew + _rhoMu*(yMuLocalNew - yMuLocal);
         nodeToPaymentChannel[sender].yMuLocal = yMuLocalNew;
 
-        double yMuRemoteNew = oldMuRemote + _kappa*(nRemote - nLocal);
+        double yMuRemoteNew = oldMuRemote - _kappa*newMuLocalGrad;
         newMuRemote = yMuRemoteNew + _rhoMu*(yMuRemoteNew - yMuRemote);
         nodeToPaymentChannel[sender].yMuRemote = yMuRemoteNew;
     } 
-    else if (_secondOrderOptimization) {
+    /*else if (_secondOrderOptimization) {
         double lastLambdaGrad = nodeToPaymentChannel[sender].lastLambdaGrad;
-        double newLambdaGrad = nLocal + nRemote - inflightLocal -inflightRemote 
-                - balSumLocal - balSumRemote;
         newLambda = oldLambda +  _eta*newLambdaGrad + _rhoLambda*(newLambdaGrad - lastLambdaGrad);
         nodeToPaymentChannel[sender].lastLambdaGrad = newLambdaGrad;
 
         double lastMuLocalGrad = nodeToPaymentChannel[sender].lastMuLocalGrad;
-        double newMuLocalGrad = nLocal - nRemote;
         newMuLocal = oldMuLocal + _kappa*newMuLocalGrad + _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
         newMuRemote = oldMuRemote - _kappa*newMuLocalGrad - _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
         nodeToPaymentChannel[sender].lastMuLocalGrad = newMuLocalGrad;
-    } 
+    } */
     else {
-        newLambda = oldLambda +  _eta*(nLocal + nRemote - inflightLocal -inflightRemote 
-                - balSumLocal - balSumRemote);
-        newMuLocal = oldMuLocal + _kappa*(nLocal - nRemote);
-        newMuRemote = oldMuRemote + _kappa*(nRemote - nLocal); 
+        newLambda = oldLambda +  _eta*newLambdaGrad;
+        newMuLocal = oldMuLocal + _kappa*newMuLocalGrad;
+        newMuRemote = oldMuRemote - _kappa*newMuLocalGrad; 
     }
 
    nodeToPaymentChannel[sender].lambda = maxDouble(newLambda, 0);
@@ -449,26 +489,33 @@ void routerNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
        //iterate through all channels
       PaymentChannel *neighborChannel = &(nodeToPaymentChannel[it->first]);
       neighborChannel->xLocal =  neighborChannel->nValue / _tUpdate;
-      double balSum = neighborChannel->lastBalSum;
-      if (balSum == -1)
-          balSum = neighborChannel->balance/max(double(neighborChannel->incomingTransUnits.size()), 1.0);
+      neighborChannel->updateRate = neighborChannel->numUpdateMessages / _tUpdate;
+        
+      auto firstTransTimes = neighborChannel->serviceArrivalTimeStamps.front();
+      auto lastTransTimes =  neighborChannel->serviceArrivalTimeStamps.back();
+      double serviceTimeDiff = get<0>(lastTransTimes).dbl() - get<0>(firstTransTimes).dbl(); 
+      double arrivalTimeDiff = get<1>(lastTransTimes).dbl() - get<1>(firstTransTimes).dbl(); 
+
+      neighborChannel->serviceRate = _serviceArrivalWindow / serviceTimeDiff; 
+      neighborChannel->arrivalRate = _serviceArrivalWindow / arrivalTimeDiff;
+
+      neighborChannel->lastQueueSize = neighborChannel->queuedTransUnits.size();
       
-      routerMsg * priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue,
-             balSum, neighborChannel->sumInFlight, it->first);
+      routerMsg * priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue, 
+              neighborChannel->serviceRate, neighborChannel->arrivalRate, 
+            neighborChannel->queuedTransUnits.size(), it->first);
+      
       neighborChannel->lastNValue = neighborChannel->nValue;
       neighborChannel->nValue = 0;
-
-      neighborChannel->lastBalSum = neighborChannel->balSum;
-      neighborChannel->balSum = -1;
-
-      neighborChannel->lastSumInFlight = neighborChannel->sumInFlight;
-      neighborChannel->sumInFlight = 0;
+      neighborChannel->numUpdateMessages = 0;
+      
       sendUpdateMessage(priceUpdateMsg);
    }
 
 }
 
-routerMsg * routerNode::generatePriceUpdateMessage(double nLocal, double balSum, double sumInFlight, int reciever){
+routerMsg * routerNode::generatePriceUpdateMessage(double nLocal, double serviceRate, double arrivalRate, 
+        int queueSize, int reciever){
    char msgname[MSGSIZE];
 
    sprintf(msgname, "tic-%d-to-%d priceUpdateMsg", myIndex(), reciever);
@@ -481,9 +528,10 @@ routerMsg * routerNode::generatePriceUpdateMessage(double nLocal, double balSum,
    rMsg->setMessageType(PRICE_UPDATE_MSG);
 
    priceUpdateMsg *puMsg = new priceUpdateMsg(msgname);
-   puMsg->setNLocal(nLocal);
-   puMsg->setBalSum(balSum);
-   puMsg->setSumInFlight(sumInFlight);
+    puMsg->setNLocal(nLocal);
+    puMsg->setServiceRate(serviceRate);
+    puMsg->setArrivalRate(arrivalRate);
+    puMsg->setQueueSize(queueSize);
    
    rMsg->encapsulate(puMsg);
    return rMsg;
@@ -496,7 +544,8 @@ routerMsg *routerNode::generateStatMessage(){
    rMsg->setMessageType(STAT_MSG);
    return rMsg;
 }
-bool manualFindQueuedTransUnitsByTransactionId( vector<tuple<int, double, routerMsg*, Id>> (queuedTransUnits), int transactionId){
+
+bool manualFindQueuedTransUnitsByTransactionId( vector<tuple<int, double, routerMsg*, Id, simtime_t>> (queuedTransUnits), int transactionId){
    for (auto q: queuedTransUnits){
       int qId = get<0>(get<3>(q));
       if (qId == transactionId){
@@ -526,11 +575,12 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
 
          //fixed not deleting from the queue
          // start queue searching
-         vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
+         vector<tuple<int, double, routerMsg*, Id, simtime_t>>* queuedTransUnits = 
+             &(nodeToPaymentChannel[nextNode].queuedTransUnits);
 
          auto iterQueue = find_if((*queuedTransUnits).begin(),
                (*queuedTransUnits).end(),
-               [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
+               [&transactionId](const tuple<int, double, routerMsg*, Id, simtime_t>& p)
                { return (get<0>(get<3>(p)) == transactionId); });
          while (iterQueue != (*queuedTransUnits).end()){
 
@@ -543,10 +593,10 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
 
             iterQueue = find_if((*queuedTransUnits).begin(),
                   (*queuedTransUnits).end(),
-                  [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
+                  [&transactionId](const tuple<int, double, routerMsg*, Id, simtime_t>& p)
                   { return (get<0>(get<3>(p)) == transactionId); });
-
          }
+         make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortFIFO);
 
          map<tuple<int,int>, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
          auto iterIncoming = find_if((*incomingTransUnits).begin(),
@@ -559,11 +609,12 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
             iterIncoming = (*incomingTransUnits).erase(iterIncoming);
 
             // start queue searching
-            vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
+            vector<tuple<int, double, routerMsg*, Id, simtime_t>>* queuedTransUnits = 
+                &(nodeToPaymentChannel[nextNode].queuedTransUnits);
 
             iterQueue = find_if((*queuedTransUnits).begin(),
                   (*queuedTransUnits).end(),
-                  [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
+                  [&transactionId](const tuple<int, double, routerMsg*, Id, simtime_t>& p)
                   { return (get<0>(get<3>(p)) == transactionId); });
             if (iterQueue != (*queuedTransUnits).end()){
                iterQueue =   (*queuedTransUnits).erase(iterQueue);
@@ -576,7 +627,7 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                }
             }
 
-            make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortPriorityThenAmtFunction);
+            make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), sortFIFO);
             //find next in incoming
             iterIncoming = find_if((*incomingTransUnits).begin(),
                   (*incomingTransUnits).end(),
@@ -634,7 +685,7 @@ routerMsg *routerNode::generateTriggerPriceUpdateMessage(){
 }
 
 
-void routerNode::checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits, int nextNode){
+void routerNode::checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id, simtime_t>> queuedTransUnits, int nextNode){
    if (queuedTransUnits.size()>0){
 
       cout << "simTime(): " << simTime() << endl;
@@ -669,8 +720,10 @@ void routerNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
 
          PaymentChannel* p = &(nodeToPaymentChannel[node]);
          emit(p->nValueSignal, p->lastNValue);
-         emit(p->inFlightSumSignal, p->lastSumInFlight);
-         emit(p->balSumSignal, p->lastBalSum);
+         emit(p->inflightOutgoingSignal, p->outgoingTransUnits.size());
+         emit(p->inflightIncomingSignal, p->incomingTransUnits.size());
+         emit(p->serviceRateSignal, p->arrivalRate/p->serviceRate);
+         //emit(p->arrivalRateSignal, p->arrivalRate);
          emit(p->lambdaSignal, p->lambda);
          emit(p->muLocalSignal, p->muLocal);
       }
@@ -780,6 +833,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
    }
    else{ //isSuccess == true
       routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), prevNode, aMsg->getAmount(), aMsg->getHtlcIndex() );
+      nodeToPaymentChannel[prevNode].numUpdateMessages += 1;
       sendUpdateMessage(uMsg);
 
    }
@@ -798,20 +852,12 @@ void routerNode::forwardAckMessage(routerMsg *msg){
 
 
 void routerNode::handleUpdateMessage(routerMsg* msg){
-   vector<tuple<int, double , routerMsg *, Id>> *q;
+   vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
    int prevNode = msg->getRoute()[msg->getHopCount()-1];
 
    updateMsg *uMsg = check_and_cast<updateMsg *>(msg->getEncapsulatedPacket());
    //increment the in flight funds back
    
-   //remove transaction from incoming_trans_units
-   if (_priceSchemeEnabled) {
-       if (nodeToPaymentChannel[prevNode].balSum == -1)
-          nodeToPaymentChannel[prevNode].balSum = 0;  
-       nodeToPaymentChannel[prevNode].balSum += nodeToPaymentChannel[prevNode].balance/
-           max(double(nodeToPaymentChannel[prevNode].incomingTransUnits.size()), 1.0);
-   }
-
    double newBalance = nodeToPaymentChannel[prevNode].balance + uMsg->getAmount();
    nodeToPaymentChannel[prevNode].balance =  newBalance;       
    nodeToPaymentChannel[prevNode].balanceEWMA = 
@@ -904,7 +950,7 @@ void routerNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){ //increm
  */
 void routerNode::handleTransactionMessage(routerMsg* ttmsg){
    int hopcount = ttmsg->getHopCount();
-   vector<tuple<int, double , routerMsg *, Id>> *q;
+   vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
 
    int destination = transMsg->getReceiver();
@@ -916,11 +962,10 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
 
    int nextNode = ttmsg->getRoute()[hopcount+1];
 
-
    q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
 
     if (_hasQueueCapacity && _queueCapacity == 0) {
-       if (forwardTransactionMessage(ttmsg, nextNode) == false) {
+       if (forwardTransactionMessage(ttmsg, nextNode, simTime()) == false) {
           // if there isn't balance, because cancelled txn case will never be hit
           // TODO: make this and forward txn message cleaner
           // maybe just clean out queue when a timeout arrives as opposed to after clear state
@@ -935,8 +980,8 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
    }
    else{
       (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
-               ttmsg, make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())));
-      push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
+               ttmsg, make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex()), simTime()));
+      push_heap((*q).begin(), (*q).end(), sortFIFO);
       processTransUnits(nextNode, *q);
    }
 }
@@ -1005,11 +1050,12 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //
  * processTransUnits - given an adjacent node, and TransUnit queue of things to send to that node, sends
  *  TransUnits until channel funds are too low by calling forwardMessage on message representing TransUnit
  */
-void routerNode:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q){
+void routerNode:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q){
    bool successful = true;
 
    while((int)q.size()>0 && successful){
-      successful = forwardTransactionMessage(get<2>(q.back()), dest);
+      pop_heap(q.begin(), q.end(), sortFIFO);
+      successful = forwardTransactionMessage(get<2>(q.back()), dest, get<4>(q.back()));
       if (successful){
          q.pop_back();
       }
@@ -1023,7 +1069,7 @@ void routerNode:: processTransUnits(int dest, vector<tuple<int, double , routerM
  */
 
 // call this dest nextnode
-bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest)
+bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime)
 {
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
 
@@ -1053,9 +1099,12 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest)
       msg->setHopCount(msg->getHopCount()+1);
       //use hopCount to find next destination
 
-      //add amount to outgoing map
-      if (_priceSchemeEnabled) 
-          nodeToPaymentChannel[nextDest].sumInFlight += transMsg->getAmount();
+        // update service arrival times
+        nodeToPaymentChannel[nextDest].serviceArrivalTimeStamps.push_back(make_tuple(simTime(), arrivalTime));
+        if (nodeToPaymentChannel[nextDest].serviceArrivalTimeStamps.size() > _serviceArrivalWindow)
+           nodeToPaymentChannel[nextDest].serviceArrivalTimeStamps.pop_front(); 
+     
+        //add amount to outgoing map
       map<Id, double> *outgoingTransUnits = &(nodeToPaymentChannel[nextDest].outgoingTransUnits);
       (*outgoingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = transMsg->getAmount();
 

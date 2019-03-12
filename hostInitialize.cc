@@ -767,4 +767,32 @@ double getTotalAmount(vector<tuple<int, double, routerMsg*, Id >> queue) {
             [](double sum, tuple<int, double, routerMsg*, Id>&p) { return sum + get<1>(p); });
 }
 
+/*
+ * sortFunction - helper function used to sort queued transUnit list by ascending priorityClass, then by
+ *      ascending amount
+ *      note: largest element gets accessed first
+ */
+bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
+      const tuple<int,double, routerMsg*, Id, simtime_t> &b)
+{
+   if (get<0>(a) < get<0>(b)){
+      return false;
+   }
+   else if (get<0>(a) == get<0>(b)){
+      return (get<1>(a) > get<1>(b));
+   }
+   return true;
+}
+
+
+
+/*
+ * sortFunction - to do FIFO sorting 
+ */
+bool sortFIFO(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
+      const tuple<int,double, routerMsg*, Id, simtime_t> &b)
+{
+    return (get<4>(a).dbl() > get<4>(b).dbl());
+}
+
 #endif

@@ -14,9 +14,10 @@ double _statRate;
 double _clearRate;
 int _kValue;
 double _simulationLength;
+int _serviceArrivalWindow; 
+
 double _transStatStart;
 double  _transStatEnd;
-
 
  //adjacency list format of graph edges of network
 map<int, vector<pair<int,int>>> _channels;
@@ -527,7 +528,7 @@ void hostNodeBase::handleTransactionMessageSpecialized(routerMsg *ttmsg) {
 void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
     int hopcount = ttmsg->getHopCount();
-    vector<tuple<int, double , routerMsg *, Id>> *q;
+    vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
     int destination = transMsg->getReceiver();
     int transactionId = transMsg->getTransactionId();
     
@@ -572,7 +573,7 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
 
         // if there is insufficient balance at the first node, return failure
         if (_hasQueueCapacity && _queueCapacity == 0) {
-            if (forwardTransactionMessage(ttmsg) == false) {
+            if (forwardTransactionMessage(ttmsg, simTime()) == false) {
                 routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
                 handleAckMessage(failedAckMsg);
             }
@@ -585,8 +586,8 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
         else{
             // add to queue and process in order of queue
             (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
-                  ttmsg, key));
-            push_heap((*q).begin(), (*q).end(), sortPriorityThenAmtFunction);
+                  ttmsg, key, simTime()));
+            push_heap((*q).begin(), (*q).end(), sortFIFO);
             processTransUnits(nextNode, *q);
         }
     }
@@ -718,10 +719,9 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
     else { 
         routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), 
                 prevNode, aMsg->getAmount(), aMsg->getHtlcIndex() );
+        nodeToPaymentChannel[prevNode].numUpdateMessages += 1;
         forwardMessage(uMsg);
     }
-    
-
     
     //delete ack message
     ttmsg->decapsulate();
@@ -765,7 +765,7 @@ void hostNodeBase::handleAckMessageTimeOut(routerMsg* ttmsg){
  *      process more jobs with new funds, delete update message
  */
 void hostNodeBase::handleUpdateMessage(routerMsg* msg) {
-    vector<tuple<int, double , routerMsg *, Id>> *q;
+    vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
     int prevNode = msg->getRoute()[msg->getHopCount()-1];
     updateMsg *uMsg = check_and_cast<updateMsg *>(msg->getEncapsulatedPacket());
     PaymentChannel *prevChannel = &(nodeToPaymentChannel[prevNode]);
@@ -875,12 +875,12 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
         if (simTime() > (msgArrivalTime + _maxTravelTime)){
             // remove from queue to next node
             if (nextNode != -1){   
-                vector<tuple<int, double, routerMsg*, Id>>* queuedTransUnits = 
+                vector<tuple<int, double, routerMsg*, Id, simtime_t>>* queuedTransUnits = 
                     &(nodeToPaymentChannel[nextNode].queuedTransUnits);
 
                 auto iterQueue = find_if((*queuedTransUnits).begin(),
                   (*queuedTransUnits).end(),
-                  [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
+                  [&transactionId](const tuple<int, double, routerMsg*, Id, simtime_t>& p)
                   { return (get<0>(get<3>(p)) == transactionId); });
                 
                 // delete all occurences of this transaction in the queue
@@ -895,13 +895,13 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                     
                     iterQueue = find_if((*queuedTransUnits).begin(),
                      (*queuedTransUnits).end(),
-                     [&transactionId](const tuple<int, double, routerMsg*, Id>& p)
+                     [&transactionId](const tuple<int, double, routerMsg*, Id, simtime_t>& p)
                      { return (get<0>(get<3>(p)) == transactionId); });
                 }
                 
                 // resort the queue based on priority
                 make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), 
-                        sortPriorityThenAmtFunction);
+                        sortFIFO);
             }
 
             // remove from incoming TransUnits from the previous node
@@ -915,10 +915,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                 
                 while (iterIncoming != (*incomingTransUnits).end()){
                     iterIncoming = (*incomingTransUnits).erase(iterIncoming);
-                    // TODO: remove?
-                    // tuple<int, int> tempId = make_tuple(transactionId, 
-                    // get<1>(iterIncoming->first));
-                    //
+
                     iterIncoming = find_if((*incomingTransUnits).begin(),
                          (*incomingTransUnits).end(),
                         [&transactionId](const pair<tuple<int, int >, double> & p)
@@ -972,7 +969,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
  *  adjusts (decrements) channel balance, sends message to next node on route
  *  as long as it isn't cancelled
  */
-bool hostNodeBase::forwardTransactionMessage(routerMsg *msg) {
+bool hostNodeBase::forwardTransactionMessage(routerMsg *msg, simtime_t arrivalTime) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
     int nextDest = msg->getRoute()[msg->getHopCount()+1];
     int transactionId = transMsg->getTransactionId();
@@ -998,7 +995,12 @@ bool hostNodeBase::forwardTransactionMessage(routerMsg *msg) {
         // update state to send transaction out
         msg->setHopCount(msg->getHopCount()+1);
 
-        //add amount to outgoing map
+        // update service arrival times
+        neighbor->serviceArrivalTimeStamps.push_back(make_tuple(simTime(), arrivalTime));
+        if (neighbor->serviceArrivalTimeStamps.size() > _serviceArrivalWindow)
+           neighbor->serviceArrivalTimeStamps.pop_front(); 
+
+        // add amount to outgoing map
         map<Id, double> *outgoingTransUnits = &(neighbor->outgoingTransUnits);
         (*outgoingTransUnits)[make_tuple(transMsg->getTransactionId(), 
                 transMsg->getHtlcIndex())] = transMsg->getAmount();
@@ -1057,6 +1059,7 @@ void hostNodeBase::initialize() {
         _signalsEnabled = par("signalsEnabled");
         _loggingEnabled = par("loggingEnabled");
         _priceSchemeEnabled = par("priceSchemeEnabled");
+        _serviceArrivalWindow = par("serviceArrivalWindow");
 
         _hasQueueCapacity = false;
         _queueCapacity = 0;
@@ -1131,8 +1134,8 @@ void hostNodeBase::initialize() {
         nodeToPaymentChannel[key].totalCapacity = nodeToPaymentChannel[key].balance + balanceOpp;
 
         //initialize queuedTransUnits
-        vector<tuple<int, double , routerMsg *, Id>> temp;
-        make_heap(temp.begin(), temp.end(), sortPriorityThenAmtFunction);
+        vector<tuple<int, double , routerMsg *, Id, simtime_t>> temp;
+        make_heap(temp.begin(), temp.end(), sortFIFO);
         nodeToPaymentChannel[key].queuedTransUnits = temp;
 
         //register PerChannel signals
@@ -1248,10 +1251,11 @@ void hostNodeBase::finish() {
  *  TransUnits until channel funds are too low
  *  calls forwardTransactionMessage on every individual TransUnit
  */
-void hostNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q) {
+void hostNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
     bool successful = true;
     while((int)q.size() > 0 && successful) {
-        successful = forwardTransactionMessage(get<2>(q.back()));
+        pop_heap(q.begin(), q.end(), sortFIFO);
+        successful = forwardTransactionMessage(get<2>(q.back()), get<4>(q.back()));
         if (successful){
             q.pop_back();
         }

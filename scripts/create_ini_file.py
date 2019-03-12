@@ -30,8 +30,13 @@ parser.add_argument('--alpha', type=float, help='step size for rate', dest='alph
 parser.add_argument('--rho', type=float, help='nesterov or accelerated gradient parameter', dest='rho', default=0.05)
 parser.add_argument('--update-query-time', type=float, help='time of update and query', \
         dest='updateQueryTime', default=0.8)
+parser.add_argument('--zeta', type=float, help='memory factor with demand estimation', dest='zeta', default=0.01)
+parser.add_argument('--xi', type=float, help='factor to weigh queue draining', dest='xi', default=1)
+parser.add_argument('--router-queue-drain-time', type=float, help='time to drain queue (seconds)', 
+        dest='routerQueueDrainTime', default=1)
+parser.add_argument('--service-arrival-window', type=int, help='number of packets to track arrival/service', 
+        dest='serviceArrivalWindow', default=100)
 
-parser.add_argument('--zeta', type=float, help='ewma factor for demand', dest='zeta', default=0.01)
 parser.add_argument('--min-rate', type=float, help='minimum rate when rate is too small in price scheme', \
         dest='minRate', default=0.25)
 
@@ -89,7 +94,7 @@ f.write("**.windowEnabled = " + args.windowEnabled + "\n")
 f.write("**.timeoutClearRate = " + args.timeoutClearRate + "\n")
 f.write("**.timeoutEnabled = " + args.timeoutEnabled + "\n")
 f.write("**.numPathChoices = " + args.numPathChoices + "\n")
-
+f.write("**.serviceArrivalWindow = " + str(args.serviceArrivalWindow) + "\n")
 
 if args.routingScheme in ['waterfilling', 'smoothWaterfilling']:
     f.write("**.waterfillingEnabled = true\n")
@@ -102,6 +107,8 @@ if 'priceScheme' in args.routingScheme:
     f.write("**.updateQueryTime = " + str(args.updateQueryTime) + "\n")
     f.write("**.minRate = " + str(args.minRate) + "\n")
     f.write("**.rhoValue = " + str(args.rho) + "\n")
+    f.write("**.xi = " + str(args.xi) + "\n")
+    f.write("**.routerQueueDrainTime = " + str(args.routerQueueDrainTime) + "\n")
 
 
 if args.routingScheme == "smoothWaterfilling":

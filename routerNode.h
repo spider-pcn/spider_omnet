@@ -38,10 +38,11 @@ class routerNode : public cSimpleModule
       virtual routerMsg *generateStatMessage();
       virtual routerMsg *generateClearStateMessage();
       virtual routerMsg *generateTriggerPriceUpdateMessage();
-      virtual routerMsg *generatePriceUpdateMessage(double nLocal, double balSum, double sumInFlight, int reciever);
+      virtual routerMsg *generatePriceUpdateMessage(double nLocal, double serviceRate, double arrivalRate,
+              int queueSize, int reciever);
 
 
-      virtual void checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits, int node);
+      virtual void checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id, simtime_t >> queuedTransUnits, int node);
       virtual int myIndex();
       virtual void initialize() override;
       virtual void finish() override;
@@ -62,14 +63,14 @@ class routerNode : public cSimpleModule
 
       virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true);
 
-      virtual bool forwardTransactionMessage(routerMsg *msg, int dest);
+      virtual bool forwardTransactionMessage(routerMsg *msg, int dest, simtime_t);
       virtual void forwardAckMessage(routerMsg *msg);
       virtual void forwardTimeOutMessage(routerMsg *msg);
       virtual void forwardProbeMessage(routerMsg *msg);
       virtual void forwardMessage(routerMsg *msg);
       virtual void handleTransactionMessagePriceScheme(routerMsg* ttmsg);
       virtual void sendUpdateMessage(routerMsg *msg);
-      virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q);
+      virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q);
       //virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode);
       virtual void deleteMessagesInQueues();
 

@@ -73,7 +73,8 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
             demand_dict_dag = dag_demand(list(graph), mean=MEAN_RATE, \
                     std_dev=CIRCULATION_STD_DEV)
                     
-        demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) +                                 dag_frac * demand_dict_dag.get(key, 0) \
+        demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + 
+                dag_frac * demand_dict_dag.get(key, 0) \
                 for key in set(demand_dict_circ) | set(demand_dict_dag) } 
 
 
@@ -316,6 +317,14 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         demand_dict[0, 1] = 2 * MEAN_RATE
         demand_dict[1, 0] = 5 * MEAN_RATE
         print demand_dict
+
+    if "three_node" in filename:
+        print "hitting here"
+        demand_dict = dict()
+        demand_dict[0, 2] = MEAN_RATE
+        demand_dict[1, 2] = MEAN_RATE
+        demand_dict[2, 1] = MEAN_RATE
+        demand_dict[1, 0] = MEAN_RATE
 
     for i, j in demand_dict.keys():
     	start_nodes.append(end_host_map[i])

@@ -10,7 +10,7 @@ public:
     cGate* gate;
     double balance;
     double balanceEWMA;
-    vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits; //make_heap in initialization
+    vector<tuple<int, double, routerMsg*,  Id, simtime_t >> queuedTransUnits; //make_heap in initialization
     map<Id, double> incomingTransUnits; //(key,value) := ((transactionId, htlcIndex), amount)
     map<Id, double> outgoingTransUnits;
 
@@ -18,14 +18,15 @@ public:
     double nValue;// Total amount across all transactions (i.e. the sum of the amount in each transaction)
         // that have arrived to be sent along the channel
     double lastNValue;
+    double lastQueueSize;
     double xLocal; //Transaction arrival rate ($x_local$)
     double totalCapacity; //Total channel capacity ($C$)
-    
+    double serviceRate; // ratio of rate transaction arrival over transaction service rate (queue->inflight)   
+    double arrivalRate;   
     double lambda; //Price due to load ($\lambda$)
-    double sumInFlight;// total number in flight over the last T seconds
-    double lastSumInFlight; 
-    double balSum = -1; // sum of balances across the last T seconds of update messages
-    double lastBalSum;
+    int numUpdateMessages; // in the last _Tquery interval
+    double updateRate; // rate of sending update messages
+    list<tuple<simtime_t, simtime_t>> serviceArrivalTimeStamps; //each entry is service and arrival time of last n transactions
 
     double lastLambdaGrad = 0; // for accelerated gradient descent
     double yLambda; // Nesterov's equation y
@@ -40,8 +41,10 @@ public:
     //statistics for price scheme per payment channel
     simsignal_t nValueSignal;
     simsignal_t xLocalSignal;
-    simsignal_t balSumSignal;
-    simsignal_t inFlightSumSignal;
+    simsignal_t serviceRateSignal;
+    simsignal_t arrivalRateSignal;
+    simsignal_t inflightOutgoingSignal;
+    simsignal_t inflightIncomingSignal;
     simsignal_t lambdaSignal;
     simsignal_t muLocalSignal;
     simsignal_t muRemoteSignal;

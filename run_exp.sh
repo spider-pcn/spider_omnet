@@ -34,15 +34,18 @@ signalsEnabled=false
 loggingEnabled=false
 
 # scheme specific parameters
-eta=0.2
-alpha=0.4
-kappa=0.2
+eta=0.05
+alpha=0.1
+kappa=0.05
 updateQueryTime=1.5
 minPriceRate=0.25
 zeta=0.01
 rho=0.04
 tau=10
 normalizer=100
+xi=1
+routerQueueDrainTime=5
+serviceArrivalWindow=300
 
 cp hostNodeBase.ned ${PATH_NAME}
 cp hostNodeWaterfilling.ned ${PATH_NAME}
@@ -207,7 +210,10 @@ do
                     --tau $tau\
                     --normalizer $normalizer \
                     --window-enabled $windowEnabled\
-                    --demand-scale $scale 
+                    --demand-scale $scale\
+                    --xi $xi\
+                    --router-queue-drain-time $routerQueueDrainTime\
+                    --service-arrival-window $serviceArrivalWindow
 
 
             # run the omnetexecutable with the right parameters
@@ -268,8 +274,8 @@ do
                   --frac_completed_window \
                   --inflight --timeouts_sender \
                   --waiting --bottlenecks --probabilities \
-                  --mu_local --lambda --n_local --bal_sum --inflight_sum \
-                  --rate_to_send --price --mu_remote --demand \
+                  --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
+                  --inflight_incoming --rate_to_send --price --mu_remote --demand \
                   --rate_sent --amt_inflight_per_path
               done
         done

@@ -29,6 +29,7 @@ struct PathInfo{
         double rttMin = 0.0;
         double window = 100;
         double priceLastSeen = 0;
+        double oldSumOfRates = 0;
         routerMsg * triggerTransSendMsg;
         simtime_t lastSendTime = 0;
         simtime_t lastRateUpdateTime = 0;
