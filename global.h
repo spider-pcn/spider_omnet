@@ -65,6 +65,13 @@ extern int _numAttemptsLNDBaseline;
 //for lndbaseline
 extern double _restorePeriod; 
 
+//for rebalancing
+extern double _rebalanceEnabled;
+extern double _rebalanceFrac;
+extern double _rebalanceTimeReq;
+extern double _rebalanceRate;
+
+
 extern bool _windowEnabled;
 
 extern vector<tuple<int,int>> _landmarksWithConnectivityList;//pair: (number of edges, node number)

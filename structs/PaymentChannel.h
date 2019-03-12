@@ -9,6 +9,7 @@ public:
     //channel information
     cGate* gate;
     double balance;
+    double balanceAdded;
     double balanceEWMA;
     vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits; //make_heap in initialization
     map<Id, double> incomingTransUnits; //(key,value) := ((transactionId, htlcIndex), amount)
@@ -36,6 +37,8 @@ public:
 
     double muRemote; //Price due to imbalance at the other end of the channel ($\mu_{remote}$)
     double yMuRemote; // Nesterov's equation y
+
+    simtime_t zeroStartTime; //time that channel balance most recently turned 0, -1 if channel not 0
 
     //statistics for price scheme per payment channel
     simsignal_t nValueSignal;

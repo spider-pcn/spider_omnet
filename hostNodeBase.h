@@ -114,6 +114,7 @@ class hostNodeBase : public cSimpleModule {
         virtual routerMsg *generateClearStateMessage();
         virtual routerMsg* generateTimeOutMessageForPath(vector<int> path, int transactionId, int receiver);
         virtual routerMsg *generateTimeOutMessage(routerMsg *transMsg);
+        virtual routerMsg *generateRebalanceMessage();
       
 
         // message handlers
@@ -131,7 +132,8 @@ class hostNodeBase : public cSimpleModule {
         virtual void handleUpdateMessage(routerMsg *msg);
         virtual void handleStatMessage(routerMsg *msg);
         virtual void handleClearStateMessage(routerMsg *msg);
-        
+        virtual void handleRebalanceMessage(routerMsg *msg);       
+ 
         // message forwarders
         virtual bool forwardTransactionMessage(routerMsg *msg);
         virtual void forwardMessage(routerMsg *msg);
@@ -142,6 +144,10 @@ class hostNodeBase : public cSimpleModule {
         virtual void processTransUnits(int dest, 
                 vector<tuple<int, double , routerMsg *, Id>>& q);
         virtual void deleteMessagesInQueues();
+      
+        virtual void updateBalance(int destNode, double amtToAdd);
+            //amtToAdd can be negative if we are decreasing
+        virtual double rebalanceTotalAmtAtNode();
 };
 
 #endif

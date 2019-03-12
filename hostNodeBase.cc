@@ -42,6 +42,11 @@ double _epsilon;
 bool _hasQueueCapacity;
 int _queueCapacity;
 
+//global parameters for rebalancing
+double _rebalanceEnabled;
+double _rebalanceFrac;
+double _rebalanceTimeReq;
+double _rebalanceRate;
 
 
 Define_Module(hostNodeBase);
@@ -188,6 +193,23 @@ simsignal_t hostNodeBase::registerSignalPerDest(string signalStart, int destNode
     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
 
     return signal;
+}
+
+
+void hostNodeBase::updateBalance(int destNode, double amtToAdd){
+    double totalCapacity = nodeToPaymentChannel[destNode].totalCapacity;
+    double oldBalance = nodeToPaymentChannel[destNode].balance;
+    double newBalance = nodeToPaymentChannel[destNode].balance + amtToAdd;
+    assert(newBalance >= 0 && newBalance <= totalCapacity);
+    
+    nodeToPaymentChannel[destNode].balance = newBalance;
+    if (!_rebalanceEnabled)
+        return;    
+
+    if (oldBalance > 0 && newBalance == 0 ) //update zeroStartTime, oldBal>0 catches amtToAdd = 0 case
+        nodeToPaymentChannel[destNode].zeroStartTime = simTime();
+    else if (oldBalance == 0 && newBalance > 0)
+        nodeToPaymentChannel[destNode].zeroStartTime = -1;
 }
 
 
@@ -364,6 +386,18 @@ routerMsg *hostNodeBase::generateStatMessage(){
     return rMsg;
 }
 
+
+/* generate rebalance trigger message every _rebalanceRate seconds
+ * to add _rebalanceFrac of total capacity
+ */
+routerMsg *hostNodeBase::generateRebalanceMessage(){
+    char msgname[MSGSIZE];
+    sprintf(msgname, "node-%d rebalanceMsg", myIndex());
+    routerMsg *rMsg = new routerMsg(msgname);
+    rMsg->setMessageType(REBALANCE_MSG);
+    return rMsg;
+}
+
 /* generate a periodic message to remove
  * any state pertaining to transactions that have 
  * timed out
@@ -506,7 +540,12 @@ void hostNodeBase::handleMessage(cMessage *msg){
                 handleClearStateMessage(ttmsg);
             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
             break;
-        
+        case REBALANCE_MSG:
+             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                <<": RECEIVED REBALANCE_MSG] "<< msg->getName() << endl;
+                handleRebalanceMessage(ttmsg);
+            if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+            break;
         default:
                 handleMessage(ttmsg);
 
@@ -704,7 +743,7 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
         // increment funds on this channel unless this is the node that caused the fauilure
         // in which case funds were never decremented in the first place
         if (aMsg->getFailedHopNum() < ttmsg->getHopCount())
-            nodeToPaymentChannel[prevNode].balance += aMsg->getAmount();
+            updateBalance(prevNode, aMsg->getAmount());
 
         // no relevant incoming_trans_units because no node on fwd path before this
         if (ttmsg->getHopCount() < ttmsg->getRoute().size() - 1) {
@@ -772,7 +811,7 @@ void hostNodeBase::handleUpdateMessage(routerMsg* msg) {
    
     //increment the in flight funds back
     double newBalance = prevChannel->balance + uMsg->getAmount();
-    prevChannel->balance =  newBalance;       
+    updateBalance(prevNode, uMsg->getAmount());
     prevChannel->balanceEWMA = (1 -_ewmaFactor) * prevChannel->balanceEWMA 
         + (_ewmaFactor) * newBalance; 
 
@@ -788,6 +827,39 @@ void hostNodeBase::handleUpdateMessage(routerMsg* msg) {
     q = &(prevChannel->queuedTransUnits);
     processTransUnits(prevNode, *q);
 } 
+
+/* checks if rebalancing needs to occur for all outgoing payment 
+ * channels of this node */
+void hostNodeBase::handleRebalanceMessage(routerMsg* ttmsg){
+    // reschedule this message to be sent again
+    if (simTime() > _simulationLength){
+        delete ttmsg;
+    }
+    else {
+        scheduleAt(simTime()+_rebalanceRate, ttmsg);
+    }
+
+    for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
+    {
+        int key =iter->first; //node
+
+        double oldBalance = nodeToPaymentChannel[key].balance;
+        simtime_t zeroStartTime = nodeToPaymentChannel[key].zeroStartTime;
+        
+        if ( ( oldBalance == 0 ) && ( zeroStartTime >= 0)  && ( zeroStartTime + _rebalanceTimeReq <= simTime()) )
+        {
+            double addedAmt= oldBalance * _rebalanceFrac;
+            //rebalance channel
+            nodeToPaymentChannel[key].balance += addedAmt; 
+            //adjust total capacity
+            nodeToPaymentChannel[key].totalCapacity += addedAmt; 
+               
+            nodeToPaymentChannel[key].balanceAdded += addedAmt;
+        }
+    }
+}
+
+
 
 
 /* emits all the default statistics across all the schemes
@@ -942,7 +1014,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
               
                     PaymentChannel *nextChannel = &(nodeToPaymentChannel[nextNode]);
                     double updatedBalance = nextChannel->balance + amount;
-                    nextChannel->balance = updatedBalance; 
+                    updateBalance(nextNode, amount);
                     nextChannel->balanceEWMA = (1 -_ewmaFactor) * nextChannel->balanceEWMA + 
                         (_ewmaFactor) * updatedBalance;
 
@@ -1006,7 +1078,7 @@ bool hostNodeBase::forwardTransactionMessage(routerMsg *msg) {
         // update balance
         int amt = transMsg->getAmount();
         double newBalance = neighbor->balance - amt;
-        neighbor->balance = newBalance;
+        updateBalance(nextDest, -1*amt);
         neighbor-> balanceEWMA = (1 -_ewmaFactor) * neighbor->balanceEWMA + 
             (_ewmaFactor) * newBalance;
         
@@ -1080,6 +1152,13 @@ void hostNodeBase::initialize() {
            _kValue = par("numPathChoices");
         }
 
+
+        //set rebalance parameters
+        _rebalanceEnabled = true;
+        _rebalanceRate = 0.5;
+        _rebalanceFrac = 0.1;
+        _rebalanceTimeReq = 4.0;
+        
         _maxTravelTime = 0.0;
         _delta = 0.01; // to avoid divide by zero 
         setNumNodes(topologyFile_);
@@ -1104,7 +1183,8 @@ void hostNodeBase::initialize() {
         if (nextGate ) {
             PaymentChannel temp =  {};
             temp.gate = curOutGate;
-
+            temp.zeroStartTime = -1;
+            temp.balanceAdded = 0;
             bool isHost = nextGate->getOwnerModule()->par("isHost");
             int key = nextGate->getOwnerModule()->getIndex();
             if (!isHost){
@@ -1197,10 +1277,25 @@ void hostNodeBase::initialize() {
     routerMsg *statMsg = generateStatMessage();
     scheduleAt(simTime() + 0, statMsg);
 
+    if (_rebalanceEnabled){
+        routerMsg *rebalanceMsg = generateRebalanceMessage();
+        scheduleAt(simTime() + 0, rebalanceMsg);
+    }
+
     if (_timeoutEnabled){
        routerMsg *clearStateMsg = generateClearStateMessage();
        scheduleAt(simTime()+ _clearRate, clearStateMsg);
     }
+}
+
+double hostNodeBase::rebalanceTotalAmtAtNode(){
+    double total = 0;
+    for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
+    {
+        int key =iter->first; //node
+        total += nodeToPaymentChannel[key].balanceAdded;
+    }
+    return total;
 }
 
 /* function that is called at the end of the simulation that
@@ -1210,7 +1305,7 @@ void hostNodeBase::finish() {
     deleteMessagesInQueues();
 
     for (int it = 0; it < _numHostNodes; ++it) {
-        if (_destList[myIndex()].count(it) > 0) {
+      if (_destList[myIndex()].count(it) > 0) {
             char buffer[30];
             sprintf(buffer, "rateCompleted %d -> %d", myIndex(), it);
             recordScalar(buffer, statRateCompleted[it]);
@@ -1230,7 +1325,14 @@ void hostNodeBase::finish() {
             sprintf(buffer, "completionTime %d -> %d ", myIndex(), it);
             recordScalar(buffer, statCompletionTimes[it]/statRateCompleted[it]);
         }
-    }
+   }
+
+   if (_rebalanceEnabled) {
+        char buffer[30];
+        sprintf(buffer, "rebalance $ added at node %d", myIndex());
+        recordScalar(buffer, rebalanceTotalAmtAtNode());
+   }        
+ 
 
     if (myIndex() == 0) {
         // can be done on a per node basis also if need be
