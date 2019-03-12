@@ -337,18 +337,19 @@ void hostNodeWaterfilling::handleAckMessageTimeOut(routerMsg* ttmsg){
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
     int transactionId = aMsg->getTransactionId();
 
-    double totalAmtReceived = (transToAmtLeftToComplete[transactionId]).amtReceived +
-        aMsg->getAmount();
-    if (totalAmtReceived != transToAmtLeftToComplete[transactionId].amtSent) 
-        return;
+    if (aMsg->getIsSuccess()) {
+        double totalAmtReceived = (transToAmtLeftToComplete[transactionId]).amtReceived + aMsg->getAmount();
+        if (totalAmtReceived != transToAmtLeftToComplete[transactionId].amtSent) 
+            return;
     
-    auto iter = find_if(canceledTransactions.begin(),
-         canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-         { return get<0>(p) == transactionId; });
+        auto iter = find_if(canceledTransactions.begin(),
+            canceledTransactions.end(),
+            [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
+            { return get<0>(p) == transactionId; });
     
-    if (iter!=canceledTransactions.end()) {
-        canceledTransactions.erase(iter);
+        if (iter!=canceledTransactions.end()) {
+            canceledTransactions.erase(iter);
+        }
     }
 }
 
@@ -361,6 +362,11 @@ void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
     int receiver = aMsg->getReceiver();
     int pathIndex = aMsg->getPathIndex();
     int transactionId = aMsg->getTransactionId();
+
+    if (aMsg->getIsSuccess() == false) {
+        hostNodeBase::handleAckMessage(ttmsg);
+        return;
+    }
     
     if (transToAmtLeftToComplete.count(transactionId) == 0){
         cout << "error, transaction " << transactionId 
@@ -376,8 +382,7 @@ void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
 
         if (transToAmtLeftToComplete[transactionId].amtReceived > 
                 transToAmtLeftToComplete[transactionId].amtSent - _epsilon) {
-            if (aMsg->getTimeSent() >= _transStatStart && 
-            aMsg->getTimeSent() <= _transStatEnd) {
+            if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) {
                 statNumCompleted[receiver] += 1; 
                 statRateCompleted[receiver] += 1;
 
@@ -655,7 +660,7 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg, bo
             
             PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
             routerMsg* waterMsg = generateTransactionMessageForPath(amtOnPath, 
-                 pathInfo->path, pathIndex, transMsg);
+                 pathInfo->path, pathIndex, transMsg, true);
             
             // if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
             

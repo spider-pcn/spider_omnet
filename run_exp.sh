@@ -2,35 +2,35 @@
 PATH_NAME="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulations/"
 GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
-num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
-    "10" "20" "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
+num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" \
+    "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
 
-balance=100
+balance=1000
 
 prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
     "hotnets" "five_line" "lnd_dec4_2018" "lnd_dec28_2018" \
-    "sw_10_routers" "sw_20_routers" "sw_40_routers" "sw_60_routers" "sw_80_routers"  \
+    "sw_10_routers" "sw_20_routers" "sw_50_routers" "sw_60_routers" "sw_80_routers"  \
     "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
     "sw_800_routers" "sw_1000_routers"\
     "sf_10_routers" "sf_20_routers" \
-    "sf_40_routers" "sf_60_routers" "sf_80_routers"  \
+    "sf_50_routers" "sf_60_routers" "sf_80_routers"  \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
     "random_30_routers" "sw_sparse_40_routers")
 
-demand_scale=("30") # "60" "90")
-path_choices_dep_list=("waterfilling") # "landmarkRouting")  # "smoothWaterfilling")
-path_choices_indep_list=("shortestPath")
+demand_scale=("5") # "40" "80") # "60" "90")
+path_choices_dep_list=("priceSchemeWindow")  # "smoothWaterfilling")
+path_choices_indep_list=() #("lndBaseline" "shortestPath")
 random_init_bal=false
 random_capacity=false
 
 
 #general parameters that do not affect config names
-simulationLength=2000
+simulationLength=1000
 statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
-signalsEnabled=false
+signalsEnabled=true
 loggingEnabled=false
 
 # scheme specific parameters
@@ -40,7 +40,7 @@ kappa=0.05
 updateQueryTime=1.5
 minPriceRate=0.25
 zeta=0.01
-rho=0.04
+rho=0.004
 tau=10
 normalizer=100
 xi=1
@@ -93,7 +93,7 @@ do
     
     # STEP 1: create topology
     $PYTHON scripts/create_topo_ned_file.py $graph_type\
-            --network-name ${PATH_NAME}$network\
+           --network-name ${PATH_NAME}$network\
             --topo-filename $topofile\
             --num-nodes ${num_nodes[i]}\
             --balance-per-channel $balance\
@@ -137,7 +137,8 @@ do
                 --generate-json-also \
                 --timeout-value 5 \
                 --scale-amount $scale \
-                --kaggle-size
+                --txn-size-mean 10
+                #--kaggle-size
 
 
         # STEP 3: run the experiment

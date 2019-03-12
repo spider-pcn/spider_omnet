@@ -126,14 +126,13 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
     elif distribution == 'poisson':
         if kaggle_size:
             print "generating from kaggle for size"
+            amt_dist = np.load(KAGGLE_AMT_MODIFIED_DIST_FILENAME)
+            num_amts = amt_dist.item().get('p').size
         # constant transaction size to be sent in a poisson fashion
         for k in range(len(start_nodes)):
             current_time = 0.0
             rate = amt_absolute[k]*1.0
             beta = (1.0) / (1.0 * rate)
-
-            amt_dist = np.load(KAGGLE_AMT_MODIFIED_DIST_FILENAME)
-            num_amts = amt_dist.item().get('p').size
 
             # if the rate is higher, given pair will have more transactions in a single second
             while current_time < total_time:
@@ -148,7 +147,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
                     txn_idx = np.random.choice(num_amts, 1, \
                                            p=amt_dist.item().get('p'))[0]
                     # map the index to a tx amount
-                    txn_size = round(amt_dist.item().get('bins')[txn_idx]/50.0, 1)
+                    txn_size = round(amt_dist.item().get('bins')[txn_idx]/5.5)
                 else:                
                     txn_size = txn_size_mean
 

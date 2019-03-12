@@ -105,7 +105,7 @@ class hostNodeBase : public cSimpleModule {
 
         // generators for the standard messages
         virtual routerMsg* generateTransactionMessageForPath(double amt, 
-                vector<int> path, int pathIndex, transactionMsg* transMsg);
+                vector<int> path, int pathIndex, transactionMsg* transMsg, bool isProcessed);
         virtual routerMsg *generateTransactionMessage(TransUnit TransUnit);
         virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true);
         virtual routerMsg *generateUpdateMessage(int transId, 

@@ -192,6 +192,7 @@ transactionMsg::transactionMsg(const char *name, short kind) : ::omnetpp::cPacke
     this->htlcIndex = 0;
     this->pathIndex = 0;
     this->originalAmount = 0;
+    this->isProcessed = false;
 }
 
 transactionMsg::transactionMsg(const transactionMsg& other) : ::omnetpp::cPacket(other)
@@ -224,6 +225,7 @@ void transactionMsg::copy(const transactionMsg& other)
     this->htlcIndex = other.htlcIndex;
     this->pathIndex = other.pathIndex;
     this->originalAmount = other.originalAmount;
+    this->isProcessed = other.isProcessed;
 }
 
 void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -240,6 +242,7 @@ void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->htlcIndex);
     doParsimPacking(b,this->pathIndex);
     doParsimPacking(b,this->originalAmount);
+    doParsimPacking(b,this->isProcessed);
 }
 
 void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -256,6 +259,7 @@ void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->htlcIndex);
     doParsimUnpacking(b,this->pathIndex);
     doParsimUnpacking(b,this->originalAmount);
+    doParsimUnpacking(b,this->isProcessed);
 }
 
 double transactionMsg::getAmount() const
@@ -368,6 +372,16 @@ void transactionMsg::setOriginalAmount(double originalAmount)
     this->originalAmount = originalAmount;
 }
 
+bool transactionMsg::getIsProcessed() const
+{
+    return this->isProcessed;
+}
+
+void transactionMsg::setIsProcessed(bool isProcessed)
+{
+    this->isProcessed = isProcessed;
+}
+
 class transactionMsgDescriptor : public omnetpp::cClassDescriptor
 {
   private:
@@ -433,7 +447,7 @@ const char *transactionMsgDescriptor::getProperty(const char *propertyname) cons
 int transactionMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 11+basedesc->getFieldCount() : 11;
+    return basedesc ? 12+basedesc->getFieldCount() : 12;
 }
 
 unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
@@ -456,8 +470,9 @@ unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<11) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<12) ? fieldTypeFlags[field] : 0;
 }
 
 const char *transactionMsgDescriptor::getFieldName(int field) const
@@ -480,8 +495,9 @@ const char *transactionMsgDescriptor::getFieldName(int field) const
         "htlcIndex",
         "pathIndex",
         "originalAmount",
+        "isProcessed",
     };
-    return (field>=0 && field<11) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<12) ? fieldNames[field] : nullptr;
 }
 
 int transactionMsgDescriptor::findField(const char *fieldName) const
@@ -499,6 +515,7 @@ int transactionMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='h' && strcmp(fieldName, "htlcIndex")==0) return base+8;
     if (fieldName[0]=='p' && strcmp(fieldName, "pathIndex")==0) return base+9;
     if (fieldName[0]=='o' && strcmp(fieldName, "originalAmount")==0) return base+10;
+    if (fieldName[0]=='i' && strcmp(fieldName, "isProcessed")==0) return base+11;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -522,8 +539,9 @@ const char *transactionMsgDescriptor::getFieldTypeString(int field) const
         "int",
         "int",
         "double",
+        "bool",
     };
-    return (field>=0 && field<11) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<12) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **transactionMsgDescriptor::getFieldPropertyNames(int field) const
@@ -601,6 +619,7 @@ std::string transactionMsgDescriptor::getFieldValueAsString(void *object, int fi
         case 8: return long2string(pp->getHtlcIndex());
         case 9: return long2string(pp->getPathIndex());
         case 10: return double2string(pp->getOriginalAmount());
+        case 11: return bool2string(pp->getIsProcessed());
         default: return "";
     }
 }
@@ -626,6 +645,7 @@ bool transactionMsgDescriptor::setFieldValueAsString(void *object, int field, in
         case 8: pp->setHtlcIndex(string2long(value)); return true;
         case 9: pp->setPathIndex(string2long(value)); return true;
         case 10: pp->setOriginalAmount(string2double(value)); return true;
+        case 11: pp->setIsProcessed(string2bool(value)); return true;
         default: return false;
     }
 }

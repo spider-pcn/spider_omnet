@@ -378,7 +378,7 @@ void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
                        // send a new transaction on that path with that amount
                        PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][i]);
                        routerMsg* lrMsg = generateTransactionMessageForPath(amt, 
-                               pathInfo->path, i, transMsg); 
+                               pathInfo->path, i, transMsg, true); 
                        handleTransactionMessage(lrMsg, true /*revisit*/);
                    }
                }

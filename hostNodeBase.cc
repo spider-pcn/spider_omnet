@@ -200,7 +200,7 @@ simsignal_t hostNodeBase::registerSignalPerDest(string signalStart, int destNode
  * some function that does splitTransaction
  */
 routerMsg* hostNodeBase::generateTransactionMessageForPath(double amt, 
-        vector<int> path, int pathIndex, transactionMsg* transMsg) {
+        vector<int> path, int pathIndex, transactionMsg* transMsg, bool isProcessed) {
     char msgname[MSGSIZE];
     sprintf(msgname, "tic-%d-to-%d split-transMsg", myIndex(), transMsg->getReceiver());
     
@@ -215,6 +215,7 @@ routerMsg* hostNodeBase::generateTransactionMessageForPath(double amt,
     msg->setPathIndex(pathIndex);
     msg->setTimeOut(transMsg->getTimeOut());
     msg->setTransactionId(transMsg->getTransactionId());
+    msg->setIsProcessed(isProcessed);
 
     // find htlc for txn
     int transactionId = transMsg->getTransactionId();    
@@ -1065,7 +1066,7 @@ void hostNodeBase::initialize() {
         _hasQueueCapacity = false;
         _queueCapacity = 0;
 
-        _transStatStart = 5000;
+        _transStatStart = 0;
         _transStatEnd = 7000;
         _waterfillingStartTime = 4000;
 
@@ -1286,12 +1287,12 @@ void hostNodeBase::deleteMessagesInQueues(){
     for (auto iter = nodeToDestInfo.begin(); iter!=nodeToDestInfo.end(); iter++){
         int dest = iter->first;
         while ((nodeToDestInfo[dest].transWaitingToBeSent).size() > 0) {
-            routerMsg * rMsg = nodeToDestInfo[dest].transWaitingToBeSent.top();
+            routerMsg * rMsg = nodeToDestInfo[dest].transWaitingToBeSent.back();
             auto tMsg = rMsg->getEncapsulatedPacket();
             rMsg->decapsulate();
             delete tMsg;
             delete rMsg;
-            nodeToDestInfo[dest].transWaitingToBeSent.pop();
+            nodeToDestInfo[dest].transWaitingToBeSent.pop_back();
         }
     }
 }
