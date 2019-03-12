@@ -735,6 +735,8 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
 
         // Nesterov's gradient descent equation
         // and other speeding up mechanisms
+
+        double sumOfRates = 0.0;
         double preProjectionRate = 0.0;
         if (_nesterov) {
           double yPrev = p->yRateToSendTrans;
@@ -742,13 +744,23 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
           p->yRateToSendTrans = yNew;
           preProjectionRate = yNew + _rho*(yNew - yPrev);
         } else if (_secondOrderOptimization) {
-            preProjectionRate = oldRate + _alpha*(1 - zValue) + _rho*(p->priceLastSeen - zValue);
+            for (auto curPath : nodeToShortestPathsMap[destNode]) {
+                sumOfRates += curPath.second.rateToSendTrans;
+            }
+            /*double delta = _alpha*(1 - (sumOfRates/300.0)*zValue) + 
+                _rho*((p->oldSumOfRates/300.0)*p->priceLastSeen - 
+                    (sumOfRates/300.0)*zValue);*/
+            double delta = _rho*(p->priceLastSeen - zValue);
+             // = r + (1 + r/10) delta; - closer to 80 will have an 8x improvement in convergence
+            // preProjectionRate = oldRate + _alpha*(1 - zValue) + _rho*(p->priceLastSeen - zValue);
+            preProjectionRate = oldRate + _alpha * (1 - zValue) + (1 + oldRate/100.0)*delta ;
         }
         else {
           preProjectionRate  = oldRate + _alpha*(1 - zValue);
         }
 
         p->priceLastSeen = zValue;
+        p->oldSumOfRates = sumOfRates;
         // p->rateToSendTrans = maxDouble(preProjectionRate, _minPriceRate);
         // updateTimers(destNode, routeIndex, p->rateToSendTrans);
 

@@ -302,6 +302,14 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         demand_dict[1, 0] = 5 * MEAN_RATE
         print demand_dict
 
+    if "three_node" in filename:
+        print "hitting here"
+        demand_dict = dict()
+        demand_dict[0, 2] = MEAN_RATE
+        demand_dict[1, 2] = MEAN_RATE
+        demand_dict[2, 1] = MEAN_RATE
+        demand_dict[1, 0] = MEAN_RATE
+
     for i, j in demand_dict.keys():
     	start_nodes.append(end_host_map[i])
     	end_nodes.append(end_host_map[j])

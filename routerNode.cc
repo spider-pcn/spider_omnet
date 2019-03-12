@@ -410,7 +410,7 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
    double oldMuRemote = nodeToPaymentChannel[sender].muRemote;
 
     double newLambdaGrad = inflightLocal*arrivalRateLocal/serviceRateLocal + 
-        inflightRemote * arrivalRateRemote/serviceRateRemote + _xi*(qLocal + qRemote) - cValue;
+        inflightRemote * arrivalRateRemote/serviceRateRemote + 2*_xi*min(qLocal, qRemote) - 0.9*cValue;
      /*if (sender >= _numHostNodes && (oldLambda > 0 || newLambdaGrad > 0)) {
         cout << "to sender " << sender << " from  " << myIndex() << " at time " << simTime();
         cout << " old lambda" << oldLambda << " new lambda grad "
