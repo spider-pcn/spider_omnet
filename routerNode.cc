@@ -361,6 +361,15 @@ void routerNode::handleMessage(cMessage *msg)
 
 void routerNode::finish(){
     deleteMessagesInQueues();
+    double numPoints = (_transStatEnd - _transStatStart)/(double) _statRate;
+
+    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
+        int node = it->first; //key
+        char buffer[30];
+        sprintf(buffer, "queueSize %d -> %d", myIndex(), node);
+        recordScalar(buffer, nodeToPaymentChannel[node].queueSizeSum/numPoints);
+    }
+
 }
 
 void routerNode::handlePriceQueryMessage(routerMsg* ttmsg){
@@ -739,22 +748,23 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
       scheduleAt(simTime()+_statRate, ttmsg);
    }
 
-   if (_signalsEnabled) {
-      for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
 
-         int node = it->first; //key
+    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
+        int node = it->first; //key
+        if (simTime() > _transStatStart && simTime() < _transStatEnd)
+            nodeToPaymentChannel[node].queueSizeSum += getTotalAmount(nodeToPaymentChannel[node].queuedTransUnits);
 
-         emit(nodeToPaymentChannel[node].amtInQueuePerChannelSignal, getTotalAmount(nodeToPaymentChannel[node].queuedTransUnits));
+        if (_signalsEnabled) {
+            emit(nodeToPaymentChannel[node].amtInQueuePerChannelSignal, 
+                    getTotalAmount(nodeToPaymentChannel[node].queuedTransUnits));
+            emit(nodeToPaymentChannel[node].balancePerChannelSignal, nodeToPaymentChannel[node].balance);
 
-         emit(nodeToPaymentChannel[node].balancePerChannelSignal, nodeToPaymentChannel[node].balance);
-
-         // compute number in flight and report that too - hack right now that just sums the number of entries in the map
-         emit(nodeToPaymentChannel[node].numInflightPerChannelSignal, 
+            // compute number in flight and report that too - hack right now that just sums the number of entries in the map
+            emit(nodeToPaymentChannel[node].numInflightPerChannelSignal, 
                  getTotalAmount(nodeToPaymentChannel[node].incomingTransUnits) +
                  getTotalAmount(nodeToPaymentChannel[node].outgoingTransUnits));
-
-      }
-   }
+        }
+    }
 
 
 }

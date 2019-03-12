@@ -1233,7 +1233,7 @@ void hostNodeBase::finish() {
             recordScalar(buffer, statAmtArrived[it]);
 
             sprintf(buffer, "completionTime %d -> %d ", myIndex(), it);
-            recordScalar(buffer, statCompletionTimes[it]/statRateCompleted[it]);
+            recordScalar(buffer, statCompletionTimes[it]);
         }
     }
 

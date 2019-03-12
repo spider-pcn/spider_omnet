@@ -10,7 +10,7 @@ from config import *
 
 # generates the start and end nodes for a fixed set of topologies - hotnets/line/simple graph
 def generate_workload_standard(filename, payment_graph_topo, workload_type, total_time, \
-        log_normal, txn_size_mean, timeout_value, generate_json_also, circ_frac, std_workload=True):
+        log_normal, kaggle_size, txn_size_mean, timeout_value, generate_json_also, circ_frac, std_workload=True):
     # by default ASSUMES NO END HOSTS
 
     # define start and end nodes and amounts
@@ -89,7 +89,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         generate_json_files(filename + '.json', graph, graph, start_nodes, end_nodes, amt_absolute)
 
     write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, total_time, log_normal, txn_size_mean, timeout_value)
+            workload_type, total_time, log_normal, kaggle_size, txn_size_mean, timeout_value)
 
 
 
@@ -101,7 +101,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
 # write to file - assume no priority for now
 # transaction sizes are either constant or exponentially distributed around their mean
 def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
-        workload_type, total_time, log_normal, txn_size_mean, timeout_value, mode="w", start_time=0):
+        workload_type, total_time, log_normal, kaggle_size, txn_size_mean, timeout_value, mode="w", start_time=0):
     outfile = open(filename, mode)
 
     if distribution == 'uniform':
@@ -124,11 +124,17 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
                 cur_time += (1.0 / rate)
 
     elif distribution == 'poisson':
+        if kaggle_size:
+            print "generating from kaggle for size"
         # constant transaction size to be sent in a poisson fashion
         for k in range(len(start_nodes)):
             current_time = 0.0
             rate = amt_absolute[k]*1.0
             beta = (1.0) / (1.0 * rate)
+
+            amt_dist = np.load(KAGGLE_AMT_MODIFIED_DIST_FILENAME)
+            num_amts = amt_dist.item().get('p').size
+
             # if the rate is higher, given pair will have more transactions in a single second
             while current_time < total_time:
 
@@ -137,7 +143,13 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
                     while (txn_size < MIN_TXN_SIZE or txn_size > MAX_TXN_SIZE):
                         txn_power = np.random.normal(loc=LOG_NORMAL_SCALE, scale=LOG_NORMAL_SCALE)
                         txn_size = round(10 ** txn_power, 1) 
-                else:
+                elif kaggle_size:
+                    # draw an index according to the amount pmf
+                    txn_idx = np.random.choice(num_amts, 1, \
+                                           p=amt_dist.item().get('p'))[0]
+                    # map the index to a tx amount
+                    txn_size = round(amt_dist.item().get('bins')[txn_idx]/50.0, 1)
+                else:                
                     txn_size = txn_size_mean
 
                 outfile.write(str(txn_size) + " " + str(current_time + start_time) + " " + str(start_nodes[k]) \
@@ -241,7 +253,7 @@ def generate_json_files(filename, graph, inside_graph, start_nodes, end_nodes, a
 # either be exponentially distributed or constant size
 def generate_workload_for_provided_topology(filename, inside_graph, whole_graph, end_host_map, \
         workload_type, total_time, \
-        log_normal, txn_size_mean, timeout_value, generate_json_also, circ_frac):
+        log_normal, kaggle_size, txn_size_mean, timeout_value, generate_json_also, circ_frac):
     num_nodes = inside_graph.number_of_nodes()
     start_nodes, end_nodes, amt_relative = [], [], []
     
@@ -339,7 +351,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         generate_json_files(filename + '.json', whole_graph, inside_graph, start_nodes, end_nodes, amt_absolute)
 
     write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, total_time, log_normal, txn_size_mean, timeout_value)
+            workload_type, total_time, log_normal, kaggle_size, txn_size_mean, timeout_value)
 
 
 # parse a given line of edge relationships from the topology file
@@ -495,6 +507,7 @@ parser.add_argument('--experiment-time', dest='total_time', type=int, \
 parser.add_argument('--txn-size-mean', dest='txn_size_mean', type=int, \
         help='mean_txn_size', default=1)
 parser.add_argument('--log-normal', action='store_true', help='should txns be exponential in size')
+parser.add_argument('--kaggle-size', action='store_true', help='should txns be kaggle in size')
 parser.add_argument('--generate-json-also', action="store_true", help="do you need to generate json file also \
         for the custom topology")
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
@@ -510,6 +523,7 @@ distribution = args.interval_distribution
 total_time = args.total_time
 txn_size_mean = args.txn_size_mean
 log_normal = args.log_normal
+kaggle_size = args.kaggle_size
 topo_filename = args.topo_filename
 generate_json_also = args.generate_json_also
 graph_topo = args.graph_topo
@@ -517,17 +531,20 @@ balance = args.balance_per_channel
 timeout_value = args.timeout_value
 SCALE_AMOUNT = args.scale_amount
 
+if kaggle_size:
+    log_normal = False
+
 
 # generate workloads
 np.random.seed(SEED)
 random.seed(SEED)
 if graph_topo != 'custom':
     generate_workload_standard(output_prefix, graph_topo, distribution, \
-            total_time, log_normal, txn_size_mean, timeout_value, generate_json_also, circ_frac)
+            total_time, log_normal, kaggle_size, txn_size_mean, timeout_value, generate_json_also, circ_frac)
 elif topo_filename is None:
     raise Exception("Topology needed for custom file")
 else:
     whole_graph, inside_graph, end_host_map = parse_topo(topo_filename)
     generate_workload_for_provided_topology(output_prefix, inside_graph, whole_graph, end_host_map,\
-            distribution, total_time, log_normal,\
+            distribution, total_time, log_normal, kaggle_size,\
             txn_size_mean, timeout_value, generate_json_also, circ_frac)
