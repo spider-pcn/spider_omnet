@@ -60,6 +60,7 @@ class routerNode : public cSimpleModule
       virtual void handleTriggerPriceUpdateMessage(routerMsg *msg);
       virtual void handlePriceUpdateMessage(routerMsg* ttmsg);
       virtual void handlePriceQueryMessage(routerMsg* ttmsg);
+      virtual void handleRebalanceMessage(routerMsg* ttmsg);
 
       virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true);
 

@@ -132,7 +132,8 @@ class hostNodeBase : public cSimpleModule {
         virtual void handleUpdateMessage(routerMsg *msg);
         virtual void handleStatMessage(routerMsg *msg);
         virtual void handleClearStateMessage(routerMsg *msg);
-        
+        virtual void handleRebalanceMessage(routerMsg *msg);       
+ 
         // message forwarders
         virtual bool forwardTransactionMessage(routerMsg *msg);
         virtual void forwardMessage(routerMsg *msg);

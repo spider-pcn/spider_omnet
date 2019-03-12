@@ -541,7 +541,12 @@ void hostNodeBase::handleMessage(cMessage *msg){
                 handleClearStateMessage(ttmsg);
             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
             break;
-        
+        case REBALANCE_MSG:
+             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                <<": RECEIVED REBALANCE_MSG] "<< msg->getName() << endl;
+                handleRebalanceMessage(ttmsg);
+            if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+            break;
         default:
                 handleMessage(ttmsg);
 
@@ -823,6 +828,39 @@ void hostNodeBase::handleUpdateMessage(routerMsg* msg) {
     q = &(prevChannel->queuedTransUnits);
     processTransUnits(prevNode, *q);
 } 
+
+/* checks if rebalancing needs to occur for all outgoing payment 
+ * channels of this node */
+void hostNodeBase::handleRebalanceMessage(routerMsg* ttmsg){
+    // reschedule this message to be sent again
+    if (simTime() > _simulationLength){
+        delete ttmsg;
+    }
+    else {
+        scheduleAt(simTime()+_rebalanceRate, ttmsg);
+    }
+
+    for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
+    {
+        int key =iter->first; //node
+
+        double oldBalance = nodeToPaymentChannel[key].balance;
+        double zeroStartTime = nodeToPaymentChannel[key].zeroStartTime;
+        
+        if ( ( oldBalance == 0 ) && ( zeroStartTime >= 0)  && ( zeroStartTime + _rebalanceTImeReq <= simtTime()) )
+        {
+            double addedAmt= oldBalance * _rebalanceFrac;
+            //rebalance channel
+            nodeToPaymentChannel[key].balance += addedAmt; 
+            //adjust total capacity
+            nodeToPaymentChannel[key].totalCapacity += addedAmt; 
+            // TODO: update stat that broadcasts how much balance has been added -> emited in handleStatMessage
+        
+        }
+    }
+}
+
+
 
 
 /* emits all the default statistics across all the schemes

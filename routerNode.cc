@@ -68,6 +68,37 @@ void routerNode::updateBalance(int destNode, double amtToAdd){
         nodeToPaymentChannel[destNode].zeroStartTime = -1;
 }
 
+
+void routerNode::handleRebalanceMessage(routerMsg* ttmsg){
+    // reschedule this message to be sent again
+    if (simTime() > _simulationLength){
+        delete ttmsg;
+    }
+    else {
+        scheduleAt(simTime()+_rebalanceRate, ttmsg);
+    }
+
+    for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
+    {
+        int key =iter->first; //node
+
+        double oldBalance = nodeToPaymentChannel[key].balance;
+        double zeroStartTime = nodeToPaymentChannel[key].zeroStartTime;
+
+        if ( ( oldBalance == 0 ) && ( zeroStartTime >= 0)  && ( zeroStartTime + _rebalanceTImeReq <= simtTime()) )
+        {
+            double addedAmt= oldBalance * _rebalanceFrac;
+            //rebalance channel
+            nodeToPaymentChannel[key].balance += addedAmt;
+            //adjust total capacity
+            nodeToPaymentChannel[key].totalCapacity += addedAmt;
+            // TODO: update stat that broadcasts how much balance has been added -> emited in handleStatMessage
+
+        }
+    }
+}
+
+
 void routerNode::forwardProbeMessage(routerMsg *msg){
    int prevDest = msg->getRoute()[msg->getHopCount() - 1];
    bool updateOnReverse = true;
@@ -355,6 +386,12 @@ void routerNode::handleMessage(cMessage *msg)
       handlePriceQueryMessage(ttmsg); //TODO: need to write
       if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
    }
+   else if (ttmsg->getMessageType() == REBALANCE_MSG){
+      if (_loggingEnabled)  cout<< "[ROUTER "<< myIndex() <<": RECEIVED REBALANCE_MSG] "<< msg->getName()<<endl;
+      handleRebalanceMessage(ttmsg); //TODO: need to write
+      if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<<endl;
+   }
+
 
 }
 
