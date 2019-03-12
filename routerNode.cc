@@ -51,6 +51,23 @@ void routerNode:: printNodeToPaymentChannel(){
 
 }
 
+void routerNode::updateBalance(int destNode, double amtToAdd){
+    //TODO: finish function
+    double totalCapacity = nodeToPaymentChannel[destNode].totalCapacity;
+    double oldBalance = nodeToPaymentChannel[destNode].balance;
+    double newBalance = nodeToPaymentChannel[destNode].balance + amtToAdd;
+    assert(newBalance >= 0 && newBalance <= totalCapacity);
+
+    nodeToPaymentChannel[destNode].balance = newBalance;
+    if (!_rebalanceEnabled)
+        return;
+
+    if (oldBalance > 0 && newBalance == 0 ) //update zeroStartTime, oldBal>0 catches amtToAdd = 0 case
+        nodeToPaymentChannel[destNode].zeroStartTime = simTime();
+    else if (oldBalance == 0 && newBalance > 0)
+        nodeToPaymentChannel[destNode].zeroStartTime = -1;
+}
+
 void routerNode::forwardProbeMessage(routerMsg *msg){
    int prevDest = msg->getRoute()[msg->getHopCount() - 1];
    bool updateOnReverse = true;
@@ -247,6 +264,11 @@ void routerNode::initialize()
 
    routerMsg *statMsg = generateStatMessage();
    scheduleAt(simTime() + 0, statMsg);
+
+   if (_rebalanceEnabled){
+        routerMsg *rebalanceMsg = generateRebalanceMessage();
+        scheduleAt(simTime() + 0, rebalanceMsg);
+   }
 
    routerMsg *clearStateMsg = generateClearStateMessage();
    scheduleAt(simTime() + _clearRate, clearStateMsg);
@@ -496,6 +518,15 @@ routerMsg *routerNode::generateStatMessage(){
    rMsg->setMessageType(STAT_MSG);
    return rMsg;
 }
+
+routerMsg *routerNode::generateRebalanceMessage(){
+   char msgname[MSGSIZE];
+   sprintf(msgname, "node-%d rebalanceMsg", myIndex());
+   routerMsg *rMsg = new routerMsg(msgname);
+   rMsg->setMessageType(REBALANCE_MSG);
+   return rMsg;
+}
+
 bool manualFindQueuedTransUnitsByTransactionId( vector<tuple<int, double, routerMsg*, Id>> (queuedTransUnits), int transactionId){
    for (auto q: queuedTransUnits){
       int qId = get<0>(get<3>(q));
@@ -596,7 +627,7 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                double amount = iterOutgoing -> second;
                 
                double updatedBalance = nodeToPaymentChannel[nextNode].balance + amount;
-               nodeToPaymentChannel[nextNode].balance = updatedBalance; 
+               updateBalance(nextNode, amount);
                nodeToPaymentChannel[nextNode].balanceEWMA = 
           (1 -_ewmaFactor) * nodeToPaymentChannel[nextNode].balanceEWMA + (_ewmaFactor) * updatedBalance;
 
@@ -768,7 +799,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
           double updatedBalance = nodeToPaymentChannel[prevNode].balance + aMsg->getAmount();
           nodeToPaymentChannel[prevNode].balanceEWMA = 
               (1 -_ewmaFactor) * nodeToPaymentChannel[prevNode].balanceEWMA + (_ewmaFactor) * updatedBalance; 
-          nodeToPaymentChannel[prevNode].balance = updatedBalance;
+          updateBalance(prevNode, aMsg->getAmount());
       }
 
       // this is nextNode on the ack path and so prev node in the forward path or rather
@@ -813,7 +844,7 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
    }
 
    double newBalance = nodeToPaymentChannel[prevNode].balance + uMsg->getAmount();
-   nodeToPaymentChannel[prevNode].balance =  newBalance;       
+   updateBalance(prevNode, uMsg->getAmount());
    nodeToPaymentChannel[prevNode].balanceEWMA = 
           (1 -_ewmaFactor) * nodeToPaymentChannel[prevNode].balanceEWMA + (_ewmaFactor) * newBalance; 
 
@@ -1064,6 +1095,7 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest)
 
       double amt = transMsg->getAmount();
       double newBalance = nodeToPaymentChannel[nextDest].balance - amt;
+      updateBalance(nextDest, -1 * amt);
       nodeToPaymentChannel[nextDest].balance = newBalance;
       nodeToPaymentChannel[nextDest].balanceEWMA = 
           (1 -_ewmaFactor) * nodeToPaymentChannel[nextDest].balanceEWMA + (_ewmaFactor) * newBalance;

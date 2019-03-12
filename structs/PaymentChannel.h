@@ -37,6 +37,8 @@ public:
     double muRemote; //Price due to imbalance at the other end of the channel ($\mu_{remote}$)
     double yMuRemote; // Nesterov's equation y
 
+    simtime_t zeroStartTime; //time that channel balance most recently turned 0, -1 if channel not 0
+
     //statistics for price scheme per payment channel
     simsignal_t nValueSignal;
     simsignal_t xLocalSignal;

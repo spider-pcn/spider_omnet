@@ -39,7 +39,8 @@ class routerNode : public cSimpleModule
       virtual routerMsg *generateClearStateMessage();
       virtual routerMsg *generateTriggerPriceUpdateMessage();
       virtual routerMsg *generatePriceUpdateMessage(double nLocal, double balSum, double sumInFlight, int reciever);
-
+      virtual routerMsg *generateRebalanceMessage();
+ 
 
       virtual void checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits, int node);
       virtual int myIndex();
@@ -72,6 +73,9 @@ class routerNode : public cSimpleModule
       virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id>>& q);
       //virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode);
       virtual void deleteMessagesInQueues();
+
+      virtual void updateBalance(int destNode, double amtToAdd); 
+        //amtToAdd can be negative if we are decreasing
 
       //helper
       virtual void printNodeToPaymentChannel();

@@ -42,6 +42,11 @@ double _epsilon;
 bool _hasQueueCapacity;
 int _queueCapacity;
 
+//global parameters for rebalancing
+double _rebalanceEnabled;
+double _rebalanceFrac;
+double _rebalanceTimeReq;
+double _rebalanceRate;
 
 
 Define_Module(hostNodeBase);
@@ -188,6 +193,24 @@ simsignal_t hostNodeBase::registerSignalPerDest(string signalStart, int destNode
     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
 
     return signal;
+}
+
+
+void hostNodeBase::updateBalance(int destNode, double amtToAdd){
+    //TODO: finish function 
+    double totalCapacity = nodeToPaymentChannel[destNode].totalCapacity;
+    double oldBalance = nodeToPaymentChannel[destNode].balance;
+    double newBalance = nodeToPaymentChannel[destNode].balance + amtToAdd;
+    assert(newBalance >= 0 && newBalance <= totalCapacity);
+    
+    nodeToPaymentChannel[destNode].balance = newBalance;
+    if (!_rebalanceEnabled)
+        return;    
+
+    if (oldBalance > 0 && newBalance == 0 ) //update zeroStartTime, oldBal>0 catches amtToAdd = 0 case
+        nodeToPaymentChannel[destNode].zeroStartTime = simTime();
+    else if (oldBalance == 0 && newBalance > 0)
+        nodeToPaymentChannel[destNode].zeroStartTime = -1;
 }
 
 
@@ -361,6 +384,18 @@ routerMsg *hostNodeBase::generateStatMessage(){
     sprintf(msgname, "node-%d statMsg", myIndex());
     routerMsg *rMsg = new routerMsg(msgname);
     rMsg->setMessageType(STAT_MSG);
+    return rMsg;
+}
+
+
+/* generate rebalance trigger message every _rebalanceRate seconds
+ * to add _rebalanceFrac of total capacity
+ */
+routerMsg *hostNodeBase::generateRebalanceMessage(){
+    char msgname[MSGSIZE];
+    sprintf(msgname, "node-%d rebalanceMsg", myIndex());
+    routerMsg *rMsg = new routerMsg(msgname);
+    rMsg->setMessageType(REBALANCE_MSG);
     return rMsg;
 }
 
@@ -704,7 +739,7 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
         // increment funds on this channel unless this is the node that caused the fauilure
         // in which case funds were never decremented in the first place
         if (aMsg->getFailedHopNum() < ttmsg->getHopCount())
-            nodeToPaymentChannel[prevNode].balance += aMsg->getAmount();
+            updateBalance(prevNode, aMsg->getAmount());
 
         // no relevant incoming_trans_units because no node on fwd path before this
         if (ttmsg->getHopCount() < ttmsg->getRoute().size() - 1) {
@@ -772,7 +807,7 @@ void hostNodeBase::handleUpdateMessage(routerMsg* msg) {
    
     //increment the in flight funds back
     double newBalance = prevChannel->balance + uMsg->getAmount();
-    prevChannel->balance =  newBalance;       
+    updateBalance(prevNode, uMsg->getAmount());
     prevChannel->balanceEWMA = (1 -_ewmaFactor) * prevChannel->balanceEWMA 
         + (_ewmaFactor) * newBalance; 
 
@@ -942,7 +977,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
               
                     PaymentChannel *nextChannel = &(nodeToPaymentChannel[nextNode]);
                     double updatedBalance = nextChannel->balance + amount;
-                    nextChannel->balance = updatedBalance; 
+                    updateBalance(nextNode, amount);
                     nextChannel->balanceEWMA = (1 -_ewmaFactor) * nextChannel->balanceEWMA + 
                         (_ewmaFactor) * updatedBalance;
 
@@ -1006,7 +1041,7 @@ bool hostNodeBase::forwardTransactionMessage(routerMsg *msg) {
         // update balance
         int amt = transMsg->getAmount();
         double newBalance = neighbor->balance - amt;
-        neighbor->balance = newBalance;
+        updateBalance(nextDest, -1*amt);
         neighbor-> balanceEWMA = (1 -_ewmaFactor) * neighbor->balanceEWMA + 
             (_ewmaFactor) * newBalance;
         
@@ -1080,6 +1115,13 @@ void hostNodeBase::initialize() {
            _kValue = par("numPathChoices");
         }
 
+
+        //set rebalance parameters
+        _rebalanceEnabled = true;
+        _rebalanceRate = 0.5;
+        _rebalanceFrac = 0.1;
+        _rebalanceTimeReq = 4.0;
+        
         _maxTravelTime = 0.0;
         _delta = 0.01; // to avoid divide by zero 
         setNumNodes(topologyFile_);
@@ -1104,6 +1146,7 @@ void hostNodeBase::initialize() {
         if (nextGate ) {
             PaymentChannel temp =  {};
             temp.gate = curOutGate;
+            temp.zeroStartTime = -1;
 
             bool isHost = nextGate->getOwnerModule()->par("isHost");
             int key = nextGate->getOwnerModule()->getIndex();
@@ -1196,6 +1239,11 @@ void hostNodeBase::initialize() {
     //generate stat message
     routerMsg *statMsg = generateStatMessage();
     scheduleAt(simTime() + 0, statMsg);
+
+    if (_rebalanceEnabled){
+        routerMsg *rebalanceMsg = generateRebalanceMessage();
+        scheduleAt(simTime() + 0, rebalanceMsg);
+    }
 
     if (_timeoutEnabled){
        routerMsg *clearStateMsg = generateClearStateMessage();
