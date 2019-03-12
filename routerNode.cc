@@ -88,7 +88,7 @@ void routerNode::handleRebalanceMessage(routerMsg* ttmsg){
         {
             double addedAmt= oldBalance * _rebalanceFrac;
             //rebalance channel
-            nodeToPaymentChannel[key].balance += addedAmt;
+            updateBalance(key, addedAmt);
             //adjust total capacity
             nodeToPaymentChannel[key].totalCapacity += addedAmt;
             nodeToPaymentChannel[key].balanceAdded += addedAmt;

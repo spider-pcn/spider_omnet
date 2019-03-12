@@ -850,7 +850,7 @@ void hostNodeBase::handleRebalanceMessage(routerMsg* ttmsg){
         {
             double addedAmt= oldBalance * _rebalanceFrac;
             //rebalance channel
-            nodeToPaymentChannel[key].balance += addedAmt; 
+            updateBalance(key, addedAmt);
             //adjust total capacity
             nodeToPaymentChannel[key].totalCapacity += addedAmt; 
                
@@ -1121,12 +1121,12 @@ void hostNodeBase::initialize() {
 
     // initialize global parameters once
     if (getIndex() == 0){  
-        _simulationLength = par("simulationLength");
+        _simulationLength = 60;//par("simulationLength");
         _statRate = par("statRate");
         _clearRate = par("timeoutClearRate");
         _waterfillingEnabled = par("waterfillingEnabled");
         _timeoutEnabled = par("timeoutEnabled");
-        _signalsEnabled = par("signalsEnabled");
+        _signalsEnabled = true; //par("signalsEnabled");
         _loggingEnabled = par("loggingEnabled");
         _priceSchemeEnabled = par("priceSchemeEnabled");
 
