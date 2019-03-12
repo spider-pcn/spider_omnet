@@ -186,6 +186,10 @@ void generateTransUnitList(string workloadFile){
                 timeOut = 5.0;
             }
 
+            if (_waterfillingEnabled) 
+                if (timeSent < _waterfillingStartTime) 
+                    continue;
+
             if (timeSent > lastTime)
                  lastTime = timeSent;
             // instantiate all the transUnits that need to be sent

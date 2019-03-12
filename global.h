@@ -3,6 +3,7 @@
 #include <omnetpp.h>
 #include <vector>
 #include <queue>
+#include <stack>
 #include "routerMsg_m.h"
 #include "transactionMsg_m.h"
 #include "ackMsg_m.h"
@@ -105,4 +106,5 @@ extern bool _secondOrderOptimization;
 
 extern double _transStatStart;
 extern double _transStatEnd;
+extern double _waterfillingStartTime;
 

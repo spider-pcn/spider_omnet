@@ -341,7 +341,7 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
        
         //send on a path if no txns queued up and timer was in the path
         if ((destInfo->transWaitingToBeSent).size() > 0) {
-            destInfo->transWaitingToBeSent.push_back(ttmsg);
+            destInfo->transWaitingToBeSent.push(ttmsg);
         } else {
             for (auto p: nodeToShortestPathsMap[destNode]) {
                 int pathIndex = p.first;
@@ -392,7 +392,7 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
             }
             
             //transaction cannot be sent on any of the paths, queue transaction
-            destInfo->transWaitingToBeSent.push_back(ttmsg);
+            destInfo->transWaitingToBeSent.push(ttmsg);
             for (auto p: nodeToShortestPathsMap[destNode]) {
                 PathInfo *pInfo = &(nodeToShortestPathsMap[destNode][p.first]);
                 if (pInfo->isSendTimerSet == false) {
@@ -843,8 +843,8 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
     if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0 && (!_windowEnabled || 
             (_windowEnabled && p->sumOfTransUnitsInFlight < p->window))){
         //remove the transaction $tu$ at the head of the queue
-        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
-        nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
+        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.top();
+        nodeToDestInfo[destNode].transWaitingToBeSent.pop();
         transactionMsg *transMsg = 
            check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
         

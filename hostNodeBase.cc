@@ -18,6 +18,7 @@ int _serviceArrivalWindow;
 
 double _transStatStart;
 double  _transStatEnd;
+double _waterfillingStartTime;
 
  //adjacency list format of graph edges of network
 map<int, vector<pair<int,int>>> _channels;
@@ -1066,6 +1067,7 @@ void hostNodeBase::initialize() {
 
         _transStatStart = 5000;
         _transStatEnd = 7000;
+        _waterfillingStartTime = 4000;
 
         _lndBaselineEnabled = par("lndBaselineEnabled");
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");
@@ -1284,12 +1286,12 @@ void hostNodeBase::deleteMessagesInQueues(){
     for (auto iter = nodeToDestInfo.begin(); iter!=nodeToDestInfo.end(); iter++){
         int dest = iter->first;
         while ((nodeToDestInfo[dest].transWaitingToBeSent).size() > 0) {
-            routerMsg * rMsg = nodeToDestInfo[dest].transWaitingToBeSent.front();
+            routerMsg * rMsg = nodeToDestInfo[dest].transWaitingToBeSent.top();
             auto tMsg = rMsg->getEncapsulatedPacket();
             rMsg->decapsulate();
             delete tMsg;
             delete rMsg;
-            nodeToDestInfo[dest].transWaitingToBeSent.pop_front();
+            nodeToDestInfo[dest].transWaitingToBeSent.pop();
         }
     }
 }

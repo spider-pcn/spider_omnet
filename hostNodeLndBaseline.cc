@@ -95,7 +95,7 @@ void hostNodeLndBaseline::initialize(){
         }
     }
 
-    _restorePeriod = 1.0;
+    _restorePeriod = 5.0;
     _numAttemptsLndBaseline = 4;
     initializeMyChannels(); 
 
