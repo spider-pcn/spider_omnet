@@ -147,7 +147,7 @@ class hostNodeBase : public cSimpleModule {
       
         virtual void updateBalance(int destNode, double amtToAdd);
             //amtToAdd can be negative if we are decreasing
-
+        virtual double rebalanceTotalAmtAtNode();
 };
 
 #endif

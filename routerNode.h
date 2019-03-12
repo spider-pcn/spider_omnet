@@ -80,7 +80,7 @@ class routerNode : public cSimpleModule
 
       //helper
       virtual void printNodeToPaymentChannel();
-
+      virtual double rebalanceTotalAmtAtNode();
 
 };
 

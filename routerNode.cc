@@ -52,7 +52,6 @@ void routerNode:: printNodeToPaymentChannel(){
 }
 
 void routerNode::updateBalance(int destNode, double amtToAdd){
-    //TODO: finish function
     double totalCapacity = nodeToPaymentChannel[destNode].totalCapacity;
     double oldBalance = nodeToPaymentChannel[destNode].balance;
     double newBalance = nodeToPaymentChannel[destNode].balance + amtToAdd;
@@ -83,16 +82,16 @@ void routerNode::handleRebalanceMessage(routerMsg* ttmsg){
         int key =iter->first; //node
 
         double oldBalance = nodeToPaymentChannel[key].balance;
-        double zeroStartTime = nodeToPaymentChannel[key].zeroStartTime;
+        simtime_t zeroStartTime = nodeToPaymentChannel[key].zeroStartTime;
 
-        if ( ( oldBalance == 0 ) && ( zeroStartTime >= 0)  && ( zeroStartTime + _rebalanceTImeReq <= simtTime()) )
+        if ( ( oldBalance == 0 ) && ( zeroStartTime >= 0)  && ( zeroStartTime + _rebalanceTimeReq <= simTime()) )
         {
             double addedAmt= oldBalance * _rebalanceFrac;
             //rebalance channel
             nodeToPaymentChannel[key].balance += addedAmt;
             //adjust total capacity
             nodeToPaymentChannel[key].totalCapacity += addedAmt;
-            // TODO: update stat that broadcasts how much balance has been added -> emited in handleStatMessage
+            nodeToPaymentChannel[key].balanceAdded += addedAmt;
 
         }
     }
@@ -397,6 +396,12 @@ void routerNode::handleMessage(cMessage *msg)
 
 void routerNode::finish(){
     deleteMessagesInQueues();
+
+   if (_rebalanceEnabled) {
+        char buffer[30];
+        sprintf(buffer, "rebalance $ added at node %d", myIndex());
+        recordScalar(buffer, rebalanceTotalAmtAtNode());
+   }
 }
 
 void routerNode::handlePriceQueryMessage(routerMsg* ttmsg){
@@ -1140,5 +1145,15 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest)
       send(msg, nodeToPaymentChannel[nextDest].gate);
       return true;
    } //end else (transMsg->getAmount() >nodeToPaymentChannel[dest].balance)
+}
+
+double routerNode::rebalanceTotalAmtAtNode(){
+    double total = 0;
+    for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
+    {
+        int key =iter->first; //node
+        total += nodeToPaymentChannel[key].balanceAdded;
+    }
+    return total;
 }
 

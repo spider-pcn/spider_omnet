@@ -35,12 +35,14 @@
 #define PRICE_QUERY_MSG 10
 #define TRIGGER_TRANSACTION_SEND_MSG 11
 
+//new msg type for rebalance
+#define REBALANCE_MSG 12
 
 typedef std::vector<int> IntVector;
 // }}
 
 /**
- * Class generated from <tt>routerMsg.msg:40</tt> by nedtool.
+ * Class generated from <tt>routerMsg.msg:42</tt> by nedtool.
  * <pre>
  * packet routerMsg
  * {
