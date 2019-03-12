@@ -33,15 +33,20 @@ class hostNodeBase : public cSimpleModule {
         //TODO: incorporate the signals into nodeToDestInfo
         // statistic collection related variables
         map<int, int> statNumFailed = {};
+        map<int, double> statAmtFailed = {};
         map<int, int> statRateFailed = {};
         map<int, int> statNumCompleted = {};
+        map<int, double> statAmtCompleted = {};
         map<int, int> statNumArrived = {};
         map<int, int> statRateCompleted = {};
+        map<int, double> statAmtArrived = {};
+        map<int, double> statAmtAttempted = {};
         map<int, int> statRateAttempted = {};
         map<int, int> statNumTimedOut = {};
         map<int, int> statNumTimedOutAtSender = {};
         map<int, int> statRateArrived = {};
         map<int, double> statProbabilities = {};
+        map<int, double> statCompletionTimes = {};
         int numCleared = 0;
 
         //store shortest paths 
@@ -98,13 +103,16 @@ class hostNodeBase : public cSimpleModule {
         virtual simsignal_t registerSignalPerDest(string signalStart, int destNode, 
                 string suffix);
 
-        // generators for the standard messages 
+        // generators for the standard messages
+        virtual routerMsg* generateTransactionMessageForPath(double amt, 
+                vector<int> path, int pathIndex, transactionMsg* transMsg);
         virtual routerMsg *generateTransactionMessage(TransUnit TransUnit);
         virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true);
         virtual routerMsg *generateUpdateMessage(int transId, 
                 int receiver, double amount, int htlcIndex);        
         virtual routerMsg *generateStatMessage();
         virtual routerMsg *generateClearStateMessage();
+        virtual routerMsg* generateTimeOutMessageForPath(vector<int> path, int transactionId, int receiver);
         virtual routerMsg *generateTimeOutMessage(routerMsg *transMsg);
       
 
@@ -134,9 +142,6 @@ class hostNodeBase : public cSimpleModule {
         virtual void processTransUnits(int dest, 
                 vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q);
         virtual void deleteMessagesInQueues();
-             
-        
-
 };
 
 #endif

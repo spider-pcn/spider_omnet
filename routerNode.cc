@@ -152,7 +152,7 @@ void routerNode::initialize()
       signal = registerSignal(signalName);
       statisticTemplate = getProperties()->get("statisticTemplate", "numInQueuePerChannelTemplate");
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-      nodeToPaymentChannel[key].numInQueuePerChannelSignal = signal;
+      nodeToPaymentChannel[key].amtInQueuePerChannelSignal = signal;
 
       //statNumProcessed int
       nodeToPaymentChannel[key].statNumProcessed = 0;
@@ -744,14 +744,14 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
 
          int node = it->first; //key
 
-         emit(nodeToPaymentChannel[node].numInQueuePerChannelSignal, (nodeToPaymentChannel[node].queuedTransUnits).size());
+         emit(nodeToPaymentChannel[node].amtInQueuePerChannelSignal, getTotalAmount(nodeToPaymentChannel[node].queuedTransUnits));
 
          emit(nodeToPaymentChannel[node].balancePerChannelSignal, nodeToPaymentChannel[node].balance);
 
          // compute number in flight and report that too - hack right now that just sums the number of entries in the map
          emit(nodeToPaymentChannel[node].numInflightPerChannelSignal, 
-                 nodeToPaymentChannel[node].incomingTransUnits.size() +
-                 nodeToPaymentChannel[node].outgoingTransUnits.size());
+                 getTotalAmount(nodeToPaymentChannel[node].incomingTransUnits) +
+                 getTotalAmount(nodeToPaymentChannel[node].outgoingTransUnits));
 
       }
    }
@@ -816,7 +816,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
    (*outgoingTransUnits).erase(make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex()));
 
    if (aMsg->getIsSuccess() == false){
-      if (aMsg->getFailedHopNum() != myIndex()) {
+      if (aMsg->getFailedHopNum() < ttmsg->getHopCount()) {
           //increment payment back to outgoing channel
           double updatedBalance = nodeToPaymentChannel[prevNode].balance + aMsg->getAmount();
           nodeToPaymentChannel[prevNode].balanceEWMA = 
@@ -939,7 +939,7 @@ void routerNode::handleTransactionMessagePriceScheme(routerMsg* ttmsg){ //increm
 
    //not a self-message, add to incoming_trans_units
    int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
-   nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + 1;
+   nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + transMsg->getAmount();
 
 }
 
@@ -1016,6 +1016,9 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //
    aMsg->setHtlcIndex(transMsg->getHtlcIndex());
    aMsg->setPathIndex(transMsg->getPathIndex());
 
+   if (!isSuccess) {
+      aMsg->setFailedHopNum((ttmsg->getRoute().size()-1) - ttmsg->getHopCount());
+   }
       //no need to set secret;
      vector<int> route = ttmsg->getRoute();
      //route.resize(ttmsg->getHopCount() + 1); //don't resize, might mess up destination
@@ -1025,13 +1028,21 @@ routerMsg *routerNode::generateAckMessage(routerMsg* ttmsg, bool isSuccess ){ //
      msg->setHopCount((route.size()-1) - ttmsg->getHopCount());
 
      //need to reverse path from current hop number in case of partial failure
-     msg->setMessageType(ACK_MSG); //now an ack message
-     // remove encapsulated packet
-     ttmsg->decapsulate();
-     delete transMsg;
-     delete ttmsg;
-     msg->encapsulate(aMsg);
-     return msg;
+     msg->setMessageType(ACK_MSG);
+       ttmsg->decapsulate();
+       if (_lndBaselineEnabled)
+       {
+           aMsg->encapsulate(transMsg);
+           msg->encapsulate(aMsg);
+           delete ttmsg;
+       }
+       else
+       {
+           delete transMsg;
+           delete ttmsg;
+           msg->encapsulate(aMsg);
+       }
+       return msg;
 }
 
 

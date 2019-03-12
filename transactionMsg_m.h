@@ -33,6 +33,7 @@
  *     double timeOut;
  *     int htlcIndex;
  *     int pathIndex;
+ *     double originalAmount;
  * }
  * </pre>
  */
@@ -49,6 +50,7 @@ class transactionMsg : public ::omnetpp::cPacket
     double timeOut;
     int htlcIndex;
     int pathIndex;
+    double originalAmount;
 
   private:
     void copy(const transactionMsg& other);
@@ -87,6 +89,8 @@ class transactionMsg : public ::omnetpp::cPacket
     virtual void setHtlcIndex(int htlcIndex);
     virtual int getPathIndex() const;
     virtual void setPathIndex(int pathIndex);
+    virtual double getOriginalAmount() const;
+    virtual void setOriginalAmount(double originalAmount);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const transactionMsg& obj) {obj.parsimPack(b);}

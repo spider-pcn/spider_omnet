@@ -18,22 +18,19 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
     "random_30_routers" "sw_sparse_40_routers")
 
-demand_scale=("10" "20" "30")
-path_choices_dep_list=( "waterfilling" "smoothWaterfilling")
-path_choices_indep_list=( "shortestPath" )
+demand_scale=("30") # "60" "90")
+path_choices_dep_list=("waterfilling") # "landmarkRouting")  # "smoothWaterfilling")
+path_choices_indep_list=("shortestPath")
 random_init_bal=false
 random_capacity=false
 
-#path_choices_dep_list=( "priceSchemeWindow")
-#path_choices_indep_list=(  )
-
 
 #general parameters that do not affect config names
-simulationLength=3000
+simulationLength=2000
 statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
-signalsEnabled=true
+signalsEnabled=false
 loggingEnabled=false
 
 # scheme specific parameters
@@ -54,6 +51,7 @@ cp hostNodeBase.ned ${PATH_NAME}
 cp hostNodeWaterfilling.ned ${PATH_NAME}
 cp hostNodeLandmarkRouting.ned ${PATH_NAME}
 cp hostNodePriceScheme.ned ${PATH_NAME}
+cp hostNodeLndBaseline.ned ${PATH_NAME}
 cp routerNode.ned ${PATH_NAME}
 
 arraylength=${#prefix[@]}
@@ -63,7 +61,7 @@ mkdir -p ${PATH_NAME}
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=( 9 10 20 21 )
+array=( 9 ) #10 11 13 22 24)
 for i in "${array[@]}" 
 do
     network="${prefix[i]}_circ_net"
@@ -138,7 +136,8 @@ do
                 --balance-per-channel $balance\
                 --generate-json-also \
                 --timeout-value 5 \
-                --scale-amount $scale
+                --scale-amount $scale \
+                --log-normal
 
 
         # STEP 3: run the experiment
@@ -246,6 +245,7 @@ do
 
 
             python scripts/generate_analysis_plots_for_single_run.py \
+              --detail $signalsEnabled \
               --vec_file ${vec_file_path} \
               --sca_file ${sca_file_path} \
               --save ${graph_op_prefix}${routing_scheme} \
@@ -265,6 +265,7 @@ do
 
 
                 python scripts/generate_analysis_plots_for_single_run.py \
+                  --detail $signalsEnabled \
                   --vec_file ${vec_file_path} \
                   --sca_file ${sca_file_path} \
                   --save ${graph_op_prefix}${routing_scheme}_final \

@@ -52,7 +52,7 @@ public:
     //statistics - ones for per payment channel
     int statNumProcessed;
     int statNumSent;
-    simsignal_t numInQueuePerChannelSignal;
+    simsignal_t amtInQueuePerChannelSignal;
     simsignal_t balancePerChannelSignal;
     simsignal_t numInflightPerChannelSignal;
 

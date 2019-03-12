@@ -13,6 +13,9 @@ from config import *
 from itertools import cycle
 
 parser = argparse.ArgumentParser('Analysis Plots')
+parser.add_argument('--detail',
+        type=str, 
+        help='whether to just summarize or plot individual things', default='True')
 parser.add_argument('--vec_file',
         type=str,
         required=True,
@@ -491,7 +494,9 @@ def main():
     plt.rc('xtick', labelsize=32)    # fontsize of the tick labels
     plt.rc('ytick', labelsize=32)    # fontsize of the tick labels
     plt.rc('legend', fontsize=34)    # legend fontsize'''
-    text_to_add = parse_sca_files(args.sca_file)
-    plot_per_payment_channel_stats(args, text_to_add)
-    plot_per_src_dest_stats(args, text_to_add)
+    parse_sca_files_overall(args.sca_file) 
+    if args.detail == 'true':
+        text_to_add = parse_sca_files(args.sca_file)
+        plot_per_payment_channel_stats(args, text_to_add)
+        plot_per_src_dest_stats(args, text_to_add)
 main()

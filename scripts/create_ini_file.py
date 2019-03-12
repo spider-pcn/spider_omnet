@@ -15,7 +15,10 @@ parser.add_argument('--logging-enabled', type=str, help='is logging enabled?', d
 parser.add_argument('--window-enabled', type=str, help='is window enabled?', dest='windowEnabled', default='false')
 parser.add_argument('--timeout-clear-rate', type=str, help='rate of clearing data after timeouts', dest='timeoutClearRate', default='0.5')
 parser.add_argument('--timeout-enabled', type=str, help='are timeouts enabled?', dest='timeoutEnabled', default='true')
-parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, LP, silentWhispers, smoothWaterfilling, priceScheme], else will default to waterfilling', dest='routingScheme', default='default')
+parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, LP,' +
+        'silentWhispers, smoothWaterfilling, priceScheme, landmarkRouting, lndBaseline],' +  
+        'else will default to waterfilling', 
+        dest='routingScheme', default='default')
 parser.add_argument('--num-path-choices', type=str, help='number of path choices', dest='numPathChoices', default='default')
 parser.add_argument('--demand-scale', type=int, help='how much has demand been scaled up by', dest='demandScale')
 
@@ -57,7 +60,7 @@ if args.demandScale != None:
 
 #arg parse might support a cleaner way to deal with this
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
-        'smoothWaterfilling', 'priceSchemeWindow'] :
+        'smoothWaterfilling', 'priceSchemeWindow', 'landmarkRouting', 'lndBaseline'] :
     if args.routingScheme != 'default':
         print "******************"
         print "WARNING: ill-specified routing scheme, defaulting to waterfilling,",\
@@ -112,6 +115,12 @@ if args.routingScheme == "smoothWaterfilling":
     f.write("**.smoothWaterfillingEnabled = true\n")
     f.write("**.tau = " + str(args.tau) + "\n")
     f.write("**.normalizer = " + str(args.normalizer) + "\n")
+
+if args.routingScheme == 'landmarkRouting':
+    f.write("**.landmarkRoutingEnabled = true\n")
+
+if args.routingScheme == 'lndBaseline':
+    f.write("**.lndBaselineEnabled = true\n")
 
 f.close()
 
