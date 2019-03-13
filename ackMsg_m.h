@@ -33,6 +33,7 @@
  *     string secret = "";
  *     double amount;
  *     bool hasTimeOut;
+ *     double largerTxnId;
  * }
  * </pre>
  */
@@ -49,6 +50,7 @@ class ackMsg : public ::omnetpp::cPacket
     ::omnetpp::opp_string secret;
     double amount;
     bool hasTimeOut;
+    double largerTxnId;
 
   private:
     void copy(const ackMsg& other);
@@ -87,6 +89,8 @@ class ackMsg : public ::omnetpp::cPacket
     virtual void setAmount(double amount);
     virtual bool getHasTimeOut() const;
     virtual void setHasTimeOut(bool hasTimeOut);
+    virtual double getLargerTxnId() const;
+    virtual void setLargerTxnId(double largerTxnId);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const ackMsg& obj) {obj.parsimPack(b);}

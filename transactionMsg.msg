@@ -26,5 +26,6 @@ packet transactionMsg
     int htlcIndex;
     int pathIndex;
     double originalAmount;
+    double largerTxnId;
 }
 

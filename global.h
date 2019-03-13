@@ -27,6 +27,7 @@
 #include "structs/TransUnit.h"
 #include "structs/CanceledTrans.h"
 #include "structs/AckState.h"
+#include "structs/SplitState.h"
 #include "structs/DestInfo.h"
 #include "structs/PathRateTuple.h"
 #include "structs/ProbeInfo.h"
@@ -45,6 +46,7 @@ struct LaterTransUnit
 //global parameters
 extern map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
 extern map<int, set<int>> _destList;
+extern map<int, map<double, SplitState>> _numSplits;
 extern int _numNodes;
 //number of nodes in network
 extern int _numRouterNodes;
@@ -110,4 +112,4 @@ extern double _waterfillingStartTime;
 extern double _landmarkRoutingStartTime;
 extern double _shortestPathStartTime;
 extern double _shortestPathEndTime;
-
+extern double _splitSize;

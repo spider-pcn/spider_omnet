@@ -99,5 +99,5 @@ for filename in lnd_file_list:
 		graph_size = len(sampled_graph.nodes())
 		sampled_graph = prune_deg_one_nodes(sampled_graph)
 
-	nx.write_edgelist(graph, LND_FILE_PATH + filename + "_reducedsize" + ".edgelist")
+	nx.write_edgelist(sampled_graph, LND_FILE_PATH + filename + "_reducedsize" + ".edgelist")
 

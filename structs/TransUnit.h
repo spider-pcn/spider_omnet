@@ -8,10 +8,10 @@ class TransUnit{
       int priorityClass;
       bool hasTimeOut;
       double timeOut;
+      double largerTxnId;
 
 
-
-      TransUnit(double amount1, double timeSent1, int sender1, int receiver1, int priorityClass1, bool hasTimeOut1, double timeOut1 = -1){
+      TransUnit(double amount1, double timeSent1, int sender1, int receiver1, int priorityClass1, bool hasTimeOut1, double timeOut1 = -1, double largerTxnId1 = -1){
          assert((hasTimeOut1 && timeOut1>0) || (!(hasTimeOut1) && timeOut1==-1));
          amount = amount1;
          timeSent = timeSent1;
@@ -20,5 +20,6 @@ class TransUnit{
          priorityClass=  priorityClass1;
          hasTimeOut =  true; // TODO: temp, original: hasTimeOut1;
          timeOut = 5.0; // TODO: temp, original: timeOut1;
+         largerTxnId = largerTxnId1;
       }
 };

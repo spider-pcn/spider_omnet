@@ -291,6 +291,9 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     int destNode = transMsg->getReceiver();
     int nextNode = ttmsg->getRoute()[hopcount + 1];
     int transactionId = transMsg->getTransactionId();
+
+    SplitState* splitInfo = &(_numSplits[myIndex()][transMsg->getLargerTxnId()]);
+    splitInfo->numArrived += 1;
     
     // first time seeing this transaction so add to d_ij computation
     // count the txn for accounting also
@@ -300,9 +303,12 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
 
         if (transMsg->getTimeSent() >= _transStatStart && 
             transMsg->getTimeSent() <= _transStatEnd) {
-            statNumArrived[destNode] += 1;
-            statAmtArrived[destNode] += transMsg->getAmount(); 
-            statRateArrived[destNode] += 1; 
+            statAmtArrived[destNode] += transMsg->getAmount();
+            
+            if (splitInfo->numArrived == 1) {       
+                statNumArrived[destNode] += 1;
+                statRateArrived[destNode] += 1; 
+            }
         }
     }
 
@@ -360,10 +366,20 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                     // record stats on sent units for payment channel, destination and path
                     int nextNode = pathInfo->path[1];
                     nodeToPaymentChannel[nextNode].nValue += 1;
+
+                    // first attempt of larger txn
+                    SplitState* splitInfo = &(_numSplits[myIndex()][transMsg->getLargerTxnId()]);
+                    if (splitInfo->firstAttemptTime == -1) {
+                        splitInfo->firstAttemptTime = simTime().dbl();
+                        
+                        if (transMsg->getTimeSent() >= _transStatStart && 
+                            transMsg->getTimeSent() <= _transStatEnd) 
+                            statRateAttempted[destNode] += 1;
+
+                    }
                     
                     if (transMsg->getTimeSent() >= _transStatStart && 
                             transMsg->getTimeSent() <= _transStatEnd) {
-                        statRateAttempted[destNode] += 1;
                         statAmtAttempted[destNode] += transMsg->getAmount();
                     }
                     
@@ -468,6 +484,7 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
     int pathIndex = aMsg->getPathIndex();
     int destNode = ttmsg->getRoute()[0];
     int transactionId = aMsg->getTransactionId();
+    double largerTxnId = aMsg->getLargerTxnId();
     
     if (aMsg->getIsSuccess()==false && aMsg->getTimeSent() >= _transStatStart && 
             aMsg->getTimeSent() <= _transStatEnd){
@@ -476,15 +493,19 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
         statAmtFailed[destNode] += aMsg->getAmount();
     }
     else {
+        SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
+        splitInfo->numReceived += 1;
+
         if (aMsg->getTimeSent() >= _transStatStart && 
-            aMsg->getTimeSent() <= _transStatEnd){
-            statNumCompleted[destNode] += 1;
-            statRateCompleted[destNode] += 1;
+                aMsg->getTimeSent() <= _transStatEnd) {
             statAmtCompleted[destNode] += aMsg->getAmount();
 
-            // stats
-            double timeTaken = simTime().dbl() - aMsg->getTimeSent();
-            statCompletionTimes[destNode] += timeTaken * 1000;
+            if (splitInfo->numTotal == splitInfo->numReceived) {
+                statNumCompleted[destNode] += 1; 
+                statRateCompleted[destNode] += 1;
+                double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
+                statCompletionTimes[destNode] += timeTaken * 1000;
+            }
         }
         nodeToShortestPathsMap[destNode][pathIndex].statRateCompleted += 1;
     }
@@ -887,9 +908,18 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         // update the number attempted to this destination and on this path
         p->statRateAttempted = p->statRateAttempted + 1;
 
+        // first attempt of larger txn
+        SplitState* splitInfo = &(_numSplits[myIndex()][transMsg->getLargerTxnId()]);
+        if (splitInfo->firstAttemptTime == -1) {
+            splitInfo->firstAttemptTime = simTime().dbl();
+
+            if (transMsg->getTimeSent() >= _transStatStart && 
+                transMsg->getTimeSent() <= _transStatEnd)
+                statRateAttempted[destNode] += 1;
+        }
+
         if (transMsg->getTimeSent() >= _transStatStart && 
             transMsg->getTimeSent() <= _transStatEnd){
-            statRateAttempted[destNode] += 1;
             statAmtAttempted[destNode] += transMsg->getAmount();
         }
 

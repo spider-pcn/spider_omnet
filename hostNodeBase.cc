@@ -6,6 +6,7 @@
 //global parameters
 map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
 map<int, set<int>> _destList;
+map<int, map<double, SplitState>> _numSplits;
 int _numNodes;
 int _numRouterNodes;
 int _numHostNodes;
@@ -22,6 +23,7 @@ double _waterfillingStartTime;
 double _landmarkRoutingStartTime;
 double _shortestPathStartTime;
 double _shortestPathEndTime;
+double _splitSize;
 
  //adjacency list format of graph edges of network
 map<int, vector<pair<int,int>>> _channels;
@@ -218,6 +220,7 @@ routerMsg* hostNodeBase::generateTransactionMessageForPath(double amt,
     msg->setPathIndex(pathIndex);
     msg->setTimeOut(transMsg->getTimeOut());
     msg->setTransactionId(transMsg->getTransactionId());
+    msg->setLargerTxnId(transMsg->getLargerTxnId());
 
     // find htlc for txn
     int transactionId = transMsg->getTransactionId();    
@@ -261,6 +264,7 @@ routerMsg *hostNodeBase::generateTransactionMessage(TransUnit unit) {
     msg->setHtlcIndex(0);
     msg->setHasTimeOut(unit.hasTimeOut);
     msg->setTimeOut(unit.timeOut);
+    msg->setLargerTxnId(unit.largerTxnId);
     
     sprintf(msgname, "tic-%d-to-%d router-transaction-Msg %f", unit.sender, unit.receiver, unit.timeSent);
     
@@ -313,6 +317,7 @@ routerMsg *hostNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     aMsg->setHasTimeOut(hasTimeOut);
     aMsg->setHtlcIndex(transMsg->getHtlcIndex());
     aMsg->setPathIndex(transMsg->getPathIndex());
+    aMsg->setLargerTxnId(transMsg->getLargerTxnId());
     if (!isSuccess){
         aMsg->setFailedHopNum((route.size()-1) - ttmsg->getHopCount());
     }
@@ -1074,6 +1079,8 @@ void hostNodeBase::initialize() {
         _landmarkRoutingStartTime = 3000;
         _shortestPathStartTime = 4000;
         _shortestPathEndTime = 7100;
+
+        _splitSize = 1.0;
 
         _lndBaselineEnabled = par("lndBaselineEnabled");
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");

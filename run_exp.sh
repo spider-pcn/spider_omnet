@@ -137,7 +137,7 @@ do
                 --generate-json-also \
                 --timeout-value 5 \
                 --scale-amount $scale \
-                --kaggle-size
+                --txn-size-mean 1
 
 
         # STEP 3: run the experiment

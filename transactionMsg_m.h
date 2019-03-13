@@ -34,6 +34,7 @@
  *     int htlcIndex;
  *     int pathIndex;
  *     double originalAmount;
+ *     double largerTxnId;
  * }
  * </pre>
  */
@@ -51,6 +52,7 @@ class transactionMsg : public ::omnetpp::cPacket
     int htlcIndex;
     int pathIndex;
     double originalAmount;
+    double largerTxnId;
 
   private:
     void copy(const transactionMsg& other);
@@ -91,6 +93,8 @@ class transactionMsg : public ::omnetpp::cPacket
     virtual void setPathIndex(int pathIndex);
     virtual double getOriginalAmount() const;
     virtual void setOriginalAmount(double originalAmount);
+    virtual double getLargerTxnId() const;
+    virtual void setLargerTxnId(double largerTxnId);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const transactionMsg& obj) {obj.parsimPack(b);}
