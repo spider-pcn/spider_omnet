@@ -13,7 +13,6 @@ public:
     vector<tuple<int, double, routerMsg*,  Id, simtime_t >> queuedTransUnits; //make_heap in initialization
     
     double queueSizeSum = 0;
-    vector<tuple<int, double, routerMsg*,  Id >> queuedTransUnits; //make_heap in initialization
     map<Id, double> incomingTransUnits; //(key,value) := ((transactionId, htlcIndex), amount)
     map<Id, double> outgoingTransUnits;
 

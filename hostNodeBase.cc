@@ -19,6 +19,9 @@ int _serviceArrivalWindow;
 double _transStatStart;
 double  _transStatEnd;
 double _waterfillingStartTime;
+double _landmarkRoutingStartTime;
+double _shortestPathStartTime;
+double _shortestPathEndTime;
 
  //adjacency list format of graph edges of network
 map<int, vector<pair<int,int>>> _channels;
@@ -1067,7 +1070,10 @@ void hostNodeBase::initialize() {
 
         _transStatStart = 5000;
         _transStatEnd = 7000;
-        _waterfillingStartTime = 4000;
+        _waterfillingStartTime = 3000;
+        _landmarkRoutingStartTime = 3000;
+        _shortestPathStartTime = 4000;
+        _shortestPathEndTime = 7100;
 
         _lndBaselineEnabled = par("lndBaselineEnabled");
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");

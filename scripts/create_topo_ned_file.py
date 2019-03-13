@@ -257,7 +257,7 @@ elif args.graph_type == 'simple_deadlock':
     G = simple_deadlock_graph
     args.separate_end_hosts = False
 elif args.graph_type.startswith('lnd_'):
-    G = nx.read_edgelist(LND_FILE_PATH + args.graph_type + '.edgelist')
+    G = nx.read_edgelist(LND_FILE_PATH + args.graph_type + '_reducedsize' + '.edgelist')
 else:
     G = simple_line_graph
     args.separate_end_hosts = False

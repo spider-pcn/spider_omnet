@@ -187,8 +187,19 @@ void generateTransUnitList(string workloadFile){
             }
 
             if (_waterfillingEnabled) 
-                if (timeSent < _waterfillingStartTime) 
+                if (timeSent < _waterfillingStartTime || timeSent > _shortestPathEndTime) 
                     continue;
+
+            if (_landmarkRoutingEnabled || _lndBaselineEnabled) 
+                if (timeSent < _landmarkRoutingStartTime || timeSent > _shortestPathEndTime) 
+                    continue;
+
+            if (!_priceSchemeEnabled)
+                if (timeSent < _shortestPathStartTime || timeSent > _shortestPathEndTime) 
+                    continue;
+
+
+
 
             if (timeSent > lastTime)
                  lastTime = timeSent;
@@ -766,9 +777,9 @@ double getTotalAmount(map<Id, double> v) {
 }
 
 /* adds up everything in the vector and returns it */
-double getTotalAmount(vector<tuple<int, double, routerMsg*, Id >> queue) {
+double getTotalAmount(vector<tuple<int, double, routerMsg*, Id, simtime_t >> queue) {
     return accumulate(begin(queue), end(queue), 0.0, 
-            [](double sum, tuple<int, double, routerMsg*, Id>&p) { return sum + get<1>(p); });
+            [](double sum, tuple<int, double, routerMsg*, Id, simtime_t>&p) { return sum + get<1>(p); });
 }
 
 /*

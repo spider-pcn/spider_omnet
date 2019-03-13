@@ -300,7 +300,8 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
 
         if (transMsg->getTimeSent() >= _transStatStart && 
             transMsg->getTimeSent() <= _transStatEnd) {
-            statNumArrived[destNode] += 1; 
+            statNumArrived[destNode] += 1;
+            statAmtArrived[destNode] += transMsg->getAmount(); 
             statRateArrived[destNode] += 1; 
         }
     }
@@ -361,8 +362,10 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                     nodeToPaymentChannel[nextNode].nValue += 1;
                     
                     if (transMsg->getTimeSent() >= _transStatStart && 
-                            transMsg->getTimeSent() <= _transStatEnd)
+                            transMsg->getTimeSent() <= _transStatEnd) {
                         statRateAttempted[destNode] += 1;
+                        statAmtAttempted[destNode] += transMsg->getAmount();
+                    }
                     
                     pathInfo->nValue += 1;
                     pathInfo->statRateAttempted += 1;
@@ -470,12 +473,14 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
             aMsg->getTimeSent() <= _transStatEnd){
         statNumFailed[destNode] += 1;
         statRateFailed[destNode] += 1;
+        statAmtFailed[destNode] += aMsg->getAmount();
     }
     else {
         if (aMsg->getTimeSent() >= _transStatStart && 
             aMsg->getTimeSent() <= _transStatEnd){
             statNumCompleted[destNode] += 1;
             statRateCompleted[destNode] += 1;
+            statAmtCompleted[destNode] += aMsg->getAmount();
 
             // stats
             double timeTaken = simTime().dbl() - aMsg->getTimeSent();
@@ -766,10 +771,10 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
             /*double delta = _alpha*(1 - (sumOfRates/300.0)*zValue) + 
                 _rho*((p->oldSumOfRates/300.0)*p->priceLastSeen - 
                     (sumOfRates/300.0)*zValue);*/
-            double delta = _rho*(p->priceLastSeen - zValue);
+            double delta = _alpha*(1 - zValue) + _rho*(p->priceLastSeen - zValue);
              // = r + (1 + r/10) delta; - closer to 80 will have an 8x improvement in convergence
             // preProjectionRate = oldRate + _alpha*(1 - zValue) + _rho*(p->priceLastSeen - zValue);
-            preProjectionRate = oldRate + _alpha * (1 - zValue) + (1 + oldRate/100.0)*delta ;
+            preProjectionRate = oldRate + delta ;
         }
         else {
           preProjectionRate  = oldRate + _alpha*(1 - zValue);
@@ -885,6 +890,7 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         if (transMsg->getTimeSent() >= _transStatStart && 
             transMsg->getTimeSent() <= _transStatEnd){
             statRateAttempted[destNode] += 1;
+            statAmtAttempted[destNode] += transMsg->getAmount();
         }
 
         //Update the  “time when next transaction can be sent” 
@@ -930,7 +936,6 @@ void hostNodePriceScheme::initializePriceProbes(vector<vector<int>> kShortestPat
         temp.yRateToSendTrans = _minPriceRate;
         // TODO: change this to something sensible
         temp.rttMin = (kShortestPaths[pathIdx].size() - 1) * 2 * _avgDelay/1000.0;
-        cout << temp.rttMin << " is rtt for path " << pathIdx << endl;
         nodeToShortestPathsMap[destNode][pathIdx] = temp;
 
         //initialize signals

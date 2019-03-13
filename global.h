@@ -107,4 +107,7 @@ extern bool _secondOrderOptimization;
 extern double _transStatStart;
 extern double _transStatEnd;
 extern double _waterfillingStartTime;
+extern double _landmarkRoutingStartTime;
+extern double _shortestPathStartTime;
+extern double _shortestPathEndTime;
 
