@@ -3,7 +3,6 @@
 
 //initialization functions
 bool probesRecent(map<int, PathInfo> probes);
-
 void generateChannelsBalancesMap(string);
 void setNumNodes(string);
 void generateTransUnitList(string);
@@ -21,8 +20,6 @@ vector<int> dijkstra(int src, int dest);
 
 void generateTransUnitList(string);
 vector<int> getRoute(int sender, int receiver);
-
-vector<string> split(string str, char delimiter);
 bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
       const tuple<int,double, routerMsg*, Id, simtime_t> &b);
 bool sortFIFO(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
@@ -40,5 +37,4 @@ void printChannels(map<int, vector<int>> channels);
 int minInt(int x, int y);
 
 double getTotalAmount(map<Id, double> v);
-double getTotalAmount(vector<tuple<int, double, routerMsg*, Id, simtime_t>> queue);
-double getTotalAmount(vector<routerMsg*> v);
+double getTotalAmount(vector<tuple<int, double, routerMsg*, Id >> queue);

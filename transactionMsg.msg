@@ -26,6 +26,5 @@ packet transactionMsg
     int htlcIndex;
     int pathIndex;
     double originalAmount;
-    bool isProcessed;
 }
 

@@ -403,14 +403,12 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
     int qRemote = puMsg->getQueueSize();
     int sender = ttmsg->getRoute()[0];
     PaymentChannel *neighborChannel = &(nodeToPaymentChannel[sender]);
-    int inflightRemote = getTotalAmount(neighborChannel->incomingTransUnits) + 
-        serviceRateRemote * _avgDelay/1000 ; 
+    int inflightRemote = neighborChannel->incomingTransUnits.size() + serviceRateRemote * _avgDelay/1000 ; 
 
     double xLocal = neighborChannel->xLocal;
     double updateRateLocal = neighborChannel->updateRate;
     int nLocal = neighborChannel->lastNValue;
-    int inflightLocal = getTotalAmount(neighborChannel->outgoingTransUnits) + 
-        updateRateLocal* _avgDelay/1000.0;
+    int inflightLocal = neighborChannel->outgoingTransUnits.size() + updateRateLocal* _avgDelay/1000.0;
     int qLocal = neighborChannel->lastQueueSize;
     double serviceRateLocal = neighborChannel->serviceRate;
     double arrivalRateLocal = neighborChannel->arrivalRate;
@@ -509,9 +507,10 @@ void routerNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
 
       neighborChannel->serviceRate = _serviceArrivalWindow / serviceTimeDiff; 
       neighborChannel->arrivalRate = _serviceArrivalWindow / arrivalTimeDiff;
+
       neighborChannel->lastQueueSize = neighborChannel->queuedTransUnits.size();
       
-      routerMsg* priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue, 
+      routerMsg * priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue, 
               neighborChannel->serviceRate, neighborChannel->arrivalRate, 
             neighborChannel->queuedTransUnits.size(), it->first);
       
@@ -574,8 +573,7 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
       scheduleAt(simTime()+_clearRate, ttmsg);
    }
 
-   for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end();){ 
-       //iterate through all canceledTransactions
+   for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end();){ //iterate through all canceledTransactions
       int transactionId = get<0>(*it);
       simtime_t msgArrivalTime = get<1>(*it);
       int prevNode = get<2>(*it);

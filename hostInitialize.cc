@@ -766,18 +766,9 @@ double getTotalAmount(map<Id, double> v) {
 }
 
 /* adds up everything in the vector and returns it */
-double getTotalAmount(vector<routerMsg *>  v) {
-    auto sumAmt = [&] (double sum, routerMsg* &p) {
-        transactionMsg *transMsg = check_and_cast<transactionMsg *>(p->getEncapsulatedPacket());
-        return sum + transMsg->getAmount(); };
-    return accumulate(begin(v), end(v), 0.0, sumAmt);
-}
-
-
-/* adds up everything in the vector and returns it */
-double getTotalAmount(vector<tuple<int, double, routerMsg*, Id, simtime_t>> queue) {
+double getTotalAmount(vector<tuple<int, double, routerMsg*, Id >> queue) {
     return accumulate(begin(queue), end(queue), 0.0, 
-            [](double sum, tuple<int, double, routerMsg*, Id, simtime_t>&p) { return sum + get<1>(p); });
+            [](double sum, tuple<int, double, routerMsg*, Id>&p) { return sum + get<1>(p); });
 }
 
 /*

@@ -24,8 +24,6 @@ double _minWindow;
 double _xi;
 double _routerQueueDrainTime;
 
-#define SMALLEST_UNIT 10
-
 Define_Module(hostNodePriceScheme);
 
 /* generate the trigger message to initiate price Updates periodically
@@ -293,69 +291,28 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     int destNode = transMsg->getReceiver();
     int nextNode = ttmsg->getRoute()[hopcount + 1];
     int transactionId = transMsg->getTransactionId();
+    
+    // first time seeing this transaction so add to d_ij computation
+    // count the txn for accounting also
+    if (simTime() == transMsg->getTimeSent()) {
+        destNodeToNumTransPending[destNode]  += 1;
+        nodeToDestInfo[destNode].transSinceLastInterval += 1;
+
+        if (transMsg->getTimeSent() >= _transStatStart && 
+            transMsg->getTimeSent() <= _transStatEnd) {
+            statNumArrived[destNode] += 1; 
+            statRateArrived[destNode] += 1; 
+        }
+    }
 
     // initiate price probes if it is a new destination
-    if (nodeToShortestPathsMap.count(destNode) == 0 && ttmsg->isSelfMessage()) {
+    if (nodeToShortestPathsMap.count(destNode) == 0 && ttmsg->isSelfMessage()){
         vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
         initializePriceProbes(kShortestRoutes, destNode);
         //TODO: change to a queue implementation
         scheduleAt(simTime() + _maxTravelTime, ttmsg);
         return;
     }
-    
-    // first time seeing this transaction so add to d_ij computation
-    // count the txn for accounting also
-    if (transMsg->getIsProcessed() == false) {
-        destNodeToNumTransPending[destNode]  += 1;
-        nodeToDestInfo[destNode].transSinceLastInterval += transMsg->getAmount();
-
-        if (transMsg->getTimeSent() >= _transStatStart && 
-            transMsg->getTimeSent() <= _transStatEnd) {
-            statNumArrived[destNode] += 1; 
-            statRateArrived[destNode] += 1;
-            statAmtArrived[destNode] +=  transMsg->getAmount();
-        }
-
-        double remainingAmt = transMsg->getAmount();
-        while (remainingAmt > _epsilon) {
-            double amtToAdd = (remainingAmt < SMALLEST_UNIT) ? remainingAmt : SMALLEST_UNIT;
-            remainingAmt -= amtToAdd;
-            vector<int> blankPath = {};
-            routerMsg *splitTransaction = generateTransactionMessageForPath(amtToAdd, 
-                 blankPath, -1, transMsg, true);
-            handleTransactionMessageSplit(splitTransaction);
-        }
-
-        AckState * s = new AckState();
-        s->amtReceived = 0;
-        s->amtSent = transMsg->getAmount();
-        s->attemptMade = false;
-        transToAmtLeftToComplete[transactionId] = *s;
-
-        ttmsg->decapsulate();
-        delete transMsg;
-        delete ttmsg;
-    }  
-    else {
-        handleTransactionMessageSplit(ttmsg);
-    }  
-
-}
-
-
-/* main routine for handling a new transaction under the pricing scheme
- * In particular, initiate price probes, assigns a txn to a path if the 
- * rate for that path allows it, otherwise queues it at the sender
- * until a timer fires on the next path allowing a txn to go through
- */
-void hostNodePriceScheme::handleTransactionMessageSplit(routerMsg* ttmsg){
-    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
-    int hopcount = ttmsg->getHopCount();
-    int destNode = transMsg->getReceiver();
-    int nextNode = ttmsg->getRoute()[hopcount + 1];
-    int transactionId = transMsg->getTransactionId();
-
-
     
     // at destination, add to incoming transUnits and trigger ack
     if (transMsg->getReceiver() == myIndex()) {
@@ -384,7 +341,7 @@ void hostNodePriceScheme::handleTransactionMessageSplit(routerMsg* ttmsg){
        
         //send on a path if no txns queued up and timer was in the path
         if ((destInfo->transWaitingToBeSent).size() > 0) {
-            destInfo->transWaitingToBeSent.push_back(ttmsg);
+            destInfo->transWaitingToBeSent.push(ttmsg);
         } else {
             for (auto p: nodeToShortestPathsMap[destNode]) {
                 int pathIndex = p.first;
@@ -401,15 +358,13 @@ void hostNodePriceScheme::handleTransactionMessageSplit(routerMsg* ttmsg){
 
                     // record stats on sent units for payment channel, destination and path
                     int nextNode = pathInfo->path[1];
-                    nodeToPaymentChannel[nextNode].nValue += transMsg->getAmount();
+                    nodeToPaymentChannel[nextNode].nValue += 1;
                     
                     if (transMsg->getTimeSent() >= _transStatStart && 
-                            transMsg->getTimeSent() <= _transStatEnd) {
+                            transMsg->getTimeSent() <= _transStatEnd)
                         statRateAttempted[destNode] += 1;
-                        statAmtAttempted[destNode] += transMsg->getAmount();
-                    }
                     
-                    pathInfo->nValue += transMsg->getAmount();
+                    pathInfo->nValue += 1;
                     pathInfo->statRateAttempted += 1;
                     pathInfo->sumOfTransUnitsInFlight += transMsg->getAmount();
                     pathInfo->lastTransSize = transMsg->getAmount();
@@ -426,11 +381,9 @@ void hostNodePriceScheme::handleTransactionMessageSplit(routerMsg* ttmsg){
                     pathInfo->timeToNextSend = newTimeToNextSend;
                     
                     //generate time out message here, when path is decided
-                    if (_timeoutEnabled && transToAmtLeftToComplete[transactionId].attemptMade == false) {
-                        transToAmtLeftToComplete[transactionId].attemptMade = true;
-                        transToAmtLeftToComplete[transactionId].attemptTime = simTime();
+                    if (_timeoutEnabled) {
                         routerMsg *toutMsg = generateTimeOutMessage(ttmsg);
-                        scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg);
+                        scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
                     }
                     
                     // if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
@@ -439,7 +392,7 @@ void hostNodePriceScheme::handleTransactionMessageSplit(routerMsg* ttmsg){
             }
             
             //transaction cannot be sent on any of the paths, queue transaction
-            destInfo->transWaitingToBeSent.push_back(ttmsg);
+            destInfo->transWaitingToBeSent.push(ttmsg);
             for (auto p: nodeToShortestPathsMap[destNode]) {
                 PathInfo *pInfo = &(nodeToShortestPathsMap[destNode][p.first]);
                 if (pInfo->isSendTimerSet == false) {
@@ -493,7 +446,7 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
 
                 emit(demandEstimatePerDestSignals[it], nodeToDestInfo[it].demand);
                 emit(numWaitingPerDestSignals[it], 
-                       getTotalAmount(nodeToDestInfo[it].transWaitingToBeSent)); 
+                       nodeToDestInfo[it].transWaitingToBeSent.size()); 
             }        
         }
     } 
@@ -502,33 +455,6 @@ void hostNodePriceScheme::handleStatMessage(routerMsg* ttmsg){
     hostNodeBase::handleStatMessage(ttmsg);
 }
 
-/* handles to logic for ack messages in the presence of timeouts
- * in particular, removes the transaction from the cancelled txns
- * to mark that it has been received 
- * it uses the transAmtSent vs Received to detect if txn is complete
- * and therefore is different from the base class 
- */
-void hostNodePriceScheme::handleAckMessageTimeOut(routerMsg* ttmsg){
-    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
-    int transactionId = aMsg->getTransactionId();
-
-    if (aMsg->getIsSuccess() == false)
-        return;
-
-    double totalAmtReceived = (transToAmtLeftToComplete[transactionId]).amtReceived +
-        aMsg->getAmount();
-    if (totalAmtReceived != transToAmtLeftToComplete[transactionId].amtSent) 
-        return;
-    
-    auto iter = find_if(canceledTransactions.begin(),
-         canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-         { return get<0>(p) == transactionId; });
-    
-    if (iter!=canceledTransactions.end()) {
-        canceledTransactions.erase(iter);
-    }
-}
 
 /* specialized ack handler that does the routine if this is a price scheme 
  * algorithm. In particular, collects/updates stats for this path alone
@@ -537,51 +463,34 @@ void hostNodePriceScheme::handleAckMessageTimeOut(routerMsg* ttmsg){
 void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
     ackMsg *aMsg = check_and_cast<ackMsg*>(ttmsg->getEncapsulatedPacket());
     int pathIndex = aMsg->getPathIndex();
-    int receiver = aMsg->getReceiver();
+    int destNode = ttmsg->getRoute()[0];
     int transactionId = aMsg->getTransactionId();
-
-    if (aMsg->getIsSuccess() == false) {
-        hostNodeBase::handleAckMessage(ttmsg);
-        return;
-    }
-
-    if (transToAmtLeftToComplete.count(transactionId) == 0){
-        cout << "error, transaction " << transactionId 
-          <<" htlc index:" << aMsg->getHtlcIndex() 
-          << " acknowledged at time " << simTime() 
-          << " wasn't written to transToAmtLeftToComplete" << endl;
+    
+    if (aMsg->getIsSuccess()==false && aMsg->getTimeSent() >= _transStatStart && 
+            aMsg->getTimeSent() <= _transStatEnd){
+        statNumFailed[destNode] += 1;
+        statRateFailed[destNode] += 1;
     }
     else {
-        (transToAmtLeftToComplete[transactionId]).amtReceived += aMsg->getAmount();
-        nodeToShortestPathsMap[receiver][pathIndex].statRateCompleted += 1;
-        if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) 
-            statAmtCompleted[receiver] += aMsg->getAmount();
+        if (aMsg->getTimeSent() >= _transStatStart && 
+            aMsg->getTimeSent() <= _transStatEnd){
+            statNumCompleted[destNode] += 1;
+            statRateCompleted[destNode] += 1;
 
-        if (transToAmtLeftToComplete[transactionId].amtReceived > 
-                transToAmtLeftToComplete[transactionId].amtSent - _epsilon) {
-            if (aMsg->getTimeSent() >= _transStatStart && 
-            aMsg->getTimeSent() <= _transStatEnd) {
-                statNumCompleted[receiver] += 1; 
-                statRateCompleted[receiver] += 1;
-
-                double timeTaken = simTime().dbl() - transToAmtLeftToComplete[transactionId].attemptTime.dbl();
-                statCompletionTimes[receiver] += timeTaken * 1000;
-            }
-            
-            // erase transaction from map 
-            // NOTE: still keeping it in the per path map (transPathToAckState)
-            // to identify that timeout needn't be sent
-            transToAmtLeftToComplete.erase(aMsg->getTransactionId());
+            // stats
+            double timeTaken = simTime().dbl() - aMsg->getTimeSent();
+            statCompletionTimes[destNode] += timeTaken * 1000;
         }
-       
-        //increment transaction amount ack on a path. 
-        tuple<int,int> key = make_tuple(transactionId, pathIndex);
-        transPathToAckState[key].amtReceived += aMsg->getAmount();
-        
-        // decrement amt inflight on a path
-        nodeToShortestPathsMap[receiver][pathIndex].sumOfTransUnitsInFlight -= aMsg->getAmount();
-        destNodeToNumTransPending[receiver] -= 1;
+        nodeToShortestPathsMap[destNode][pathIndex].statRateCompleted += 1;
     }
+
+    //increment transaction amount ack on a path. 
+    tuple<int,int> key = make_tuple(transactionId, pathIndex);
+    transPathToAckState[key].amtReceived += aMsg->getAmount();
+    
+    nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= aMsg->getAmount();
+    destNodeToNumTransPending[destNode] -= 1;     
+    hostNodeBase::handleAckMessage(ttmsg);
 }
 
 /* handler for the clear state message that deals with
@@ -614,58 +523,6 @@ void hostNodePriceScheme::handleClearStateMessage(routerMsg *ttmsg) {
     // works fine now because timeouts start per transaction only when
     // sent out and no txn splitting
     hostNodeBase::handleClearStateMessage(ttmsg);
-}
-
-
-
-/* handles the special time out mechanism for waterfilling which is responsible
- * for sending time out messages on all paths that may have seen this txn and 
- * marking the txn as cancelled
- */
-void hostNodePriceScheme::handleTimeOutMessage(routerMsg* ttmsg){
-    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
-
-    if (ttmsg->isSelfMessage()) { 
-        //is at the sender
-        int transactionId = toutMsg->getTransactionId();
-        int destination = toutMsg->getReceiver();
-       
-        for (auto p : (nodeToShortestPathsMap[destination])){
-            int pathIndex = p.first;
-            tuple<int,int> key = make_tuple(transactionId, pathIndex);
-            if(_loggingEnabled) {
-                cout << "transPathToAckState.count(key): " 
-                   << transPathToAckState.count(key) << endl;
-                cout << "transactionId: " << transactionId 
-                    << "; pathIndex: " << pathIndex << endl;
-            }
-            
-            if (transPathToAckState[key].amtSent != transPathToAckState[key].amtReceived) {
-                routerMsg* psTimeOutMsg = generateTimeOutMessageForPath(
-                    nodeToShortestPathsMap[destination][p.first].path, 
-                    transactionId, destination);
-                // TODO: what if a transaction on two different paths have same next hop?
-                int nextNode = (psTimeOutMsg->getRoute())[psTimeOutMsg->getHopCount()+1];
-                CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
-                        simTime(), -1, nextNode, destination);
-                canceledTransactions.insert(ct);
-                forwardMessage(psTimeOutMsg);
-            }
-            else {
-                transPathToAckState.erase(key);
-            }
-        }
-        delete ttmsg;
-    }
-    else{
-        // at the receiver
-        CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),
-                (ttmsg->getRoute())[ttmsg->getHopCount()-1], -1, toutMsg->getReceiver());
-        canceledTransactions.insert(ct);
-        ttmsg->decapsulate();
-        delete toutMsg;
-        delete ttmsg;
-    }
 }
 
 
@@ -749,12 +606,11 @@ void hostNodePriceScheme::handlePriceUpdateMessage(routerMsg* ttmsg){
     int sender = ttmsg->getRoute()[0];
     
     PaymentChannel *neighborChannel = &(nodeToPaymentChannel[sender]);
-    int inflightRemote = getTotalAmount(neighborChannel->incomingTransUnits) + 
-        serviceRateRemote * _avgDelay/1000 ; 
+    int inflightRemote = neighborChannel->incomingTransUnits.size() + serviceRateRemote * _avgDelay/1000 ; 
     double xLocal = neighborChannel->xLocal;
     double updateRateLocal = neighborChannel->updateRate;
     int nLocal = neighborChannel->lastNValue;
-    int inflightLocal = getTotalAmount(neighborChannel->outgoingTransUnits) + updateRateLocal* _avgDelay/1000.0;
+    int inflightLocal = neighborChannel->outgoingTransUnits.size() + updateRateLocal* _avgDelay/1000.0;
     int qLocal = neighborChannel->lastQueueSize; 
     double serviceRateLocal = neighborChannel->serviceRate;
     double arrivalRateLocal = neighborChannel->arrivalRate;
@@ -941,7 +797,7 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
             pathRateTuples.push_back(newTuple);
         }
 
-        int queueSize = getTotalAmount(nodeToDestInfo[destNode].transWaitingToBeSent);
+        int queueSize = nodeToDestInfo[destNode].transWaitingToBeSent.size();
         double drainTime = 100.0; // seconds
         double bias = nodeToDestInfo[destNode].demand - sumRates; 
         // get<1>(pathRateTuples[routeIndex]) += _alpha * bias;
@@ -987,11 +843,10 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
     if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0 && (!_windowEnabled || 
             (_windowEnabled && p->sumOfTransUnitsInFlight < p->window))){
         //remove the transaction $tu$ at the head of the queue
-        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.back();
-        nodeToDestInfo[destNode].transWaitingToBeSent.pop_back();
+        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.top();
+        nodeToDestInfo[destNode].transWaitingToBeSent.pop();
         transactionMsg *transMsg = 
            check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
-        int transactionId = transMsg->getTransactionId();
         
         //Send the transaction $tu$ along the corresponding path.
         transMsg->setPathIndex(pathIndex);
@@ -1000,12 +855,12 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
 
         // increment the number of units sent on a particular payment channel
         int nextNode = path[1];
-        nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + transMsg->getAmount();
+        nodeToPaymentChannel[nextNode].nValue = nodeToPaymentChannel[nextNode].nValue + 1;
 
         // if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
 
         // increment amount in inflght and other info on last transaction on this path
-        p->nValue += transMsg->getAmount();
+        p->nValue += 1;
         p->sumOfTransUnitsInFlight = p->sumOfTransUnitsInFlight + transMsg->getAmount();
         p->lastTransSize = transMsg->getAmount();
         p->lastSendTime = simTime();
@@ -1016,11 +871,9 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         transPathToAckState[key].amtSent += transMsg->getAmount();
         
         //generate time out message here, when path is decided
-        if (_timeoutEnabled && transToAmtLeftToComplete[transactionId].attemptMade == false) {
-            transToAmtLeftToComplete[transactionId].attemptMade = true;
-            transToAmtLeftToComplete[transactionId].attemptTime = simTime();
-            routerMsg *toutMsg = generateTimeOutMessage(msgToSend);
-            scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
+        if (_timeoutEnabled) {
+          routerMsg *toutMsg = generateTimeOutMessage(msgToSend);
+          scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
         }
 
         // cannot be cancelled at this point
@@ -1032,7 +885,6 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         if (transMsg->getTimeSent() >= _transStatStart && 
             transMsg->getTimeSent() <= _transStatEnd){
             statRateAttempted[destNode] += 1;
-            statAmtAttempted[destNode] += transMsg->getAmount();
         }
 
         //Update the  “time when next transaction can be sent” 
