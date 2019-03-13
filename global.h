@@ -68,7 +68,7 @@ extern double _restorePeriod;
 //for rebalancing
 extern double _rebalanceEnabled;
 extern double _rebalanceFrac;
-extern double _rebalanceTimeReq;
+extern double _rebalanceWatchPeriod;
 extern double _rebalanceRate;
 
 

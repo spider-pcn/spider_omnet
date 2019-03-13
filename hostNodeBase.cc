@@ -45,7 +45,7 @@ int _queueCapacity;
 //global parameters for rebalancing
 double _rebalanceEnabled;
 double _rebalanceFrac;
-double _rebalanceTimeReq;
+double _rebalanceWatchPeriod;
 double _rebalanceRate;
 
 
@@ -846,9 +846,9 @@ void hostNodeBase::handleRebalanceMessage(routerMsg* ttmsg){
         double oldBalance = nodeToPaymentChannel[key].balance;
         simtime_t zeroStartTime = nodeToPaymentChannel[key].zeroStartTime;
         
-        if ( ( oldBalance == 0 ) && ( zeroStartTime >= 0)  && ( zeroStartTime + _rebalanceTimeReq <= simTime()) )
+        if ( ( oldBalance == 0 ) && ( zeroStartTime >= 0)  && ( simTime() > zeroStartTime + _rebalanceWatchPeriod ) )
         {
-            double addedAmt= oldBalance * _rebalanceFrac;
+            double addedAmt= nodeToPaymentChannel[key].totalCapacity * _rebalanceFrac;
             //rebalance channel
             updateBalance(key, addedAmt);
             //adjust total capacity
@@ -1121,16 +1121,16 @@ void hostNodeBase::initialize() {
 
     // initialize global parameters once
     if (getIndex() == 0){  
-        _simulationLength = 60;//par("simulationLength");
+        _simulationLength = par("simulationLength");
         _statRate = par("statRate");
         _clearRate = par("timeoutClearRate");
         _waterfillingEnabled = par("waterfillingEnabled");
         _timeoutEnabled = par("timeoutEnabled");
-        _signalsEnabled = true; //par("signalsEnabled");
+        _signalsEnabled = par("signalsEnabled");
         _loggingEnabled = par("loggingEnabled");
         _priceSchemeEnabled = par("priceSchemeEnabled");
 
-        _hasQueueCapacity = false;
+        _hasQueueCapacity = true;
         _queueCapacity = 0;
 
         _transStatStart = 5000;
@@ -1157,7 +1157,7 @@ void hostNodeBase::initialize() {
         _rebalanceEnabled = true;
         _rebalanceRate = 0.5;
         _rebalanceFrac = 0.1;
-        _rebalanceTimeReq = 4.0;
+        _rebalanceWatchPeriod = 4.0;
         
         _maxTravelTime = 0.0;
         _delta = 0.01; // to avoid divide by zero 

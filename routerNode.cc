@@ -84,9 +84,9 @@ void routerNode::handleRebalanceMessage(routerMsg* ttmsg){
         double oldBalance = nodeToPaymentChannel[key].balance;
         simtime_t zeroStartTime = nodeToPaymentChannel[key].zeroStartTime;
 
-        if ( ( oldBalance == 0 ) && ( zeroStartTime >= 0)  && ( zeroStartTime + _rebalanceTimeReq <= simTime()) )
+        if ( ( oldBalance == 0 ) && ( zeroStartTime >= 0)  && ( simTime() > zeroStartTime + _rebalanceWatchPeriod ) )
         {
-            double addedAmt= oldBalance * _rebalanceFrac;
+            double addedAmt= nodeToPaymentChannel[key].totalCapacity * _rebalanceFrac;
             //rebalance channel
             updateBalance(key, addedAmt);
             //adjust total capacity
