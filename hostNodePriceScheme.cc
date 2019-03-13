@@ -24,7 +24,7 @@ double _minWindow;
 double _xi;
 double _routerQueueDrainTime;
 
-#define SMALLEST_UNIT 1
+#define SMALLEST_UNIT 10
 
 Define_Module(hostNodePriceScheme);
 
@@ -324,7 +324,6 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
             routerMsg *splitTransaction = generateTransactionMessageForPath(amtToAdd, 
                  blankPath, -1, transMsg, true);
             handleTransactionMessageSplit(splitTransaction);
-            // cout << "splitting transaction " << transactionId << " once " << endl;
         }
 
         AckState * s = new AckState();
@@ -423,8 +422,7 @@ void hostNodePriceScheme::handleTransactionMessageSplit(routerMsg* ttmsg){
                 
                     // update the "time when the next transaction can be sent"
                     double rateToUse = max(pathInfo->rateToSendTrans, _epsilon);
-                    simtime_t newTimeToNextSend =  simTime() + 
-                        min(max(transMsg->getAmount()/rateToUse, _epsilon), 10.0);
+                    simtime_t newTimeToNextSend =  simTime() + max(transMsg->getAmount()/rateToUse, _epsilon);
                     pathInfo->timeToNextSend = newTimeToNextSend;
                     
                     //generate time out message here, when path is decided
@@ -433,7 +431,6 @@ void hostNodePriceScheme::handleTransactionMessageSplit(routerMsg* ttmsg){
                         transToAmtLeftToComplete[transactionId].attemptTime = simTime();
                         routerMsg *toutMsg = generateTimeOutMessage(ttmsg);
                         scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg);
-                        cout << "attempting transaction " << transactionId << endl;
                     }
                     
                     // if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
@@ -544,9 +541,6 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
     int transactionId = aMsg->getTransactionId();
 
     if (aMsg->getIsSuccess() == false) {
-        cout << " should never actually get here" << endl;
-        statRateFailed[receiver] = statRateFailed[receiver] + 1;
-        statAmtFailed[receiver] += aMsg->getAmount();
         hostNodeBase::handleAckMessage(ttmsg);
         return;
     }
@@ -588,7 +582,6 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
         nodeToShortestPathsMap[receiver][pathIndex].sumOfTransUnitsInFlight -= aMsg->getAmount();
         destNodeToNumTransPending[receiver] -= 1;
     }
-    hostNodeBase::handleAckMessage(ttmsg);
 }
 
 /* handler for the clear state message that deals with
@@ -696,7 +689,7 @@ void hostNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
     for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++ ) {
         PaymentChannel *neighborChannel = &(nodeToPaymentChannel[it->first]);      
         neighborChannel->xLocal = neighborChannel->nValue / _tUpdate;
-        neighborChannel->updateRate = neighborChannel->amtUpdateMessages/_tUpdate;
+        neighborChannel->updateRate = neighborChannel->numUpdateMessages/_tUpdate;
         if (it->first < 0){
             printNodeToPaymentChannel();
             endSimulation();
@@ -705,19 +698,17 @@ void hostNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
         auto firstTransTimes = neighborChannel->serviceArrivalTimeStamps.front();
         auto lastTransTimes =  neighborChannel->serviceArrivalTimeStamps.back();
         double serviceTimeDiff = get<0>(lastTransTimes).dbl() - get<0>(firstTransTimes).dbl(); 
-        double arrivalTimeDiff = get<1>(lastTransTimes).dbl() - get<1>(firstTransTimes).dbl();
-
-        double totalAmount = getTotalAmount(neighborChannel->serviceArrivalTimeStamps); 
-        neighborChannel->serviceRate = totalAmount / serviceTimeDiff;
-        neighborChannel->arrivalRate = totalAmount / arrivalTimeDiff;
-        neighborChannel->lastQueueSize = getTotalAmount(neighborChannel->queuedTransUnits);
+        double arrivalTimeDiff = get<1>(lastTransTimes).dbl() - get<1>(firstTransTimes).dbl(); 
+        neighborChannel->serviceRate = _serviceArrivalWindow / serviceTimeDiff;
+        neighborChannel->arrivalRate = _serviceArrivalWindow / arrivalTimeDiff;
+        neighborChannel->lastQueueSize = neighborChannel->queuedTransUnits.size();
 
         routerMsg * priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue, 
                 neighborChannel->serviceRate, neighborChannel->arrivalRate, 
-            neighborChannel->lastQueueSize, it->first);
+            neighborChannel->queuedTransUnits.size(), it->first);
         neighborChannel->lastNValue = neighborChannel->nValue;
         neighborChannel->nValue = 0;
-        neighborChannel->amtUpdateMessages = 0;
+        neighborChannel->numUpdateMessages = 0;
         
         forwardMessage(priceUpdateMsg);
     }
@@ -922,7 +913,7 @@ void hostNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
             double delta = _rho*(p->priceLastSeen - zValue);
              // = r + (1 + r/10) delta; - closer to 80 will have an 8x improvement in convergence
             // preProjectionRate = oldRate + _alpha*(1 - zValue) + _rho*(p->priceLastSeen - zValue);
-            preProjectionRate = oldRate + _alpha * (1 - zValue) + delta /*+ (1 + oldRate/100.0)*delta*/ ;
+            preProjectionRate = oldRate + _alpha * (1 - zValue) + (1 + oldRate/100.0)*delta ;
         }
         else {
           preProjectionRate  = oldRate + _alpha*(1 - zValue);
@@ -1063,7 +1054,7 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         double rateToSendTrans = max(p->rateToSendTrans, _epsilon);
         double lastTxnSize = p->lastTransSize;
         p->timeToNextSend = simTime() +
-                min(max(lastTxnSize/rateToSendTrans, _epsilon), 10.0);
+                max(lastTxnSize/rateToSendTrans, _epsilon);
         scheduleAt(p->timeToNextSend, ttmsg);
         p->amtAllowedToSend = 0.0;
           
@@ -1136,7 +1127,7 @@ void hostNodePriceScheme::updateTimers(int destNode, int pathIndex, double newRa
 
     // Reschedule timer on this path according to this rate
     double rateToUse = max(newRate, _epsilon);
-    simtime_t newTimeToSend = simTime() + min(max((lastTxnSize - allowedToSend)/ rateToUse, _epsilon), 10.0);
+    simtime_t newTimeToSend = simTime() + max((lastTxnSize - allowedToSend)/ rateToUse, _epsilon);
     cancelEvent(p->triggerTransSendMsg);
     p->timeToNextSend = newTimeToSend;
     /*if (nodeToDestInfo[destNode].transWaitingToBeSent.size() == 0) 

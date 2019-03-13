@@ -780,11 +780,6 @@ double getTotalAmount(vector<tuple<int, double, routerMsg*, Id, simtime_t>> queu
             [](double sum, tuple<int, double, routerMsg*, Id, simtime_t>&p) { return sum + get<1>(p); });
 }
 
-/* adds up everything in the vector and returns it */
-double getTotalAmount(list<tuple<simtime_t, simtime_t, double>> v) {
-    return accumulate(begin(v), end(v), 0.0, 
-            [](double sum, tuple<simtime_t, simtime_t, double> &p) { return sum + get<2>(p); });
-}
 /*
  * sortFunction - helper function used to sort queued transUnit list by ascending priorityClass, then by
  *      ascending amount

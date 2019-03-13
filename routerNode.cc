@@ -500,25 +500,24 @@ void routerNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
        //iterate through all channels
       PaymentChannel *neighborChannel = &(nodeToPaymentChannel[it->first]);
       neighborChannel->xLocal =  neighborChannel->nValue / _tUpdate;
-      neighborChannel->updateRate = neighborChannel->amtUpdateMessages / _tUpdate;
+      neighborChannel->updateRate = neighborChannel->numUpdateMessages / _tUpdate;
         
       auto firstTransTimes = neighborChannel->serviceArrivalTimeStamps.front();
       auto lastTransTimes =  neighborChannel->serviceArrivalTimeStamps.back();
       double serviceTimeDiff = get<0>(lastTransTimes).dbl() - get<0>(firstTransTimes).dbl(); 
-      double arrivalTimeDiff = get<1>(lastTransTimes).dbl() - get<1>(firstTransTimes).dbl();
-      double totalAmount = getTotalAmount(neighborChannel->serviceArrivalTimeStamps); 
+      double arrivalTimeDiff = get<1>(lastTransTimes).dbl() - get<1>(firstTransTimes).dbl(); 
 
-      neighborChannel->serviceRate = totalAmount / serviceTimeDiff; 
-      neighborChannel->arrivalRate = totalAmount / arrivalTimeDiff;
-      neighborChannel->lastQueueSize = getTotalAmount(neighborChannel->queuedTransUnits);
+      neighborChannel->serviceRate = _serviceArrivalWindow / serviceTimeDiff; 
+      neighborChannel->arrivalRate = _serviceArrivalWindow / arrivalTimeDiff;
+      neighborChannel->lastQueueSize = neighborChannel->queuedTransUnits.size();
       
       routerMsg* priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue, 
               neighborChannel->serviceRate, neighborChannel->arrivalRate, 
-            neighborChannel->lastQueueSize, it->first);
+            neighborChannel->queuedTransUnits.size(), it->first);
       
       neighborChannel->lastNValue = neighborChannel->nValue;
       neighborChannel->nValue = 0;
-      neighborChannel->amtUpdateMessages = 0;
+      neighborChannel->numUpdateMessages = 0;
       
       sendUpdateMessage(priceUpdateMsg);
    }
@@ -732,8 +731,8 @@ void routerNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
 
          PaymentChannel* p = &(nodeToPaymentChannel[node]);
          emit(p->nValueSignal, p->lastNValue);
-         emit(p->inflightOutgoingSignal, getTotalAmount(p->outgoingTransUnits));
-         emit(p->inflightIncomingSignal, getTotalAmount(p->incomingTransUnits));
+         emit(p->inflightOutgoingSignal, p->outgoingTransUnits.size());
+         emit(p->inflightIncomingSignal, p->incomingTransUnits.size());
          emit(p->serviceRateSignal, p->arrivalRate/p->serviceRate);
          //emit(p->arrivalRateSignal, p->arrivalRate);
          emit(p->lambdaSignal, p->lambda);
@@ -846,7 +845,7 @@ void routerNode::handleAckMessage(routerMsg* ttmsg){
    }
    else{ //isSuccess == true
       routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), prevNode, aMsg->getAmount(), aMsg->getHtlcIndex() );
-      nodeToPaymentChannel[prevNode].amtUpdateMessages += aMsg->getAmount();
+      nodeToPaymentChannel[prevNode].numUpdateMessages += 1;
       sendUpdateMessage(uMsg);
 
    }
@@ -1113,8 +1112,7 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t a
       //use hopCount to find next destination
 
         // update service arrival times
-        nodeToPaymentChannel[nextDest].serviceArrivalTimeStamps.push_back(make_tuple(simTime(), arrivalTime,
-                    transMsg->getAmount()));
+        nodeToPaymentChannel[nextDest].serviceArrivalTimeStamps.push_back(make_tuple(simTime(), arrivalTime));
         if (nodeToPaymentChannel[nextDest].serviceArrivalTimeStamps.size() > _serviceArrivalWindow)
            nodeToPaymentChannel[nextDest].serviceArrivalTimeStamps.pop_front(); 
      

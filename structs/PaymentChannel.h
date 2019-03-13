@@ -26,9 +26,9 @@ public:
     double serviceRate; // ratio of rate transaction arrival over transaction service rate (queue->inflight)   
     double arrivalRate;   
     double lambda; //Price due to load ($\lambda$)
-    double amtUpdateMessages; // in the last _Tquery interval
+    int numUpdateMessages; // in the last _Tquery interval
     double updateRate; // rate of sending update messages
-    list<tuple<simtime_t, simtime_t, double>> serviceArrivalTimeStamps; //each entry is service and arrival time of last n transactions
+    list<tuple<simtime_t, simtime_t>> serviceArrivalTimeStamps; //each entry is service and arrival time of last n transactions
 
     double lastLambdaGrad = 0; // for accelerated gradient descent
     double yLambda; // Nesterov's equation y

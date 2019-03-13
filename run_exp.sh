@@ -5,7 +5,7 @@ GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" \
     "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
 
-balance=100
+balance=1000
 
 prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
     "hotnets" "five_line" "lnd_dec4_2018" "lnd_dec28_2018" \
@@ -26,7 +26,7 @@ random_capacity=false
 
 
 #general parameters that do not affect config names
-simulationLength=5000
+simulationLength=1000
 statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
@@ -137,7 +137,7 @@ do
                 --generate-json-also \
                 --timeout-value 5 \
                 --scale-amount $scale \
-                --txn-size-mean 1
+                --txn-size-mean 10
                 #--kaggle-size
 
 
