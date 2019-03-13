@@ -42,3 +42,4 @@ int minInt(int x, int y);
 double getTotalAmount(map<Id, double> v);
 double getTotalAmount(vector<tuple<int, double, routerMsg*, Id, simtime_t>> queue);
 double getTotalAmount(vector<routerMsg*> v);
+double getTotalAmount(list<tuple<simtime_t, simtime_t, double>> v);

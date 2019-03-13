@@ -300,7 +300,8 @@ routerMsg *hostNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     bool hasTimeOut = transMsg->getHasTimeOut();
     
     char msgname[MSGSIZE];
-    sprintf(msgname, "receiver-%d-to-sender-%d ackMsg", receiver, sender);
+    sprintf(msgname, "receiver-%d-to-sender-%d ackMsg for transaction %d sent at %f", 
+            receiver, sender, transactionId, timeSent);
     routerMsg *msg = new routerMsg(msgname);
     ackMsg *aMsg = new ackMsg(msgname);
     aMsg->setTransactionId(transactionId);
@@ -721,7 +722,7 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
     else { 
         routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), 
                 prevNode, aMsg->getAmount(), aMsg->getHtlcIndex() );
-        nodeToPaymentChannel[prevNode].numUpdateMessages += 1;
+        nodeToPaymentChannel[prevNode].amtUpdateMessages += aMsg->getAmount();
         forwardMessage(uMsg);
     }
     
@@ -998,7 +999,7 @@ bool hostNodeBase::forwardTransactionMessage(routerMsg *msg, simtime_t arrivalTi
         msg->setHopCount(msg->getHopCount()+1);
 
         // update service arrival times
-        neighbor->serviceArrivalTimeStamps.push_back(make_tuple(simTime(), arrivalTime));
+        neighbor->serviceArrivalTimeStamps.push_back(make_tuple(simTime(), arrivalTime, transMsg->getAmount()));
         if (neighbor->serviceArrivalTimeStamps.size() > _serviceArrivalWindow)
            neighbor->serviceArrivalTimeStamps.pop_front(); 
 
