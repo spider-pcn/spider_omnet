@@ -146,7 +146,7 @@ def generate_graph(size, graph_type):
 # generate extra end host nodes if need be
 # make the first line list of landmarks for this topology
 def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts,\
-        randomize_init_bal=False, random_channel_capacity=False):
+        randomize_init_bal=False, random_channel_capacity=False, is_lnd=False):
     f1 = open(output_filename, "w+")
 
     offset = G.number_of_nodes()

@@ -1090,12 +1090,12 @@ void hostNodeBase::initialize() {
         _hasQueueCapacity = true;
         _queueCapacity = 100;
 
-        _transStatStart = 5000;
-        _transStatEnd = 7000;
-        _waterfillingStartTime = 3500;
-        _landmarkRoutingStartTime = 3500;
-        _shortestPathStartTime = 4000;
-        _shortestPathEndTime = 7100;
+        _transStatStart = 3000;
+        _transStatEnd = 5000;
+        _waterfillingStartTime = 2000;
+        _landmarkRoutingStartTime = 2300;
+        _shortestPathStartTime = 2300;
+        _shortestPathEndTime = 5200;
 
         _splitSize = 1.0;
 
