@@ -199,6 +199,19 @@ void hostNodeWaterfilling::handleTimeOutMessage(routerMsg* ttmsg){
         //is at the sender
         int transactionId = toutMsg->getTransactionId();
         int destination = toutMsg->getReceiver();
+        deque<routerMsg*>* transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
+        // check if txn is still in just sender queue
+        auto iter = find_if(transList->begin(),
+           transList->end(),
+           [&transactionId](const routerMsg* p)
+           { transactionMsg *transMsg = check_and_cast<transactionMsg *>(p->getEncapsulatedPacket());
+             return transMsg->getTransactionId()  == transactionId; });
+
+        if (iter!=transList->end()) {
+            deleteTransaction(*iter);
+            transList->erase(iter);
+        }
+
        
         for (auto p : (nodeToShortestPathsMap[destination])){
             int pathIndex = p.first;
@@ -273,8 +286,10 @@ void hostNodeWaterfilling::handleProbeMessage(routerMsg* ttmsg){
         
         if (destNodeToNumTransPending[destNode] > 0){
             // service first transaction on path
-            handleTransactionMessageSpecialized(nodeToDestInfo[destNode].transWaitingToBeSent.front());
-            nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
+            if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {
+                handleTransactionMessageSpecialized(nodeToDestInfo[destNode].transWaitingToBeSent.front());
+                nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
+            }
             
             //reset the probe message to send again
            nodeToShortestPathsMap[destNode][pathIdx].isProbeOutstanding = true;
