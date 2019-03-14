@@ -508,9 +508,11 @@ void hostNodeWaterfilling::initializeProbes(vector<vector<int>> kShortestPaths, 
 void hostNodeWaterfilling::restartProbes(int destNode) {
     for (auto p: nodeToShortestPathsMap[destNode] ){
         PathInfo pathInformation = p.second;
-        nodeToShortestPathsMap[destNode][p.first].isProbeOutstanding = true;
-        routerMsg * msg = generateProbeMessage(destNode, p.first, p.second.path);
-        forwardProbeMessage(msg);
+        if (nodeToShortestPathsMap[destNode][p.first].isProbeOutstanding == false) {
+            nodeToShortestPathsMap[destNode][p.first].isProbeOutstanding = true;
+            routerMsg * msg = generateProbeMessage(destNode, p.first, p.second.path);
+            forwardProbeMessage(msg);
+        }
     }
 }
 

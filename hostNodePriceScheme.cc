@@ -485,8 +485,9 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                 if (pInfo->isSendTimerSet == false) {
                     simtime_t timeToNextSend = pInfo->timeToNextSend;
                     if (simTime() > timeToNextSend) {
-                        timeToNextSend = simTime() + _epsilon;
-                    }               
+                        timeToNextSend = simTime() + 0.0001;
+                    }
+                    cancelEvent(pInfo->triggerTransSendMsg);            
                     scheduleAt(timeToNextSend, pInfo->triggerTransSendMsg);
                     pInfo->isSendTimerSet = true;
                 }
@@ -992,13 +993,14 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         }
 
         //Update the  “time when next transaction can be sent” 
-        double bound = _reschedulingEnabled ? _epsilon : 1.0;
+        double bound = _reschedulingEnabled ? 0.0001  : 1.0;
         double rateToSendTrans = max(p->rateToSendTrans, bound);
         p->timeToNextSend = simTime() + max(transMsg->getAmount()/rateToSendTrans, bound);
         
         //If there are more transactions queued up, reschedule timer
         //if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0){
-            scheduleAt(p->timeToNextSend, ttmsg);
+        cancelEvent(ttmsg);
+        scheduleAt(p->timeToNextSend, ttmsg);
         /*} else {
             p->isSendTimerSet = false;
         }*/
@@ -1011,6 +1013,7 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         double lastTxnSize = p->lastTransSize;
         p->timeToNextSend = simTime() +
                 max(lastTxnSize/rateToSendTrans, _epsilon);
+        cancelEvent(ttmsg);
         scheduleAt(p->timeToNextSend, ttmsg);
         p->amtAllowedToSend = 0.0;
           

@@ -420,8 +420,6 @@ bool hostNodeLandmarkRouting::randomSplit(double totalAmt, vector<double> bottle
     set<int> nextSet;
     double remainingAmt = totalAmt;
 
-    cout << "totalAmt " << totalAmt;
-
     // start with non-zero bottlneck paths
     for (int i = 0; i < bottlenecks.size(); i++)
         if (bottlenecks[i] > 0)
