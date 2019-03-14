@@ -37,6 +37,7 @@ class hostNodePriceScheme : public hostNodeBase {
 
         // modified message handlers
         virtual void handleMessage(cMessage *msg) override;
+        virtual void handleTimeOutMessage(routerMsg *msg) override;
         virtual void handleTransactionMessageSpecialized(routerMsg *msg) override;
         virtual void handleStatMessage(routerMsg *msg) override;
         virtual void handleAckMessageSpecialized(routerMsg* ttmsg) override;

@@ -5,7 +5,7 @@ using namespace omnetpp;
 
 class DestInfo{
 public:
-    stack<routerMsg *> transWaitingToBeSent;
+    deque<routerMsg *> transWaitingToBeSent;
     
 
     // units are txns per second

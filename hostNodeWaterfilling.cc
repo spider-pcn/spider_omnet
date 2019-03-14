@@ -97,7 +97,7 @@ void hostNodeWaterfilling::handleTransactionMessageSpecialized(routerMsg* ttmsg)
     double waitTime = _maxTravelTime;
     
     // txn at receiver
-    if (!ttmsg->isSelfMessage()) {
+    if (ttmsg->getRoute()[hopCount] == destNode) {
         // add to incoming units
         int prevNode = ttmsg->getRoute()[hopCount - 1];
         map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
@@ -155,10 +155,10 @@ void hostNodeWaterfilling::handleTransactionMessageSpecialized(routerMsg* ttmsg)
             bool recent = probesRecent(nodeToShortestPathsMap[destNode]);
             if (recent){
                 if ((!_timeoutEnabled) || (simTime() < (transMsg->getTimeSent() + transMsg->getTimeOut()))) { 
-                    splitTransactionForWaterfilling(ttmsg, transMsg->getAmount() == transMsg->getOriginalAmount());
+                    splitTransactionForWaterfilling(ttmsg, !transMsg->getIsAttempted());
                     double amtRemaining = transMsg->getAmount();
                     if (amtRemaining > 0 + _epsilon) {
-                        scheduleAt(simTime() + waitTime, ttmsg);
+                        pushIntoSenderQueue(&(nodeToDestInfo[destNode]), ttmsg);
                     }
                     else {
                         ttmsg->decapsulate();
@@ -181,7 +181,7 @@ void hostNodeWaterfilling::handleTransactionMessageSpecialized(routerMsg* ttmsg)
                 if (destNodeToNumTransPending[destNode] > 0) {
                     restartProbes(destNode);
                 }
-                scheduleAt(simTime() + waitTime, ttmsg);
+                pushIntoSenderQueue(&(nodeToDestInfo[destNode]), ttmsg);
                 return;
             }
         }
@@ -272,7 +272,11 @@ void hostNodeWaterfilling::handleProbeMessage(routerMsg* ttmsg){
         p->isProbeOutstanding = false;
         
         if (destNodeToNumTransPending[destNode] > 0){
-           //reset the probe message to send again
+            // service first transaction on path
+            handleTransactionMessageSpecialized(nodeToDestInfo[destNode].transWaitingToBeSent.front());
+            nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
+            
+            //reset the probe message to send again
            nodeToShortestPathsMap[destNode][pathIdx].isProbeOutstanding = true;
            vector<int> route = ttmsg->getRoute();
            reverse(route.begin(), route.end());
@@ -528,6 +532,7 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg, bo
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
     int destNode = transMsg->getReceiver();
     double remainingAmt = transMsg->getAmount();
+    transMsg->setIsAttempted(false);
     
     // if you want to choose at random between paths
     bool randomChoice = false; 
@@ -640,7 +645,10 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg, bo
     // accounting
     SplitState* splitInfo = &(_numSplits[myIndex()][transMsg->getLargerTxnId()]);
     bool firstLargerAttempt = (splitInfo->firstAttemptTime == -1);
-    if (remainingAmt < transMsg->getAmount()  && transMsg->getTimeSent() >= _transStatStart && 
+    if (splitInfo->firstAttemptTime == -1) {
+        splitInfo->firstAttemptTime = simTime().dbl();
+    }
+    if (transMsg->getTimeSent() >= _transStatStart && 
             transMsg->getTimeSent() <= _transStatEnd) {
         if (firstAttempt && firstLargerAttempt) 
             statRateAttempted[destNode] = statRateAttempted[destNode] + 1;
@@ -678,9 +686,7 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg, bo
             
             // increment numAttempted per path
             pathInfo->statRateAttempted += 1;
-            if (splitInfo->firstAttemptTime == -1) {
-                splitInfo->firstAttemptTime = simTime().dbl();
-            }
+
 
             handleTransactionMessage(waterMsg, true/*revisit*/);
             

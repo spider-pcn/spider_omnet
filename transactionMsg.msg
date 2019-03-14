@@ -25,7 +25,7 @@ packet transactionMsg
     double timeOut;
     int htlcIndex;
     int pathIndex;
-    double originalAmount;
+    bool isAttempted; 
     double largerTxnId;
 }
 

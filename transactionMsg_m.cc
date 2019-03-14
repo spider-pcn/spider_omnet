@@ -191,7 +191,7 @@ transactionMsg::transactionMsg(const char *name, short kind) : ::omnetpp::cPacke
     this->timeOut = 0;
     this->htlcIndex = 0;
     this->pathIndex = 0;
-    this->originalAmount = 0;
+    this->isAttempted = false;
     this->largerTxnId = 0;
 }
 
@@ -224,7 +224,7 @@ void transactionMsg::copy(const transactionMsg& other)
     this->timeOut = other.timeOut;
     this->htlcIndex = other.htlcIndex;
     this->pathIndex = other.pathIndex;
-    this->originalAmount = other.originalAmount;
+    this->isAttempted = other.isAttempted;
     this->largerTxnId = other.largerTxnId;
 }
 
@@ -241,7 +241,7 @@ void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->timeOut);
     doParsimPacking(b,this->htlcIndex);
     doParsimPacking(b,this->pathIndex);
-    doParsimPacking(b,this->originalAmount);
+    doParsimPacking(b,this->isAttempted);
     doParsimPacking(b,this->largerTxnId);
 }
 
@@ -258,7 +258,7 @@ void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->timeOut);
     doParsimUnpacking(b,this->htlcIndex);
     doParsimUnpacking(b,this->pathIndex);
-    doParsimUnpacking(b,this->originalAmount);
+    doParsimUnpacking(b,this->isAttempted);
     doParsimUnpacking(b,this->largerTxnId);
 }
 
@@ -362,14 +362,14 @@ void transactionMsg::setPathIndex(int pathIndex)
     this->pathIndex = pathIndex;
 }
 
-double transactionMsg::getOriginalAmount() const
+bool transactionMsg::getIsAttempted() const
 {
-    return this->originalAmount;
+    return this->isAttempted;
 }
 
-void transactionMsg::setOriginalAmount(double originalAmount)
+void transactionMsg::setIsAttempted(bool isAttempted)
 {
-    this->originalAmount = originalAmount;
+    this->isAttempted = isAttempted;
 }
 
 double transactionMsg::getLargerTxnId() const
@@ -494,7 +494,7 @@ const char *transactionMsgDescriptor::getFieldName(int field) const
         "timeOut",
         "htlcIndex",
         "pathIndex",
-        "originalAmount",
+        "isAttempted",
         "largerTxnId",
     };
     return (field>=0 && field<12) ? fieldNames[field] : nullptr;
@@ -514,7 +514,7 @@ int transactionMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='t' && strcmp(fieldName, "timeOut")==0) return base+7;
     if (fieldName[0]=='h' && strcmp(fieldName, "htlcIndex")==0) return base+8;
     if (fieldName[0]=='p' && strcmp(fieldName, "pathIndex")==0) return base+9;
-    if (fieldName[0]=='o' && strcmp(fieldName, "originalAmount")==0) return base+10;
+    if (fieldName[0]=='i' && strcmp(fieldName, "isAttempted")==0) return base+10;
     if (fieldName[0]=='l' && strcmp(fieldName, "largerTxnId")==0) return base+11;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
@@ -538,7 +538,7 @@ const char *transactionMsgDescriptor::getFieldTypeString(int field) const
         "double",
         "int",
         "int",
-        "double",
+        "bool",
         "double",
     };
     return (field>=0 && field<12) ? fieldTypeStrings[field] : nullptr;
@@ -618,7 +618,7 @@ std::string transactionMsgDescriptor::getFieldValueAsString(void *object, int fi
         case 7: return double2string(pp->getTimeOut());
         case 8: return long2string(pp->getHtlcIndex());
         case 9: return long2string(pp->getPathIndex());
-        case 10: return double2string(pp->getOriginalAmount());
+        case 10: return bool2string(pp->getIsAttempted());
         case 11: return double2string(pp->getLargerTxnId());
         default: return "";
     }
@@ -644,7 +644,7 @@ bool transactionMsgDescriptor::setFieldValueAsString(void *object, int field, in
         case 7: pp->setTimeOut(string2double(value)); return true;
         case 8: pp->setHtlcIndex(string2long(value)); return true;
         case 9: pp->setPathIndex(string2long(value)); return true;
-        case 10: pp->setOriginalAmount(string2double(value)); return true;
+        case 10: pp->setIsAttempted(string2bool(value)); return true;
         case 11: pp->setLargerTxnId(string2double(value)); return true;
         default: return false;
     }

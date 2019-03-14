@@ -2,6 +2,7 @@
 #include <queue>
 
 #define MSGSIZE 100
+#define MAX_SENDER_PER_DEST_QUEUE 2000
 
 //global parameters
 map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
@@ -106,6 +107,24 @@ int hostNodeBase::sampleFromDistribution(vector<double> probabilities) {
     return 0;
 }
 
+void hostNodeBase::pushIntoSenderQueue(DestInfo* destInfo, routerMsg* ttmsg) {
+    destInfo->transWaitingToBeSent.push_front(ttmsg);
+    if (destInfo->transWaitingToBeSent.size() > MAX_SENDER_PER_DEST_QUEUE) {
+        routerMsg* lastMsg = destInfo->transWaitingToBeSent.back();
+        destInfo->transWaitingToBeSent.pop_back();
+        deleteTransaction(lastMsg);
+    }
+}
+
+
+void hostNodeBase::deleteTransaction(routerMsg* ttmsg) {
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+    int destination = transMsg->getReceiver();
+    statNumTimedOut[destination] += 1;
+    ttmsg->decapsulate();
+    delete transMsg;
+    delete ttmsg;
+}
 
 /* generate next Transaction to be processed at this node 
  * this is an optimization to prevent all txns from being loaded initially
@@ -211,7 +230,6 @@ routerMsg* hostNodeBase::generateTransactionMessageForPath(double amt,
     
     transactionMsg *msg = new transactionMsg(msgname);
     msg->setAmount(amt);
-    msg->setOriginalAmount(amt);
     msg->setTimeSent(transMsg->getTimeSent());
     msg->setSender(transMsg->getSender());
     msg->setReceiver(transMsg->getReceiver());
@@ -255,7 +273,6 @@ routerMsg *hostNodeBase::generateTransactionMessage(TransUnit unit) {
     
     transactionMsg *msg = new transactionMsg(msgname);
     msg->setAmount(unit.amount);
-    msg->setOriginalAmount(unit.amount);
     msg->setTimeSent(unit.timeSent);
     msg->setSender(unit.sender);
     msg->setReceiver(unit.receiver);
@@ -1070,8 +1087,8 @@ void hostNodeBase::initialize() {
         _priceSchemeEnabled = par("priceSchemeEnabled");
         _serviceArrivalWindow = par("serviceArrivalWindow");
 
-        _hasQueueCapacity = false;
-        _queueCapacity = 0;
+        _hasQueueCapacity = true;
+        _queueCapacity = 100;
 
         _transStatStart = 5000;
         _transStatEnd = 7000;
@@ -1299,12 +1316,12 @@ void hostNodeBase::deleteMessagesInQueues(){
     for (auto iter = nodeToDestInfo.begin(); iter!=nodeToDestInfo.end(); iter++){
         int dest = iter->first;
         while ((nodeToDestInfo[dest].transWaitingToBeSent).size() > 0) {
-            routerMsg * rMsg = nodeToDestInfo[dest].transWaitingToBeSent.top();
+            routerMsg * rMsg = nodeToDestInfo[dest].transWaitingToBeSent.front();
             auto tMsg = rMsg->getEncapsulatedPacket();
             rMsg->decapsulate();
             delete tMsg;
             delete rMsg;
-            nodeToDestInfo[dest].transWaitingToBeSent.pop();
+            nodeToDestInfo[dest].transWaitingToBeSent.pop_front();
         }
     }
 }

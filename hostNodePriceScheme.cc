@@ -24,6 +24,7 @@ double _minWindow;
 double _xi;
 double _routerQueueDrainTime;
 
+
 Define_Module(hostNodePriceScheme);
 
 /* generate the trigger message to initiate price Updates periodically
@@ -280,6 +281,65 @@ void hostNodePriceScheme::handleMessage(cMessage *msg) {
     }
 }
 
+void hostNodePriceScheme::handleTimeOutMessage(routerMsg* ttmsg) {
+    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
+    int destination = toutMsg->getReceiver();
+    int transactionId = toutMsg->getTransactionId();
+    deque<routerMsg*> *transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
+    
+    if (ttmsg->isSelfMessage()) {
+        // check if txn is still in just sender queue
+        auto iter = find_if(transList->begin(),
+           transList->end(),
+           [&transactionId](const routerMsg* p)
+           { transactionMsg *transMsg = check_and_cast<transactionMsg *>(p->getEncapsulatedPacket());
+             return transMsg->getTransactionId()  == transactionId; });
+
+        if (iter!=transList->end()) {
+            deleteTransaction(*iter);
+            transList->erase(iter);
+            ttmsg->decapsulate();
+            delete toutMsg;
+            delete ttmsg;
+            return;
+        }
+
+        // send out a time out message on the path that hasn't acked all of it
+        for (auto p : (nodeToShortestPathsMap[destination])){
+            int pathIndex = p.first;
+            tuple<int,int> key = make_tuple(transactionId, pathIndex);
+                        
+            if (transPathToAckState[key].amtSent != transPathToAckState[key].amtReceived) {
+                routerMsg* psMsg = generateTimeOutMessageForPath(
+                    nodeToShortestPathsMap[destination][p.first].path, 
+                    transactionId, destination);
+                // TODO: what if a transaction on two different paths have same next hop?
+                int nextNode = (psMsg->getRoute())[psMsg->getHopCount()+1];
+                CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
+                        simTime(), -1, nextNode, destination);
+                canceledTransactions.insert(ct);
+                forwardMessage(psMsg);
+            }
+            else {
+                transPathToAckState.erase(key);
+            }
+        }
+        ttmsg->decapsulate();
+        delete toutMsg;
+        delete ttmsg;
+    }
+    else {
+        // at the receiver
+        CanceledTrans ct = make_tuple(toutMsg->getTransactionId(),simTime(),
+                (ttmsg->getRoute())[ttmsg->getHopCount()-1], -1, toutMsg->getReceiver());
+        canceledTransactions.insert(ct);
+        ttmsg->decapsulate();
+        delete toutMsg;
+        delete ttmsg;
+    }
+}
+
+
 /* main routine for handling a new transaction under the pricing scheme
  * In particular, initiate price probes, assigns a txn to a path if the 
  * rate for that path allows it, otherwise queues it at the sender
@@ -300,6 +360,13 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     if (simTime() == transMsg->getTimeSent()) {
         destNodeToNumTransPending[destNode]  += 1;
         nodeToDestInfo[destNode].transSinceLastInterval += 1;
+
+        //generate time out message here
+        // because queue is LIFO
+        if (_timeoutEnabled) {
+            routerMsg *toutMsg = generateTimeOutMessage(ttmsg);
+            scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
+        }
 
         if (transMsg->getTimeSent() >= _transStatStart && 
             transMsg->getTimeSent() <= _transStatEnd) {
@@ -348,7 +415,7 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
        
         //send on a path if no txns queued up and timer was in the path
         if ((destInfo->transWaitingToBeSent).size() > 0) {
-            destInfo->transWaitingToBeSent.push(ttmsg);
+            pushIntoSenderQueue(destInfo, ttmsg);
         } else {
             for (auto p: nodeToShortestPathsMap[destNode]) {
                 int pathIndex = p.first;
@@ -399,11 +466,7 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                     simtime_t newTimeToNextSend =  simTime() + max(transMsg->getAmount()/rateToUse, _epsilon);
                     pathInfo->timeToNextSend = newTimeToNextSend;
                     
-                    //generate time out message here, when path is decided
-                    if (_timeoutEnabled) {
-                        routerMsg *toutMsg = generateTimeOutMessage(ttmsg);
-                        scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
-                    }
+
                     
                     // if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
                     return;
@@ -411,7 +474,8 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
             }
             
             //transaction cannot be sent on any of the paths, queue transaction
-            destInfo->transWaitingToBeSent.push(ttmsg);
+            pushIntoSenderQueue(destInfo, ttmsg);
+
             for (auto p: nodeToShortestPathsMap[destNode]) {
                 PathInfo *pInfo = &(nodeToShortestPathsMap[destNode][p.first]);
                 if (pInfo->isSendTimerSet == false) {
@@ -869,8 +933,8 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
     if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0 && (!_windowEnabled || 
             (_windowEnabled && p->sumOfTransUnitsInFlight < p->window))){
         //remove the transaction $tu$ at the head of the queue
-        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.top();
-        nodeToDestInfo[destNode].transWaitingToBeSent.pop();
+        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
+        nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
         transactionMsg *transMsg = 
            check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
         
@@ -895,12 +959,6 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         // necessary for knowing what path to remove transaction in flight funds from
         tuple<int,int> key = make_tuple(transMsg->getTransactionId(), pathIndex); 
         transPathToAckState[key].amtSent += transMsg->getAmount();
-        
-        //generate time out message here, when path is decided
-        if (_timeoutEnabled) {
-          routerMsg *toutMsg = generateTimeOutMessage(msgToSend);
-          scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
-        }
 
         // cannot be cancelled at this point
         handleTransactionMessage(msgToSend, 1/*revisiting*/);
