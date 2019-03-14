@@ -192,18 +192,19 @@ void generateTransUnitList(string workloadFile){
                     continue;
                  }
             }
-            else if (_landmarkRoutingEnabled || _lndBaselineEnabled) 
+            else if (_landmarkRoutingEnabled || _lndBaselineEnabled) { 
                 if (timeSent < _landmarkRoutingStartTime || timeSent > _shortestPathEndTime) 
                     continue;
-            else if (!_priceSchemeEnabled) // shortest path
+            }
+            else if (!_priceSchemeEnabled) {// shortest path
                 if (timeSent < _shortestPathStartTime || timeSent > _shortestPathEndTime) 
                     continue;
+            }
             
             if (timeSent > lastTime)
                  lastTime = timeSent;
             // instantiate all the transUnits that need to be sent
             int numSplits = 0;
-            
             while (amount >= _splitSize && (_waterfillingEnabled || _priceSchemeEnabled)) {
                 TransUnit tempTU = TransUnit(_splitSize, timeSent, 
                         sender, receiver, priorityClass, hasTimeOut, timeOut, largerTxnID);
