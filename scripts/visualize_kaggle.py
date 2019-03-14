@@ -11,7 +11,7 @@ cdf = []
 cdf.append(prob[0])
 for i in range(1, len(prob)):
     cdf.append(prob[i] + cdf[i - 1])
-    if sizes[i] > 500 and index == -1:
+    if sizes[i] > 250 and index == -1:
         index = i
 
 #plt.plot(sizes, cdf)
@@ -33,8 +33,8 @@ for i in range(1, len(new_pdf)):
     new_cdf.append(new_pdf[i] + new_cdf[i - 1])
     exp_x2 += ((sizes[i] - mean) ** 2) * new_pdf[i]
 
-plt.plot(cut_off_sizes, new_cdf)
-plt.show()
+#plt.plot(cut_off_sizes, new_cdf)
+#plt.show()
 
 print math.sqrt(exp_x2)
 print mean

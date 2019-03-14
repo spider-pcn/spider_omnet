@@ -189,6 +189,8 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
         if random_channel_capacity:
             balance_for_this_channel = random.randint(balance_per_channel/2, 3 * balance_per_channel/2)
+        elif is_lnd:
+            balance_for_this_channel = G[e[0]][e[1]]['capacity'] 
         else:
             balance_for_this_channel = balance_per_channel
 
@@ -266,7 +268,8 @@ args.randomize_start_bal = args.randomize_start_bal == 'true'
 args.random_channel_capacity = args.random_channel_capacity == 'true'
 
 print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename, \
-        args.separate_end_hosts, args.randomize_start_bal, args.random_channel_capacity)
+        args.separate_end_hosts, args.randomize_start_bal, args.random_channel_capacity,\
+        args.graph_type.startswith('lnd_'))
 network_base = os.path.basename(args.network_name)
 
 for routing_alg in routing_alg_list:

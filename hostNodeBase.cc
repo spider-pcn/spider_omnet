@@ -1092,8 +1092,8 @@ void hostNodeBase::initialize() {
 
         _transStatStart = 5000;
         _transStatEnd = 7000;
-        _waterfillingStartTime = 3000;
-        _landmarkRoutingStartTime = 3000;
+        _waterfillingStartTime = 3500;
+        _landmarkRoutingStartTime = 3500;
         _shortestPathStartTime = 4000;
         _shortestPathEndTime = 7100;
 

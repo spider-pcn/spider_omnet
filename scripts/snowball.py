@@ -99,5 +99,11 @@ for filename in lnd_file_list:
 		graph_size = len(sampled_graph.nodes())
 		sampled_graph = prune_deg_one_nodes(sampled_graph)
 
-	nx.write_edgelist(sampled_graph, LND_FILE_PATH + filename + "_reducedsize" + ".edgelist")
+
+        """ make all node numbers start from 0 """
+        numbered_graph = nx.convert_node_labels_to_integers(sampled_graph)
+        print "graph size: ", numbered_graph.number_of_nodes(), " nodes" , \
+                numbered_graph.number_of_edges(), " edges"
+	
+        nx.write_edgelist(numbered_graph, LND_FILE_PATH + filename + "_reducedsize" + ".edgelist")
 

@@ -148,7 +148,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
                     txn_idx = np.random.choice(num_amts, 1, \
                                            p=amt_dist.item().get('p'))[0]
                     # map the index to a tx amount
-                    txn_size = round(amt_dist.item().get('bins')[txn_idx]/50.0, 1)
+                    txn_size = int(round(amt_dist.item().get('bins')[txn_idx]/50.0, 1))
                 else:                
                     txn_size = txn_size_mean
 
