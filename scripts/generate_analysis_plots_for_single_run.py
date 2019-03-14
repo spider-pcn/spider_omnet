@@ -498,5 +498,10 @@ def main():
         text_to_add = parse_sca_files(args.sca_file)
         plot_per_payment_channel_stats(args, text_to_add)
         plot_per_src_dest_stats(args, text_to_add)
-    parse_sca_files_overall(args.sca_file) 
+    
+    summary_stats = parse_sca_files_overall(args.sca_file) 
+    f = open(args.save + "_summary", "w+")
+    f.write(summary_stats)
+    f.close()
+
 main()

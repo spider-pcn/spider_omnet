@@ -225,6 +225,7 @@ void generateTransUnitList(string workloadFile){
             temp.numTotal = numSplits;
             temp.numReceived = 0;
             temp.numArrived = 0;
+            temp.numAttempted = 0;
             temp.firstAttemptTime = -1;
             _numSplits[sender][largerTxnID] = temp;
 

@@ -125,11 +125,19 @@ def parse_sca_files_overall(filename):
             else:
                 completion_time += value
 
+    
     print "Stats for ", filename
     print " Success ratio over arrived: ", num_completed/num_arrived, " over attempted", num_completed/num_attempted
     print " Success volume  over arrived: ", vol_completed/vol_arrived, \
             " over attempted", vol_completed/vol_attempted
     print " Avg completion time ", completion_time/num_completed
+
+    return "Stats for " + filename + " Success ratio over arrived: " + str(num_completed/num_arrived) +\
+            " over attempted" + str(num_completed/num_attempted) + \
+            " Success volume  over arrived: " + str(vol_completed/vol_arrived) + \
+            " over attempted" + str(vol_completed/vol_attempted) + \
+            " Avg completion time " + str(completion_time/max(num_completed, 1.0))
+
 
 
 

@@ -282,11 +282,12 @@ void hostNodePriceScheme::handleMessage(cMessage *msg) {
 }
 
 void hostNodePriceScheme::handleTimeOutMessage(routerMsg* ttmsg) {
-    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
+    hostNodeBase::handleTimeOutMessage(ttmsg);
+    /*timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
     int destination = toutMsg->getReceiver();
     int transactionId = toutMsg->getTransactionId();
     deque<routerMsg*> *transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
-    
+    cout << "timing out transaction " << transactionId << endl; 
     if (ttmsg->isSelfMessage()) {
         // check if txn is still in just sender queue
         auto iter = find_if(transList->begin(),
@@ -309,7 +310,8 @@ void hostNodePriceScheme::handleTimeOutMessage(routerMsg* ttmsg) {
             int pathIndex = p.first;
             tuple<int,int> key = make_tuple(transactionId, pathIndex);
                         
-            if (transPathToAckState[key].amtSent != transPathToAckState[key].amtReceived) {
+            if (transPathToAckState.count(key) > 0 && 
+                    transPathToAckState[key].amtSent != transPathToAckState[key].amtReceived) {
                 routerMsg* psMsg = generateTimeOutMessageForPath(
                     nodeToShortestPathsMap[destination][p.first].path, 
                     transactionId, destination);
@@ -336,7 +338,7 @@ void hostNodePriceScheme::handleTimeOutMessage(routerMsg* ttmsg) {
         ttmsg->decapsulate();
         delete toutMsg;
         delete ttmsg;
-    }
+    }*/
 }
 
 
@@ -360,13 +362,7 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     if (simTime() == transMsg->getTimeSent()) {
         destNodeToNumTransPending[destNode]  += 1;
         nodeToDestInfo[destNode].transSinceLastInterval += 1;
-
-        //generate time out message here
-        // because queue is LIFO
-        if (_timeoutEnabled) {
-            routerMsg *toutMsg = generateTimeOutMessage(ttmsg);
-            scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
-        }
+        splitInfo->firstAttemptTime = simTime().dbl();
 
         if (transMsg->getTimeSent() >= _transStatStart && 
             transMsg->getTimeSent() <= _transStatEnd) {
@@ -436,12 +432,20 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
 
                     // first attempt of larger txn
                     SplitState* splitInfo = &(_numSplits[myIndex()][transMsg->getLargerTxnId()]);
-                    if (splitInfo->firstAttemptTime == -1) {
-                        splitInfo->firstAttemptTime = simTime().dbl();
-                        
+                    if (splitInfo->numAttempted == 0) {
+                        splitInfo->numAttempted += 1;
                         if (transMsg->getTimeSent() >= _transStatStart && 
                             transMsg->getTimeSent() <= _transStatEnd) 
                             statRateAttempted[destNode] += 1;
+                        // /cout << "attempting transaction " << transactionId << endl;
+
+                        // generate time out message here
+                        // because queue is LIFO
+                        if (_timeoutEnabled) {
+                            routerMsg *toutMsg = generateTimeOutMessage(ttmsg);
+                            scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
+                        }
+
 
                     }
                     
@@ -966,11 +970,17 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         // update the number attempted to this destination and on this path
         p->statRateAttempted = p->statRateAttempted + 1;
 
+        // generate time out message here
+        // because queue is LIFO
+        if (_timeoutEnabled) {
+            routerMsg *toutMsg = generateTimeOutMessage(msgToSend);
+            scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
+        }
+
         // first attempt of larger txn
         SplitState* splitInfo = &(_numSplits[myIndex()][transMsg->getLargerTxnId()]);
-        if (splitInfo->firstAttemptTime == -1) {
-            splitInfo->firstAttemptTime = simTime().dbl();
-
+        if (splitInfo->numAttempted == 0) {
+            splitInfo->numAttempted += 1;
             if (transMsg->getTimeSent() >= _transStatStart && 
                 transMsg->getTimeSent() <= _transStatEnd)
                 statRateAttempted[destNode] += 1;
