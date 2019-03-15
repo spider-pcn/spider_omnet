@@ -18,19 +18,19 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
     "random_30_routers" "sw_sparse_40_routers")
 
-demand_scale=("30") # "60" "90")
-path_choices_dep_list=("waterfilling") # "landmarkRouting")  # "smoothWaterfilling")
+demand_scale=("5") # "60" "90")
+path_choices_dep_list=() # "landmarkRouting")  # "smoothWaterfilling")
 path_choices_indep_list=("shortestPath")
 random_init_bal=false
 random_capacity=false
 
 
 #general parameters that do not affect config names
-simulationLength=2000
+simulationLength=1000
 statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
-signalsEnabled=false
+signalsEnabled=true
 loggingEnabled=false
 
 # scheme specific parameters
@@ -61,7 +61,7 @@ mkdir -p ${PATH_NAME}
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=( 9 ) #10 11 13 22 24)
+array=( 6 ) #10 11 13 22 24)
 for i in "${array[@]}" 
 do
     network="${prefix[i]}_circ_net"
@@ -85,7 +85,7 @@ do
     fi
     
     # set delay amount
-    if [ ${prefix[i]:0:3} == "two" ]; then
+    if [[ (${prefix[i]:0:3} == "two") || (${prefix[i]:0:5} == "three") ]]; then
         delay="120"
     else
         delay="30"
@@ -116,6 +116,8 @@ do
         # figure out payment graph/workload topology
         if [ ${prefix[i]:0:9} == "five_line" ]; then
             payment_graph_topo="simple_line"
+        elif [ ${prefix[i]:0:5} == "three" ]; then
+            payment_graph_topo="simple_line"
         elif [ ${prefix[i]:0:4} == "five" ]; then
             payment_graph_topo="hardcoded_circ"
         elif [ ${prefix[i]:0:7} == "hotnets" ]; then
@@ -128,7 +130,7 @@ do
         echo $graph_type
 
         # STEP 2: create transactions corresponding to this experiment run
-        $PYTHON scripts/create_workload.py $workload poisson \
+        $PYTHON scripts/create_workload.py $workload uniform \
                 --graph-topo $payment_graph_topo \
                 --payment-graph-dag-percentage 0\
                 --topo-filename $topofile\

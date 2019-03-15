@@ -155,6 +155,23 @@ def aggregate_info_per_node(all_timeseries, vec_id_to_info_map, signal_type, is_
 
         signal_values =  timeseries
 
+        '''if signal_type == "numInQueue":
+            ggplot_file = open("ggplot_op", "a+")
+            time = [t[0] for t in timeseries]
+            value = [t[1] for t in timeseries]
+            if src_node == 0:
+                queue_id = 1
+            elif src_node == 2:
+                queue_id = 4
+            elif dest_node == 0:
+                queue_id = 2
+            else:
+                queue_id = 3
+            for t, v in zip(time, value):
+                if t > 295 and t < 310:
+                    ggplot_file.write("Q" + str(queue_id) + "," + str(t - 295) + "," + str(v) + "\n")
+            ggplot_file.close()'''
+
         if aggregate_per_path:
             path_id = int(signal_name.split("_")[1])
             cur_info = node_signal_info.get(src_node, dict())

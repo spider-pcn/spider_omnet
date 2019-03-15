@@ -46,7 +46,10 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
 
         start_nodes = [0, num_nodes - 1]
         end_nodes = [num_nodes - 1, 0]
-        amt_relative = [MEAN_RATE, MEAN_RATE]
+        amt_relative = [MEAN_RATE] * 2
+        '''start_nodes = [0, 2, 0, 1] 
+        end_nodes = [2, 0, 1, 0]
+        amt_relative = [MEAN_RATE, MEAN_RATE, 2*MEAN_RATE, 2*MEAN_RATE]'''
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
     elif payment_graph_topo == 'hardcoded_circ':
@@ -108,9 +111,11 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
         # constant transaction size generated at uniform intervals
         for k in range(len(start_nodes)):
             cur_time = 0
+            '''if (start_nodes[k] == 1 or end_nodes[k] == 1):
+                cur_time = 300'''
+
             while cur_time < total_time:
                 rate = amt_absolute[k]
-                
                 if log_normal:
                     txn_size = MIN_TXN_SIZE/10
                     while (txn_size < MIN_TXN_SIZE or txn_size > MAX_TXN_SIZE):
