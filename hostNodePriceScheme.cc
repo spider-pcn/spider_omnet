@@ -9,6 +9,7 @@ bool _secondOrderOptimization;
 // parameters for price scheme
 double _eta; //for price computation
 double _kappa; //for price computation
+double _capacityFactor; //for price computation
 double _tUpdate; //for triggering price updates at routers
 double _tQuery; //for triggering price query probes at hosts
 double _alpha;
@@ -1111,6 +1112,7 @@ void hostNodePriceScheme::initialize() {
 
         _eta = par("eta");
         _kappa = par("kappa");
+        _capacityFactor = par("capacityFactor");
         _tUpdate = par("updateQueryTime");
         _tQuery = par("updateQueryTime");
         _alpha = par("alpha");

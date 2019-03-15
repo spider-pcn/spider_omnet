@@ -28,6 +28,7 @@ parser.add_argument('--eta', type=float, help='step size for mu', dest='eta', de
 parser.add_argument('--kappa', type=float, help='step size for lambda', dest='kappa', default=0.01)
 parser.add_argument('--alpha', type=float, help='step size for rate', dest='alpha', default=0.01)
 parser.add_argument('--rho', type=float, help='nesterov or accelerated gradient parameter', dest='rho', default=0.05)
+parser.add_argument('--capacityFactor', type=float, help='fraction of capacity used for lambda', dest='capacityFactor')
 parser.add_argument('--update-query-time', type=float, help='time of update and query', \
         dest='updateQueryTime', default=0.8)
 parser.add_argument('--zeta', type=float, help='memory factor with demand estimation', dest='zeta', default=0.01)
@@ -80,6 +81,9 @@ if args.numPathChoices != 'default':
 else:   
     args.numPathChoices = '4'
 
+if args.capacityFactor != None:
+    configname = configname + "_capacityFactorTimes10_" + str(int(float(args.capacityFactor)*10))
+
 f = open(args.ini_filename, "w+")
 f.write("[General]\n\n")
 f.write("[Config " +  configname + "]\n")
@@ -109,7 +113,8 @@ if 'priceScheme' in args.routingScheme:
     f.write("**.rhoValue = " + str(args.rho) + "\n")
     f.write("**.xi = " + str(args.xi) + "\n")
     f.write("**.routerQueueDrainTime = " + str(args.routerQueueDrainTime) + "\n")
-
+    if args.capacityFactor != None:
+        f.write("**.capacityFactor = " + str(args.capacityFactor) + "\n")
 
 if args.routingScheme == "smoothWaterfilling":
     f.write("**.smoothWaterfillingEnabled = true\n")
