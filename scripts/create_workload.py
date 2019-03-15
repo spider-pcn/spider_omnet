@@ -6,6 +6,7 @@ import networkx as nx
 import random
 import json
 from config import *
+from max_circulation import *
 
 
 # generates the start and end nodes for a fixed set of topologies - hotnets/line/simple graph
@@ -73,7 +74,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
             demand_dict_dag = dag_demand(list(graph), mean=MEAN_RATE, \
                     std_dev=CIRCULATION_STD_DEV)
                     
-        demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) +                                 dag_frac * demand_dict_dag.get(key, 0) \
+        demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
                 for key in set(demand_dict_circ) | set(demand_dict_dag) } 
 
 
@@ -324,7 +325,8 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
     print "generated workload" 
-    print demand_dict
+
+    print "maximum circulation: ", max_circulation(demand_dict)
 
     if generate_json_also:
         generate_json_files(filename + '.json', whole_graph, inside_graph, start_nodes, end_nodes, amt_absolute)
