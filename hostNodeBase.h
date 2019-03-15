@@ -96,6 +96,9 @@ class hostNodeBase : public cSimpleModule {
         //helper functions common to all algorithms
         virtual bool printNodeToPaymentChannel();
         virtual int sampleFromDistribution(vector<double> probabilities);
+
+        virtual void pushIntoSenderQueue(DestInfo* destInfo, routerMsg* msg);
+        virtual void deleteTransaction(routerMsg* msg);
         virtual void generateNextTransaction();
         virtual simsignal_t registerSignalPerDestPath(string signalStart, 
               int pathIdx, int destNode);
@@ -133,14 +136,14 @@ class hostNodeBase : public cSimpleModule {
         virtual void handleClearStateMessage(routerMsg *msg);
         
         // message forwarders
-        virtual bool forwardTransactionMessage(routerMsg *msg);
+        virtual bool forwardTransactionMessage(routerMsg *msg, simtime_t arrivalTime);
         virtual void forwardMessage(routerMsg *msg);
 
         // core simulator functions
         virtual void initialize() override;
         virtual void finish() override;
         virtual void processTransUnits(int dest, 
-                vector<tuple<int, double , routerMsg *, Id>>& q);
+                vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q);
         virtual void deleteMessagesInQueues();
 };
 

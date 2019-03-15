@@ -26,5 +26,6 @@ packet ackMsg
     string secret=""; 
     double amount;
     bool hasTimeOut;
+    double largerTxnId;
  }
 

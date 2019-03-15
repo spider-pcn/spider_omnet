@@ -33,7 +33,8 @@
  *     double timeOut;
  *     int htlcIndex;
  *     int pathIndex;
- *     double originalAmount;
+ *     bool isAttempted;
+ *     double largerTxnId;
  * }
  * </pre>
  */
@@ -50,7 +51,8 @@ class transactionMsg : public ::omnetpp::cPacket
     double timeOut;
     int htlcIndex;
     int pathIndex;
-    double originalAmount;
+    bool isAttempted;
+    double largerTxnId;
 
   private:
     void copy(const transactionMsg& other);
@@ -89,8 +91,10 @@ class transactionMsg : public ::omnetpp::cPacket
     virtual void setHtlcIndex(int htlcIndex);
     virtual int getPathIndex() const;
     virtual void setPathIndex(int pathIndex);
-    virtual double getOriginalAmount() const;
-    virtual void setOriginalAmount(double originalAmount);
+    virtual bool getIsAttempted() const;
+    virtual void setIsAttempted(bool isAttempted);
+    virtual double getLargerTxnId() const;
+    virtual void setLargerTxnId(double largerTxnId);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const transactionMsg& obj) {obj.parsimPack(b);}

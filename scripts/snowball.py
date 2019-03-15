@@ -80,6 +80,7 @@ def prune_deg_one_nodes(sampled_graph):
 	return sampled_graph
 
 
+
 lnd_file_list = ["lnd_dec4_2018", "lnd_dec28_2018"]
 for filename in lnd_file_list: 
 	graph = nx.read_edgelist(LND_FILE_PATH + filename + ".edgelist")
@@ -102,10 +103,11 @@ for filename in lnd_file_list:
 		graph_size = len(sampled_graph.nodes())
 		sampled_graph = prune_deg_one_nodes(sampled_graph)
 
-	print "Graph size: ", len(sampled_graph.nodes())
-	print "Number of edges: ", len(sampled_graph.edges())
-	nx.draw(sampled_graph, nodesize=100)
-	plt.show()
+	""" make all node numbers start from 0 """
+	numbered_graph = nx.convert_node_labels_to_integers(sampled_graph)
+	print "graph size: ", numbered_graph.number_of_nodes(), " nodes" , \
+			numbered_graph.number_of_edges(), " edges"
 
-	nx.write_edgelist(graph, LND_FILE_PATH + filename + "_reducedsize" + ".edgelist")
+	nx.write_edgelist(numbered_graph, LND_FILE_PATH + filename + "_reducedsize" + ".edgelist")
+
 

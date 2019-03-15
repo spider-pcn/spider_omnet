@@ -1,5 +1,5 @@
 #!/bin/bash
-PATH_PREFIX="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/"
+PATH_NAME="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulations/"
 GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
 num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" \
@@ -18,8 +18,8 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
     "random_30_routers" "sw_sparse_40_routers")
 
-scale=30 # "60" "90")
-path_choices_dep_list=()
+demand_scale=("1") # "60" "90")
+path_choices_capacity_factor_dep_list=("priceSchemeWindow") # "landmarkRouting")  # "smoothWaterfilling")
 path_choices_indep_list=()
 random_init_bal=false
 random_capacity=false
@@ -27,10 +27,10 @@ random_capacity=false
 
 #general parameters that do not affect config names
 simulationLength=5000
-statCollectionRate=100
+statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
-signalsEnabled=false
+signalsEnabled=true
 loggingEnabled=false
 
 # scheme specific parameters
@@ -46,81 +46,79 @@ normalizer=100
 xi=1
 routerQueueDrainTime=5
 serviceArrivalWindow=300
+capacityFactor=0.9
+capacityFactorTimes10=9
 
-
+cp hostNodeBase.ned ${PATH_NAME}
+cp hostNodeWaterfilling.ned ${PATH_NAME}
+cp hostNodeLandmarkRouting.ned ${PATH_NAME}
+cp hostNodePriceScheme.ned ${PATH_NAME}
+cp hostNodeLndBaseline.ned ${PATH_NAME}
+cp routerNode.ned ${PATH_NAME}
 
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
-mkdir -p ${PATH_PREFIX}
-
-dag_percent=("5" "20" "40")
+mkdir -p ${PATH_NAME}
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=(11 22) #10 11 13 22 24)
+array=( 9 ) #10 11 13 22 24)
 for i in "${array[@]}" 
-do    
-    # create workload files and run different demand levels
-    for dag_amt in "${dag_percent[@]}"
-    do
-        # generate the graph first to ned file
-        PATH_NAME="${PATH_PREFIX}dag${dag_amt}/"
-        mkdir -p ${PATH_NAME}
-        
-        cp hostNodeBase.ned ${PATH_NAME}
-        cp hostNodeWaterfilling.ned ${PATH_NAME}
-        cp hostNodeLandmarkRouting.ned ${PATH_NAME}
-        cp hostNodePriceScheme.ned ${PATH_NAME}
-        cp hostNodeLndBaseline.ned ${PATH_NAME}
-        cp routerNode.ned ${PATH_NAME}
+do
+    network="${prefix[i]}_circ_net"
+    topofile="${PATH_NAME}${prefix[i]}_topo.txt"
+
+    # identify graph type for topology
+    if [ ${prefix[i]:0:2} == "sw" ]; then
+        graph_type="small_world"
+    elif [ ${prefix[i]:0:2} == "sf" ]; then
+        graph_type="scale_free"
+    elif [ ${prefix[i]:0:4} == "tree" ]; then
+        graph_type="tree"
+    elif [ ${prefix[i]:0:3} == "lnd" ]; then
+        graph_type=${prefix[i]}
+    elif [ ${prefix[i]} == "hotnets" ]; then
+        graph_type="hotnets_topo"
+    elif [ ${prefix[i]:0:6} == "random" ]; then
+        graph_type="random"
+    else
+        graph_type="simple_topologies"
+    fi
     
-        network="${prefix[i]}_dag${dag_amt}_net"
-        topofile="${PATH_NAME}${prefix[i]}_topo.txt"
+    # set delay amount
+    if [[ (${prefix[i]:0:3} == "two") || (${prefix[i]:0:5} == "three") ]]; then
+        delay="120"
+    else
+        delay="30"
+    fi
+    
+    # STEP 1: create topology
+    $PYTHON scripts/create_topo_ned_file.py $graph_type\
+            --network-name ${PATH_NAME}$network\
+            --topo-filename $topofile\
+            --num-nodes ${num_nodes[i]}\
+            --balance-per-channel $balance\
+            --separate-end-hosts \
+            --delay-per-channel $delay\
+            --randomize-start-bal $random_init_bal\
+            --random-channel-capacity $random_capacity 
 
-        # identify graph type for topology
-        if [ ${prefix[i]:0:2} == "sw" ]; then
-            graph_type="small_world"
-        elif [ ${prefix[i]:0:2} == "sf" ]; then
-            graph_type="scale_free"
-        elif [ ${prefix[i]:0:4} == "tree" ]; then
-            graph_type="tree"
-        elif [ ${prefix[i]:0:3} == "lnd" ]; then
-            graph_type=${prefix[i]}
-        elif [ ${prefix[i]} == "hotnets" ]; then
-            graph_type="hotnets_topo"
-        elif [ ${prefix[i]:0:6} == "random" ]; then
-            graph_type="random"
-        else
-            graph_type="simple_topologies"
-        fi
-        
-        # set delay amount
-        if [ ${prefix[i]:0:3} == "two" ]; then
-            delay="120"
-        else
-            delay="30"
-        fi
-        
-        # STEP 1: create topology
-        $PYTHON scripts/create_topo_ned_file.py $graph_type\
-                --network-name ${PATH_NAME}$network\
-                --topo-filename $topofile\
-                --num-nodes ${num_nodes[i]}\
-                --balance-per-channel $balance\
-                --separate-end-hosts \
-                --delay-per-channel $delay\
-                --randomize-start-bal $random_init_bal\
-                --random-channel-capacity $random_capacity  
 
-        # CREATE WORKLOAD
-        workloadname="${prefix[i]}_demand${scale}_dag${dag_amt}"
+    # create workload files and run different demand levels
+    for scale in "${demand_scale[@]}"
+    do
+
+        # generate the graph first to ned file
+        workloadname="${prefix[i]}_circ_demand${scale}"
         workload="${PATH_NAME}$workloadname"
         inifile="${PATH_NAME}${workloadname}_default.ini"
         payment_graph_topo="custom"
         
         # figure out payment graph/workload topology
         if [ ${prefix[i]:0:9} == "five_line" ]; then
+            payment_graph_topo="simple_line"
+        elif [ ${prefix[i]:0:5} == "three" ]; then
             payment_graph_topo="simple_line"
         elif [ ${prefix[i]:0:4} == "five" ]; then
             payment_graph_topo="hardcoded_circ"
@@ -134,33 +132,24 @@ do
         echo $graph_type
 
         # STEP 2: create transactions corresponding to this experiment run
-        echo $PYTHON scripts/create_workload.py $workload poisson \
+        $PYTHON scripts/create_workload.py $workload uniform \
                 --graph-topo $payment_graph_topo \
-                --payment-graph-dag-percentage ${dag_amt}\
+                --payment-graph-dag-percentage 0\
                 --topo-filename $topofile\
                 --experiment-time $simulationLength \
                 --balance-per-channel $balance\
                 --generate-json-also \
                 --timeout-value 5 \
-                --scale-amount $scale 
-        
-        $PYTHON scripts/create_workload.py $workload poisson \
-                --graph-topo $payment_graph_topo \
-                --payment-graph-dag-percentage ${dag_amt}\
-                --topo-filename $topofile\
-                --experiment-time $simulationLength \
-                --balance-per-channel $balance\
-                --generate-json-also \
-                --timeout-value 5 \
-                --scale-amount $scale 
+                --scale-amount $scale \
+                --txn-size-mean 1
 
-       
+
         # STEP 3: run the experiment
         # routing schemes where number of path choices doesn't matter
         for routing_scheme in "${path_choices_indep_list[@]}" 
         do
-          output_file=outputs/${prefix[i]}_dag${dag_amt}_${routing_scheme}_demand${scale}0
-          inifile=${PATH_NAME}${prefix[i]}_dag${dag_amt}_${routing_scheme}_demand${scale}.ini
+          output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0
+          inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}.ini
 
           # create the ini file with specified parameters
           python scripts/create_ini_file.py \
@@ -184,14 +173,14 @@ do
         done
 
         #routing schemes where number of path choices matter
-        for routing_scheme in  "${path_choices_dep_list[@]}" 
+        for routing_scheme in  "${path_choices_capacity_factor_dep_list[@]}" 
         do
           pids=""
           # if you add more choices for the number of paths you might run out of cores/memory
           for numPathChoices in 4
           do
-            output_file=outputs/${prefix[i]}_dag${dag_amt}_${routing_scheme}_demand${scale}0
-            inifile=${PATH_NAME}${prefix[i]}_dag${dag_amt}_${routing_scheme}_demand${scale}.ini
+            output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0_capacityFactorTimes10_${capacityFactorTimes10}
+            inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}.ini
 
             if [[ $routing_scheme =~ .*Window.* ]]; then
                 windowEnabled=true
@@ -220,6 +209,7 @@ do
                     --eta $eta\
                     --kappa $kappa\
                     --rho $rho\
+										--capacityFactor $capacityFactor\
                     --update-query-time $updateQueryTime\
                     --min-rate $minPriceRate\
                     --tau $tau\
@@ -234,7 +224,7 @@ do
             # run the omnetexecutable with the right parameters
             # in the background
             ./spiderNet -u Cmdenv -f ${inifile}\
-                -c ${network}_${routing_scheme}_demand${scale}_${numPathChoices} -n ${PATH_NAME}\
+                -c ${network}_${routing_scheme}_demand${scale}_${numPathChoices}_capacityFactorTimes10_${capacityFactorTimes10} -n ${PATH_NAME}\
                 > ${output_file}.txt &
             pids+=($!)
          done 
@@ -244,12 +234,12 @@ do
         # STEP 4: plot everything for this demand
         # TODO: add plotting script
         echo "Plotting"
-        payment_graph_type="dag${dag_amt}" 
+        payment_graph_type='circ' 
         if [ "$timeoutEnabled" = true ] ; then timeout="timeouts"; else timeout="no_timeouts"; fi
         if [ "$random_init_bal" = true ] ; then suffix="randomInitBal_"; else suffix=""; fi
         if [ "$random_capacity" = true ]; then suffix="${suffix}randomCapacity_"; fi
         echo $suffix
-        graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix[i]}_${payment_graph_type}_delay${delay}_demand${scale}0_${suffix}
+        graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix[i]}_delay${delay}_demand${scale}0_${suffix}_capacityFactorTimes10_${capacityFactorTimes10}
         vec_file_prefix=${PATH_NAME}results/${prefix[i]}_${payment_graph_type}_net_
         
         #routing schemes where number of path choices doesn't matter
@@ -271,12 +261,12 @@ do
         done
 
         #routing schemes where number of path choices matter
-        for routing_scheme in "${path_choices_dep_list[@]}"     
+        for routing_scheme in "${path_choices_capacity_factor_dep_list[@]}"     
         do
           for numPathChoices in 4
             do
-                vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${numPathChoices}-#0.vec
-                sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${numPathChoices}-#0.sca
+                vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${numPathChoices}_capacityFactorTimes10_${capacityFactorTimes10}-#0.vec
+                sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${numPathChoices}_capacityFactorTimes10_${capacityFactorTimes10}-#0.sca
 
 
                 python scripts/generate_analysis_plots_for_single_run.py \

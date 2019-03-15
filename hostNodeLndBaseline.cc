@@ -95,8 +95,8 @@ void hostNodeLndBaseline::initialize(){
         }
     }
 
-    _restorePeriod = 1.0;
-    _numAttemptsLndBaseline = 4;
+    _restorePeriod = 5.0;
+    _numAttemptsLndBaseline = 20;
     initializeMyChannels(); 
 
     //initialize list for channels we pruned 

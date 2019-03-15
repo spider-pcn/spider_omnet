@@ -414,24 +414,47 @@ void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
 
 /* function to compute a random split across all the paths for landmark routing
  */
-bool hostNodeLandmarkRouting::randomSplit(double totalAmt, vector<double> bottlenecks, vector<double> &amtPerPath) {
-    vector<double> randomParts;
-    for (int i = 0; i < bottlenecks.size() - 1; i++){
-        randomParts.push_back(rand() / (RAND_MAX + 1.));
-    }
-    randomParts.push_back(1);
-    sort(randomParts.begin(), randomParts.end());
+bool hostNodeLandmarkRouting::randomSplit(double totalAmt, vector<double> bottlenecks, 
+        vector<double> &amtPerPath) {
+    set<int> pathsPossible;
+    set<int> nextSet;
+    double remainingAmt = totalAmt;
 
-    amtPerPath[0] = totalAmt * randomParts[0];
-    if (amtPerPath[0] > bottlenecks[0])
-        return false;
+    // start with non-zero bottlneck paths
+    for (int i = 0; i < bottlenecks.size(); i++)
+        if (bottlenecks[i] > 0)
+            pathsPossible.insert(i);
 
-    for (int i = 1; i < bottlenecks.size(); i++) {
-        amtPerPath[i] = totalAmt*(randomParts[i] - randomParts[i - 1]);
-        if (amtPerPath[i] > bottlenecks[i])
-            return false;
+    // keep allocating while you can
+    while (remainingAmt > _epsilon - _epsilon && pathsPossible.size() > 0) {
+        vector<double> randomParts;
+        nextSet.clear();
+        randomParts.push_back(0);
+        for (int i = 0; i < pathsPossible.size() - 1; i++){
+            randomParts.push_back(rand() / (RAND_MAX + 1.));
+        }
+        randomParts.push_back(1);
+        sort(randomParts.begin(), randomParts.end());
+
+        int j = 0;
+        for (int i : pathsPossible) {
+            double amtToAdd = remainingAmt*(randomParts[j + 1] - randomParts[j]);
+            amtPerPath[i] += amtToAdd; 
+            if (amtPerPath[i] >= bottlenecks[i]) 
+                amtPerPath[i] = bottlenecks[i];
+            else
+                nextSet.insert(i);
+            remainingAmt -= amtToAdd;
+            j += 1;
+        }       
+        pathsPossible = nextSet;
     }
-    return true;
+    
+    /*cout << "splits were ";
+    for (double amt : amtPerPath)
+        cout << amt << ", ";
+    cout << " hencem returning " << (remainingAmt<= _epsilon) << endl;*/
+    return (remainingAmt <= _epsilon);
 }
 
 /* initializes the table with the paths to use for Landmark Routing, everything else as 

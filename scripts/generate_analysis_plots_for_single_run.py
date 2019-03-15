@@ -75,12 +75,15 @@ parser.add_argument('--x_local',
 parser.add_argument('--n_local',
         action='store_true',
         help='Plot the per channel number of txns when price based scheme is used')
-parser.add_argument('--bal_sum',
+parser.add_argument('--service_arrival_ratio',
         action='store_true',
-        help='Plot the per channel sum over update messages of balance when price based scheme is used')
-parser.add_argument('--inflight_sum',
+        help='Plot the per channel  service rate when price based scheme is used')
+parser.add_argument('--inflight_outgoing',
         action='store_true',
-        help='Plot the per channel sum of txns sent out over this time interval related price when price based scheme is used')
+        help='Plot the per channel number of outgoing txns price when price based scheme is used')
+parser.add_argument('--inflight_incoming',
+        action='store_true',
+        help='Plot the per channel number of incoming txns price when price based scheme is used')
 parser.add_argument('--rate_to_send',
         action='store_true',
         help='Plot the per path rate to send when price based scheme is used')
@@ -151,6 +154,23 @@ def aggregate_info_per_node(all_timeseries, vec_id_to_info_map, signal_type, is_
             continue
 
         signal_values =  timeseries
+
+        '''if signal_type == "numInQueue":
+            ggplot_file = open("ggplot_op", "a+")
+            time = [t[0] for t in timeseries]
+            value = [t[1] for t in timeseries]
+            if src_node == 0:
+                queue_id = 1
+            elif src_node == 2:
+                queue_id = 4
+            elif dest_node == 0:
+                queue_id = 2
+            else:
+                queue_id = 3
+            for t, v in zip(time, value):
+                if t > 295 and t < 310:
+                    ggplot_file.write("Q" + str(queue_id) + "," + str(t - 295) + "," + str(v) + "\n")
+            ggplot_file.close()'''
 
         if aggregate_per_path:
             path_id = int(signal_name.split("_")[1])
@@ -379,13 +399,19 @@ def plot_per_payment_channel_stats(args, text_to_add):
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "nValue", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "nValue")
 
-        if args.bal_sum:
-            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "balSum", True, is_both=False)
-            plot_relevant_stats(data_to_plot, pdf, "balSum")
+        if args.service_arrival_ratio:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "serviceRate", True, is_both=False)
+            plot_relevant_stats(data_to_plot, pdf, "service arrival ratio")
 
-        if args.inflight_sum:
-            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "inFlightSum", True, is_both=False)
-            plot_relevant_stats(data_to_plot, pdf, "inFlightSum")
+
+        if args.inflight_outgoing:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "inflightOutgoing", True, is_both=False)
+            plot_relevant_stats(data_to_plot, pdf, "inflight outgoing on channel")
+
+
+        if args.inflight_incoming:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "inflightIncoming", True, is_both=False)
+            plot_relevant_stats(data_to_plot, pdf, "inflight incoming on channel")
 
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
             os.path.basename(args.save) + "_per_channel_info.pdf"
@@ -485,9 +511,14 @@ def main():
     plt.rc('xtick', labelsize=32)    # fontsize of the tick labels
     plt.rc('ytick', labelsize=32)    # fontsize of the tick labels
     plt.rc('legend', fontsize=34)    # legend fontsize'''
-    parse_sca_files_overall(args.sca_file) 
     if args.detail == 'true':
         text_to_add = parse_sca_files(args.sca_file)
         plot_per_payment_channel_stats(args, text_to_add)
         plot_per_src_dest_stats(args, text_to_add)
+    
+    summary_stats = parse_sca_files_overall(args.sca_file) 
+    f = open(args.save + "_summary", "w+")
+    f.write(summary_stats)
+    f.close()
+
 main()

@@ -146,7 +146,7 @@ def generate_graph(size, graph_type):
 # generate extra end host nodes if need be
 # make the first line list of landmarks for this topology
 def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts,\
-        randomize_init_bal=False, random_channel_capacity=False):
+        randomize_init_bal=False, random_channel_capacity=False, is_lnd=False):
     f1 = open(output_filename, "w+")
 
     offset = G.number_of_nodes()
@@ -189,6 +189,8 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
         if random_channel_capacity:
             balance_for_this_channel = random.randint(balance_per_channel/2, 3 * balance_per_channel/2)
+        elif is_lnd:
+            balance_for_this_channel = G[e[0]][e[1]]['capacity'] 
         else:
             balance_for_this_channel = balance_per_channel
 
@@ -257,7 +259,7 @@ elif args.graph_type == 'simple_deadlock':
     G = simple_deadlock_graph
     args.separate_end_hosts = False
 elif args.graph_type.startswith('lnd_'):
-    G = nx.read_edgelist(LND_FILE_PATH + args.graph_type + '.edgelist')
+    G = nx.read_edgelist(LND_FILE_PATH + args.graph_type + '_reducedsize' + '.edgelist')
 else:
     G = simple_line_graph
     args.separate_end_hosts = False
@@ -266,7 +268,8 @@ args.randomize_start_bal = args.randomize_start_bal == 'true'
 args.random_channel_capacity = args.random_channel_capacity == 'true'
 
 print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename, \
-        args.separate_end_hosts, args.randomize_start_bal, args.random_channel_capacity)
+        args.separate_end_hosts, args.randomize_start_bal, args.random_channel_capacity,\
+        args.graph_type.startswith('lnd_'))
 network_base = os.path.basename(args.network_name)
 
 for routing_alg in routing_alg_list:

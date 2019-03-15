@@ -2,47 +2,50 @@
 PATH_NAME="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulations/"
 GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
-num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "40" "60" "80" "100" "200" "400" "600" "800" "1000" \
-    "10" "20" "40" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
+num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" \
+    "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
 
 balance=100
 
 prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
     "hotnets" "five_line" "lnd_dec4_2018" "lnd_dec28_2018" \
-    "sw_10_routers" "sw_20_routers" "sw_40_routers" "sw_60_routers" "sw_80_routers"  \
+    "sw_10_routers" "sw_20_routers" "sw_50_routers" "sw_60_routers" "sw_80_routers"  \
     "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
     "sw_800_routers" "sw_1000_routers"\
     "sf_10_routers" "sf_20_routers" \
-    "sf_40_routers" "sf_60_routers" "sf_80_routers"  \
+    "sf_50_routers" "sf_60_routers" "sf_80_routers"  \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
     "random_30_routers" "sw_sparse_40_routers")
 
-demand_scale=("30") # "60" "90")
-path_choices_dep_list=("waterfilling") # "landmarkRouting")  # "smoothWaterfilling")
+demand_scale=("5") # "60" "90")
+path_choices_dep_list=() # "landmarkRouting")  # "smoothWaterfilling")
 path_choices_indep_list=("shortestPath")
 random_init_bal=false
 random_capacity=false
 
 
 #general parameters that do not affect config names
-simulationLength=2000
+simulationLength=1000
 statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
-signalsEnabled=false
+signalsEnabled=true
 loggingEnabled=false
 
 # scheme specific parameters
-eta=0.2
-alpha=0.4
-kappa=0.2
+eta=0.025
+alpha=0.2
+kappa=0.025
 updateQueryTime=1.5
 minPriceRate=0.25
 zeta=0.01
 rho=0.04
 tau=10
 normalizer=100
+xi=1
+routerQueueDrainTime=5
+serviceArrivalWindow=300
 
 cp hostNodeBase.ned ${PATH_NAME}
 cp hostNodeWaterfilling.ned ${PATH_NAME}
@@ -58,7 +61,7 @@ mkdir -p ${PATH_NAME}
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=( 9 ) #10 11 13 22 24)
+array=( 6 ) #10 11 13 22 24)
 for i in "${array[@]}" 
 do
     network="${prefix[i]}_circ_net"
@@ -72,7 +75,7 @@ do
     elif [ ${prefix[i]:0:4} == "tree" ]; then
         graph_type="tree"
     elif [ ${prefix[i]:0:3} == "lnd" ]; then
-        graph_type=$prefix{i}
+        graph_type=${prefix[i]}
     elif [ ${prefix[i]} == "hotnets" ]; then
         graph_type="hotnets_topo"
     elif [ ${prefix[i]:0:6} == "random" ]; then
@@ -82,7 +85,7 @@ do
     fi
     
     # set delay amount
-    if [ ${prefix[i]:0:3} == "two" ]; then
+    if [[ (${prefix[i]:0:3} == "two") || (${prefix[i]:0:5} == "three") ]]; then
         delay="120"
     else
         delay="30"
@@ -113,6 +116,8 @@ do
         # figure out payment graph/workload topology
         if [ ${prefix[i]:0:9} == "five_line" ]; then
             payment_graph_topo="simple_line"
+        elif [ ${prefix[i]:0:5} == "three" ]; then
+            payment_graph_topo="simple_line"
         elif [ ${prefix[i]:0:4} == "five" ]; then
             payment_graph_topo="hardcoded_circ"
         elif [ ${prefix[i]:0:7} == "hotnets" ]; then
@@ -125,7 +130,7 @@ do
         echo $graph_type
 
         # STEP 2: create transactions corresponding to this experiment run
-        $PYTHON scripts/create_workload.py $workload poisson \
+        $PYTHON scripts/create_workload.py $workload uniform \
                 --graph-topo $payment_graph_topo \
                 --payment-graph-dag-percentage 0\
                 --topo-filename $topofile\
@@ -134,7 +139,7 @@ do
                 --generate-json-also \
                 --timeout-value 5 \
                 --scale-amount $scale \
-                --log-normal
+                --txn-size-mean 1
 
 
         # STEP 3: run the experiment
@@ -207,7 +212,10 @@ do
                     --tau $tau\
                     --normalizer $normalizer \
                     --window-enabled $windowEnabled\
-                    --demand-scale $scale 
+                    --demand-scale $scale\
+                    --xi $xi\
+                    --router-queue-drain-time $routerQueueDrainTime\
+                    --service-arrival-window $serviceArrivalWindow
 
 
             # run the omnetexecutable with the right parameters
@@ -268,8 +276,8 @@ do
                   --frac_completed_window \
                   --inflight --timeouts_sender \
                   --waiting --bottlenecks --probabilities \
-                  --mu_local --lambda --n_local --bal_sum --inflight_sum \
-                  --rate_to_send --price --mu_remote --demand \
+                  --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
+                  --inflight_incoming --rate_to_send --price --mu_remote --demand \
                   --rate_sent --amt_inflight_per_path
               done
         done

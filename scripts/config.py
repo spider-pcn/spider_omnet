@@ -55,8 +55,9 @@ five_line_graph.add_edge(2, 3)
 five_line_graph.add_edge(3, 4)
 
 # Filenames for Kaggle data
-KAGGLE_PATH = './data/'
+KAGGLE_PATH = '/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/data/'
 KAGGLE_AMT_DIST_FILENAME = KAGGLE_PATH + 'amt_dist.npy'
+KAGGLE_AMT_MODIFIED_DIST_FILENAME = KAGGLE_PATH + 'amt_dist_cutoff.npy'
 KAGGLE_TIME_DIST_FILENAME = KAGGLE_PATH + 'time_dist.npy'
 
 
@@ -68,6 +69,7 @@ CIRCULATION_STD_DEV = 2
 LARGE_BALANCE = 1000000000
 MIN_TXN_SIZE = 0.1
 MAX_TXN_SIZE = 10
+SMALLEST_UNIT=1
 
 EC2_INSTANCE_ADDRESS="ec2-18-213-2-219.compute-1.amazonaws.com"
 PORT_NUMBER=8000
@@ -75,7 +77,7 @@ PORT_NUMBER=8000
 # json parameters for lnd testbed
 ENDHOST_LND_ONE_WAY_CAPACITY = 1000000000
 ROUTER_CAPACITY = 100
-LND_FILE_PATH = "../lnd_data/"
+LND_FILE_PATH = "/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/lnd_data/"
 LOG_NORMAL_MEAN=-0.6152
 LOG_NORMAL_SCALE=0.7310
 
@@ -120,7 +122,8 @@ per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", 
         "priceLastSeenPerDestPerPath", "numTimedOutPerDest"])
 
 per_channel_list = []
-for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "nValue", "balSum", "inFlightSum", \
+for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "nValue", "serviceRate", "arrivalRate",
+        "inflightOutgoing", "inflightIncoming", \
         "numSent", "muRemote", "numInflight"]:
     INTERESTING_SIGNALS[signal] = signal + "PerChannel"
     per_channel_list.append(signal + "PerChannel")

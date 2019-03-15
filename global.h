@@ -3,6 +3,7 @@
 #include <omnetpp.h>
 #include <vector>
 #include <queue>
+#include <stack>
 #include "routerMsg_m.h"
 #include "transactionMsg_m.h"
 #include "ackMsg_m.h"
@@ -26,6 +27,7 @@
 #include "structs/TransUnit.h"
 #include "structs/CanceledTrans.h"
 #include "structs/AckState.h"
+#include "structs/SplitState.h"
 #include "structs/DestInfo.h"
 #include "structs/PathRateTuple.h"
 #include "structs/ProbeInfo.h"
@@ -44,6 +46,7 @@ struct LaterTransUnit
 //global parameters
 extern map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
 extern map<int, set<int>> _destList;
+extern map<int, map<double, SplitState>> _numSplits;
 extern int _numNodes;
 //number of nodes in network
 extern int _numRouterNodes;
@@ -81,12 +84,16 @@ extern double _rhoMu;
 
 extern double _eta; //for price computation
 extern double _kappa; //for price computation
+extern double _capacityFactor; //for price computation
 extern double _tUpdate; //for triggering price updates at routers
 extern double _tQuery; //for triggering price query probes
 extern double _alpha; //parameter for rate updates
 extern double _minPriceRate; // minimum rate to assign to all nodes when computing projections and such
 extern double _delta; // round trip propagation delay
 extern double _avgDelay;
+extern double _xi; // how fast you want to drain the queue relative to network rtt - want this to be less than 1
+extern double _routerQueueDrainTime;
+extern int _serviceArrivalWindow;
 
 extern bool _signalsEnabled;
 extern bool _loggingEnabled;
@@ -102,4 +109,8 @@ extern bool _secondOrderOptimization;
 
 extern double _transStatStart;
 extern double _transStatEnd;
-
+extern double _waterfillingStartTime;
+extern double _landmarkRoutingStartTime;
+extern double _shortestPathStartTime;
+extern double _shortestPathEndTime;
+extern double _splitSize;

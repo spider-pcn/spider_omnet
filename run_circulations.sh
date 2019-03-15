@@ -24,7 +24,7 @@ scale=10
 eta=0.025
 alpha=0.05
 kappa=0.025
-updateQueryTime=1.5
+updateQueryTime=1
 minPriceRate=0.25
 zeta=0.01
 rho=0
@@ -114,7 +114,9 @@ do
                 --normalizer $normalizer \
                 --window-enabled $windowEnabled \
                 --demand-scale ${scale}
-
+                --xi $xi\
+                --routerQueueDrainTime $routerQueueDrainTime\
+                --serviceArrivalWindow $serviceArrivalWindow
 
         # run the omnetexecutable with the right parameters
         # in the background

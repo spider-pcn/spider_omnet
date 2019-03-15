@@ -3,8 +3,6 @@
 #include "hostInitialize.h"
 
 
-
-
 bool probesRecent(map<int, PathInfo> probes){
     for (auto iter : probes){
         int key = iter.first;
@@ -164,11 +162,13 @@ void generateTransUnitList(string workloadFile){
     string line;
     ifstream myfile (workloadFile);
     double lastTime = -1; 
+    int lineNum = 0;
     if (myfile.is_open())
     {
         while ( getline (myfile,line) )
         {
             vector<string> data = split(line, ' ');
+            lineNum++;
 
             //data[0] = amount, data[1] = timeSent, data[2] = sender, data[3] = receiver, data[4] = priority class; (data[5] = time out)
             double amount = stod(data[0]);
@@ -177,6 +177,7 @@ void generateTransUnitList(string workloadFile){
             int receiver = stoi(data[3]);
             int priorityClass = stoi(data[4]);
             double timeOut=-1;
+            double largerTxnID = lineNum;
             double hasTimeOut = _timeoutEnabled;
             if (data.size()>5 && _timeoutEnabled){
                 timeOut = stoi(data[5]);
@@ -186,14 +187,48 @@ void generateTransUnitList(string workloadFile){
                 timeOut = 5.0;
             }
 
+            if (_waterfillingEnabled) { 
+                if (timeSent < _waterfillingStartTime || timeSent > _shortestPathEndTime) {
+                    continue;
+                 }
+            }
+            else if (_landmarkRoutingEnabled || _lndBaselineEnabled) { 
+                if (timeSent < _landmarkRoutingStartTime || timeSent > _shortestPathEndTime) 
+                    continue;
+            }
+            else if (!_priceSchemeEnabled) {// shortest path
+                if (timeSent < _shortestPathStartTime || timeSent > _shortestPathEndTime) 
+                    continue;
+            }
+            
             if (timeSent > lastTime)
                  lastTime = timeSent;
             // instantiate all the transUnits that need to be sent
-            TransUnit tempTU = TransUnit(amount, timeSent, sender, receiver, priorityClass, hasTimeOut, timeOut);
+            int numSplits = 0;
+            while (amount >= _splitSize && (_waterfillingEnabled || _priceSchemeEnabled)) {
+                TransUnit tempTU = TransUnit(_splitSize, timeSent, 
+                        sender, receiver, priorityClass, hasTimeOut, timeOut, largerTxnID);
+                amount -= _splitSize;
+                _transUnitList[sender].push(tempTU);
+                numSplits++;
+            }
+            if (amount > 0) {
+                TransUnit tempTU = TransUnit(amount, timeSent, sender, receiver, priorityClass, 
+                        hasTimeOut, timeOut, largerTxnID);
+                _transUnitList[sender].push(tempTU);
+                numSplits++;
+            }
 
             // push the transUnit into a priority queue indexed by the sender, 
-            _transUnitList[sender].push(tempTU);
             _destList[sender].insert(receiver);
+
+            SplitState temp = {};
+            temp.numTotal = numSplits;
+            temp.numReceived = 0;
+            temp.numArrived = 0;
+            temp.numAttempted = 0;
+            temp.firstAttemptTime = -1;
+            _numSplits[sender][largerTxnID] = temp;
 
         }
         //cout << "finished generateTransUnitList" << endl;
@@ -762,9 +797,37 @@ double getTotalAmount(map<Id, double> v) {
 }
 
 /* adds up everything in the vector and returns it */
-double getTotalAmount(vector<tuple<int, double, routerMsg*, Id >> queue) {
+double getTotalAmount(vector<tuple<int, double, routerMsg*, Id, simtime_t >> queue) {
     return accumulate(begin(queue), end(queue), 0.0, 
-            [](double sum, tuple<int, double, routerMsg*, Id>&p) { return sum + get<1>(p); });
+            [](double sum, tuple<int, double, routerMsg*, Id, simtime_t>&p) { return sum + get<1>(p); });
+}
+
+/*
+ * sortFunction - helper function used to sort queued transUnit list by ascending priorityClass, then by
+ *      ascending amount
+ *      note: largest element gets accessed first
+ */
+bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
+      const tuple<int,double, routerMsg*, Id, simtime_t> &b)
+{
+   if (get<0>(a) < get<0>(b)){
+      return false;
+   }
+   else if (get<0>(a) == get<0>(b)){
+      return (get<1>(a) > get<1>(b));
+   }
+   return true;
+}
+
+
+
+/*
+ * sortFunction - to do FIFO sorting 
+ */
+bool sortFIFO(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
+      const tuple<int,double, routerMsg*, Id, simtime_t> &b)
+{
+    return (get<4>(a).dbl() > get<4>(b).dbl());
 }
 
 #endif

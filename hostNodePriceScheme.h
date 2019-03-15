@@ -22,7 +22,8 @@ class hostNodePriceScheme : public hostNodeBase {
     protected:
         // message generators
         virtual routerMsg *generateTriggerPriceUpdateMessage();
-        virtual routerMsg *generatePriceUpdateMessage(double nLocal, double balSum, double sumInFlight, int dest);
+        virtual routerMsg *generatePriceUpdateMessage(double nLocal, double serviceRate, double arrivalRate, 
+                int queueSize, int reciever);
         virtual routerMsg *generateTriggerPriceQueryMessage();
         virtual routerMsg *generatePriceQueryMessage(vector<int> route, int routeIndex);
         virtual routerMsg *generateTriggerTransactionSendMessage(vector<int> route, 
@@ -36,12 +37,11 @@ class hostNodePriceScheme : public hostNodeBase {
 
         // modified message handlers
         virtual void handleMessage(cMessage *msg) override;
+        virtual void handleTimeOutMessage(routerMsg *msg) override;
         virtual void handleTransactionMessageSpecialized(routerMsg *msg) override;
         virtual void handleStatMessage(routerMsg *msg) override;
         virtual void handleAckMessageSpecialized(routerMsg* ttmsg) override;
         virtual void handleClearStateMessage(routerMsg *msg) override;
-        virtual void handleUpdateMessage(routerMsg *msg) override;
-        virtual bool forwardTransactionMessage(routerMsg *msg) override;
 
         // special messages for priceScheme
         virtual void handleTriggerPriceUpdateMessage(routerMsg *msg);
