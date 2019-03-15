@@ -2,6 +2,9 @@
 the snowball sampling method.
 Ref: https://arxiv.org/pdf/1308.5865.pdf """
 
+
+import matplotlib.pyplot as plt 
+
 import copy
 import networkx as nx 
 import random 
@@ -91,13 +94,18 @@ for filename in lnd_file_list:
 	""" max_sample_size is the maximum size of sampled graph. Returned graph 
 	might be smaller than that. k is how many neighbors to sample (by each node)
 	in each round """
-	sampled_graph = snowball_sample(graph, init_seed, max_sample_size=100, k=2)
+	sampled_graph = snowball_sample(graph, init_seed, max_sample_size=300, k=8)
 
 	""" prune out degree one nodes until there are no degree one nodes """
 	graph_size = len(sampled_graph.nodes()) + 1
 	while graph_size > len(sampled_graph.nodes()):
 		graph_size = len(sampled_graph.nodes())
 		sampled_graph = prune_deg_one_nodes(sampled_graph)
+
+	print "Graph size: ", len(sampled_graph.nodes())
+	print "Number of edges: ", len(sampled_graph.edges())
+	nx.draw(sampled_graph, nodesize=100)
+	plt.show()
 
 	nx.write_edgelist(graph, LND_FILE_PATH + filename + "_reducedsize" + ".edgelist")
 
