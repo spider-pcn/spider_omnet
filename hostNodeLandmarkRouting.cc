@@ -416,36 +416,29 @@ void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
  */
 bool hostNodeLandmarkRouting::randomSplit(double totalAmt, vector<double> bottlenecks, 
         vector<double> &amtPerPath) {
-    set<int> pathsPossible;
-    set<int> nextSet;
+    vector<int> pathsPossible;
+    vector<int> nextSet;
     double remainingAmt = totalAmt;
 
     // start with non-zero bottlneck paths
     for (int i = 0; i < bottlenecks.size(); i++)
         if (bottlenecks[i] > 0)
-            pathsPossible.insert(i);
+            pathsPossible.push_back(i);
 
     // keep allocating while you can
     while (remainingAmt > _epsilon - _epsilon && pathsPossible.size() > 0) {
-        vector<double> randomParts;
         nextSet.clear();
-        randomParts.push_back(0);
-        for (int i = 0; i < pathsPossible.size() - 1; i++){
-            randomParts.push_back(rand() / (RAND_MAX + 1.));
-        }
-        randomParts.push_back(1);
-        sort(randomParts.begin(), randomParts.end());
-
-        int j = 0;
+        random_shuffle(pathsPossible.begin(), pathsPossible.end());
         for (int i : pathsPossible) {
-            double amtToAdd = remainingAmt*(randomParts[j + 1] - randomParts[j]);
-            amtPerPath[i] += amtToAdd; 
-            if (amtPerPath[i] >= bottlenecks[i]) 
-                amtPerPath[i] = bottlenecks[i];
-            else
-                nextSet.insert(i);
+            double amtToAdd = round((remainingAmt - 1) * (rand() / RAND_MAX + 1.) + 1);
+            if (amtPerPath[i] + amtToAdd > bottlenecks[i])
+                amtToAdd = bottlenecks[i] - amtPerPath[i];
+            else 
+                nextSet.push_back(i);
+            amtPerPath[i] += amtToAdd;
             remainingAmt -= amtToAdd;
-            j += 1;
+            if (remainingAmt <= _epsilon)
+                break;
         }       
         pathsPossible = nextSet;
     }
@@ -453,7 +446,7 @@ bool hostNodeLandmarkRouting::randomSplit(double totalAmt, vector<double> bottle
     /*cout << "splits were ";
     for (double amt : amtPerPath)
         cout << amt << ", ";
-    cout << " hencem returning " << (remainingAmt<= _epsilon) << endl;*/
+    cout << " hence returning " << (remainingAmt<= _epsilon) << endl;*/
     return (remainingAmt <= _epsilon);
 }
 

@@ -14,6 +14,10 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         log_normal, kaggle_size, txn_size_mean, timeout_value, generate_json_also, circ_frac, std_workload=True):
     # by default ASSUMES NO END HOSTS
 
+    dag_frac = round(1 - circ_frac,3)
+    demand_dict_dag = dict()
+    demand_dict_circ = dict()
+
     # define start and end nodes and amounts
     # edge a->b in payment graph appears in index i as start_nodes[i]=a, and end_nodes[i]=b
     if payment_graph_topo == 'hotnets_topo':
@@ -52,6 +56,11 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         end_nodes = [2, 0, 1, 0]
         amt_relative = [MEAN_RATE, MEAN_RATE, 2*MEAN_RATE, 2*MEAN_RATE]'''
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+        
+        demand_dict_circ[0,num_nodes - 1] = MEAN_RATE
+        demand_dict_circ[num_nodes - 1, 0] = MEAN_RATE
+        demand_dict_dag[0, num_nodes - 1] = MEAN_RATE
+
 
     elif payment_graph_topo == 'hardcoded_circ':
         start_nodes = [0, 1, 2, 3, 4]
@@ -66,9 +75,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         num_nodes = graph.number_of_nodes()
     	
         """ generate circulation and dag demand """
-        dag_frac = round(1 - circ_frac,3)
-        demand_dict_dag = dict()
-        demand_dict_circ = dict()
+
 
         if circ_frac > 0:
     	    demand_dict_circ = circ_demand(list(graph), mean=MEAN_RATE, \
@@ -77,16 +84,18 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
             demand_dict_dag = dag_demand(list(graph), mean=MEAN_RATE, \
                     std_dev=CIRCULATION_STD_DEV)
                     
-        demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + 
-                dag_frac * demand_dict_dag.get(key, 0) \
-                for key in set(demand_dict_circ) | set(demand_dict_dag) } 
+    demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + 
+            dag_frac * demand_dict_dag.get(key, 0) \
+            for key in set(demand_dict_circ) | set(demand_dict_dag) }
+
+    print demand_dict
 
 
-        for i, j in demand_dict.keys():
-            start_nodes.append(i)
-            end_nodes.append(j)
-            amt_relative.append(demand_dict[i, j])
-        amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+    for i, j in demand_dict.keys():
+        start_nodes.append(i)
+        end_nodes.append(j)
+        amt_relative.append(demand_dict[i, j])
+    amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
 
     if generate_json_also:
@@ -278,11 +287,13 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
             std_dev=CIRCULATION_STD_DEV)
     
     circ_total = reduce(lambda x, value: x + value, demand_dict_circ.itervalues(), 0)
+    dag_total = reduce(lambda x, value: x + value, demand_dict_dag.itervalues(), 0)
 
     demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
             for key in set(demand_dict_circ) | set(demand_dict_dag) } 
     total = reduce(lambda x, value: x + value, demand_dict.itervalues(), 0)
     print "Circulation", circ_total
+    print "Dag", dag_total
     print "total", total
     print circ_frac
     print dag_frac
@@ -476,6 +487,7 @@ def dag_demand(node_list, mean, std_dev, gen_method="topological_sort"):
                 demand_dict[sender, receiver] = demand_dict.get((sender, receiver), 0) + 1
         else:
             perm = np.random.permutation(node_list)
+            print "root is ", perm[0]
 
             """ use a random ordering of the nodes """
             """ as the topological sort of the DAG demand to produce """
