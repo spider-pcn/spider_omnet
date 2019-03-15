@@ -128,7 +128,8 @@ void hostNodeWaterfilling::handleTransactionMessageSpecialized(routerMsg* ttmsg)
             splitInfo->numArrived += 1;
             
             if (transMsg->getTimeSent() >= _transStatStart && transMsg->getTimeSent() <= _transStatEnd) {
-                statAmtArrived[destNode] += transMsg->getAmount();
+                if (transMsg->getIsAttempted() == false)
+                    statAmtArrived[destNode] += transMsg->getAmount();
                 if (splitInfo->numArrived == 1) {
                     statNumArrived[destNode] += 1; 
                     statRateArrived[destNode] += 1;
@@ -223,7 +224,7 @@ void hostNodeWaterfilling::handleTimeOutMessage(routerMsg* ttmsg){
                     << "; pathIndex: " << pathIndex << endl;
             }
             
-            if (transPathToAckState[key].amtSent != transPathToAckState[key].amtReceived) {
+            if (transPathToAckState.count(key) > 0 && transPathToAckState[key].amtSent != transPathToAckState[key].amtReceived) {
                 routerMsg* waterTimeOutMsg = generateTimeOutMessageForPath(
                     nodeToShortestPathsMap[destination][p.first].path, 
                     transactionId, destination);
@@ -397,8 +398,9 @@ void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
         (transToAmtLeftToComplete[transactionId]).amtReceived += aMsg->getAmount();
         nodeToShortestPathsMap[receiver][pathIndex].statRateCompleted += 1;
         if (aMsg->getTimeSent() >= _transStatStart 
-                && aMsg->getTimeSent() <= _transStatEnd) 
+                && aMsg->getTimeSent() <= _transStatEnd) { 
             statAmtCompleted[receiver] += aMsg->getAmount();
+        }
 
         if (transToAmtLeftToComplete[transactionId].amtReceived > 
                 transToAmtLeftToComplete[transactionId].amtSent - _epsilon) {
@@ -409,7 +411,7 @@ void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
                     aMsg->getTimeSent() <= _transStatEnd) {
 
                 if (splitInfo->numTotal == splitInfo->numReceived) {
-                    statNumCompleted[receiver] += 1; 
+                    statNumCompleted[receiver] += 1;
                     statRateCompleted[receiver] += 1;
                     double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                     statCompletionTimes[receiver] += timeTaken * 1000;
@@ -549,7 +551,7 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg, bo
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
     int destNode = transMsg->getReceiver();
     double remainingAmt = transMsg->getAmount();
-    transMsg->setIsAttempted(false);
+    transMsg->setIsAttempted(true);
     
     // if you want to choose at random between paths
     bool randomChoice = false; 
@@ -667,9 +669,12 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg, bo
     }
     if (transMsg->getTimeSent() >= _transStatStart && 
             transMsg->getTimeSent() <= _transStatEnd) {
-        if (firstAttempt && firstLargerAttempt) 
+        if (firstAttempt && firstLargerAttempt) { 
             statRateAttempted[destNode] = statRateAttempted[destNode] + 1;
-        statAmtAttempted[destNode] += (transMsg->getAmount() - remainingAmt);
+        }
+        if (firstAttempt) {
+            statAmtAttempted[destNode] += transMsg->getAmount();
+        }
     }
 
     if (remainingAmt > transMsg->getAmount()) {

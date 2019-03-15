@@ -99,6 +99,10 @@ parser.add_argument('--price',
 parser.add_argument('--demand',
         action='store_true',
         help='Plot the per dest estimated demand when price based scheme is used')
+parser.add_argument('--numCompleted',
+        action='store_true',
+        help='Plot the per dest completion rate')
+
 
 
 parser.add_argument('--save',
@@ -496,6 +500,11 @@ def plot_per_src_dest_stats(args, text_to_add):
         if args.demand:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "demandEstimate", False)
             plot_relevant_stats(data_to_plot, pdf, "Demand Estimate per Path")
+
+        if args.numCompleted:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateCompleted", False)
+            plot_relevant_stats(data_to_plot, pdf, "number of txns completed")
+
 
  
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
