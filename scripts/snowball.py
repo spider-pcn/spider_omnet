@@ -9,6 +9,8 @@ import copy
 import networkx as nx 
 import random 
 from config import *
+import matplotlib.pyplot as plt
+import numpy as np
 
 random.seed(SEED)
 
@@ -109,5 +111,12 @@ for filename in lnd_file_list:
 			numbered_graph.number_of_edges(), " edges"
 
 	nx.write_edgelist(numbered_graph, LND_FILE_PATH + filename + "_reducedsize" + ".edgelist")
+
+        """capacities = nx.get_edge_attributes(sampled_graph, 'capacity')
+        capacities = [c / 10000 for c in capacities.values()]
+        print capacities
+        plt.hist(capacities, bins=100, normed=True, cumulative=True)
+        print np.mean(np.array(capacities)), "stddev" , np.std(np.array(capacities))
+        plt.show()"""
 
 

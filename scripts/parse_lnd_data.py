@@ -1,6 +1,8 @@
 import json
 import networkx as nx
 from config import *
+import matplotlib.pyplot as plt
+import numpy as np
 
 def read_file(filename):
     with open(filename) as f:
@@ -29,6 +31,12 @@ def read_file(filename):
 
     print "Number of nodes in lnd graph:", lnd_graph.number_of_nodes()
     print "Number of edge in lnd graph:", lnd_graph.number_of_edges()
+
+    capacities = nx.get_edge_attributes(lnd_graph, "capacity")
+    capacities = [int(str(c)) for c in capacities.values()]
+    plt.hist(capacities, bins=100, normed=True, cumulative=True)
+    print np.mean(np.array(capacities)), "stddev" , np.std(np.array(capacities))
+    plt.show()
 
     return lnd_graph
 
