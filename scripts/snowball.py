@@ -77,6 +77,7 @@ def prune_deg_one_nodes(sampled_graph):
 	return sampled_graph
 
 
+
 lnd_file_list = ["lnd_dec4_2018", "lnd_dec28_2018"]
 for filename in lnd_file_list: 
 	graph = nx.read_edgelist(LND_FILE_PATH + filename + ".edgelist")

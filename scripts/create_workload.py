@@ -62,7 +62,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         num_nodes = graph.number_of_nodes()
     	
         """ generate circulation and dag demand """
-        dag_frac = 1 - circ_frac
+        dag_frac = round(1 - circ_frac,3)
         demand_dict_dag = dict()
         demand_dict_circ = dict()
 
@@ -259,7 +259,8 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     
 
     """ generate circulation and dag demand """
-    dag_frac = 1 - circ_frac
+    circ_frac = round(circ_frac, 3)
+    dag_frac = round(1 - circ_frac, 3)
     demand_dict_dag = dict()
     demand_dict_circ = dict()
 
