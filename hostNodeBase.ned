@@ -22,6 +22,9 @@ simple hostNodeBase
 
                 bool windowEnabled = default(false);
 		int numPathChoices = default(4);
+                
+                double transStatStart = default(3000);
+                double transStatEnd = default(5000);
 
                 double alpha = default(0.01);
                 double kappa = default(0.01);

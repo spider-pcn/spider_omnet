@@ -1090,8 +1090,8 @@ void hostNodeBase::initialize() {
         _hasQueueCapacity = true;
         _queueCapacity = 100;
 
-        _transStatStart = 3000;
-        _transStatEnd = 5000;
+        _transStatStart = par("transStatStart");
+        _transStatEnd = par("transStatEnd");
         _waterfillingStartTime = 2000;
         _landmarkRoutingStartTime = 2300;
         _shortestPathStartTime = 2300;

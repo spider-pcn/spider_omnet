@@ -20,7 +20,9 @@ simple hostNodePriceScheme
                 bool windowEnabled = default(false);
                 bool landmarkRoutingEnabled = default(false);
                 bool lndBaselineEnabled = default(false);
-		
+	
+	        double transStatStart = default(3000);
+                double transStatEnd = default(5000);
                 int numPathChoices = default(4);
 
                 double alpha = default(0.01);

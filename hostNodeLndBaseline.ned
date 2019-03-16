@@ -32,6 +32,9 @@ simple hostNodeLndBaseline
                 double xi = default(1);
                 int serviceArrivalWindow = default(100);
                 double routerQueueDrainTime = default(1);
+
+                double transStatStart = default(3000);
+                double transStatEnd = default(5000);
                 
                 double tau = default(10);
                 double normalizer = default(100);

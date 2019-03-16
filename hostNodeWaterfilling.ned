@@ -20,6 +20,9 @@ simple hostNodeWaterfilling
                 bool landmarkRoutingEnabled = default(false);
                 bool lndBaselineEnabled = default(false);
 
+                double transStatStart = default(3000);
+                double transStatEnd = default(5000);
+                
                 bool windowEnabled = default(false);
 		int numPathChoices = default(4);
 

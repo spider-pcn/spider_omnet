@@ -21,6 +21,8 @@ parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath
         dest='routingScheme', default='default')
 parser.add_argument('--num-path-choices', type=str, help='number of path choices', dest='numPathChoices', default='default')
 parser.add_argument('--demand-scale', type=int, help='how much has demand been scaled up by', dest='demandScale')
+parser.add_argument('--transStatStart', type=int, help='when to start collecting stats from', default=3000)
+parser.add_argument('--transStatEnd', type=int,help='when to end stats collection', default=5000)
 
 
 # price based scheme parameters
@@ -99,6 +101,8 @@ f.write("**.timeoutClearRate = " + args.timeoutClearRate + "\n")
 f.write("**.timeoutEnabled = " + args.timeoutEnabled + "\n")
 f.write("**.numPathChoices = " + args.numPathChoices + "\n")
 f.write("**.serviceArrivalWindow = " + str(args.serviceArrivalWindow) + "\n")
+f.write("**.transStatStart = " + str(args.transStatStart) + "\n")
+f.write("**.transStatEnd = " + str(args.transStatEnd) + "\n")
 
 if args.routingScheme in ['waterfilling', 'smoothWaterfilling']:
     f.write("**.waterfillingEnabled = true\n")
