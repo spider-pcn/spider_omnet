@@ -299,6 +299,7 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
     auto tempChannels = _channels;
     for ( int it = 0; it < k; it++ ){
         route = dijkstraInputGraph(sender, receiver, tempChannels);
+        //printVector(route);
         if (route.size() <= 1){
             return shortestRoutes;
         }
@@ -334,12 +335,12 @@ void initializePathMaps(string filename) {
             if (data[0].compare("pair") == 0) {
                 if (lineNum > 1) {
                     _pathsMap[sender][receiver] = pathList;
-                    cout << data[0] <<  " " << data[1] << endl;
+                    // cout << data[0] <<  " " << data[1] << endl;
                 }
                 sender = stoi(data[1]);
                 receiver = stoi(data[2]);
                 pathList.clear();
-                cout << " sender " << sender << " receiver " << receiver << endl;
+                //cout << " sender " << sender << " receiver " << receiver << endl;
             }
             else {
                 vector<int> newPath;
@@ -347,7 +348,8 @@ void initializePathMaps(string filename) {
                     newPath.push_back(stoi(d));
                 }
                 pathList.push_back(newPath);
-                printVector(newPath);
+                if (_loggingEnabled) 
+                    printVector(newPath);
             }
         }
     }

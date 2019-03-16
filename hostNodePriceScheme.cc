@@ -379,7 +379,7 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
 
     // initiate price probes if it is a new destination
     if (nodeToShortestPathsMap.count(destNode) == 0 && ttmsg->isSelfMessage()){
-        vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
+        vector<vector<int>> kShortestRoutes = getKPaths(transMsg->getSender(),destNode, _kValue);
         initializePriceProbes(kShortestRoutes, destNode);
         //TODO: change to a queue implementation
         scheduleAt(simTime() + _maxTravelTime, ttmsg);

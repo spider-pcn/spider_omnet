@@ -145,7 +145,7 @@ void hostNodeWaterfilling::handleTransactionMessageSpecialized(routerMsg* ttmsg)
         
         // Compute paths and initialize probes if destination hasn't been encountered
         if (nodeToShortestPathsMap.count(destNode) == 0 ){
-            vector<vector<int>> kShortestRoutes = getKShortestRoutes(transMsg->getSender(),destNode, _kValue);
+            vector<vector<int>> kShortestRoutes = getKPaths(transMsg->getSender(),destNode, _kValue);
             initializeProbes(kShortestRoutes, destNode);
             scheduleAt(simTime() + waitTime, ttmsg);
             return;

@@ -20,7 +20,7 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
 
 demand_scale=("1" "3" "6" "9") # "60" "90")
 routing_scheme=$1
-path_choice=$2
+pathChoice=$2
 echo $routing_scheme
 random_init_bal=false
 random_capacity=false
@@ -63,6 +63,15 @@ cp routerNode.ned ${PATH_NAME}
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_NAME}
+
+if [ -z "$pathChoice" ]; then
+    pathChoice="shortest"
+fi
+
+echo $pathChoice
+
+
+
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
@@ -151,8 +160,8 @@ do
         # STEP 3: run the experiment
         # routing schemes where number of path choices doesn't matter
         if [ ${routing_scheme} ==  "shortestPath" ]; then 
-          output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0
-          inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}.ini
+          output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0_${pathChoice}
+          inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}_${pathChoice}.ini
 
           # create the ini file with specified parameters
           python scripts/create_ini_file.py \
@@ -170,11 +179,11 @@ do
                   --demand-scale ${scale}\
                   --transStatStart $transStatStart\
                   --transStatEnd $transStatEnd\
-                  --path-choice $path_choice
+                  --path-choice $pathChoice
 
 
           # run the omnetexecutable with the right parameters
-          ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme}_demand${scale} -n ${PATH_NAME}\
+          ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme}_demand${scale}_${pathChoice} -n ${PATH_NAME}\
                 > ${output_file}.txt & 
         
       else
@@ -182,8 +191,8 @@ do
           # if you add more choices for the number of paths you might run out of cores/memory
           for numPathChoices in 4
           do
-            output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0
-            inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}.ini
+            output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0_${pathChoice}
+            inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}_${pathChoice}.ini
 
             if [[ $routing_scheme =~ .*Window.* ]]; then
                 windowEnabled=true
@@ -223,12 +232,12 @@ do
                     --service-arrival-window $serviceArrivalWindow\
                     --transStatStart $transStatStart\
                     --transStatEnd $transStatEnd\
-                    --path-choice $path_choice
+                    --path-choice $pathChoice
 
             # run the omnetexecutable with the right parameters
             # in the background
             ./spiderNet -u Cmdenv -f ${inifile}\
-                -c ${network}_${routing_scheme}_demand${scale}_${numPathChoices} -n ${PATH_NAME}\
+                -c ${network}_${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices} -n ${PATH_NAME}\
                 > ${output_file}.txt &
             pids+=($!)
             done
@@ -248,15 +257,15 @@ do
         
         #routing schemes where number of path choices doesn't matter
         if [ ${routing_scheme} ==  "shortestPath" ]; then 
-            vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}-#0.vec
-            sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}-#0.sca
+            vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}-#0.vec
+            sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}-#0.sca
 
 
             python scripts/generate_analysis_plots_for_single_run.py \
               --detail $signalsEnabled \
               --vec_file ${vec_file_path} \
               --sca_file ${sca_file_path} \
-              --save ${graph_op_prefix}${routing_scheme} \
+              --save ${graph_op_prefix}${routing_scheme}_${pathChoice} \
               --balance \
               --queue_info --timeouts --frac_completed \
               --inflight --timeouts_sender \
@@ -267,15 +276,15 @@ do
         else
           for numPathChoices in 4
             do
-                vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${numPathChoices}-#0.vec
-                sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${numPathChoices}-#0.sca
+                vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}-#0.vec
+                sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}-#0.sca
 
 
                 python scripts/generate_analysis_plots_for_single_run.py \
                   --detail $signalsEnabled \
                   --vec_file ${vec_file_path} \
                   --sca_file ${sca_file_path} \
-                  --save ${graph_op_prefix}${routing_scheme}_final \
+                  --save ${graph_op_prefix}${routing_scheme}_${pathChoice} \
                   --balance \
                   --queue_info --timeouts --frac_completed \
                   --frac_completed_window \

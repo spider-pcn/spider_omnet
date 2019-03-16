@@ -63,6 +63,9 @@ if args.routingScheme != 'default':
 if args.demandScale != None:
     configname += "_demand" + str(args.demandScale)
 
+print "in ini file, ", args.pathChoice
+configname += "_" + args.pathChoice
+
 #arg parse might support a cleaner way to deal with this
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
         'smoothWaterfilling', 'priceSchemeWindow', 'priceSchemeWindowNoQueue', 'landmarkRouting', 'lndBaseline'] :
@@ -137,7 +140,6 @@ if args.routingScheme == 'landmarkRouting':
 if args.routingScheme == 'lndBaseline':
     f.write("**.lndBaselineEnabled = true\n")
 
-print "in ini file, ", args.pathChoice
 if args.pathChoice == "oblivious":
     f.write("**.obliviousRoutingEnabled = true\n")
 elif args.pathChoice == "widest":
