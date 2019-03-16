@@ -368,7 +368,7 @@ def plot_per_payment_channel_stats(args, text_to_add):
 
             inflight = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numInflight", True)
             plot_relevant_stats(inflight, pdf, "Inflight funds")
-            find_problem(data_to_plot, inflight)
+            #find_problem(data_to_plot, inflight)
 
             '''if args.inflight:
                 inflight_data_to_plot = aggregate_inflight_info(data_to_plot)

@@ -39,7 +39,6 @@ parser.add_argument('--router-queue-drain-time', type=float, help='time to drain
         dest='routerQueueDrainTime', default=1)
 parser.add_argument('--service-arrival-window', type=int, help='number of packets to track arrival/service', 
         dest='serviceArrivalWindow', default=100)
-
 parser.add_argument('--min-rate', type=float, help='minimum rate when rate is too small in price scheme', \
         dest='minRate', default=0.25)
 

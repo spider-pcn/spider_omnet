@@ -8,7 +8,7 @@ num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "2
 balance=100
 
 prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
-    "hotnets" "five_line" "lnd_dec4_2018" "lnd_dec28_2018" \
+    "hotnets" "five_line" "lnd_dec4_2018" "lnd_dec4_2018lessScale" \
     "sw_10_routers" "sw_20_routers" "sw_50_routers" "sw_60_routers" "sw_80_routers"  \
     "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
     "sw_800_routers" "sw_1000_routers"\
@@ -18,22 +18,22 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
     "random_30_routers" "sw_sparse_40_routers")
 
-demand_scale=("5") # "60" "90")
-path_choices_dep_list=() # "landmarkRouting")  # "smoothWaterfilling")
-path_choices_indep_list=("shortestPath")
+demand_scale=("1" "3" "6" "9") # "60" "90")
+routing_scheme=$1
+echo $routing_scheme
 random_init_bal=false
 random_capacity=false
 
 
 #general parameters that do not affect config names
-simulationLength=1000
-statCollectionRate=25
+simulationLength=2100
+statCollectionRate=100
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-transStatStart=0
-transStatEnd=3000
+transStatStart=1000
+transStatEnd=2000
 
 # scheme specific parameters
 eta=0.025
@@ -63,7 +63,7 @@ mkdir -p ${PATH_NAME}
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=( 6 ) #10 11 13 22 24)
+array=( 7 8 ) #10 11 13 22 24)
 for i in "${array[@]}" 
 do
     network="${prefix[i]}_circ_net"
@@ -94,15 +94,15 @@ do
     fi
     
     # STEP 1: create topology
-    $PYTHON scripts/create_topo_ned_file.py $graph_type\
-            --network-name ${PATH_NAME}$network\
-            --topo-filename $topofile\
-            --num-nodes ${num_nodes[i]}\
-            --balance-per-channel $balance\
-            --separate-end-hosts \
-            --delay-per-channel $delay\
-            --randomize-start-bal $random_init_bal\
-            --random-channel-capacity $random_capacity 
+#    $PYTHON scripts/create_topo_ned_file.py $graph_type\
+#            --network-name ${PATH_NAME}$network\
+#            --topo-filename $topofile\
+#            --num-nodes ${num_nodes[i]}\
+#            --balance-per-channel $balance\
+#            --separate-end-hosts \
+#            --delay-per-channel $delay\
+#            --randomize-start-bal $random_init_bal\
+#            --random-channel-capacity $random_capacity 
 
 
     # create workload files and run different demand levels
@@ -132,22 +132,21 @@ do
         echo $graph_type
 
         # STEP 2: create transactions corresponding to this experiment run
-        $PYTHON scripts/create_workload.py $workload uniform \
-                --graph-topo $payment_graph_topo \
-                --payment-graph-dag-percentage 0\
-                --topo-filename $topofile\
-                --experiment-time $simulationLength \
-                --balance-per-channel $balance\
-                --generate-json-also \
-                --timeout-value 5 \
-                --scale-amount $scale \
-                --txn-size-mean 1
-
+#        $PYTHON scripts/create_workload.py $workload uniform \
+#                --graph-topo $payment_graph_topo \
+#                --payment-graph-dag-percentage 0\
+#                --topo-filename $topofile\
+#                --experiment-time $simulationLength \
+#                --balance-per-channel $balance\
+#                --generate-json-also \
+#                --timeout-value 5 \
+#                --scale-amount $scale \
+#                --txn-size-mean 1
+#
 
         # STEP 3: run the experiment
         # routing schemes where number of path choices doesn't matter
-        for routing_scheme in "${path_choices_indep_list[@]}" 
-        do
+        if [ ${routing_scheme} ==  "shortestPath" ]; then 
           output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0
           inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}.ini
 
@@ -172,11 +171,8 @@ do
           # run the omnetexecutable with the right parameters
           ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme}_demand${scale} -n ${PATH_NAME}\
                 > ${output_file}.txt & 
-        done
-
-        #routing schemes where number of path choices matter
-        for routing_scheme in  "${path_choices_dep_list[@]}" 
-        do
+        
+      else
           pids=""
           # if you add more choices for the number of paths you might run out of cores/memory
           for numPathChoices in 4
@@ -229,8 +225,8 @@ do
                 -c ${network}_${routing_scheme}_demand${scale}_${numPathChoices} -n ${PATH_NAME}\
                 > ${output_file}.txt &
             pids+=($!)
-         done 
-        done
+            done
+        fi
         wait # for all algorithms to complete for this demand
 
         # STEP 4: plot everything for this demand
@@ -245,8 +241,7 @@ do
         vec_file_prefix=${PATH_NAME}results/${prefix[i]}_${payment_graph_type}_net_
         
         #routing schemes where number of path choices doesn't matter
-        for routing_scheme in "${path_choices_indep_list[@]}"  #silentWhispers
-        do
+        if [ ${routing_scheme} ==  "shortestPath" ]; then 
             vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}-#0.vec
             sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}-#0.sca
 
@@ -260,11 +255,10 @@ do
               --queue_info --timeouts --frac_completed \
               --inflight --timeouts_sender \
               --waiting --bottlenecks
-        done
+        
 
         #routing schemes where number of path choices matter
-        for routing_scheme in "${path_choices_dep_list[@]}"     
-        do
+        else
           for numPathChoices in 4
             do
                 vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${numPathChoices}-#0.vec
@@ -285,7 +279,7 @@ do
                   --inflight_incoming --rate_to_send --price --mu_remote --demand \
                   --rate_sent --amt_inflight_per_path
               done
-        done
+          fi
 
         # STEP 5: cleanup        
         #rm ${PATH_NAME}${prefix[i]}_circ*_demand${scale}.ini

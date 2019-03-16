@@ -284,7 +284,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
             std_dev=CIRCULATION_STD_DEV)
     if dag_frac > 0: 
         demand_dict_dag = dag_demand(list(inside_graph), mean=MEAN_RATE, \
-            std_dev=CIRCULATION_STD_DEV)
+            std_dev=CIRCULATION_STD_DEV, skew_param=dag_frac*10, gen_method="src_skew")
     
     circ_total = reduce(lambda x, value: x + value, demand_dict_circ.itervalues(), 0)
     dag_total = reduce(lambda x, value: x + value, demand_dict_dag.itervalues(), 0)
@@ -292,52 +292,13 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
             for key in set(demand_dict_circ) | set(demand_dict_dag) } 
     total = reduce(lambda x, value: x + value, demand_dict.itervalues(), 0)
+    
     print "Circulation", circ_total
     print "Dag", dag_total
     print "total", total
     print circ_frac
     print dag_frac
     
-    split_dag_and_circ = False
-    if split_dag_and_circ:
-        # first 100 seconds all circulation
-        for i, j in demand_dict_circ.keys():
-    	    start_nodes.append(end_host_map[i])
-    	    end_nodes.append(end_host_map[j])
-    	    amt_relative.append(demand_dict_circ[i, j])	
-        amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
-
-        write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, 100, log_normal, txn_size_mean, timeout_value)
-
-        # 25% dag on the second 100 seconds
-        start_nodes, end_nodes, amt_relative = [], [], []
-        # circ_frac = 0.75
-        # dag_frac = 0.25
-        demand_dict = dict()
-        demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
-            for key in set(demand_dict_circ) | set(demand_dict_dag) } 
-        for i, j in demand_dict.keys():
-    	    start_nodes.append(end_host_map[i])
-    	    end_nodes.append(end_host_map[j])
-    	    amt_relative.append(demand_dict[i, j])
-        amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
-
-        write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, 100, log_normal, txn_size_mean, timeout_value, "a", start_time = 100)
-
-        # nothing for 100 seconds, then circulation again for 100
-        start_nodes, end_nodes, amt_relative = [], [], []
-        for i, j in demand_dict_circ.keys():
-    	    start_nodes.append(end_host_map[i])
-    	    end_nodes.append(end_host_map[j])
-    	    amt_relative.append(demand_dict_circ[i, j])	
-        amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
-
-        write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, 100, log_normal, txn_size_mean, timeout_value, "a", start_time = 300)
-
-        return
 
     if "two_node_imbalance" in filename:
         demand_dict[0, 1] = MEAN_RATE
@@ -364,7 +325,8 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
 
     print "generated workload" 
 
-    print "maximum circulation: ", max_circulation(demand_dict)
+    max_circ = max_circulation(demand_dict)
+    print "maximum circulation: ", max_circ, " or ", float(max_circ)/total
 
     if generate_json_also:
         generate_json_files(filename + '.json', whole_graph, inside_graph, start_nodes, end_nodes, amt_absolute)
@@ -468,7 +430,7 @@ def circ_demand(node_list, mean, std_dev):
 # generate dag for node ids mentioned in node_list,
 # with average total demand out of a node equal to 'mean', and a 
 # perturbation of 'std_dev' 
-def dag_demand(node_list, mean, std_dev, gen_method="topological_sort"):
+def dag_demand(node_list, mean, std_dev, skew_param=5,gen_method="topological_sort"):
         print "DAG_DEMAND", mean
 
         assert type(mean) is int
@@ -479,10 +441,16 @@ def dag_demand(node_list, mean, std_dev, gen_method="topological_sort"):
         if gen_method == "src_skew":
             """ sample receiver uniformly at random and source from exponential distribution """
             for i in range(len(node_list) * mean):
-                receiver = np.random.choice(node_list)
+
                 sender = len(node_list)
                 while sender >= len(node_list):
-                    sender = int(np.random.exponential(len(node_list)/3))
+                    sender = int(np.random.exponential(len(node_list)/skew_param))
+                
+                receiver_list = np.random.permutation(node_list)
+                receiver_index = len(node_list)
+                while receiver_index >= len(node_list):
+                    receiver_index = int(np.random.exponential(len(node_list)/skew_param))
+                receiver = receiver_list[receiver_index]
 
                 demand_dict[sender, receiver] = demand_dict.get((sender, receiver), 0) + 1
         else:

@@ -190,7 +190,7 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         if random_channel_capacity:
             balance_for_this_channel = random.randint(balance_per_channel/2, 3 * balance_per_channel/2)
         elif is_lnd:
-            balance_for_this_channel = G[e[0]][e[1]]['capacity'] 
+            balance_for_this_channel = G[e[0]][e[1]]['capacity']/10000 
         else:
             balance_for_this_channel = balance_per_channel
 
