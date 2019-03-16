@@ -47,6 +47,7 @@ struct LaterTransUnit
 extern map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
 extern map<int, set<int>> _destList;
 extern map<int, map<double, SplitState>> _numSplits;
+extern map<int, map<int, vector<vector<int>>>> _pathsMap;
 extern int _numNodes;
 //number of nodes in network
 extern int _numRouterNodes;
@@ -99,6 +100,10 @@ extern int _serviceArrivalWindow;
 extern bool _signalsEnabled;
 extern bool _loggingEnabled;
 extern double _ewmaFactor;
+
+extern bool _widestPathsEnabled;
+extern bool _kspYenEnabled;
+extern bool _obliviousRoutingEnabled;
 
 extern bool _hasQueueCapacity;
 extern int _queueCapacity;

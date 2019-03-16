@@ -20,6 +20,11 @@ simple hostNodeBase
                 bool landmarkRoutingEnabled = default(false);
                 bool lndBaselineEnabled = default(false);
 
+                bool widestPathsEnabled = default(false);
+                bool obliviousRoutingEnabled = default(false);
+                bool kspYenEnabled = default(false);
+                
+
                 bool windowEnabled = default(false);
 		int numPathChoices = default(4);
                 

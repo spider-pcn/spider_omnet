@@ -59,7 +59,7 @@ KAGGLE_PATH = '/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/data/'
 KAGGLE_AMT_DIST_FILENAME = KAGGLE_PATH + 'amt_dist.npy'
 KAGGLE_AMT_MODIFIED_DIST_FILENAME = KAGGLE_PATH + 'amt_dist_cutoff.npy'
 KAGGLE_TIME_DIST_FILENAME = KAGGLE_PATH + 'time_dist.npy'
-
+PATH_PKL_DATA = "path_data/"
 
 # CONSTANTS
 SEED = 23

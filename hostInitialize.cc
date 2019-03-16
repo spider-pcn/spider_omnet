@@ -318,6 +318,75 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
     return shortestRoutes;
 }
 
+void initializePathMaps(string filename) {
+    string line;
+    int lineNum = 0;
+    ifstream myfile (filename);
+    if (myfile.is_open())
+    {
+        int sender = -1;
+        int receiver = -1;
+        vector<vector<int>> pathList;
+        while ( getline (myfile,line) ) 
+        {
+            vector<string> data = split(line, ' ');
+            lineNum++;
+            if (data[0].compare("pair") == 0) {
+                if (lineNum > 1) {
+                    _pathsMap[sender][receiver] = pathList;
+                    cout << data[0] <<  " " << data[1] << endl;
+                }
+                sender = stoi(data[1]);
+                receiver = stoi(data[2]);
+                pathList.clear();
+                cout << " sender " << sender << " receiver " << receiver << endl;
+            }
+            else {
+                vector<int> newPath;
+                for (string d : data) {
+                    newPath.push_back(stoi(d));
+                }
+                pathList.push_back(newPath);
+                printVector(newPath);
+            }
+        }
+    }
+    else {
+        cout << "unable to open paths file " << endl;
+    }
+}
+
+
+vector<vector<int>> getKPaths(int sender, int receiver, int k) {
+    if (!_widestPathsEnabled && !_kspYenEnabled && !_obliviousRoutingEnabled) 
+        return getKShortestRoutes(sender, receiver, k);
+
+    if (_pathsMap.empty()) {
+        cout << "path Map uninitialized" << endl;
+        throw std::exception();
+    }
+
+    if (_pathsMap.count(sender) == 0) {
+        cout << " sender " << sender << " has no paths at all " << endl;
+        throw std::exception();
+    }
+
+    if (_pathsMap[sender].count(receiver) == 0) {
+        cout << " sender " << sender << " has no paths to receiver " << receiver << endl;
+        throw std::exception();
+    }
+    
+    vector<vector<int>> finalPaths;
+    int numPaths = 0;
+    for (vector<int> path : _pathsMap[sender][receiver]) {
+        if (numPaths >= k)
+            break;
+        finalPaths.push_back(path);
+        numPaths++;
+    }
+    return finalPaths;
+}
+
 bool vectorContains(vector<int> smallVector, vector<vector<int>> bigVector) {
     for (auto v : bigVector) {
         if (v == smallVector)

@@ -22,6 +22,10 @@ simple hostNodeLndBaseline
                 bool lndBaselineEnabled = default(false);
 		int numPathChoices = default(4);
 
+                bool widestPathsEnabled = default(false);
+                bool obliviousRoutingEnabled = default(false);
+                bool kspYenEnabled = default(false);
+
                 double alpha = default(0.01);
                 double kappa = default(0.01);
                 double eta = default(0.01);

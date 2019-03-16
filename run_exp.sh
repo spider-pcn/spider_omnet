@@ -20,10 +20,14 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
 
 demand_scale=("1" "3" "6" "9") # "60" "90")
 routing_scheme=$1
+path_choice=$2
 echo $routing_scheme
 random_init_bal=false
 random_capacity=false
 
+widestPathsEnabled=false
+obliviousRoutingEnabled=false
+kspYenEnabled=false
 
 #general parameters that do not affect config names
 simulationLength=2100
@@ -165,7 +169,8 @@ do
                   --routing-scheme ${routing_scheme}\
                   --demand-scale ${scale}\
                   --transStatStart $transStatStart\
-                  --transStatEnd $transStatEnd
+                  --transStatEnd $transStatEnd\
+                  --path-choice $path_choice
 
 
           # run the omnetexecutable with the right parameters
@@ -217,7 +222,8 @@ do
                     --router-queue-drain-time $routerQueueDrainTime\
                     --service-arrival-window $serviceArrivalWindow\
                     --transStatStart $transStatStart\
-                    --transStatEnd $transStatEnd
+                    --transStatEnd $transStatEnd\
+                    --path-choice $path_choice
 
             # run the omnetexecutable with the right parameters
             # in the background

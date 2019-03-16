@@ -8,6 +8,7 @@
 map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
 map<int, set<int>> _destList;
 map<int, map<double, SplitState>> _numSplits;
+map<int, map<int, vector<vector<int>>>> _pathsMap;
 int _numNodes;
 int _numRouterNodes;
 int _numHostNodes;
@@ -41,6 +42,11 @@ bool _priceSchemeEnabled;
 bool _landmarkRoutingEnabled;
 bool _windowEnabled;
 bool _lndBaselineEnabled;
+
+
+bool _widestPathsEnabled;
+bool _obliviousRoutingEnabled;
+bool _kspYenEnabled;
 
 // for all precision errors
 double _epsilon; 
@@ -1070,7 +1076,6 @@ void hostNodeBase::initialize() {
     successfulDoNotSendTimeOut = {};
     
 
-    cout << "starting initialization" ;
     string topologyFile_ = par("topologyFile");
     string workloadFile_ = par("workloadFile");
 
@@ -1097,6 +1102,10 @@ void hostNodeBase::initialize() {
         _shortestPathStartTime = 0;
         _shortestPathEndTime = 5000;
 
+        _widestPathsEnabled = par("widestPathsEnabled");
+        _kspYenEnabled = par("kspYenEnabled");
+        _obliviousRoutingEnabled = par("obliviousRoutingEnabled");
+
         _splitSize = 1.0;
 
         _lndBaselineEnabled = par("lndBaselineEnabled");
@@ -1107,6 +1116,17 @@ void hostNodeBase::initialize() {
             _queueCapacity = 0;
             _timeoutEnabled = false;
         }
+
+        string pathFileName;
+        if (_widestPathsEnabled)
+            pathFileName = topologyFile_ + "_widestPaths";
+        else if (_obliviousRoutingEnabled)
+            pathFileName = topologyFile_ + "_obliviousPaths";
+        else if (_kspYenEnabled)
+            pathFileName = topologyFile_ + "_kspYenPaths";
+
+        if (_widestPathsEnabled || _kspYenEnabled || _obliviousRoutingEnabled)
+            initializePathMaps(pathFileName);
 
         _epsilon = pow(10, -6);
         cout << "epsilon" << _epsilon << endl;

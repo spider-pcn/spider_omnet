@@ -11,6 +11,8 @@ void updateMaxTravelTime(vector<int> route);
 vector<int> getRoute(int sender, int receiver);
 vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k);
 vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, int k);
+vector<vector<int>> getKPaths(int sender, int receiver, int k);
+void initializePathMaps(string filename);
 
 //search functions
 vector<int> breadthFirstSearch(int sender, int receiver);

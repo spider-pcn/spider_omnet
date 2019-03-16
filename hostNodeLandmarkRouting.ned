@@ -25,6 +25,10 @@ simple hostNodeLandmarkRouting
                 double transStatStart = default(3000);
                 double transStatEnd = default(5000);
 
+                bool widestPathsEnabled = default(false);
+                bool obliviousRoutingEnabled = default(false);
+                bool kspYenEnabled = default(false);
+
                 double alpha = default(0.01);
                 double kappa = default(0.01);
                 double eta = default(0.01);

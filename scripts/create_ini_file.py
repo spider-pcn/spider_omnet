@@ -23,6 +23,9 @@ parser.add_argument('--num-path-choices', type=str, help='number of path choices
 parser.add_argument('--demand-scale', type=int, help='how much has demand been scaled up by', dest='demandScale')
 parser.add_argument('--transStatStart', type=int, help='when to start collecting stats from', default=3000)
 parser.add_argument('--transStatEnd', type=int,help='when to end stats collection', default=5000)
+parser.add_argument('--path-choice', type=str, help='type of path choices', dest='pathChoice', default='shortest',
+        choices=['widest', 'oblivious', 'kspYen', 'shortest'])
+
 
 
 # price based scheme parameters
@@ -133,6 +136,15 @@ if args.routingScheme == 'landmarkRouting':
 
 if args.routingScheme == 'lndBaseline':
     f.write("**.lndBaselineEnabled = true\n")
+
+print "in ini file, ", args.pathChoice
+if args.pathChoice == "oblivious":
+    f.write("**.obliviousRoutingEnabled = true\n")
+elif args.pathChoice == "widest":
+    f.write("**.widestPathsEnabled = true\n")
+elif args.pathChoice == "kspYen":
+    f.write("**.kspYenEnabled = true\n")
+
 
 f.close()
 

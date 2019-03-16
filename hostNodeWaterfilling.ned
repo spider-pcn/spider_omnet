@@ -22,6 +22,10 @@ simple hostNodeWaterfilling
 
                 double transStatStart = default(3000);
                 double transStatEnd = default(5000);
+               
+                bool widestPathsEnabled = default(false);
+                bool obliviousRoutingEnabled = default(false);
+                bool kspYenEnabled = default(false);
                 
                 bool windowEnabled = default(false);
 		int numPathChoices = default(4);
