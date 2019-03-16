@@ -418,8 +418,14 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
    double oldMuLocal = nodeToPaymentChannel[sender].muLocal;
    double oldMuRemote = nodeToPaymentChannel[sender].muRemote;
 
-    double newLambdaGrad = inflightLocal*arrivalRateLocal/serviceRateLocal + 
-        inflightRemote * arrivalRateRemote/serviceRateRemote + 2*_xi*min(qLocal, qRemote) - (_capacityFactor * cValue);
+    double newLambdaGrad;
+    if (_useQueueEquation) {
+     newLambdaGrad	= inflightLocal*arrivalRateLocal/serviceRateLocal + 
+       inflightRemote * arrivalRateRemote/serviceRateRemote + 2*_xi*min(qLocal, qRemote) - (_capacityFactor * cValue);
+    } else {
+     newLambdaGrad = inflightLocal*arrivalRateLocal/serviceRateLocal + 
+       inflightRemote * arrivalRateRemote/serviceRateRemote - (_capacityFactor * cValue); 
+    }
      /*if (sender >= _numHostNodes && (oldLambda > 0 || newLambdaGrad > 0)) {
         cout << "to sender " << sender << " from  " << myIndex() << " at time " << simTime();
         cout << " old lambda" << oldLambda << " new lambda grad "
@@ -431,8 +437,13 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
       << "qLocal" << qLocal << "qRemote" << qRemote << endl; 
      } */
         
-    double newMuLocalGrad = nLocal - nRemote + qLocal*_tUpdate/_routerQueueDrainTime -
-        qRemote*_tUpdate/_routerQueueDrainTime;
+    double newMuLocalGrad;
+    if (_useQueueEquation) {
+     newMuLocalGrad	= nLocal - nRemote + qLocal*_tUpdate/_routerQueueDrainTime -
+       qRemote*_tUpdate/_routerQueueDrainTime;
+    } else {
+     newMuLocalGrad	= nLocal - nRemote;
+    }
     /*cout << " to sender " << sender << " from " << myIndex() << " at time " << simTime();
     cout << "nLocal " << nLocal << " nRemote " << nRemote << " qlocal and term " << qLocal 
         << " " << qLocal * _tUpdate / _routerQueueDrainTime << "qRemote " << qRemote

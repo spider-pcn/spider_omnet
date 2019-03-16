@@ -85,6 +85,7 @@ extern double _rhoMu;
 extern double _eta; //for price computation
 extern double _kappa; //for price computation
 extern double _capacityFactor; //for price computation
+extern bool _useQueueEquation;
 extern double _tUpdate; //for triggering price updates at routers
 extern double _tQuery; //for triggering price query probes
 extern double _alpha; //parameter for rate updates

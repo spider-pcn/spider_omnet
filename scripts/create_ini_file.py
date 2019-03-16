@@ -62,7 +62,7 @@ if args.demandScale != None:
 
 #arg parse might support a cleaner way to deal with this
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
-        'smoothWaterfilling', 'priceSchemeWindow', 'landmarkRouting', 'lndBaseline'] :
+        'smoothWaterfilling', 'priceSchemeWindow', 'priceSchemeWindowNoQueue', 'landmarkRouting', 'lndBaseline'] :
     if args.routingScheme != 'default':
         print "******************"
         print "WARNING: ill-specified routing scheme, defaulting to waterfilling,",\
@@ -76,6 +76,8 @@ elif "Window" in args.routingScheme:
     modifiedRoutingScheme = args.routingScheme[:-6]
 else:
     modifiedRoutingScheme = args.routingScheme
+if "NoQueue" in args.routingScheme:
+    modifiedRoutingScheme = modifiedRoutingScheme[:-7]
 
 if args.numPathChoices != 'default':
     configname = configname + "_" + args.numPathChoices
@@ -118,6 +120,8 @@ if 'priceScheme' in args.routingScheme:
     f.write("**.routerQueueDrainTime = " + str(args.routerQueueDrainTime) + "\n")
     if args.capacityFactor != None:
         f.write("**.capacityFactor = " + str(args.capacityFactor) + "\n")
+    if 'NoQueue' in args.routingScheme: 
+        f.write("**.useQueueEquation = false\n")
 
 if args.routingScheme == "smoothWaterfilling":
     f.write("**.smoothWaterfillingEnabled = true\n")

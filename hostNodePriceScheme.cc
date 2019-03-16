@@ -5,6 +5,7 @@ double _tokenBucketCapacity = 1.0;
 bool _reschedulingEnabled; // whether timers can be rescheduled
 bool _nesterov;
 bool _secondOrderOptimization;
+bool _useQueueEquation;
 
 // parameters for price scheme
 double _eta; //for price computation
@@ -1113,6 +1114,7 @@ void hostNodePriceScheme::initialize() {
         _eta = par("eta");
         _kappa = par("kappa");
         _capacityFactor = par("capacityFactor");
+        _useQueueEquation = par("useQueueEquation");
         _tUpdate = par("updateQueryTime");
         _tQuery = par("updateQueryTime");
         _alpha = par("alpha");
