@@ -86,6 +86,10 @@ void generateChannelsBalancesMap(string topologyFile) {
             double balance2 = stod( data[5]);
             _balances[make_tuple(node1,node2)] = balance1;
             _balances[make_tuple(node2,node1)] = balance2;
+
+            tuple<int, int> senderReceiverPair = (node1 < node2) ? make_tuple(node1, node2) :
+                make_tuple(node2, node1);
+            _capacities[senderReceiverPair] = balance1 + balance2;
             data = split(line, ' ');
         }
 

@@ -16,13 +16,17 @@ public:
     map<Id, double> incomingTransUnits; //(key,value) := ((transactionId, htlcIndex), amount)
     map<Id, double> outgoingTransUnits;
 
+    double queueDelayEWMA;
+    int numRebalanceEvents = 0;
+    double amtAdded = 0.0;
+
     //channel information for price scheme
     double nValue;// Total amount across all transactions (i.e. the sum of the amount in each transaction)
         // that have arrived to be sent along the channel
     double lastNValue;
     double lastQueueSize;
     double xLocal; //Transaction arrival rate ($x_local$)
-    double totalCapacity; //Total channel capacity ($C$)
+    double origTotalCapacity; //Total channel capacity ($C$)
     double serviceRate; // ratio of rate transaction arrival over transaction service rate (queue->inflight)   
     double arrivalRate;   
     double lambda; //Price due to load ($\lambda$)

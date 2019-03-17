@@ -14,7 +14,6 @@ double _capacityFactor; //for price computation
 double _tUpdate; //for triggering price updates at routers
 double _tQuery; //for triggering price query probes at hosts
 double _alpha;
-double _gamma;
 double _zeta;
 double _delta;
 double _avgDelay;
@@ -677,7 +676,7 @@ void hostNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
             double oldRate = pInfo->rateSentOnPath; 
             
             pInfo->nValue = 0; 
-            pInfo->rateSentOnPath = (1 - _gamma) *oldRate + _gamma * latestRate; 
+            pInfo->rateSentOnPath = latestRate; 
         }
 
         // use this information to also update your demand for this destination
@@ -712,7 +711,9 @@ void hostNodePriceScheme::handlePriceUpdateMessage(routerMsg* ttmsg){
     double serviceRateLocal = neighborChannel->serviceRate;
     double arrivalRateLocal = neighborChannel->arrivalRate;
 
-    double cValue = neighborChannel->totalCapacity;
+    tuple<int, int> node1node2Pair = (myIndex() < sender) ? make_tuple(myIndex(), sender) : make_tuple(sender,
+            myIndex());
+    double cValue = _capacities[node1node2Pair]; 
     double oldLambda = neighborChannel->lambda;
     double oldMuLocal = neighborChannel->muLocal;
     double oldMuRemote = neighborChannel->muRemote;
@@ -1121,7 +1122,6 @@ void hostNodePriceScheme::initialize() {
         _tUpdate = par("updateQueryTime");
         _tQuery = par("updateQueryTime");
         _alpha = par("alpha");
-        _gamma = 1; // ewma factor to compute per path rates
         _zeta = par("zeta"); // ewma for d_ij every source dest demand
         _minPriceRate = par("minRate");
         _rho = _rhoLambda = _rhoMu = par("rhoValue");

@@ -127,7 +127,7 @@ void routerNode::initialize()
 
       // initialize total capacity and other price variables
       double balanceOpp =  _balances[make_tuple(key, myIndex())];
-      nodeToPaymentChannel[key].totalCapacity = nodeToPaymentChannel[key].balance + balanceOpp;
+      nodeToPaymentChannel[key].origTotalCapacity = nodeToPaymentChannel[key].balance + balanceOpp;
       nodeToPaymentChannel[key].lambda = 0;
       nodeToPaymentChannel[key].muLocal = 0;
       nodeToPaymentChannel[key].muRemote = 0;
@@ -413,7 +413,9 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
     double serviceRateLocal = neighborChannel->serviceRate;
     double arrivalRateLocal = neighborChannel->arrivalRate;
  
-   double cValue = nodeToPaymentChannel[sender].totalCapacity;
+    tuple<int, int> node1node2Pair = (myIndex() < sender) ? make_tuple(myIndex(), sender) : make_tuple(sender,
+            myIndex());
+   double cValue = _capacities[node1node2Pair]; 
    double oldLambda = nodeToPaymentChannel[sender].lambda;
    double oldMuLocal = nodeToPaymentChannel[sender].muLocal;
    double oldMuRemote = nodeToPaymentChannel[sender].muRemote;
@@ -586,6 +588,27 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
    else{
       scheduleAt(simTime()+_clearRate, ttmsg);
    }
+    
+   /* hack for now to do this periodically */
+    if (_rebalancingEnabled && !_priceSchemeEnabled) {
+        for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++ ) {
+            PaymentChannel *neighborChannel = &(nodeToPaymentChannel[it->first]);   
+
+            auto lastTransTimes =  neighborChannel->serviceArrivalTimeStamps.back();
+            double curQueueingDelay = get<0>(lastTransTimes).dbl() - get<1>(lastTransTimes).dbl();
+            neighborChannel->queueDelayEWMA = 0.6*curQueueingDelay + 0.4*neighborChannel->queueDelayEWMA;
+
+            if (neighborChannel->queueDelayEWMA > _queueDelayThreshold) {
+                neighborChannel->balance += getTotalAmount(neighborChannel->queuedTransUnits);
+                tuple<int, int> senderReceiverTuple = 
+                    (it->first < myIndex()) ? make_tuple(it->first, myIndex()) :
+                    make_tuple(myIndex(), it->first);
+                    _capacities[senderReceiverTuple] += getTotalAmount(neighborChannel->queuedTransUnits);
+            }
+            neighborChannel->numRebalanceEvents += 1; 
+            processTransUnits(it->first, neighborChannel->queuedTransUnits);
+        }
+    }
 
    for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end();){ //iterate through all canceledTransactions
       int transactionId = get<0>(*it);
@@ -886,6 +909,19 @@ void routerNode::handleUpdateMessage(routerMsg* msg){
    nodeToPaymentChannel[prevNode].balance =  newBalance;       
    nodeToPaymentChannel[prevNode].balanceEWMA = 
           (1 -_ewmaFactor) * nodeToPaymentChannel[prevNode].balanceEWMA + (_ewmaFactor) * newBalance; 
+   double origTotalCapacity = nodeToPaymentChannel[prevNode].origTotalCapacity;
+
+    if (_rebalancingEnabled) {
+        if (newBalance > _rebalancingUpFactor * origTotalCapacity) {
+            nodeToPaymentChannel[prevNode].balance = origTotalCapacity;
+            tuple<int, int> senderReceiverTuple = (prevNode < myIndex()) ? make_tuple(prevNode, myIndex()) :
+                make_tuple(myIndex(), prevNode);
+            _capacities[senderReceiverTuple] -= (_rebalancingUpFactor - 1)*origTotalCapacity;
+
+            nodeToPaymentChannel[prevNode].numRebalanceEvents += 1;
+            nodeToPaymentChannel[prevNode].amtAdded -= (_rebalancingUpFactor - 1) * origTotalCapacity;
+        }
+    }
 
    map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
    (*incomingTransUnits).erase(make_tuple(uMsg->getTransactionId(),uMsg->getHtlcIndex()));

@@ -55,6 +55,7 @@ extern int _numRouterNodes;
 extern int _numHostNodes;
 extern map<int, vector<pair<int,int>>> _channels; //adjacency list format of graph edges of network
 extern map<tuple<int,int>,double> _balances;
+extern map<tuple<int,int>, double> _capacities;
 extern double _statRate;
 extern double _clearRate;
 extern double _maxTravelTime;
@@ -121,3 +122,10 @@ extern double _landmarkRoutingStartTime;
 extern double _shortestPathStartTime;
 extern double _shortestPathEndTime;
 extern double _splitSize;
+
+// rebalancing related parameters
+extern bool _rebalancingEnabled;
+extern double _rebalancingUpFactor;
+extern double _queueDelayThreshold;
+extern double _gamma;
+extern double _maxGammaImbalanceQueueSize;

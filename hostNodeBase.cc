@@ -33,6 +33,8 @@ map<int, vector<pair<int,int>>> _channels;
 //map of balances for each edge; key = <int,int> is <source, destination>
 map<tuple<int,int>,double> _balances;
 
+map<tuple<int,int>,double> _capacities;
+
 // controls algorithm and what is outputted
 bool _waterfillingEnabled;
 bool _timeoutEnabled;
@@ -56,7 +58,12 @@ double _epsilon;
 bool _hasQueueCapacity;
 int _queueCapacity;
 
-
+// rebalancing related
+bool _rebalancingEnabled;
+double _rebalancingUpFactor;
+double _queueDelayThreshold;
+double _gamma;
+double _maxGammaImbalanceQueueSize;
 
 Define_Module(hostNodeBase);
 
@@ -807,6 +814,18 @@ void hostNodeBase::handleUpdateMessage(routerMsg* msg) {
     prevChannel->balance =  newBalance;       
     prevChannel->balanceEWMA = (1 -_ewmaFactor) * prevChannel->balanceEWMA 
         + (_ewmaFactor) * newBalance; 
+    
+    if (_rebalancingEnabled) {
+        if (newBalance > _rebalancingUpFactor * prevChannel->origTotalCapacity) {
+            prevChannel->balance = prevChannel->origTotalCapacity;
+            tuple<int, int> senderReceiverTuple = (prevNode < myIndex()) ? make_tuple(prevNode, myIndex()) :
+                make_tuple(myIndex(), prevNode);
+            _capacities[senderReceiverTuple] -= (_rebalancingUpFactor - 1)*prevChannel->origTotalCapacity;
+
+            prevChannel->numRebalanceEvents += 1;
+            prevChannel->amtAdded -= (_rebalancingUpFactor - 1)*prevChannel->origTotalCapacity;
+        }
+    }
 
     //remove transaction from incoming_trans_units
     map<Id, double> *incomingTransUnits = &(prevChannel->incomingTransUnits);
@@ -895,7 +914,28 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
     else{
         scheduleAt(simTime()+_clearRate, ttmsg);
     }
-    
+
+    /* hack for now to do this periodically */
+    if (_rebalancingEnabled && !_priceSchemeEnabled) {
+        for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++ ) {
+            PaymentChannel *neighborChannel = &(nodeToPaymentChannel[it->first]);   
+
+            auto lastTransTimes =  neighborChannel->serviceArrivalTimeStamps.back();
+            double curQueueingDelay = get<0>(lastTransTimes).dbl() - get<1>(lastTransTimes).dbl();
+            neighborChannel->queueDelayEWMA = 0.6*curQueueingDelay + 0.4*neighborChannel->queueDelayEWMA;
+
+            if (neighborChannel->queueDelayEWMA > _queueDelayThreshold) {
+                neighborChannel->balance += getTotalAmount(neighborChannel->queuedTransUnits);
+                tuple<int, int> senderReceiverTuple = 
+                    (it->first < myIndex()) ? make_tuple(it->first, myIndex()) :
+                    make_tuple(myIndex(), it->first);
+                    _capacities[senderReceiverTuple] += getTotalAmount(neighborChannel->queuedTransUnits);
+            }
+            neighborChannel->numRebalanceEvents += 1; 
+            processTransUnits(it->first, neighborChannel->queuedTransUnits);
+        }
+    }
+
     for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); ) {       
         int transactionId = get<0>(*it);
         simtime_t msgArrivalTime = get<1>(*it);
@@ -1117,6 +1157,12 @@ void hostNodeBase::initialize() {
             _timeoutEnabled = false;
         }
 
+        _rebalancingEnabled = par("rebalancingEnabled");
+        _rebalancingUpFactor = 3.0;
+        _queueDelayThreshold = par("queueDelayThreshold");
+        _gamma = par("gamma");
+        _maxGammaImbalanceQueueSize = par("gammaImbalanceQueueSize");
+
         string pathFileName;
         if (_widestPathsEnabled)
             pathFileName = topologyFile_ + "_widestPaths";
@@ -1183,7 +1229,7 @@ void hostNodeBase::initialize() {
 
         // intialize capacity
         double balanceOpp =  _balances[make_tuple(key, myIndex())];
-        nodeToPaymentChannel[key].totalCapacity = nodeToPaymentChannel[key].balance + balanceOpp;
+        nodeToPaymentChannel[key].origTotalCapacity = nodeToPaymentChannel[key].balance + balanceOpp;
 
         //initialize queuedTransUnits
         vector<tuple<int, double , routerMsg *, Id, simtime_t>> temp;
