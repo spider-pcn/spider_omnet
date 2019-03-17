@@ -34,6 +34,8 @@ simple hostNodePriceScheme
                 double eta = default(0.01);
                 double zeta = default(0.01);
                 double rhoValue = default(0.05);
+                double capacityFactor = default(1.0);
+                
                 bool useQueueEquation = default(true);
                 double capacityFactor = default(1);
                 double minRate = default(0.25);

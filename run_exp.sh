@@ -16,7 +16,7 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sf_50_routers" "sf_60_routers" "sf_80_routers"  \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
-    "random_30_routers" "sw_sparse_40_routers" "lnd_gaussian")
+    "random_30_routers" "sw_sparse_40_routers" "lnd_gaussian" "lnd_uniform")
 
 demand_scale=("4") # "60" "90")
 routing_scheme=$1
