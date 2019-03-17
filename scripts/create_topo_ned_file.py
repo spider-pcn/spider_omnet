@@ -182,13 +182,20 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         f1.write(str(l) + "r ")
     f1.write("\n")
 
+    total_budget = balance_per_channel * len(G.edges())
+    weights = {e: min(G.degree(e[0]), G.degree(e[1])) for e in G.edges()}
+    sum_weights = sum(weights.values())
+
     # write rest of topology
     for e in G.edges():
 
         f1.write(str(e[0]) + "r " + str(e[1]) +  "r ")
         f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
         if random_channel_capacity:
-            balance_for_this_channel = random.randint(balance_per_channel/2, 3 * balance_per_channel/2)
+            print weights[e], sum_weights
+            balance_for_this_channel = abs(np.random.normal(balance_per_channel, 0.6 * balance_per_channel))
+            # balance_for_this_channel = round((weights[e]/float(sum_weights) ) * total_budget)
+            #balance_for_this_channel = random.randint(balance_per_channel/2, 3 * balance_per_channel/2)
         elif is_lnd:
             balance_for_this_channel = G[e[0]][e[1]]['capacity']/10000 
         else:
