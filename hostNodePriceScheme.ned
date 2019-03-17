@@ -47,6 +47,10 @@ simple hostNodePriceScheme
                 double tau = default(10);
                 double normalizer = default(100);
 
+                bool rebalancingEnabled = default(false);
+                double queueDelayThreshold = default(3.0);
+                double gamma = default(1.0);
+                double gammaImbalanceQueueSize = default(5.0);
 		
 		@signal[completionTime](type="simtime_t"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 

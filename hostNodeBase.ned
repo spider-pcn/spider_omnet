@@ -23,7 +23,11 @@ simple hostNodeBase
                 bool widestPathsEnabled = default(false);
                 bool obliviousRoutingEnabled = default(false);
                 bool kspYenEnabled = default(false);
-                
+               
+                bool rebalancingEnabled = default(false);
+                double queueDelayThreshold = default(3.0);
+                double gamma = default(1.0);
+                double gammaImbalanceQueueSize = default(5.0);
 
                 bool windowEnabled = default(false);
 		int numPathChoices = default(4);

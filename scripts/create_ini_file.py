@@ -52,6 +52,13 @@ parser.add_argument('--tau', type=float, help='time unit factor in smooth waterf
 parser.add_argument('--normalizer', type=float, help='C in probability update', dest='normalizer', \
         default=100)
 
+parser.add_argument('--rebalancing-enabled', action='store_true', dest="rebalancingEnabled")
+parser.add_argument('--gamma', type=float, help='factor to weigh rebalancing', dest='gamma', default=1)
+parser.add_argument('--rebalancing-queue-delay-threshold', type=float, help='threshold for rebalancing', 
+        dest='rebalancingQueueDelayThreshold', default=3)
+parser.add_argument('--gamma-imbalance-queue-size', type=float, help='threshold queue size for rebalancing', 
+        dest='gammaImbalanceQueueSize', default=5)
+
 
 args = parser.parse_args()
 
@@ -68,6 +75,12 @@ print "in ini file, path choice", args.pathChoice, " capacity : ",args.capacity
 configname += "_" + args.pathChoice
 if args.capacity is not None:
     configname += '_cap' + str(args.capacity)
+
+if args.rebalancingEnabled:
+    configname += "_rebalancing_"
+    configname += str(args.gamma)
+    configname += "_" + str(args.gammaImabalanceQueueSize)
+    configname += str(args.rebalancingQueueingDelayThreshold)
 
 #arg parse might support a cleaner way to deal with this
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
@@ -150,6 +163,14 @@ elif args.pathChoice == "widest":
 elif args.pathChoice == "kspYen":
     f.write("**.kspYenEnabled = true\n")
 
+
+if args.rebalancingEnabled:
+    f.write("**.rebalancingEnabled = true\n")
+    if "priceScheme" in args.routingScheme:
+        f.write("**.gamma = " + str(args.gamma) + "\n")
+        f.write("**.gammaImbalanceQueueSize = " + str(args.gammaImbalanceQueueSize) + "\n")
+    else:
+        f.write("**.queueDelayThreshold = " + str(args.rebalancingQueueingDelayThreshold) + "\n")
 
 f.close()
 

@@ -22,6 +22,11 @@ simple hostNodeLandmarkRouting
                 bool lndBaselineEnabled = default(false);
 		int numPathChoices = default(4);
 
+                bool rebalancingEnabled = default(false);
+                double queueDelayThreshold = default(3.0);
+                double gamma = default(1.0);
+                double gammaImbalanceQueueSize = default(5.0);
+
                 double transStatStart = default(3000);
                 double transStatEnd = default(5000);
 
