@@ -98,6 +98,6 @@ if __name__ == "__main__":
     out_file = open(sys.argv[6], 'w')
     queueDataPoints = parse_vec_file(vec_filename, startTime, endTime)
     for x in queueDataPoints:
-        out_file.write(scheme + ", " + demand + ", " + str(x) + "\n")
+        out_file.write(scheme + "," + demand + "," + str(x) + "\n")
     out_file.close()
     print max(queueDataPoints)
