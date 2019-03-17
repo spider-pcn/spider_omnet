@@ -19,6 +19,7 @@ public:
     double queueDelayEWMA;
     int numRebalanceEvents = 0;
     double amtAdded = 0.0;
+    double fakeRebalancingQueue = 0.0;
 
     //channel information for price scheme
     double nValue;// Total amount across all transactions (i.e. the sum of the amount in each transaction)

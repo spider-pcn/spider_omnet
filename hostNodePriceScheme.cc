@@ -724,6 +724,22 @@ void hostNodePriceScheme::handlePriceUpdateMessage(routerMsg* ttmsg){
     double newMuLocalGrad = nLocal + qLocal*_tUpdate/_routerQueueDrainTime - 
         (nRemote + qRemote*_tUpdate/_routerQueueDrainTime);
 
+    if (_rebalancingEnabled) {
+        double amtAdded = (oldMuLocal - _gamma);
+        double newSize = neighborChannel->fakeRebalancingQueue + amtAdded;
+        neighborChannel->fakeRebalancingQueue = max(0.0, newSize);
+        if (newSize > _maxGammaImbalanceQueueSize) {
+            neighborChannel->balance += amtAdded;
+            tuple<int, int> senderReceiverTuple = 
+                    (sender < myIndex()) ? make_tuple(sender, myIndex()) :
+                    make_tuple(myIndex(), sender);
+            _capacities[senderReceiverTuple] += amtAdded;
+            neighborChannel->amtAdded += amtAdded;
+            neighborChannel->numRebalanceEvents += 1;
+            neighborChannel->fakeRebalancingQueue = 0;
+        }
+    }
+
      // Nesterov's gradient descent equation
      // and other speeding up mechanisms
      double newLambda = 0.0;
