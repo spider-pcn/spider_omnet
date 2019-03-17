@@ -185,6 +185,7 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
     total_budget = balance_per_channel * len(G.edges())
     weights = {e: min(G.degree(e[0]), G.degree(e[1])) for e in G.edges()}
     sum_weights = sum(weights.values())
+    capacity_dict = dict()
 
     # write rest of topology
     for e in G.edges():
@@ -192,8 +193,8 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         f1.write(str(e[0]) + "r " + str(e[1]) +  "r ")
         f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
         if random_channel_capacity:
-            print weights[e], sum_weights
-            balance_for_this_channel = abs(np.random.normal(balance_per_channel, 0.6 * balance_per_channel))
+            #print weights[e], sum_weights
+            balance_for_this_channel = round(abs(np.random.normal(balance_per_channel, 0.75 * balance_per_channel)))
             # balance_for_this_channel = round((weights[e]/float(sum_weights) ) * total_budget)
             #balance_for_this_channel = random.randint(balance_per_channel/2, 3 * balance_per_channel/2)
         elif is_lnd:
@@ -201,12 +202,15 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         else:
             balance_for_this_channel = balance_per_channel
 
+        capacity_dict[e] = balance_for_this_channel
+
         if randomize_init_bal:
             one_end_bal = random.randint(1, balance_for_this_channel)
             other_end_bal = balance_for_this_channel - one_end_bal
             f1.write(str(one_end_bal) + " " + str(other_end_bal) + "\n")
         else:
-            f1.write(str(balance_for_this_channel/2) + " " + str(balance_for_this_channel/2) + "\n")
+            f1.write(str(round(balance_for_this_channel/2)) + " " + \
+                    str(round(balance_for_this_channel/2)) + "\n")
 
     # generate extra end host nodes
     if separate_end_hosts: 
@@ -216,7 +220,7 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
             f1.write(str(LARGE_BALANCE/2) + " " + str(LARGE_BALANCE/2) + "\n")
     f1.close()
 
-
+    nx.set_edge_attributes(G, capacity_dict, 'capacity')
 
 # parse arguments
 parser = argparse.ArgumentParser(description="Create arbitrary topologies to run the omnet simulator on")
