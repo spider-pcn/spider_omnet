@@ -456,7 +456,7 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
     double newMuRemote = 0.0;
     double myKappa = _kappa /**20.0 /cValue*/;
     double myEta = _eta /** 20.0 / cValue*/;
-
+    
     if (_nesterov) {
         double yLambda = nodeToPaymentChannel[sender].yLambda;
         double yMuLocal = nodeToPaymentChannel[sender].yMuLocal;

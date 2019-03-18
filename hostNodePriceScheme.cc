@@ -728,39 +728,42 @@ void hostNodePriceScheme::handlePriceUpdateMessage(routerMsg* ttmsg){
      double newLambda = 0.0;
      double newMuLocal = 0.0;
      double newMuRemote = 0.0;
+
+    double myKappa = _kappa;
+     double myEta = _eta;
      if (_nesterov) {
          double yLambda = neighborChannel->yLambda;
          double yMuLocal = neighborChannel->yMuLocal;
          double yMuRemote = neighborChannel->yMuRemote;
 
-         double yLambdaNew = oldLambda + _eta*newLambdaGrad;
+         double yLambdaNew = oldLambda + myEta*newLambdaGrad;
          newLambda = yLambdaNew + _rhoLambda*(yLambdaNew - yLambda); 
          neighborChannel->yLambda = yLambdaNew;
 
-         double yMuLocalNew = oldMuLocal + _kappa*newMuLocalGrad;
+         double yMuLocalNew = oldMuLocal + myKappa*newMuLocalGrad;
          newMuLocal = yMuLocalNew + _rhoMu*(yMuLocalNew - yMuLocal);
          neighborChannel->yMuLocal = yMuLocalNew;
 
-         double yMuRemoteNew = oldMuRemote - _kappa*newMuLocalGrad;
+         double yMuRemoteNew = oldMuRemote - myKappa*newMuLocalGrad;
          newMuRemote = yMuRemoteNew + _rhoMu*(yMuRemoteNew - yMuRemote);
          neighborChannel->yMuRemote = yMuRemoteNew;
      } 
      /*else if (_secondOrderOptimization) {
          double lastLambdaGrad = neighborChannel->lastLambdaGrad;
-         newLambda = oldLambda +  _eta*newLambdaGrad + _rhoLambda*(newLambdaGrad - lastLambdaGrad);
+         newLambda = oldLambda +  myEta*newLambdaGrad + _rhoLambda*(newLambdaGrad - lastLambdaGrad);
          neighborChannel->lastLambdaGrad = newLambdaGrad;
 
          double lastMuLocalGrad = neighborChannel->lastMuLocalGrad;
-         newMuLocal = oldMuLocal + _kappa*newMuLocalGrad + 
+         newMuLocal = oldMuLocal + myKappa*newMuLocalGrad + 
              _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
-         newMuRemote = oldMuRemote - _kappa*newMuLocalGrad - 
+         newMuRemote = oldMuRemote - myKappa*newMuLocalGrad - 
              _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
          neighborChannel->lastMuLocalGrad = newMuLocalGrad;
      } */
      else {
-         newLambda = oldLambda +  _eta*newLambdaGrad;
-         newMuLocal = oldMuLocal + _kappa*newMuLocalGrad;
-         newMuRemote = oldMuRemote - _kappa*newMuLocalGrad; 
+         newLambda = oldLambda +  myEta*newLambdaGrad;
+         newMuLocal = oldMuLocal + myKappa*newMuLocalGrad;
+         newMuRemote = oldMuRemote - myKappa*newMuLocalGrad; 
      }
      
      neighborChannel->lambda = maxDouble(newLambda, 0);
