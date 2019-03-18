@@ -930,9 +930,10 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                     (it->first < myIndex()) ? make_tuple(it->first, myIndex()) :
                     make_tuple(myIndex(), it->first);
                     _capacities[senderReceiverTuple] += getTotalAmount(neighborChannel->queuedTransUnits);
+            
+                neighborChannel->numRebalanceEvents += 1; 
+                processTransUnits(it->first, neighborChannel->queuedTransUnits);
             }
-            neighborChannel->numRebalanceEvents += 1; 
-            processTransUnits(it->first, neighborChannel->queuedTransUnits);
         }
     }
 

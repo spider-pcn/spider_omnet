@@ -54,7 +54,7 @@ parser.add_argument('--normalizer', type=float, help='C in probability update', 
 
 parser.add_argument('--rebalancing-enabled', action='store_true', dest="rebalancingEnabled")
 parser.add_argument('--gamma', type=float, help='factor to weigh rebalancing', dest='gamma', default=1)
-parser.add_argument('--rebalancing-queue-delay-threshold', type=float, help='threshold for rebalancing', 
+parser.add_argument('--rebalancing-queue-delay-threshold', type=int, help='threshold for rebalancing',\
         dest='rebalancingQueueDelayThreshold', default=3)
 parser.add_argument('--gamma-imbalance-queue-size', type=float, help='threshold queue size for rebalancing', 
         dest='gammaImbalanceQueueSize', default=5)
@@ -75,12 +75,6 @@ print "in ini file, path choice", args.pathChoice, " capacity : ",args.capacity
 configname += "_" + args.pathChoice
 if args.capacity is not None:
     configname += '_cap' + str(args.capacity)
-
-if args.rebalancingEnabled:
-    configname += "_rebalancing_"
-    configname += str(args.gamma)
-    configname += "_" + str(args.gammaImabalanceQueueSize)
-    configname += str(args.rebalancingQueueingDelayThreshold)
 
 #arg parse might support a cleaner way to deal with this
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
@@ -106,8 +100,18 @@ if args.numPathChoices != 'default':
 else:   
     args.numPathChoices = '4'
 
+if args.rebalancingEnabled:
+    configname += "_rebalancing_"
+    configname += str(int(args.gamma * 100))
+    #configname += "_" + str(int(args.gammaImbalanceQueueSize * 100))
+    configname += "_" + str(int(args.rebalancingQueueDelayThreshold))
+
+
+
 if args.capacityFactor != None:
     configname = configname + "_capacityFactorTimes10_" + str(int(float(args.capacityFactor)*10))
+
+print configname
 
 f = open(args.ini_filename, "w+")
 f.write("[General]\n\n")
@@ -170,7 +174,7 @@ if args.rebalancingEnabled:
         f.write("**.gamma = " + str(args.gamma) + "\n")
         f.write("**.gammaImbalanceQueueSize = " + str(args.gammaImbalanceQueueSize) + "\n")
     else:
-        f.write("**.queueDelayThreshold = " + str(args.rebalancingQueueingDelayThreshold) + "\n")
+        f.write("**.queueDelayThreshold = " + str(args.rebalancingQueueDelayThreshold) + "\n")
 
 f.close()
 

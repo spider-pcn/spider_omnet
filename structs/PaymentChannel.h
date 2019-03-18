@@ -55,6 +55,7 @@ public:
     simsignal_t lambdaSignal;
     simsignal_t muLocalSignal;
     simsignal_t muRemoteSignal;
+    simsignal_t fakeRebalanceQSignal;
 
     //statistics - ones for per payment channel
     int statNumProcessed;
@@ -62,5 +63,6 @@ public:
     simsignal_t amtInQueuePerChannelSignal;
     simsignal_t balancePerChannelSignal;
     simsignal_t numInflightPerChannelSignal;
+    simsignal_t queueDelayEWMASignal;
 
 };

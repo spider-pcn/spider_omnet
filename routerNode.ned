@@ -28,6 +28,12 @@ simple routerNode
 		@signal[nValuePerChannel*](type="double"); 
 		@statisticTemplate[nValuePerChannelTemplate](record=vector, stats);
 		
+		@signal[fakeRebalanceQPerChannel*](type="double"); 
+		@statisticTemplate[fakeRebalanceQPerChannelTemplate](record=vector, stats);
+                
+		@signal[queueDelayEWMAPerChannel*](type="double"); 
+		@statisticTemplate[queueDelayEWMAPerChannelTemplate](record=vector, stats);
+                
                 @signal[serviceRatePerChannel*](type="double"); 
 		@statisticTemplate[serviceRatePerChannelTemplate](record=vector, stats);
 				

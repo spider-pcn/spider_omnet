@@ -103,7 +103,12 @@ parser.add_argument('--demand',
 parser.add_argument('--numCompleted',
         action='store_true',
         help='Plot the per dest completion rate')
-
+parser.add_argument('--queue_delay',
+        action='store_true',
+        help='Plot the perchannel queueing delay')
+parser.add_argument('--fake_rebalance_queue',
+        action='store_true',
+        help='Plot the perchannel fake queue delay')
 
 
 parser.add_argument('--save',
@@ -381,6 +386,14 @@ def plot_per_payment_channel_stats(args, text_to_add):
         if args.queue_info:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numInQueue", True)
             plot_relevant_stats(data_to_plot, pdf, "Number in Queue")
+
+        if args.queue_delay:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "queueDelayEWMA", True)
+            plot_relevant_stats(data_to_plot, pdf, "Delay through queue")
+
+        if args.fake_rebalance_queue:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "fakeRebalanceQ", True)
+            plot_relevant_stats(data_to_plot, pdf, "fake queue size")
 
         if args.num_sent_per_channel:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numSent", True)

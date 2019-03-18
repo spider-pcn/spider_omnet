@@ -38,7 +38,8 @@ def parse_sca_files(filename):
         line = f.readline()
         while line:
             if line.startswith("scalar"):
-                if not("queueSize" in line or "completionTime" in line or "amt" in line or "rate" in line):
+                if not("queueSize" in line or "completionTime" in line or "amt" in line or "rate" in line or \
+                        "Rebalancing" in line or "Amt" in line):
                     parameters += parse_sca_parameter_line(line)
 
             elif line.startswith("statistic"):

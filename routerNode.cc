@@ -170,6 +170,19 @@ void routerNode::initialize()
       getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
       nodeToPaymentChannel[key].balancePerChannelSignal = signal;
 
+      //balancePerChannel signal
+      if (key<_numHostNodes){
+         sprintf(signalName, "queueDelayEWMAPerChannel(host %d)", key);
+      }
+      else{
+         sprintf(signalName, "queueDelayEWMAPerChannel(router %d [%d])", key-_numHostNodes, key);
+      }
+
+      signal = registerSignal(signalName);
+      statisticTemplate = getProperties()->get("statisticTemplate", "queueDelayEWMAPerChannelTemplate");
+      getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+      nodeToPaymentChannel[key].queueDelayEWMASignal = signal;
+      
       //InflightPerChannel signal
       if (key<_numHostNodes){
          sprintf(signalName, "numInflightPerChannel(host %d)", key);
@@ -184,7 +197,18 @@ void routerNode::initialize()
       nodeToPaymentChannel[key].numInflightPerChannelSignal = signal;
 
 
-      if (_priceSchemeEnabled){
+      
+     if (_priceSchemeEnabled){
+         if (key<_numHostNodes) {
+            sprintf(signalName, "fakeRebalanceQPerChannel(host %d)", key);
+         }
+         else {
+            sprintf(signalName, "fakeRebalanceQPerChannel(router %d [%d])", key - _numHostNodes, key);
+         }
+         signal = registerSignal(signalName);
+         statisticTemplate = getProperties()->get("statisticTemplate", "fakeRebalanceQPerChannelTemplate");
+         getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+         nodeToPaymentChannel[key].fakeRebalanceQSignal = signal;
 
          if (key<_numHostNodes) {
             sprintf(signalName, "nValuePerChannel(host %d)", key);
@@ -196,7 +220,6 @@ void routerNode::initialize()
          statisticTemplate = getProperties()->get("statisticTemplate", "nValuePerChannelTemplate");
          getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
          nodeToPaymentChannel[key].nValueSignal = signal;
-
 
          if (key<_numHostNodes) {
             sprintf(signalName, "serviceRatePerChannel(host %d)", key);
@@ -362,13 +385,25 @@ void routerNode::handleMessage(cMessage *msg)
 void routerNode::finish(){
     deleteMessagesInQueues();
     double numPoints = (_transStatEnd - _transStatStart)/(double) _statRate;
+    double sumRebalancing = 0;
+    double sumAmtAdded = 0;
 
     for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){ //iterate through all adjacent nodes
         int node = it->first; //key
         char buffer[30];
         sprintf(buffer, "queueSize %d -> %d", myIndex(), node);
         recordScalar(buffer, nodeToPaymentChannel[node].queueSizeSum/numPoints);
+
+        sumRebalancing += nodeToPaymentChannel[node].numRebalanceEvents;
+        sumAmtAdded += nodeToPaymentChannel[node].amtAdded;
+        
     }
+        char buffer[30];
+        sprintf(buffer, "totalNumRebalancingEvents %d", myIndex());
+        recordScalar(buffer, sumRebalancing);
+        sprintf(buffer, "totalAmtAdded %d", myIndex());
+        recordScalar(buffer, sumAmtAdded);
+
 
 }
 
@@ -604,9 +639,10 @@ void routerNode::handleClearStateMessage(routerMsg* ttmsg){
                     (it->first < myIndex()) ? make_tuple(it->first, myIndex()) :
                     make_tuple(myIndex(), it->first);
                     _capacities[senderReceiverTuple] += getTotalAmount(neighborChannel->queuedTransUnits);
+            
+                neighborChannel->numRebalanceEvents += 1; 
+                processTransUnits(it->first, neighborChannel->queuedTransUnits);
             }
-            neighborChannel->numRebalanceEvents += 1; 
-            processTransUnits(it->first, neighborChannel->queuedTransUnits);
         }
     }
 
@@ -766,6 +802,7 @@ void routerNode::handleStatMessagePriceScheme(routerMsg* ttmsg){
 
          PaymentChannel* p = &(nodeToPaymentChannel[node]);
          emit(p->nValueSignal, p->lastNValue);
+         emit(p->fakeRebalanceQSignal, p->fakeRebalancingQueue);
          emit(p->inflightOutgoingSignal, p->outgoingTransUnits.size());
          emit(p->inflightIncomingSignal, p->incomingTransUnits.size());
          emit(p->serviceRateSignal, p->arrivalRate/p->serviceRate);
@@ -800,6 +837,7 @@ void routerNode::handleStatMessage(routerMsg* ttmsg){
             emit(nodeToPaymentChannel[node].numInflightPerChannelSignal, 
                  getTotalAmount(nodeToPaymentChannel[node].incomingTransUnits) +
                  getTotalAmount(nodeToPaymentChannel[node].outgoingTransUnits));
+            emit(nodeToPaymentChannel[node].queueDelayEWMASignal, nodeToPaymentChannel[node].queueDelayEWMA);
         }
     }
 

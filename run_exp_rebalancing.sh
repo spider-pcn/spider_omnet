@@ -3,7 +3,7 @@ PATH_NAME="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulatio
 GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
 num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" \
-    "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40" "0")
+    "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
 
 balance=100
 
@@ -16,10 +16,9 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sf_50_routers" "sf_60_routers" "sf_80_routers"  \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
-    "random_30_routers" "sw_sparse_40_routers" "lnd_gaussian" "lnd_uniform")
+    "random_30_routers" "sw_sparse_40_routers")
 
-
-demand_scale=("5" "7") # "60" "90")
+demand_scale=("10") # "60" "90")
 routing_scheme=$1
 pathChoice=$2
 echo $routing_scheme
@@ -31,14 +30,14 @@ obliviousRoutingEnabled=false
 kspYenEnabled=false
 
 #general parameters that do not affect config names
-simulationLength=5100
-statCollectionRate=100
+simulationLength=1000
+statCollectionRate=25
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-transStatStart=3000
-transStatEnd=5000
+transStatStart=0
+transStatEnd=2000
 
 # scheme specific parameters
 eta=0.025
@@ -61,6 +60,8 @@ cp hostNodePriceScheme.ned ${PATH_NAME}
 cp hostNodeLndBaseline.ned ${PATH_NAME}
 cp routerNode.ned ${PATH_NAME}
 
+
+
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_NAME}
@@ -71,13 +72,16 @@ fi
 
 echo $pathChoice
 
-
-
+queueThreshold=3
+gamma=1 # (*100 to avoid config name issues)
+gamma100=100
+#gammaImbalanceQueueSize100=500
+gammaImbalanceQueueSize=10
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=( 11 ) #10 11 13 22 24)
+array=( 4 ) #10 11 13 22 24)
 for i in "${array[@]}" 
 do
     network="${prefix[i]}_circ_net"
@@ -163,8 +167,10 @@ do
         if [ ${routing_scheme} ==  "shortestPath" ]; then 
           output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0_${pathChoice}
           inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}_${pathChoice}.ini
-
-          # create the ini file with specified parameters
+          config_name=${network}_${routing_scheme}_demand${scale}_${pathChoice}
+          config_name=${config_name}_rebalancing_${gamma100}_${queueThreshold} 
+          
+         # create the ini file with specified parameters
           python scripts/create_ini_file.py \
                   --network-name ${network}\
                   --topo-filename ${topofile}\
@@ -181,10 +187,12 @@ do
                   --transStatStart $transStatStart\
                   --transStatEnd $transStatEnd\
                   --path-choice $pathChoice
+                  --rebalancing-enabled \
+                  --rebalancing-queue-delay-threshold $queueThreshold
 
 
           # run the omnetexecutable with the right parameters
-          ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme}_demand${scale}_${pathChoice} -n ${PATH_NAME}\
+          ./spiderNet -u Cmdenv -f $inifile -c ${config_name} -n ${PATH_NAME}\
                 > ${output_file}.txt & 
         
       else
@@ -192,8 +200,10 @@ do
           # if you add more choices for the number of paths you might run out of cores/memory
           for numPathChoices in 4
           do
-            output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0_${pathChoice}_${numPathChoices}
-            inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}.ini
+            output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0_${pathChoice}
+            inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}_${pathChoice}.ini
+            config_name=${network}_${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}
+            config_name=${config_name}_rebalancing_${gamma100}_${queueThreshold} 
 
             if [[ $routing_scheme =~ .*Window.* ]]; then
                 windowEnabled=true
@@ -233,13 +243,15 @@ do
                     --service-arrival-window $serviceArrivalWindow\
                     --transStatStart $transStatStart\
                     --transStatEnd $transStatEnd\
-                    --path-choice $pathChoice
+                    --path-choice $pathChoice\
+                    --rebalancing-enabled \
+                    --rebalancing-queue-delay-threshold $queueThreshold\
+                    --gamma $gamma\
+                    --gamma-imbalance-queue-size $gammaImbalanceQueueSize
 
             # run the omnetexecutable with the right parameters
             # in the background
-            ./spiderNet -u Cmdenv -f ${inifile}\
-                -c ${network}_${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices} -n ${PATH_NAME}\
-                > ${output_file}.txt &
+            ./spiderNet -u Cmdenv -f ${inifile} -c ${config_name} -n ${PATH_NAME} > ${output_file}.txt &
             pids+=($!)
             done
         fi
@@ -253,13 +265,17 @@ do
         if [ "$random_init_bal" = true ] ; then suffix="randomInitBal_"; else suffix=""; fi
         if [ "$random_capacity" = true ]; then suffix="${suffix}randomCapacity_"; fi
         echo $suffix
-        graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix[i]}_delay${delay}_demand${scale}0_${suffix}
+        graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix[i]}_delay${delay}_
+        graph_op_prefix=${graph_op_prefix}demand${scale}0_rebalancing${gamma}_${queueThreshold}_${suffix}
         vec_file_prefix=${PATH_NAME}results/${prefix[i]}_${payment_graph_type}_net_
+
         
         #routing schemes where number of path choices doesn't matter
-        if [ ${routing_scheme} ==  "shortestPath" ]; then 
-            vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}-#0.vec
-            sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}-#0.sca
+        if [ ${routing_scheme} ==  "shortestPath" ]; then
+            vec_file_suffix=${routing_scheme}_demand${scale}_${pathChoice}
+            vec_file_suffix=${vec_file_suffix}_rebalancing_${gamma100}_${queueThreshold} 
+            vec_file_path=${vec_file_prefix}${vec_file_suffix}-#0.vec
+            sca_file_path=${vec_file_prefix}${vec_file_suffix}-#0.sca
 
 
             python scripts/generate_analysis_plots_for_single_run.py \
@@ -270,22 +286,24 @@ do
               --balance \
               --queue_info --timeouts --frac_completed \
               --inflight --timeouts_sender \
-              --waiting --bottlenecks
+              --waiting --bottlenecks --queue_delay 
         
 
         #routing schemes where number of path choices matter
         else
           for numPathChoices in 4
             do
-                vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}-#0.vec
-                sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}-#0.sca
+                vec_file_suffix=${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}
+                vec_file_suffix=${vec_file_suffix}_rebalancing_${gamma100}_${queueThreshold} 
+                vec_file_path=${vec_file_prefix}${vec_file_suffix}-#0.vec
+                sca_file_path=${vec_file_prefix}${vec_file_suffix}-#0.sca
 
 
                 python scripts/generate_analysis_plots_for_single_run.py \
                   --detail $signalsEnabled \
                   --vec_file ${vec_file_path} \
                   --sca_file ${sca_file_path} \
-                  --save ${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices} \
+                  --save ${graph_op_prefix}${routing_scheme}_${pathChoice} \
                   --balance \
                   --queue_info --timeouts --frac_completed \
                   --frac_completed_window \
@@ -293,7 +311,7 @@ do
                   --waiting --bottlenecks --probabilities \
                   --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
                   --inflight_incoming --rate_to_send --price --mu_remote --demand \
-                  --rate_sent --amt_inflight_per_path
+                  --rate_sent --amt_inflight_per_path --queue_delay --fake_rebalance_queue
               done
           fi
 
