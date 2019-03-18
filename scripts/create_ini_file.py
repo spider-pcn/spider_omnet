@@ -25,6 +25,7 @@ parser.add_argument('--transStatStart', type=int, help='when to start collecting
 parser.add_argument('--transStatEnd', type=int,help='when to end stats collection', default=5000)
 parser.add_argument('--path-choice', type=str, help='type of path choices', dest='pathChoice', default='shortest',
         choices=['widest', 'oblivious', 'kspYen', 'shortest'])
+parser.add_argument('--capacity', type=int,help='mean cap for topology',default=100)
 
 
 
@@ -63,8 +64,9 @@ if args.routingScheme != 'default':
 if args.demandScale != None:
     configname += "_demand" + str(args.demandScale)
 
-print "in ini file, ", args.pathChoice
+print "in ini file, path choice", args.pathChoice, " capacity : ",args.capacity
 configname += "_" + args.pathChoice
+configname += '_cap' + str(args.capacity)
 
 #arg parse might support a cleaner way to deal with this
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \

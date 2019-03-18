@@ -209,13 +209,15 @@ void generateTransUnitList(string workloadFile){
                 TransUnit tempTU = TransUnit(_splitSize, timeSent, 
                         sender, receiver, priorityClass, hasTimeOut, timeOut, largerTxnID);
                 amount -= _splitSize;
-                _transUnitList[sender].push(tempTU);
+                cout << "pushing transactions in for sender " << sender << endl;
+                _transUnitList[sender].push_back(tempTU);
                 numSplits++;
             }
             if (amount > 0) {
                 TransUnit tempTU = TransUnit(amount, timeSent, sender, receiver, priorityClass, 
                         hasTimeOut, timeOut, largerTxnID);
-                _transUnitList[sender].push(tempTU);
+                _transUnitList[sender].push_back(tempTU);
+                cout << "pushing transactions in for sender " << sender << endl;
                 numSplits++;
             }
 
@@ -233,10 +235,10 @@ void generateTransUnitList(string workloadFile){
         }
         //cout << "finished generateTransUnitList" << endl;
         myfile.close();
-        if (lastTime + 5 < _simulationLength) {
+        /*if (lastTime + 5 < _simulationLength) {
             cout << "Insufficient txns" << endl;
             assert(false);
-        }
+        }*/
     }
     else 
         cout << "Unable to open file" << workloadFile << endl;
