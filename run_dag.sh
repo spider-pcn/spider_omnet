@@ -176,7 +176,9 @@ do
                   --timeout-clear-rate $timeoutClearRate\
                   --timeout-enabled $timeoutEnabled\
                   --routing-scheme ${routing_scheme}\
-                  --demand-scale ${scale}
+                  --demand-scale ${scale}\
+                  --transStatStart $transStatStart\
+                  --transStatEnd $transStatEnd
 
 
           # run the omnetexecutable with the right parameters
@@ -228,7 +230,9 @@ do
                     --demand-scale $scale\
                     --xi $xi\
                     --router-queue-drain-time $routerQueueDrainTime\
-                    --service-arrival-window $serviceArrivalWindow
+                    --service-arrival-window $serviceArrivalWindow\
+                    --transStatStart $transStatStart\
+                    --transStatEnd $transStatEnd
 
 
             # run the omnetexecutable with the right parameters

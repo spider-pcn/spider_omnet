@@ -134,8 +134,7 @@ do
                 --balance-per-channel $balance\
                 --generate-json-also \
                 --timeout-value 5 \
-                --kaggle-size \
-                --scale-amount $scale 
+                --scale-amount $scale\
+                --kaggle-size
     done
 done
-
