@@ -3,7 +3,7 @@ PATH_NAME="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulatio
 GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
 num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" \
-    "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
+    "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40" "0")
 
 balance=100
 
@@ -16,9 +16,9 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sf_50_routers" "sf_60_routers" "sf_80_routers"  \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
-    "random_30_routers" "sw_sparse_40_routers")
+    "random_30_routers" "sw_sparse_40_routers" "lnd_gaussian")
 
-demand_scale=("1" "3" "6" "9") # "60" "90")
+demand_scale=("4") # "60" "90")
 routing_scheme=$1
 pathChoice=$2
 echo $routing_scheme
@@ -191,8 +191,8 @@ do
           # if you add more choices for the number of paths you might run out of cores/memory
           for numPathChoices in 4
           do
-            output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0_${pathChoice}
-            inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}_${pathChoice}.ini
+            output_file=outputs/${prefix[i]}_circ_${routing_scheme}_demand${scale}0_${pathChoice}_${numPathChoices}
+            inifile=${PATH_NAME}${prefix[i]}_circ_${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}.ini
 
             if [[ $routing_scheme =~ .*Window.* ]]; then
                 windowEnabled=true
@@ -284,7 +284,7 @@ do
                   --detail $signalsEnabled \
                   --vec_file ${vec_file_path} \
                   --sca_file ${sca_file_path} \
-                  --save ${graph_op_prefix}${routing_scheme}_${pathChoice} \
+                  --save ${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices} \
                   --balance \
                   --queue_info --timeouts --frac_completed \
                   --frac_completed_window \

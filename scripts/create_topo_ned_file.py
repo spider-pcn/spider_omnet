@@ -195,6 +195,8 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         if random_channel_capacity:
             #print weights[e], sum_weights
             balance_for_this_channel = round(abs(np.random.normal(balance_per_channel, 0.75 * balance_per_channel)))
+            if balance_for_this_channel < 2:
+                balance_for_this_channel = 2
             # balance_for_this_channel = round((weights[e]/float(sum_weights) ) * total_budget)
             #balance_for_this_channel = random.randint(balance_per_channel/2, 3 * balance_per_channel/2)
         elif is_lnd:
@@ -228,7 +230,7 @@ parser.add_argument('--num-nodes', type=int, dest='num_nodes', help='number of n
 parser.add_argument('--delay-per-channel', type=int, dest='delay_per_channel', \
         help='delay between nodes (ms)', default=30)
 parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'hotnets_topo', 'simple_line', \
-        'simple_deadlock', 'simple_topologies', 'lnd_dec4_2018', 'lnd_dec28_2018', 'tree', 'random'], \
+        'simple_deadlock', 'simple_topologies', 'lnd_dec4_2018', 'lnd_gaussian', 'lnd_uniform', 'tree', 'random'], \
         help='type of graph (Small world or scale free or custom topology list)', default='small_world')
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 parser.add_argument('--topo-filename', dest='topo_filename', type=str, \
@@ -270,7 +272,7 @@ elif args.graph_type == 'simple_deadlock':
     G = simple_deadlock_graph
     args.separate_end_hosts = False
 elif args.graph_type.startswith('lnd_'):
-    G = nx.read_edgelist(LND_FILE_PATH + args.graph_type + '_reducedsize' + '.edgelist')
+    G = nx.read_edgelist(LND_FILE_PATH + 'lnd_dec4_2018_reducedsize' + '.edgelist')
 else:
     G = simple_line_graph
     args.separate_end_hosts = False

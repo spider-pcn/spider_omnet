@@ -26,7 +26,7 @@ random_capacity=false
 
 
 #general parameters that do not affect config names
-simulationLength=3000
+simulationLength=2700
 statCollectionRate=100
 timeoutClearRate=1
 timeoutEnabled=true
@@ -34,6 +34,9 @@ signalsEnabled=true
 loggingEnabled=false
 transStatStart=1000
 transStatEnd=2500
+echo $transStatStart
+echo $transStatEnd
+echo $signalsEnabled
 
 # scheme specific parameters
 eta=0.025
@@ -60,7 +63,7 @@ dag_percent=("20" "42" "65")
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=(11 22) #10 11 13 22 24)
+array=(11) #10 11 13 22 24)
 for i in "${array[@]}" 
 do    
     # create workload files and run different demand levels

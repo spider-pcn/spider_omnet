@@ -287,6 +287,17 @@ vector<int> getRoute(int sender, int receiver){
     return route;
 }
 
+double bottleneckOnPath(vector<int> route) {
+   double min = 10000000;
+    // ignore end hosts
+    for (int i = 1; i < route.size() - 2; i++) {
+        double cap = _balances[make_tuple(i, i + 1)] + _balances[make_tuple(i+1, i)];
+        if (cap < min)
+            min = cap;
+    }
+    return min;
+}
+
 
 vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
     //do searching without regard for channel capacities, DFS right now
@@ -299,7 +310,9 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
     auto tempChannels = _channels;
     for ( int it = 0; it < k; it++ ){
         route = dijkstraInputGraph(sender, receiver, tempChannels);
-        //printVector(route);
+        /*cout << "Route Num " << it + 1 << " " << bottleneckOnPath(route) << " ";
+        printVector(route);*/
+
         if (route.size() <= 1){
             return shortestRoutes;
         }

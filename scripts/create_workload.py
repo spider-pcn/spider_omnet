@@ -7,7 +7,7 @@ import random
 import json
 from config import *
 from max_circulation import *
-
+import pickle
 
 # generates the start and end nodes for a fixed set of topologies - hotnets/line/simple graph
 def generate_workload_standard(filename, payment_graph_topo, workload_type, total_time, \
@@ -298,6 +298,11 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     print "total", total
     print circ_frac
     print dag_frac
+
+    """
+    pkl_op = open('lnd_demand.pkl', 'wb')
+    pickle.dump(demand_dict, pkl_op)
+    pkl_op.close()"""
     
 
     if "two_node_imbalance" in filename:
