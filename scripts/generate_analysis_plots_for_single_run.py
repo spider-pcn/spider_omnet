@@ -11,6 +11,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from cycler import cycler
 from config import *
 from itertools import cycle
+import collections
 
 parser = argparse.ArgumentParser('Analysis Plots')
 parser.add_argument('--detail',
@@ -111,7 +112,7 @@ parser.add_argument('--save',
         help='The pdf file prefix to which to write the figures')
 
 args = parser.parse_args()
-
+num_paths = []
 #fmts = ['r--', 'b-', 'g-.']
 
 # returns a dictionary of the necessary stats where key is a router node
@@ -253,6 +254,8 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
             # plot one plot per src dest pair and multiple lines per path
             if per_path_info:
                 color_cycle_for_path = cycle(['r', 'g', 'b', 'y', 'c', 'm', 'y', 'k'])
+                if signal_type == "Price per path":
+                    num_paths.append(len(info.items()))
                 for path, path_signals in info.items():
                     time = [t[0] for t in path_signals]
                     values = [t[1] for t in path_signals]
@@ -524,6 +527,8 @@ def main():
         text_to_add = parse_sca_files(args.sca_file)
         plot_per_payment_channel_stats(args, text_to_add)
         plot_per_src_dest_stats(args, text_to_add)
+        path_dist = collections.Counter(num_paths)
+        print path_dist
     
     summary_stats = parse_sca_files_overall(args.sca_file) 
     f = open(args.save + "_summary", "w+")
