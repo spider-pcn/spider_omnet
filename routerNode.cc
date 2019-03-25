@@ -454,37 +454,40 @@ void routerNode::handlePriceUpdateMessage(routerMsg* ttmsg){
     double newLambda = 0.0;
     double newMuLocal = 0.0;
     double newMuRemote = 0.0;
+    double myKappa = _kappa /**20.0 /cValue*/;
+    double myEta = _eta /** 20.0 / cValue*/;
+
     if (_nesterov) {
         double yLambda = nodeToPaymentChannel[sender].yLambda;
         double yMuLocal = nodeToPaymentChannel[sender].yMuLocal;
         double yMuRemote = nodeToPaymentChannel[sender].yMuRemote;
 
-        double yLambdaNew = oldLambda + _eta*newLambdaGrad;
+        double yLambdaNew = oldLambda + myEta*newLambdaGrad;
         newLambda = yLambdaNew + _rhoLambda*(yLambdaNew - yLambda); 
         nodeToPaymentChannel[sender].yLambda = yLambdaNew;
 
-        double yMuLocalNew = oldMuLocal + _kappa*newMuLocalGrad;
+        double yMuLocalNew = oldMuLocal + myKappa*newMuLocalGrad;
         newMuLocal = yMuLocalNew + _rhoMu*(yMuLocalNew - yMuLocal);
         nodeToPaymentChannel[sender].yMuLocal = yMuLocalNew;
 
-        double yMuRemoteNew = oldMuRemote - _kappa*newMuLocalGrad;
+        double yMuRemoteNew = oldMuRemote - myKappa*newMuLocalGrad;
         newMuRemote = yMuRemoteNew + _rhoMu*(yMuRemoteNew - yMuRemote);
         nodeToPaymentChannel[sender].yMuRemote = yMuRemoteNew;
     } 
     /*else if (_secondOrderOptimization) {
         double lastLambdaGrad = nodeToPaymentChannel[sender].lastLambdaGrad;
-        newLambda = oldLambda +  _eta*newLambdaGrad + _rhoLambda*(newLambdaGrad - lastLambdaGrad);
+        newLambda = oldLambda +  myEta*newLambdaGrad + _rhoLambda*(newLambdaGrad - lastLambdaGrad);
         nodeToPaymentChannel[sender].lastLambdaGrad = newLambdaGrad;
 
         double lastMuLocalGrad = nodeToPaymentChannel[sender].lastMuLocalGrad;
-        newMuLocal = oldMuLocal + _kappa*newMuLocalGrad + _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
-        newMuRemote = oldMuRemote - _kappa*newMuLocalGrad - _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
+        newMuLocal = oldMuLocal + myKappa*newMuLocalGrad + _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
+        newMuRemote = oldMuRemote - myKappa*newMuLocalGrad - _rhoMu*(newMuLocalGrad - lastMuLocalGrad);
         nodeToPaymentChannel[sender].lastMuLocalGrad = newMuLocalGrad;
     } */
     else {
-        newLambda = oldLambda +  _eta*newLambdaGrad;
-        newMuLocal = oldMuLocal + _kappa*newMuLocalGrad;
-        newMuRemote = oldMuRemote - _kappa*newMuLocalGrad; 
+        newLambda = oldLambda +  myEta*newLambdaGrad;
+        newMuLocal = oldMuLocal + myKappa*newMuLocalGrad;
+        newMuRemote = oldMuRemote - myKappa*newMuLocalGrad; 
     }
 
    nodeToPaymentChannel[sender].lambda = maxDouble(newLambda, 0);
