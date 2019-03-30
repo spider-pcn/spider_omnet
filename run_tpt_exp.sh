@@ -2,21 +2,6 @@
 PATH_NAME="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulations/"
 GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
-num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" \
-    "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40" "0")
-
-balance=100
-
-#prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
-#    "hotnets" "five_line" "lnd_dec4_2018" "lnd_dec4_2018lessScale" \
-#    "sw_10_routers" "sw_20_routers" "sw_50_routers" "sw_60_routers" "sw_80_routers"  \
-#    "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
-#    "sw_800_routers" "sw_1000_routers"\
-#    "sf_10_routers" "sf_20_routers" \
-#    "sf_50_routers" "sf_60_routers" "sf_80_routers"  \
-#    "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
-#    "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
-#    "random_30_routers" "sw_sparse_40_routers" "lnd_uniform")
 
 routing_scheme=$1
 pathChoice=$2
@@ -24,19 +9,15 @@ echo $routing_scheme
 random_init_bal=false
 random_capacity=false
 
-widestPathsEnabled=false
-obliviousRoutingEnabled=false
-kspYenEnabled=false
-
 #general parameters that do not affect config names
-simulationLength=100
+simulationLength=3100
 statCollectionRate=100
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-transStatStart=1000
-transStatEnd=2000
+transStatStart=2000
+transStatEnd=3000
 
 # scheme specific parameters
 eta=0.025
@@ -70,16 +51,20 @@ fi
 echo $pathChoice
 
 
+capacity_list=("20" "40" "80" "160" "320")
+demand_list=("10" "20" "40" "80" "160")
+length=${#capacity_list[@]}
 
-
-# TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
-# adjust experiment time as needed
-#array=( 0 1 4 5 8 19 32)
-array=( 4 ) #10 11 13 22 24)
-for capacity in 100 #40 80 160 
+for (( i=0; i<$length; i++ ));
 do
-    #prefix="lnd_uniform"
-    prefix="five_node_hardcoded"
+    prefix="lnd_uniform"
+    capacity=${capacity_list[i]}
+    scale=${demand_list[i]}
+
+    echo $capacity
+    echo $scale
+
+    #prefix="five_node_hardcoded"
     network="${prefix}_cap${capacity}_circ_net"
     topofile="${PATH_NAME}${prefix}_cap${capacity}_topo.txt"
     echo ${capacity}
@@ -107,21 +92,10 @@ do
     else
         delay="30"
     fi
-    
-    # STEP 1: create topology
-    $PYTHON scripts/create_topo_ned_file.py $graph_type\
-            --network-name ${PATH_NAME}$network\
-            --topo-filename $topofile\
-            --num-nodes 0 \
-            --balance-per-channel ${capacity}\
-            --separate-end-hosts \
-            --delay-per-channel $delay\
-            --randomize-start-bal $random_init_bal\
-            --random-channel-capacity $random_capacity 
 
 
     # workload info for infinite workload
-    scale="40"
+
 
     # generate the graph first to ned file
     workloadname="${prefix}_circ_demand${scale}"
@@ -129,35 +103,12 @@ do
     inifile="${PATH_NAME}${workloadname}_default.ini"
     payment_graph_topo="custom"
     
-    # figure out payment graph/workload topology
-    if [ ${prefix:0:9} == "five_line" ]; then
-        payment_graph_topo="simple_line"
-    elif [ ${prefix:0:5} == "three" ]; then
-        payment_graph_topo="simple_line"
-    elif [ ${prefix:0:4} == "five" ]; then
-        payment_graph_topo="hardcoded_circ"
-    elif [ ${prefix:0:7} == "hotnets" ]; then
-        payment_graph_topo="hotnets_topo"
-    fi
-
     echo $network
     echo $topofile
     echo $inifile
     echo $graph_type
     echo $workloadname
 
-        # STEP 2: create transactions corresponding to this experiment run
-#        $PYTHON scripts/create_workload.py $workload uniform \
-#                --graph-topo $payment_graph_topo \
-#                --payment-graph-dag-percentage 0\
-#                --topo-filename $topofile\
-#                --experiment-time $simulationLength \
-#                --balance-per-channel $balance\
-#                --generate-json-also \
-#                --timeout-value 5 \
-#                --scale-amount $scale \
-#                --txn-size-mean 1
-#
 
     # STEP 3: run the experiment
     # routing schemes where number of path choices doesn't matter
@@ -289,7 +240,7 @@ do
               --detail $signalsEnabled \
               --vec_file ${vec_file_path} \
               --sca_file ${sca_file_path} \
-              --save ${graph_op_prefix}${routing_scheme}_${pathChoice} \
+              --save ${graph_op_prefix}${routing_scheme}_${pathChoice}_lowstep \
               --balance \
               --queue_info --timeouts --frac_completed \
               --frac_completed_window \

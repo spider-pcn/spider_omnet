@@ -44,8 +44,8 @@ struct LaterTransUnit
 };
 
 //global parameters
-// extern map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
-extern map<int, deque<TransUnit>> _transUnitList;
+extern map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
+// extern map<int, deque<TransUnit>> _transUnitList;
 extern map<int, set<int>> _destList;
 extern map<int, map<double, SplitState>> _numSplits;
 extern map<int, map<int, vector<vector<int>>>> _pathsMap;

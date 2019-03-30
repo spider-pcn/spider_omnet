@@ -531,7 +531,7 @@ def main():
         print path_dist
     
     summary_stats = parse_sca_files_overall(args.sca_file) 
-    f = open(args.save + "_summary", "w+")
+    f = open(args.save + "_summary.txt", "w+")
     f.write(summary_stats)
     f.close()
 

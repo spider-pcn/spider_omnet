@@ -199,7 +199,7 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
                 balance_for_this_channel = 2
             # balance_for_this_channel = round((weights[e]/float(sum_weights) ) * total_budget)
             #balance_for_this_channel = random.randint(balance_per_channel/2, 3 * balance_per_channel/2)
-        elif is_lnd:
+        elif is_lnd and "uniform" not in output_filename:
             balance_for_this_channel = G[e[0]][e[1]]['capacity']/10000 
         else:
             balance_for_this_channel = balance_per_channel

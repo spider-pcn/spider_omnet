@@ -209,15 +209,13 @@ void generateTransUnitList(string workloadFile){
                 TransUnit tempTU = TransUnit(_splitSize, timeSent, 
                         sender, receiver, priorityClass, hasTimeOut, timeOut, largerTxnID);
                 amount -= _splitSize;
-                cout << "pushing transactions in for sender " << sender << endl;
-                _transUnitList[sender].push_back(tempTU);
+                _transUnitList[sender].push(tempTU);
                 numSplits++;
             }
             if (amount > 0) {
                 TransUnit tempTU = TransUnit(amount, timeSent, sender, receiver, priorityClass, 
                         hasTimeOut, timeOut, largerTxnID);
-                _transUnitList[sender].push_back(tempTU);
-                cout << "pushing transactions in for sender " << sender << endl;
+                _transUnitList[sender].push(tempTU);
                 numSplits++;
             }
 
