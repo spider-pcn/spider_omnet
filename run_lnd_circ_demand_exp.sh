@@ -4,7 +4,7 @@ GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
 balance=100
 
-demand_scale=("1" "3" "5" "7") 
+demand_scale=("1" "2" "3" "4") 
 routing_scheme=$1
 pathChoice=$2
 echo $routing_scheme
@@ -16,14 +16,14 @@ obliviousRoutingEnabled=false
 kspYenEnabled=false
 
 #general parameters that do not affect config names
-simulationLength=5100
+simulationLength=3100
 statCollectionRate=100
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-transStatStart=3000
-transStatEnd=5000
+transStatStart=2000
+transStatEnd=3000
 
 # scheme specific parameters
 eta=0.025
@@ -57,10 +57,10 @@ echo $pathChoice
 
 
 
-prefix="sw_50_routers"
+prefix="lnd_uniform"
 network="${prefix}_circ_net"
 topofile="${PATH_NAME}${prefix}_topo.txt"
-graph_type="small_world"
+graph_type="lnd_uniform"
 delay="30"
 
 # create workload files and run different demand levels
