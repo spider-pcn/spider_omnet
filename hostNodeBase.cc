@@ -1097,9 +1097,9 @@ void hostNodeBase::initialize() {
 
         _transStatStart = par("transStatStart");
         _transStatEnd = par("transStatEnd");
-        _waterfillingStartTime = 0;
-        _landmarkRoutingStartTime = 0;
-        _shortestPathStartTime = 0;
+        _waterfillingStartTime = 1000;
+        _landmarkRoutingStartTime = 1300;
+        _shortestPathStartTime = 1300;
         _shortestPathEndTime = 5000;
 
         _widestPathsEnabled = par("widestPathsEnabled");

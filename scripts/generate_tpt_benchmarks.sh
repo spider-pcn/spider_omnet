@@ -2,7 +2,7 @@
 PATH_NAME="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulations/"
 
 
-demand_scale=("10" "20" "40" "60" "80") # "60" "90")
+demand_scale=("10" "20" "40" "80" "160") # "60" "90")
 capacity_list=("20" "40" "80" "160" "320")
 random_init_bal=false
 random_capacity=false
@@ -20,9 +20,7 @@ arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_NAME}
 
-# TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
-# adjust experiment time as needed
-#array=( 0 1 4 5 8 19 32)
+
 prefix="lnd_uniform"
 length=${#capacity_list[@]}
 

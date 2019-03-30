@@ -18,7 +18,8 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
     "random_30_routers" "sw_sparse_40_routers" "lnd_gaussian" "lnd_uniform")
 
-demand_scale=("4") # "60" "90")
+
+demand_scale=("5" "7") # "60" "90")
 routing_scheme=$1
 pathChoice=$2
 echo $routing_scheme
@@ -30,14 +31,14 @@ obliviousRoutingEnabled=false
 kspYenEnabled=false
 
 #general parameters that do not affect config names
-simulationLength=2100
+simulationLength=5100
 statCollectionRate=100
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-transStatStart=1000
-transStatEnd=2000
+transStatStart=3000
+transStatEnd=5000
 
 # scheme specific parameters
 eta=0.025
@@ -76,7 +77,7 @@ echo $pathChoice
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=( 7 8 ) #10 11 13 22 24)
+array=( 11 ) #10 11 13 22 24)
 for i in "${array[@]}" 
 do
     network="${prefix[i]}_circ_net"
