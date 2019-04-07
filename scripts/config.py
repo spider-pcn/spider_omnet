@@ -71,7 +71,7 @@ MIN_TXN_SIZE = 0.1
 MAX_TXN_SIZE = 10
 SMALLEST_UNIT=1
 
-EC2_INSTANCE_ADDRESS="ec2-18-213-2-219.compute-1.amazonaws.com"
+EC2_INSTANCE_ADDRESS="ec2-34-224-216-215.compute-1.amazonaws.com"
 PORT_NUMBER=8000
 
 # json parameters for lnd testbed

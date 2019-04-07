@@ -146,7 +146,7 @@ do
         echo $graph_type
 
         # STEP 2: create transactions corresponding to this experiment run
-        $PYTHON scripts/create_workload.py $workload uniform \
+        $PYTHON scripts/create_workload.py $workload poisson \
                 --graph-topo $payment_graph_topo \
                 --payment-graph-dag-percentage 0\
                 --topo-filename $topofile\

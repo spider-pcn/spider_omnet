@@ -554,7 +554,9 @@ void routerNode::handleTriggerPriceUpdateMessage(routerMsg* ttmsg){
       auto firstTransTimes = neighborChannel->serviceArrivalTimeStamps.front();
       auto lastTransTimes =  neighborChannel->serviceArrivalTimeStamps.back();
       double serviceTimeDiff = get<0>(lastTransTimes).dbl() - get<0>(firstTransTimes).dbl(); 
-      double arrivalTimeDiff = get<1>(lastTransTimes).dbl() - get<1>(firstTransTimes).dbl(); 
+      // double arrivalTimeDiff = get<1>(lastTransTimes).dbl() - get<1>(firstTransTimes).dbl(); 
+      double arrivalTimeDiff = neighborChannel->arrivalTimeStamps.back().dbl() - 
+          neighborChannel->arrivalTimeStamps.front().dbl();
 
       neighborChannel->serviceRate = _serviceArrivalWindow / serviceTimeDiff; 
       neighborChannel->arrivalRate = _serviceArrivalWindow / arrivalTimeDiff;
@@ -1061,6 +1063,10 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
    int nextNode = ttmsg->getRoute()[hopcount+1];
 
    q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
+
+   nodeToPaymentChannel[nextNode].arrivalTimeStamps.push_back(simTime());
+   if (nodeToPaymentChannel[nextNode].arrivalTimeStamps.size() > _serviceArrivalWindow)
+       nodeToPaymentChannel[nextNode].arrivalTimeStamps.pop_front(); 
 
     if (_hasQueueCapacity && _queueCapacity == 0) {
        if (forwardTransactionMessage(ttmsg, nextNode, simTime()) == false) {
