@@ -200,7 +200,10 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
             # balance_for_this_channel = round((weights[e]/float(sum_weights) ) * total_budget)
             #balance_for_this_channel = random.randint(balance_per_channel/2, 3 * balance_per_channel/2)
         elif is_lnd and "uniform" not in output_filename:
-            balance_for_this_channel = G[e[0]][e[1]]['capacity']/10000 
+            if "lessScale" in output_filename:
+                balance_for_this_channel = G[e[0]][e[1]]['capacity']/1000 
+            else:
+                balance_for_this_channel = G[e[0]][e[1]]['capacity']/10000 
         else:
             balance_for_this_channel = balance_per_channel
 
@@ -230,7 +233,8 @@ parser.add_argument('--num-nodes', type=int, dest='num_nodes', help='number of n
 parser.add_argument('--delay-per-channel', type=int, dest='delay_per_channel', \
         help='delay between nodes (ms)', default=30)
 parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'hotnets_topo', 'simple_line', \
-        'simple_deadlock', 'simple_topologies', 'lnd_dec4_2018', 'lnd_gaussian', 'lnd_uniform', 'tree', 'random'], \
+        'simple_deadlock', 'simple_topologies', 'lnd_dec4_2018','lnd_dec4_2018lessScale', \
+        'lnd_gaussian', 'lnd_uniform', 'tree', 'random'], \
         help='type of graph (Small world or scale free or custom topology list)', default='small_world')
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 parser.add_argument('--topo-filename', dest='topo_filename', type=str, \

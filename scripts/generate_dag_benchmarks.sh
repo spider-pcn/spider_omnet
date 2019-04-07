@@ -8,7 +8,7 @@ num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "2
 balance=100
 
 prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
-    "hotnets" "five_line" "lnd_dec4_2018" "lnd_dec28_2018" \
+    "hotnets" "five_line" "lnd_dec4_2018" "lnd_dec4_2018lessScale" \
     "sw_10_routers" "sw_20_routers" "sw_50_routers" "sw_60_routers" "sw_80_routers"  \
     "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
     "sw_800_routers" "sw_1000_routers"\
@@ -18,13 +18,13 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
     "random_30_routers" "sw_sparse_40_routers")
 
-scale=50 # "60" "90")
+scale=3 # "60" "90")
 random_init_bal=false
 random_capacity=false
 
 
 #general parameters that do not affect config names
-simulationLength=3000
+simulationLength=3100
 statCollectionRate=100
 timeoutClearRate=1
 timeoutEnabled=true
@@ -51,12 +51,12 @@ arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_PREFIX}
 
-dag_percent=("20" "42" "65")
+dag_percent=("20" "45" "65")
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=(11) #10 11 13 22 24)
+array=(8) #10 11 13 22 24)
 for i in "${array[@]}" 
 do    
     # create workload files and run different demand levels
@@ -150,6 +150,7 @@ do
                 --balance-per-channel $balance\
                 --generate-json-also \
                 --timeout-value 5 \
+                --kaggle-size \
                 --scale-amount $scale 
     done
     #rm $topofile
