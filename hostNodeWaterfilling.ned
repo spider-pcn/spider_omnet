@@ -19,6 +19,7 @@ simple hostNodeWaterfilling
 		bool smoothWaterfillingEnabled = default(false);
                 bool landmarkRoutingEnabled = default(false);
                 bool lndBaselineEnabled = default(false);
+                bool splittingEnabled = default(true);
 
                 bool rebalancingEnabled = default(false);
                 double queueDelayThreshold = default(3.0);

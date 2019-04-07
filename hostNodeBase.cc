@@ -44,6 +44,7 @@ bool _priceSchemeEnabled;
 bool _landmarkRoutingEnabled;
 bool _windowEnabled;
 bool _lndBaselineEnabled;
+bool _splittingEnabled;
 
 
 bool _widestPathsEnabled;
@@ -1131,6 +1132,7 @@ void hostNodeBase::initialize() {
         _signalsEnabled = par("signalsEnabled");
         _loggingEnabled = par("loggingEnabled");
         _priceSchemeEnabled = par("priceSchemeEnabled");
+        _splittingEnabled = par("splittingEnabled");
         _serviceArrivalWindow = par("serviceArrivalWindow");
 
         _hasQueueCapacity = true;

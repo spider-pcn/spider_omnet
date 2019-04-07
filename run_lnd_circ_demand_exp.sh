@@ -5,6 +5,9 @@ GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 balance=100
 
 demand_scale=("1" "2" "3" "4") 
+# first argument can be appended with Window to enabled windows,
+# append with NoQueue to disable queue term 
+# append with NoSplit to disable splitting
 routing_scheme=$1
 pathChoice=$2
 echo $routing_scheme
@@ -57,10 +60,10 @@ echo $pathChoice
 
 
 
-prefix="lnd_uniform"
+prefix="lnd_dec4_2018lessScale"
 network="${prefix}_circ_net"
 topofile="${PATH_NAME}${prefix}_topo.txt"
-graph_type="lnd_uniform"
+graph_type="lnd_dec4_2018lessScale"
 delay="30"
 
 # create workload files and run different demand levels

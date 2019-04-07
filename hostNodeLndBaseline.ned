@@ -38,6 +38,7 @@ simple hostNodeLndBaseline
                 double rhoValue = default(0.05);
                 double minRate = default(0.25);
                 double updateQueryTime = default(0.8);
+                bool splittingEnabled = default(false);
                 double xi = default(1);
                 int serviceArrivalWindow = default(100);
                 double routerQueueDrainTime = default(1);

@@ -44,6 +44,7 @@ simple hostNodeLandmarkRouting
                 double xi = default(1);
                 int serviceArrivalWindow = default(100);
                 double routerQueueDrainTime = default(1);
+                bool splittingEnabled = default(false);
                 
                 double tau = default(10);
                 double normalizer = default(100);

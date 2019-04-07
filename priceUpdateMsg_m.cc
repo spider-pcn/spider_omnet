@@ -260,12 +260,12 @@ void priceUpdateMsg::setArrivalRate(double arrivalRate)
     this->arrivalRate = arrivalRate;
 }
 
-int priceUpdateMsg::getQueueSize() const
+double priceUpdateMsg::getQueueSize() const
 {
     return this->queueSize;
 }
 
-void priceUpdateMsg::setQueueSize(int queueSize)
+void priceUpdateMsg::setQueueSize(double queueSize)
 {
     this->queueSize = queueSize;
 }
@@ -395,7 +395,7 @@ const char *priceUpdateMsgDescriptor::getFieldTypeString(int field) const
         "double",
         "double",
         "double",
-        "int",
+        "double",
     };
     return (field>=0 && field<4) ? fieldTypeStrings[field] : nullptr;
 }
@@ -467,7 +467,7 @@ std::string priceUpdateMsgDescriptor::getFieldValueAsString(void *object, int fi
         case 0: return double2string(pp->getNLocal());
         case 1: return double2string(pp->getServiceRate());
         case 2: return double2string(pp->getArrivalRate());
-        case 3: return long2string(pp->getQueueSize());
+        case 3: return double2string(pp->getQueueSize());
         default: return "";
     }
 }
@@ -485,7 +485,7 @@ bool priceUpdateMsgDescriptor::setFieldValueAsString(void *object, int field, in
         case 0: pp->setNLocal(string2double(value)); return true;
         case 1: pp->setServiceRate(string2double(value)); return true;
         case 2: pp->setArrivalRate(string2double(value)); return true;
-        case 3: pp->setQueueSize(string2long(value)); return true;
+        case 3: pp->setQueueSize(string2double(value)); return true;
         default: return false;
     }
 }

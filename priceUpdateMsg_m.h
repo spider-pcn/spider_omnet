@@ -26,7 +26,7 @@
  *     double nLocal;
  *     double serviceRate;
  *     double arrivalRate;
- *     int queueSize;
+ *     double queueSize;
  * }
  * </pre>
  */
@@ -36,7 +36,7 @@ class priceUpdateMsg : public ::omnetpp::cPacket
     double nLocal;
     double serviceRate;
     double arrivalRate;
-    int queueSize;
+    double queueSize;
 
   private:
     void copy(const priceUpdateMsg& other);
@@ -61,8 +61,8 @@ class priceUpdateMsg : public ::omnetpp::cPacket
     virtual void setServiceRate(double serviceRate);
     virtual double getArrivalRate() const;
     virtual void setArrivalRate(double arrivalRate);
-    virtual int getQueueSize() const;
-    virtual void setQueueSize(int queueSize);
+    virtual double getQueueSize() const;
+    virtual void setQueueSize(double queueSize);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const priceUpdateMsg& obj) {obj.parsimPack(b);}

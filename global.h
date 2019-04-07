@@ -80,6 +80,7 @@ extern vector<int> _landmarks;
 
 //parameters for price scheme
 extern bool _priceSchemeEnabled;
+extern bool _splittingEnabled;
 
 extern double _rho; // for nesterov computation
 extern double _rhoLambda; // and accelerated Gradients
