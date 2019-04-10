@@ -724,12 +724,21 @@ void hostNodePriceScheme::handlePriceUpdateMessage(routerMsg* ttmsg){
     double oldLambda = neighborChannel->lambda;
     double oldMuLocal = neighborChannel->muLocal;
     double oldMuRemote = neighborChannel->muRemote;
-  
-    double newLambdaGrad = inflightLocal*arrivalRateLocal/serviceRateLocal + 
-        inflightRemote * arrivalRateRemote/serviceRateRemote + updateRateLocal * _avgDelay/1000
-       + serviceRateRemote * _avgDelay/1000 + _xi*(qLocal + qRemote) - cValue;
-    double newMuLocalGrad = nLocal + qLocal*_tUpdate/_routerQueueDrainTime - 
-        (nRemote + qRemote*_tUpdate/_routerQueueDrainTime);
+ 
+    double newLambdaGrad;
+    double newMuLocalGrad;
+    if (_useQueueEquation) {
+        newLambdaGrad	= inflightLocal*arrivalRateLocal/serviceRateLocal + 
+            inflightRemote * arrivalRateRemote/serviceRateRemote + 
+            2*_xi*min(qLocal, qRemote) - (_capacityFactor * cValue);
+        
+        newMuLocalGrad	= nLocal - nRemote + qLocal*_tUpdate/_routerQueueDrainTime - qRemote*_tUpdate/_routerQueueDrainTime;
+    } else {
+        newLambdaGrad = inflightLocal*arrivalRateLocal/serviceRateLocal + 
+       inflightRemote * arrivalRateRemote/serviceRateRemote - (_capacityFactor * cValue);
+        newMuLocalGrad	= nLocal - nRemote;
+    }
+
 
     if (_rebalancingEnabled) {
         double amtAdded = (oldMuLocal - _gamma);

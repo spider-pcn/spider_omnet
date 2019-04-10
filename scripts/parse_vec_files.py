@@ -1,5 +1,6 @@
 import os
 from config import *
+from parse_vec_files import *
 
 # parse a vector declaration line that maps a vector id to the signal that it is recording
 def parse_vec_declaration(line):

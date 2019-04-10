@@ -79,7 +79,7 @@ if args.capacity is not None:
 #arg parse might support a cleaner way to deal with this
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
         'smoothWaterfilling', 'priceSchemeWindow', 'priceSchemeWindowNoQueue', 'priceSchemeWindowNoSplit',\
-        'landmarkRouting', 'lndBaseline'] :
+        'landmarkRouting', 'lndBaseline', 'priceSchemeNoQueue'] :
     if args.routingScheme != 'default':
         print "******************"
         print "WARNING: ill-specified routing scheme, defaulting to waterfilling,",\
