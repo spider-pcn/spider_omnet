@@ -103,8 +103,8 @@ if __name__ == "__main__":
             attr_set.add(a)
 
     for e in attr_set:
-        os.system('rm ' + args.output_prefix + '_' + e)
-        out_file = open(args.output_prefix + "_" + e, 'w+')
+        os.system('rm ' + args.output_prefix + '_' + e + "_data")
+        out_file = open(args.output_prefix + "_" + e + "_data", 'w+')
         out_file.write("scheme,demand,src,dest,")
         if e != "queue":
             out_file.write("path,time,value\n")
@@ -118,12 +118,12 @@ if __name__ == "__main__":
         node_type = "router" if parameter == "queue" else "host"
         data_points = parse_for_timeseries(vec_filename, start_time, end_time, node_type, src, dest, \
                 signal_map[parameter])
-        out_file = open(args.output_prefix + "_" + parameter, 'a+')
+        out_file = open(args.output_prefix + "_" + parameter + "_data", 'a+')
         for x in data_points:
             path = x[2]
             out_file.write(scheme + "," + str(demand) + "," + str(src) + "," + str(dest) + ",")
             if node_type == "host":
-                out_file.write(str(path) + "," + str(x[0]) + "," + str(x[1]) + "\n")
+                out_file.write("P" + str(path) + "," + str(x[0]) + "," + str(x[1]) + "\n")
             else:
                 out_file.write(str(x[0]) + "," + str(x[1]) + "\n")
         out_file.close()
