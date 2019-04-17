@@ -32,6 +32,9 @@ parser.add_argument('--end-time',
 parser.add_argument('--attr-list',
         nargs='+',
         help='List of attributes to plot')
+parser.add_argument('--summary',
+        action='store_true',
+        help='whether to produce summary across all src dest')
 args = parser.parse_args()
 
 signal_map={"queue": "numInQueue", "inflight": "sumOfTransUnitsInFlight", "rate": "rateToSendTransPerDest"}
@@ -71,9 +74,10 @@ def parse_for_timeseries(filename, start_time, end_time, node_type, src, dest, r
                             tv_val = data[1]
                             vec_id = data[0]
                             if((vec_id_map[vec_id][1] == node_type) and (vec_id_map[vec_id][4] == node_type)
-                                    and (vec_id_map[vec_id][0] == src and vec_id_map[vec_id][3] == dest)):
-                                if ((tv_val[0] >= start_time) and (tv_val[0]<= end_time)):
-                                    dataPoints.append((tv_val[0], tv_val[1], path_id))
+                                and ((tv_val[0] >= start_time) and (tv_val[0]<= end_time))):
+                                    if (src == dest or 
+                                            (vec_id_map[vec_id][0] == src and vec_id_map[vec_id][3] == dest)):
+                                        dataPoints.append((tv_val[0], tv_val[1], path_id))
     return dataPoints
 
 
@@ -94,6 +98,7 @@ if __name__ == "__main__":
     new_list = []
     attr_list = []
     attr_set = set()
+    summary = args.summary
     for i, a in enumerate(args.attr_list):
         new_list.append(a)
         if (i + 1)  % 3 == 0:
@@ -105,26 +110,47 @@ if __name__ == "__main__":
     for e in attr_set:
         os.system('rm ' + args.output_prefix + '_' + e + "_data")
         out_file = open(args.output_prefix + "_" + e + "_data", 'w+')
-        out_file.write("scheme,demand,src,dest,")
+        if summary:
+            out_file.write("scheme,demand,")
+        else:
+            out_file.write("scheme,demand,src,dest,")
         if e != "queue":
             out_file.write("path,time,value\n")
         else:
             out_file.write("time,value\n")
 
-    for entry in attr_list:
-        parameter = entry[0]
-        src, dest = int(entry[1]), int(entry[2])
-        print signal_map[parameter]
-        node_type = "router" if parameter == "queue" else "host"
-        data_points = parse_for_timeseries(vec_filename, start_time, end_time, node_type, src, dest, \
-                signal_map[parameter])
-        out_file = open(args.output_prefix + "_" + parameter + "_data", 'a+')
-        for x in data_points:
-            path = x[2]
-            out_file.write(scheme + "," + str(demand) + "," + str(src) + "," + str(dest) + ",")
-            if node_type == "host":
-                out_file.write("P" + str(path) + "," + str(x[0]) + "," + str(x[1]) + "\n")
-            else:
-                out_file.write(str(x[0]) + "," + str(x[1]) + "\n")
-        out_file.close()
-        print max(data_points)
+    if summary:
+        for e in attr_set:
+            parameter = e
+            print signal_map[parameter]
+            node_type = "router" if parameter == "queue" else "host"
+            data_points = parse_for_timeseries(vec_filename, start_time, end_time, node_type, 0, 0, \
+                    signal_map[parameter])
+            out_file = open(args.output_prefix + "_" + parameter + "_data", 'a+')
+            for x in data_points:
+                path = x[2]
+                out_file.write(scheme + "," + str(demand) + ",")
+                if node_type == "host":
+                    out_file.write("P" + str(path) + "," + str(x[0]) + "," + str(x[1]) + "\n")
+                else:
+                    out_file.write(str(x[0]) + "," + str(x[1]) + "\n")
+            out_file.close()
+            print max(data_points)
+    else:
+        for entry in attr_list:
+            parameter = entry[0]
+            src, dest = int(entry[1]), int(entry[2])
+            print signal_map[parameter]
+            node_type = "router" if parameter == "queue" else "host"
+            data_points = parse_for_timeseries(vec_filename, start_time, end_time, node_type, src, dest, \
+                    signal_map[parameter])
+            out_file = open(args.output_prefix + "_" + parameter + "_data", 'a+')
+            for x in data_points:
+                path = x[2]
+                out_file.write(scheme + "," + str(demand) + "," + str(src) + "," + str(dest) + ",")
+                if node_type == "host":
+                    out_file.write("P" + str(path) + "," + str(x[0]) + "," + str(x[1]) + "\n")
+                else:
+                    out_file.write(str(x[0]) + "," + str(x[1]) + "\n")
+            out_file.close()
+            print max(data_points)
