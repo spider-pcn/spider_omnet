@@ -74,6 +74,8 @@ extern double _restorePeriod;
 extern bool _windowEnabled;
 
 extern vector<tuple<int,int>> _landmarksWithConnectivityList;//pair: (number of edges, node number)
+extern map<double, int> _transactionCompletionBySize;
+extern map<double, int> _transactionArrivalBySize;
 
 // for silentWhispers
 extern vector<int> _landmarks;

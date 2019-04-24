@@ -256,9 +256,9 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
             statAmtCompleted[destNode] += aMsg->getAmount();
 
             if (splitInfo->numTotal == splitInfo->numReceived) {
-                cout << "recording completed txn" << endl;
                 statNumCompleted[destNode] += 1; 
                 statRateCompleted[destNode] += 1;
+                _transactionCompletionBySize[splitInfo->numTotal] += 1;
                 double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                 statCompletionTimes[destNode] += timeTaken * 1000;
             }

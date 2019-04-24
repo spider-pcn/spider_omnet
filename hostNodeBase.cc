@@ -6,6 +6,8 @@
 
 //global parameters
 map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
+map<double, int> _transactionCompletionBySize;
+map<double, int> _transactionArrivalBySize;
 map<int, set<int>> _destList;
 map<int, map<double, SplitState>> _numSplits;
 map<int, map<int, vector<vector<int>>>> _pathsMap;
@@ -716,6 +718,7 @@ void hostNodeBase::handleAckMessageSpecialized(routerMsg* ttmsg) {
     else if (aMsg->getTimeSent() >= _transStatStart && 
             aMsg->getTimeSent() <= _transStatEnd) {
         statRateCompleted[destNode] = statRateCompleted[destNode] + 1;
+        _transactionCompletionBySize[aMsg->getAmount()] += 1;
         statAmtCompleted[destNode] += aMsg->getAmount();
 
         // stats
@@ -1343,6 +1346,16 @@ void hostNodeBase::finish() {
         recordScalar("delta", _delta);
         recordScalar("average delay", _avgDelay/1000.0);
         recordScalar("epsilon", _epsilon);
+
+        for (auto const& x : _transactionCompletionBySize) {
+            double amount = x.first;
+            int completed = x.second;
+            int arrived = _transactionArrivalBySize[amount];
+
+            char buffer[60];
+            sprintf(buffer, "size %d: arrived (%d) completed", int(amount), arrived);
+            recordScalar(buffer, completed);
+        }
     }
 }
 

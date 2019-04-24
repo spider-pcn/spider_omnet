@@ -413,6 +413,7 @@ void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
                 if (splitInfo->numTotal == splitInfo->numReceived) {
                     statNumCompleted[receiver] += 1;
                     statRateCompleted[receiver] += 1;
+                    _transactionCompletionBySize[splitInfo->numTotal] += 1;
                     double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                     statCompletionTimes[receiver] += timeTaken * 1000;
                 }

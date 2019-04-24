@@ -266,6 +266,7 @@ void hostNodeLandmarkRouting::handleAckMessageSpecialized(routerMsg* ttmsg) {
                 if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) {
                     statNumCompleted[receiver] += 1; 
                     statRateCompleted[receiver] += 1;
+                    _transactionCompletionBySize[amtSent] += 1;
 
                     double timeTaken = simTime().dbl() - aMsg->getTimeSent();
                     statCompletionTimes[receiver] += timeTaken * 1000;
