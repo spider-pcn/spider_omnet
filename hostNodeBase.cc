@@ -573,7 +573,7 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
     int transactionId = transMsg->getTransactionId();
     
     if (!revisit && transMsg->getTimeSent() >= _transStatStart && 
-            transMsg->getTimeSent() <= _transStatEnd) {
+            transMsg->getTimeSent() <= _transStatEnd && transMsg->isSelfMessage()) {
         statRateArrived[destination] += 1;
         statAmtArrived[destination] += transMsg->getAmount();
         statRateAttempted[destination] += 1;

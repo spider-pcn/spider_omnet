@@ -129,6 +129,7 @@ routerMsg *hostNodeLndBaseline::generateAckMessage(routerMsg* ttmsg, bool isSucc
     aMsg->setHasTimeOut(hasTimeOut);
     aMsg->setHtlcIndex(transMsg->getHtlcIndex());
     aMsg->setPathIndex(transMsg->getPathIndex());
+    aMsg->setLargerTxnId(transMsg->getLargerTxnId());
     if (!isSuccess){
         aMsg->setFailedHopNum((route.size() - 1) - ttmsg->getHopCount());
     }
@@ -155,17 +156,27 @@ void hostNodeLndBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     int hopcount = ttmsg->getHopCount();
     vector<tuple<int, double , routerMsg *, Id>> *q;
     int destNode = transMsg->getReceiver();
-    int destination = destNode;
     int transactionId = transMsg->getTransactionId();
+
+    SplitState* splitInfo = &(_numSplits[myIndex()][transMsg->getLargerTxnId()]);
+    splitInfo->numArrived += 1;
 
     // if its at the sender, initiate probes, when they come back,
     // call normal handleTransactionMessage
     if (ttmsg->isSelfMessage()) {
-        if (transMsg->getTimeSent() >= _transStatStart && transMsg->getTimeSent() <= _transStatEnd) {
-            statRateArrived[destination] += 1; 
-            statAmtArrived[destination] += transMsg->getAmount();
-            statAmtAttempted[destination] += transMsg->getAmount();
-            statRateAttempted[destination] += 1; 
+        if (splitInfo->numArrived == 1)
+            splitInfo->firstAttemptTime = simTime().dbl();
+
+        if (transMsg->getTimeSent() >= _transStatStart && 
+            transMsg->getTimeSent() <= _transStatEnd) {
+            statAmtArrived[destNode] += transMsg->getAmount();
+            statAmtAttempted[destNode] += transMsg->getAmount();
+            
+            if (splitInfo->numArrived == 1) {       
+                statNumArrived[destNode] += 1;
+                statRateArrived[destNode] += 1; 
+                statRateAttempted[destNode] += 1; 
+            }
         }
 
         vector<int> newRoute = generateNextPath(destNode);
@@ -176,7 +187,7 @@ void hostNodeLndBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
         {
             transMsg->setPathIndex(0);
             ttmsg->setRoute(newRoute);
-            handleTransactionMessage(ttmsg);
+            handleTransactionMessage(ttmsg, true);
         }
         else
         {
@@ -185,7 +196,7 @@ void hostNodeLndBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
         }
     }
     else{
-        handleTransactionMessage(ttmsg);
+        handleTransactionMessage(ttmsg,true);
     }
 }
 
@@ -221,6 +232,8 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
     ackMsg *aMsg = check_and_cast<ackMsg *>(msg->getEncapsulatedPacket());
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(aMsg->getEncapsulatedPacket());
     int transactionId = transMsg->getTransactionId();
+    int destNode = msg->getRoute()[0];
+    double largerTxnId = aMsg->getLargerTxnId();
     //guaranteed to be at last step of the path
     
     auto iter = find_if(canceledTransactions.begin(),
@@ -235,11 +248,24 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
         if (iter != canceledTransactions.end())
             canceledTransactions.erase(iter);
 
+        SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
+        splitInfo->numReceived += 1;
+
+        if (transMsg->getTimeSent() >= _transStatStart && 
+                transMsg->getTimeSent() <= _transStatEnd) {
+            statAmtCompleted[destNode] += aMsg->getAmount();
+
+            if (splitInfo->numTotal == splitInfo->numReceived) {
+                cout << "recording completed txn" << endl;
+                statNumCompleted[destNode] += 1; 
+                statRateCompleted[destNode] += 1;
+                double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
+                statCompletionTimes[destNode] += timeTaken * 1000;
+            }
+        }
         aMsg->decapsulate();
         delete transMsg;
-        /*if (_signalsEnabled)
-            emit (numPathsPerTransPerDestSignals[aMsg->getReceiver()], numPathsAttempted);*/
-        hostNodeBase::handleAckMessageSpecialized(msg);
+        hostNodeBase::handleAckMessage(msg); 
     }
     else
     { //allowed more attempts
@@ -256,6 +282,9 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
         vector<int> newRoute = generateNextPath(transMsg->getReceiver());
         if (newRoute.size() == 0)
         {
+            handleAckMessageNoMoreRoutes(msg);
+        } else if (iter != canceledTransactions.end()) {
+            canceledTransactions.erase(iter);
             handleAckMessageNoMoreRoutes(msg);
         }
         else{

@@ -364,7 +364,8 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     if (simTime() == transMsg->getTimeSent()) {
         destNodeToNumTransPending[destNode]  += 1;
         nodeToDestInfo[destNode].transSinceLastInterval += transMsg->getAmount();
-        splitInfo->firstAttemptTime = simTime().dbl();
+        if (splitInfo->numArrived == 1)
+            splitInfo->firstAttemptTime = simTime().dbl();
 
         if (transMsg->getTimeSent() >= _transStatStart && 
             transMsg->getTimeSent() <= _transStatEnd) {

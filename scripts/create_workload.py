@@ -331,7 +331,8 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     print "generated workload" 
 
     max_circ = max_circulation(demand_dict)
-    print "maximum circulation: ", max_circ, " or ", float(max_circ)/total
+    if total != 0:
+        print "maximum circulation: ", max_circ, " or ", float(max_circ)/total
 
     if generate_json_also:
         generate_json_files(filename + '.json', whole_graph, inside_graph, start_nodes, end_nodes, amt_absolute)

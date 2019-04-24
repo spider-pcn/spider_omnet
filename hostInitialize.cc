@@ -209,7 +209,7 @@ void generateTransUnitList(string workloadFile){
                  lastTime = timeSent;
             // instantiate all the transUnits that need to be sent
             int numSplits = 0;
-            while (amount >= _splitSize && (_waterfillingEnabled || _priceSchemeEnabled) && 
+            while (amount >= _splitSize && (_waterfillingEnabled || _priceSchemeEnabled || _lndBaselineEnabled) && 
                     _splittingEnabled) {
                 TransUnit tempTU = TransUnit(_splitSize, timeSent, 
                         sender, receiver, priorityClass, hasTimeOut, timeOut, largerTxnID);
@@ -226,7 +226,7 @@ void generateTransUnitList(string workloadFile){
 
             // push the transUnit into a priority queue indexed by the sender, 
             _destList[sender].insert(receiver);
-
+            
             SplitState temp = {};
             temp.numTotal = numSplits;
             temp.numReceived = 0;

@@ -79,7 +79,7 @@ if args.capacity is not None:
 #arg parse might support a cleaner way to deal with this
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
         'smoothWaterfilling', 'priceSchemeWindow', 'priceSchemeWindowNoQueue', 'priceSchemeWindowNoSplit',\
-        'landmarkRouting', 'lndBaseline', 'priceSchemeNoQueue'] :
+        'landmarkRouting', 'lndBaseline', 'priceSchemeNoQueue', 'lndBaselineSplit']:
     if args.routingScheme != 'default':
         print "******************"
         print "WARNING: ill-specified routing scheme, defaulting to waterfilling,",\
@@ -97,6 +97,8 @@ if "NoQueue" in args.routingScheme:
     modifiedRoutingScheme = modifiedRoutingScheme[:-7]
 if "NoSplit" in args.routingScheme:
     modifiedRoutingScheme = modifiedRoutingScheme[:-7]
+if args.routingScheme == "lndBaselineSplit":
+    modifiedRoutingScheme = "lndBaseline"
 
 
 if args.numPathChoices != 'default':
@@ -155,6 +157,8 @@ if 'priceScheme' in args.routingScheme:
 
 if 'NoSplit' in args.routingScheme: 
     f.write("**.splittingEnabled = false\n")
+elif 'Split' in args.routingScheme: # cases where split is explictly enabled
+    f.write("**.splittingEnabled = true\n")
 
 if args.routingScheme == "smoothWaterfilling":
     f.write("**.smoothWaterfillingEnabled = true\n")
@@ -164,7 +168,7 @@ if args.routingScheme == "smoothWaterfilling":
 if args.routingScheme == 'landmarkRouting':
     f.write("**.landmarkRoutingEnabled = true\n")
 
-if args.routingScheme == 'lndBaseline':
+if 'lndBaseline' in args.routingScheme:
     f.write("**.lndBaselineEnabled = true\n")
 
 if args.pathChoice == "oblivious":
