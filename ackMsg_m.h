@@ -32,7 +32,9 @@
  *     int failedHopNum;
  *     string secret = "";
  *     double amount;
+ *     int priorityClass;
  *     bool hasTimeOut;
+ *     double timeOut;
  *     double largerTxnId;
  * }
  * </pre>
@@ -49,7 +51,9 @@ class ackMsg : public ::omnetpp::cPacket
     int failedHopNum;
     ::omnetpp::opp_string secret;
     double amount;
+    int priorityClass;
     bool hasTimeOut;
+    double timeOut;
     double largerTxnId;
 
   private:
@@ -87,8 +91,12 @@ class ackMsg : public ::omnetpp::cPacket
     virtual void setSecret(const char * secret);
     virtual double getAmount() const;
     virtual void setAmount(double amount);
+    virtual int getPriorityClass() const;
+    virtual void setPriorityClass(int priorityClass);
     virtual bool getHasTimeOut() const;
     virtual void setHasTimeOut(bool hasTimeOut);
+    virtual double getTimeOut() const;
+    virtual void setTimeOut(double timeOut);
     virtual double getLargerTxnId() const;
     virtual void setLargerTxnId(double largerTxnId);
 };

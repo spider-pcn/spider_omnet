@@ -317,7 +317,44 @@ routerMsg *hostNodeBase::generateTransactionMessage(TransUnit unit) {
     return rMsg;
 }
 
-
+/* Generates a duplicate transaction message using an ack for the same transaction message
+ * useful if you have to duplicate a transaction from the ackMessage 
+*/
+routerMsg *hostNodeBase::generateDuplicateTransactionMessage(ackMsg* aMsg) {
+   char msgname[MSGSIZE];
+   int sender = myIndex();
+   int receiver = aMsg->getReceiver();
+   sprintf(msgname, "tic-%d-to-%d transactionMsg", sender, receiver);
+   
+   transactionMsg *msg = new transactionMsg(msgname);
+   msg->setAmount(aMsg->getAmount());
+   msg->setTimeSent(aMsg->getTimeSent());
+   msg->setSender(sender);
+   msg->setReceiver(receiver);
+   msg->setPriorityClass(aMsg->getPriorityClass());
+   msg->setTransactionId(aMsg->getTransactionId());
+   msg->setHtlcIndex(aMsg->getHtlcIndex());
+   msg->setHasTimeOut(aMsg->getHasTimeOut());
+   msg->setTimeOut(aMsg->getTimeOut());
+   msg->setLargerTxnId(aMsg->getLargerTxnId());
+   
+   sprintf(msgname, "tic-%d-to-%d router-transaction-Msg %f", sender, receiver, aMsg->getTimeSent());
+   
+   routerMsg *rMsg = new routerMsg(msgname);
+   // compute route only once
+   if (destNodeToPath.count(receiver) == 0){ 
+      vector<int> route = getRoute(sender,receiver);
+      destNodeToPath[receiver] = route;
+      rMsg->setRoute(route);
+   }
+   else{
+      rMsg->setRoute(destNodeToPath[receiver]);
+   }
+   rMsg->setHopCount(0);
+   rMsg->setMessageType(TRANSACTION_MSG);
+   rMsg->encapsulate(msg);
+   return rMsg;
+}
 
 /* called only when a transactionMsg reaches end of its path to mark
  * the acknowledgement and receipt of the transaction at the receiver,
@@ -351,6 +388,8 @@ routerMsg *hostNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     aMsg->setHtlcIndex(transMsg->getHtlcIndex());
     aMsg->setPathIndex(transMsg->getPathIndex());
     aMsg->setLargerTxnId(transMsg->getLargerTxnId());
+    aMsg->setPriorityClass(transMsg->getPriorityClass());
+    aMsg->setTimeOut(transMsg->getTimeOut());
     if (!isSuccess){
         aMsg->setFailedHopNum((route.size()-1) - ttmsg->getHopCount());
     }

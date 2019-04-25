@@ -25,7 +25,9 @@ packet ackMsg
         int failedHopNum;
     string secret=""; 
     double amount;
+    int priorityClass;
     bool hasTimeOut;
+    double timeOut;
     double largerTxnId;
  }
 

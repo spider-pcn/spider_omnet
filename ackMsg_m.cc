@@ -190,7 +190,9 @@ ackMsg::ackMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
     this->failedHopNum = 0;
     this->secret = "";
     this->amount = 0;
+    this->priorityClass = 0;
     this->hasTimeOut = false;
+    this->timeOut = 0;
     this->largerTxnId = 0;
 }
 
@@ -222,7 +224,9 @@ void ackMsg::copy(const ackMsg& other)
     this->failedHopNum = other.failedHopNum;
     this->secret = other.secret;
     this->amount = other.amount;
+    this->priorityClass = other.priorityClass;
     this->hasTimeOut = other.hasTimeOut;
+    this->timeOut = other.timeOut;
     this->largerTxnId = other.largerTxnId;
 }
 
@@ -238,7 +242,9 @@ void ackMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->failedHopNum);
     doParsimPacking(b,this->secret);
     doParsimPacking(b,this->amount);
+    doParsimPacking(b,this->priorityClass);
     doParsimPacking(b,this->hasTimeOut);
+    doParsimPacking(b,this->timeOut);
     doParsimPacking(b,this->largerTxnId);
 }
 
@@ -254,7 +260,9 @@ void ackMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->failedHopNum);
     doParsimUnpacking(b,this->secret);
     doParsimUnpacking(b,this->amount);
+    doParsimUnpacking(b,this->priorityClass);
     doParsimUnpacking(b,this->hasTimeOut);
+    doParsimUnpacking(b,this->timeOut);
     doParsimUnpacking(b,this->largerTxnId);
 }
 
@@ -348,6 +356,16 @@ void ackMsg::setAmount(double amount)
     this->amount = amount;
 }
 
+int ackMsg::getPriorityClass() const
+{
+    return this->priorityClass;
+}
+
+void ackMsg::setPriorityClass(int priorityClass)
+{
+    this->priorityClass = priorityClass;
+}
+
 bool ackMsg::getHasTimeOut() const
 {
     return this->hasTimeOut;
@@ -356,6 +374,16 @@ bool ackMsg::getHasTimeOut() const
 void ackMsg::setHasTimeOut(bool hasTimeOut)
 {
     this->hasTimeOut = hasTimeOut;
+}
+
+double ackMsg::getTimeOut() const
+{
+    return this->timeOut;
+}
+
+void ackMsg::setTimeOut(double timeOut)
+{
+    this->timeOut = timeOut;
 }
 
 double ackMsg::getLargerTxnId() const
@@ -433,7 +461,7 @@ const char *ackMsgDescriptor::getProperty(const char *propertyname) const
 int ackMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 11+basedesc->getFieldCount() : 11;
+    return basedesc ? 13+basedesc->getFieldCount() : 13;
 }
 
 unsigned int ackMsgDescriptor::getFieldTypeFlags(int field) const
@@ -456,8 +484,10 @@ unsigned int ackMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<11) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<13) ? fieldTypeFlags[field] : 0;
 }
 
 const char *ackMsgDescriptor::getFieldName(int field) const
@@ -478,10 +508,12 @@ const char *ackMsgDescriptor::getFieldName(int field) const
         "failedHopNum",
         "secret",
         "amount",
+        "priorityClass",
         "hasTimeOut",
+        "timeOut",
         "largerTxnId",
     };
-    return (field>=0 && field<11) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<13) ? fieldNames[field] : nullptr;
 }
 
 int ackMsgDescriptor::findField(const char *fieldName) const
@@ -497,8 +529,10 @@ int ackMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='f' && strcmp(fieldName, "failedHopNum")==0) return base+6;
     if (fieldName[0]=='s' && strcmp(fieldName, "secret")==0) return base+7;
     if (fieldName[0]=='a' && strcmp(fieldName, "amount")==0) return base+8;
-    if (fieldName[0]=='h' && strcmp(fieldName, "hasTimeOut")==0) return base+9;
-    if (fieldName[0]=='l' && strcmp(fieldName, "largerTxnId")==0) return base+10;
+    if (fieldName[0]=='p' && strcmp(fieldName, "priorityClass")==0) return base+9;
+    if (fieldName[0]=='h' && strcmp(fieldName, "hasTimeOut")==0) return base+10;
+    if (fieldName[0]=='t' && strcmp(fieldName, "timeOut")==0) return base+11;
+    if (fieldName[0]=='l' && strcmp(fieldName, "largerTxnId")==0) return base+12;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -520,10 +554,12 @@ const char *ackMsgDescriptor::getFieldTypeString(int field) const
         "int",
         "string",
         "double",
+        "int",
         "bool",
         "double",
+        "double",
     };
-    return (field>=0 && field<11) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<13) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **ackMsgDescriptor::getFieldPropertyNames(int field) const
@@ -599,8 +635,10 @@ std::string ackMsgDescriptor::getFieldValueAsString(void *object, int field, int
         case 6: return long2string(pp->getFailedHopNum());
         case 7: return oppstring2string(pp->getSecret());
         case 8: return double2string(pp->getAmount());
-        case 9: return bool2string(pp->getHasTimeOut());
-        case 10: return double2string(pp->getLargerTxnId());
+        case 9: return long2string(pp->getPriorityClass());
+        case 10: return bool2string(pp->getHasTimeOut());
+        case 11: return double2string(pp->getTimeOut());
+        case 12: return double2string(pp->getLargerTxnId());
         default: return "";
     }
 }
@@ -624,8 +662,10 @@ bool ackMsgDescriptor::setFieldValueAsString(void *object, int field, int i, con
         case 6: pp->setFailedHopNum(string2long(value)); return true;
         case 7: pp->setSecret((value)); return true;
         case 8: pp->setAmount(string2double(value)); return true;
-        case 9: pp->setHasTimeOut(string2bool(value)); return true;
-        case 10: pp->setLargerTxnId(string2double(value)); return true;
+        case 9: pp->setPriorityClass(string2long(value)); return true;
+        case 10: pp->setHasTimeOut(string2bool(value)); return true;
+        case 11: pp->setTimeOut(string2double(value)); return true;
+        case 12: pp->setLargerTxnId(string2double(value)); return true;
         default: return false;
     }
 }

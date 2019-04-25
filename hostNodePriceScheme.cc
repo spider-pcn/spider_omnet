@@ -558,12 +558,24 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
     int destNode = ttmsg->getRoute()[0];
     int transactionId = aMsg->getTransactionId();
     double largerTxnId = aMsg->getLargerTxnId();
+
+    if (aMsg->getIsSuccess() == false) {
+        // make sure transaction isn't cancelled yet
+        auto iter = find_if(canceledTransactions.begin(),
+                canceledTransactions.end(),
+            [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
+            { return get<0>(p) == transactionId; });
     
-    if (aMsg->getIsSuccess()==false && aMsg->getTimeSent() >= _transStatStart && 
-            aMsg->getTimeSent() <= _transStatEnd){
-        statNumFailed[destNode] += 1;
-        statRateFailed[destNode] += 1;
-        statAmtFailed[destNode] += aMsg->getAmount();
+        if (iter!=canceledTransactions.end()) {
+            if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd)
+                statAmtFailed[destNode] += aMsg->getAmount();
+        } 
+        else {
+            // requeue transaction
+            routerMsg *duplicateTrans = generateDuplicateTransactionMessage(aMsg);
+            pushIntoSenderQueue(&(nodeToDestInfo[destNode]), duplicateTrans);
+        }
+ 
     }
     else {
         SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
