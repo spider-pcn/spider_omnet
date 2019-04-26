@@ -284,14 +284,14 @@ void hostNodePriceScheme::handleMessage(cMessage *msg) {
 }
 
 void hostNodePriceScheme::handleTimeOutMessage(routerMsg* ttmsg) {
-    hostNodeBase::handleTimeOutMessage(ttmsg);
-    /*timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
+    // hostNodeBase::handleTimeOutMessage(ttmsg);
+    timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
     int destination = toutMsg->getReceiver();
     int transactionId = toutMsg->getTransactionId();
     deque<routerMsg*> *transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
     cout << "timing out transaction " << transactionId << endl; 
     if (ttmsg->isSelfMessage()) {
-        // check if txn is still in just sender queue
+        // check if txn is still in just sender queue, just delete and return then
         auto iter = find_if(transList->begin(),
            transList->end(),
            [&transactionId](const routerMsg* p)
@@ -340,7 +340,7 @@ void hostNodePriceScheme::handleTimeOutMessage(routerMsg* ttmsg) {
         ttmsg->decapsulate();
         delete toutMsg;
         delete ttmsg;
-    }*/
+    }
 }
 
 
@@ -444,12 +444,10 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
 
                         // generate time out message here
                         // because queue is LIFO
-                        if (_timeoutEnabled) {
+                        /*if (_timeoutEnabled) {
                             routerMsg *toutMsg = generateTimeOutMessage(ttmsg);
                             scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
-                        }
-
-
+                        }*/
                     }
                     
                     if (transMsg->getTimeSent() >= _transStatStart && 
@@ -473,8 +471,6 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                     double additional = min(max((transMsg->getAmount())/ rateToUse, _epsilon), 10000.0);
                     simtime_t newTimeToNextSend =  simTime() + additional;
                     pathInfo->timeToNextSend = newTimeToNextSend;
-                    
-
                     
                     // if (_signalsEnabled) emit(pathPerTransPerDestSignals[destNode], pathIndex);
                     return;
@@ -1025,10 +1021,10 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
 
         // generate time out message here
         // because queue is LIFO
-        if (_timeoutEnabled) {
+        /*if (_timeoutEnabled) {
             routerMsg *toutMsg = generateTimeOutMessage(msgToSend);
             scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
-        }
+        }*/
 
         // first attempt of larger txn
         SplitState* splitInfo = &(_numSplits[myIndex()][transMsg->getLargerTxnId()]);

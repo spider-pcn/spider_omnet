@@ -161,7 +161,7 @@ void hostNodeBase::generateNextTransaction() {
 
       scheduleAt(timeSent, msg);
 
-      if (_timeoutEnabled && !_priceSchemeEnabled && j.hasTimeOut){
+      if (_timeoutEnabled && j.hasTimeOut){
          routerMsg *toutMsg = generateTimeOutMessage(msg);
          scheduleAt(timeSent + j.timeOut, toutMsg );
       }
