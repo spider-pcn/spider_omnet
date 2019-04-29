@@ -5,7 +5,6 @@ GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" \
     "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40" "0")
 
-balance=100
 
 prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
     "hotnets" "five_line" "lnd_dec4_2018" "lnd_dec4_2018lessScale" \
@@ -63,79 +62,87 @@ mkdir -p ${PATH_NAME}
 array=(11) #10 11 13 22 24)
 for i in "${array[@]}" 
 do
-    network="${prefix[i]}_circ_net"
-    topofile="${PATH_NAME}${prefix[i]}_topo.txt"
+    for balance in 1250 2500 5000 10000
+    do 
+        network="${prefix[i]}_circ_net"
+        topofile="${PATH_NAME}${prefix[i]}_topo${balance}.txt"
 
-    # identify graph type for topology
-    if [ ${prefix[i]:0:2} == "sw" ]; then
-        graph_type="small_world"
-    elif [ ${prefix[i]:0:2} == "sf" ]; then
-        graph_type="scale_free"
-    elif [ ${prefix[i]:0:4} == "tree" ]; then
-        graph_type="tree"
-    elif [ ${prefix[i]:0:3} == "lnd" ]; then
-        graph_type=${prefix[i]}
-    elif [ ${prefix[i]} == "hotnets" ]; then
-        graph_type="hotnets_topo"
-    elif [ ${prefix[i]:0:6} == "random" ]; then
-        graph_type="random"
-    else
-        graph_type="simple_topologies"
-    fi
-    
-    # set delay amount
-    if [ ${prefix[i]:0:3} == "two" ]; then
-        delay="120"
-    else
-        delay="30"
-    fi
-    
-    # STEP 1: create topology
-    $PYTHON scripts/create_topo_ned_file.py $graph_type\
-            --network-name ${PATH_NAME}$network\
-            --topo-filename $topofile\
-            --num-nodes ${num_nodes[i]}\
-            --balance-per-channel $balance\
-            --separate-end-hosts \
-            --delay-per-channel $delay\
-            --randomize-start-bal $random_init_bal\
-            --random-channel-capacity $random_capacity
+        # identify graph type for topology
+        if [ ${prefix[i]:0:2} == "sw" ]; then
+            graph_type="small_world"
+        elif [ ${prefix[i]:0:2} == "sf" ]; then
+            graph_type="scale_free"
+        elif [ ${prefix[i]:0:4} == "tree" ]; then
+            graph_type="tree"
+        elif [ ${prefix[i]:0:3} == "lnd" ]; then
+            graph_type=${prefix[i]}
+        elif [ ${prefix[i]} == "hotnets" ]; then
+            graph_type="hotnets_topo"
+        elif [ ${prefix[i]:0:6} == "random" ]; then
+            graph_type="random"
+        else
+            graph_type="simple_topologies"
+        fi
+        
+        # set delay amount
+        if [ ${prefix[i]:0:3} == "two" ]; then
+            delay="120"
+        else
+            delay="30"
+        fi
+        
+        # STEP 1: create topology
+        $PYTHON scripts/create_topo_ned_file.py $graph_type\
+                --network-name ${PATH_NAME}$network\
+                --topo-filename $topofile\
+                --num-nodes ${num_nodes[i]}\
+                --balance-per-channel $balance\
+                --separate-end-hosts \
+                --delay-per-channel $delay\
+                --randomize-start-bal $random_init_bal\
+                --random-channel-capacity $random_capacity
+    done
 
-
-    # create workload files and run different demand levels
-    for scale in "${demand_scale[@]}"
+    # create 5 workload files for 5 runs
+    for num in {1..5}
     do
 
-        # generate the graph first to ned file
-        workloadname="${prefix[i]}_circ_demand${scale}"
-        workload="${PATH_NAME}$workloadname"
-        inifile="${PATH_NAME}${workloadname}_default.ini"
-        payment_graph_topo="custom"
-        
-        # figure out payment graph/workload topology
-        if [ ${prefix[i]:0:9} == "five_line" ]; then
-            payment_graph_topo="simple_line"
-        elif [ ${prefix[i]:0:4} == "five" ]; then
-            payment_graph_topo="hardcoded_circ"
-        elif [ ${prefix[i]:0:7} == "hotnets" ]; then
-            payment_graph_topo="hotnets_topo"
-        fi
+        # create workload files and run different demand levels
+        for scale in "${demand_scale[@]}"
+        do
 
-        echo $network
-        echo $topofile
-        echo $inifile
-        echo $graph_type
+            # generate the graph first to ned file
+            workloadname="${prefix[i]}_circ${num}_demand${scale}"
+            workload="${PATH_NAME}$workloadname"
+            inifile="${PATH_NAME}${workloadname}_default.ini"
+            payment_graph_topo="custom"
+            
+            # figure out payment graph/workload topology
+            if [ ${prefix[i]:0:9} == "five_line" ]; then
+                payment_graph_topo="simple_line"
+            elif [ ${prefix[i]:0:4} == "five" ]; then
+                payment_graph_topo="hardcoded_circ"
+            elif [ ${prefix[i]:0:7} == "hotnets" ]; then
+                payment_graph_topo="hotnets_topo"
+            fi
 
-        # STEP 2: create transactions corresponding to this experiment run
-        $PYTHON scripts/create_workload.py $workload poisson \
-                --graph-topo $payment_graph_topo \
-                --payment-graph-dag-percentage 0\
-                --topo-filename $topofile\
-                --experiment-time $simulationLength \
-                --balance-per-channel $balance\
-                --generate-json-also \
-                --timeout-value 5 \
-                --scale-amount $scale\
-                --kaggle-size
+            echo $network
+            echo $topofile
+            echo $inifile
+            echo $graph_type
+
+            # STEP 2: create transactions corresponding to this experiment run
+            $PYTHON scripts/create_workload.py $workload poisson \
+                    --graph-topo $payment_graph_topo \
+                    --payment-graph-dag-percentage 0\
+                    --topo-filename $topofile\
+                    --experiment-time $simulationLength \
+                    --balance-per-channel $balance\
+                    --generate-json-also \
+                    --timeout-value 5 \
+                    --scale-amount $scale\
+                    --kaggle-size \
+                    --run-num ${num}
+        done
     done
 done

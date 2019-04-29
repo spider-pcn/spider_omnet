@@ -54,6 +54,8 @@ parser.add_argument('--normalizer', type=float, help='C in probability update', 
 
 parser.add_argument('--rebalancing-enabled', action='store_true', dest="rebalancingEnabled")
 parser.add_argument('--gamma', type=float, help='factor to weigh rebalancing', dest='gamma', default=1)
+parser.add_argument('--balance', type=int, help='average per channel balance', dest='balance')
+parser.add_argument('--circ-num', type=int, help='run number', dest='circNum')
 parser.add_argument('--rebalancing-queue-delay-threshold', type=int, help='threshold for rebalancing',\
         dest='rebalancingQueueDelayThreshold', default=3)
 parser.add_argument('--gamma-imbalance-queue-size', type=float, help='threshold queue size for rebalancing', 
@@ -66,8 +68,12 @@ args = parser.parse_args()
 
 configname = os.path.basename(args.network_name)
 
+if args.balance != None:
+    configname += "_" + str(args.balance)
 if args.routingScheme != 'default':
     configname = configname + "_" + args.routingScheme
+if args.circNum != None:
+    configname += "_circ" + str(args.circNum)
 if args.demandScale != None:
     configname += "_demand" + str(args.demandScale)
 

@@ -141,7 +141,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
     elif distribution == 'poisson':
         if kaggle_size:
             print "generating from kaggle for size"
-            amt_dist = np.load(KAGGLE_AMT_MODIFIED_DIST_FILENAME)
+            amt_dist = np.load(KAGGLE_AMT_DIST_FILENAME)
             num_amts = amt_dist.item().get('p').size
 
         # constant transaction size to be sent in a poisson fashion
@@ -163,7 +163,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
                     txn_idx = np.random.choice(num_amts, 1, \
                                            p=amt_dist.item().get('p'))[0]
                     # map the index to a tx amount
-                    txn_size = int(round(amt_dist.item().get('bins')[txn_idx]/4.3, 1))
+                    txn_size = int(round(amt_dist.item().get('bins')[txn_idx], 1))
                 else:                
                     txn_size = txn_size_mean
 
@@ -507,6 +507,7 @@ parser.add_argument('--generate-json-also', action="store_true", help="do you ne
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 parser.add_argument('--timeout-value', type=float, help='generic time out for all transactions', default=5)
 parser.add_argument('--scale-amount', type=int, help='how much to scale the mean deamnd by', default=5)
+parser.add_argument('--run-num', type=int, help='influences the seed', default=1)
 
 
 args = parser.parse_args()
@@ -530,8 +531,8 @@ if kaggle_size:
 
 
 # generate workloads
-np.random.seed(SEED)
-random.seed(SEED)
+np.random.seed(SEED_LIST[args.run_num])
+random.seed(SEED_LIST[args.run_num])
 if graph_topo != 'custom':
     generate_workload_standard(output_prefix, graph_topo, distribution, \
             total_time, log_normal, kaggle_size, txn_size_mean, timeout_value, generate_json_also, circ_frac)
