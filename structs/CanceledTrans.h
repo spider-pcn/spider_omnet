@@ -17,3 +17,25 @@ public:
 typedef tuple<int, simtime_t, int, int, int> CanceledTrans ;
     // (transactionId, msgArrivalTime, prevNode, nextNode, destNode)
 
+
+struct CanceledTransComp {
+    using is_transparent = std::true_type;
+
+    bool operator()(CanceledTrans const& ct1, CanceledTrans const& ct2) const
+    {
+        return get<0>(ct1) < get<0>(ct2);
+    };
+
+    bool operator()(CanceledTrans const& ct1, int id) const
+    {
+        return get<0>(ct1) < id;
+    };
+
+    bool operator()(int id, CanceledTrans const& ct2) const
+    {
+        return id < get<0>(ct2);
+    };
+};
+
+
+

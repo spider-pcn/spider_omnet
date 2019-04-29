@@ -883,10 +883,7 @@ void routerNode::handleAckMessageTimeOut(routerMsg* ttmsg){
    ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
    //check if transactionId is in canceledTransaction set
    int transactionId = aMsg->getTransactionId();
-   auto iter = find_if(canceledTransactions.begin(),
-         canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-         { return get<0>(p) == transactionId; });
+   auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
    if (iter!=canceledTransactions.end()){
       canceledTransactions.erase(iter);
    }
@@ -1019,13 +1016,9 @@ bool routerNode::handleTransactionMessageTimeOut(routerMsg* ttmsg){
    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
 
    int transactionId = transMsg->getTransactionId();
+   auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
 
-   auto iter = find_if(canceledTransactions.begin(),
-         canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-         { return get<0>(p) == transactionId; });
-
-   if ( iter!=canceledTransactions.end() ){
+   if (iter != canceledTransactions.end() ){
       //delete yourself
       ttmsg->decapsulate();
       delete transMsg;
@@ -1188,10 +1181,7 @@ bool routerNode::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t a
    else {
       // check if txn has been cancelled and if so return without doing anything to move on to the next transaction
       int transactionId = transMsg->getTransactionId();
-      auto iter = find_if(canceledTransactions.begin(),
-           canceledTransactions.end(),
-           [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-           { return get<0>(p) == transactionId; });
+      auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
 
       // can potentially erase info?
       if (iter != canceledTransactions.end()) {

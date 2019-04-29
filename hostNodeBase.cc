@@ -631,11 +631,8 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
         
         if (_timeoutEnabled){
             //TODO: what if we have multiple HTLC's per transaction id?
-            auto iter = find_if(canceledTransactions.begin(),
-               canceledTransactions.end(),
-               [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-               { return get<0>(p) == transactionId; });
-            if (iter!=canceledTransactions.end()) {
+            auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+            if (iter != canceledTransactions.end()) {
                 canceledTransactions.erase(iter);
             }
         }
@@ -685,11 +682,7 @@ bool hostNodeBase::handleTransactionMessageTimeOut(routerMsg* ttmsg) {
     int transactionId = transMsg->getTransactionId();
 
     // look for transaction in cancelled txn set and delete if present
-    auto iter = find_if(canceledTransactions.begin(),
-         canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-         { return get<0>(p) == transactionId; });
-    
+    auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
     if ( iter!=canceledTransactions.end() ){
         //delete yourself
         ttmsg->decapsulate();
@@ -827,13 +820,9 @@ void hostNodeBase::handleAckMessageTimeOut(routerMsg* ttmsg){
 
 
     // only if it isn't waterfilling
-    if (aMsg->getIsSuccess()){
-        auto iter = find_if(canceledTransactions.begin(),
-                canceledTransactions.end(),
-            [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-            { return get<0>(p) == transactionId; });
-    
-        if (iter!=canceledTransactions.end()) {
+    if (aMsg->getIsSuccess()) {
+        auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+        if (iter != canceledTransactions.end()) {
             canceledTransactions.erase(iter);
         }
         successfulDoNotSendTimeOut.insert(aMsg->getTransactionId());
@@ -1098,11 +1087,7 @@ bool hostNodeBase::forwardTransactionMessage(routerMsg *msg, simtime_t arrivalTi
         // return true directly if txn has been cancelled
         // so that you waste not resources on this and move on to a new txn
         // if you return false processTransUnits won't look for more txns
-        auto iter = find_if(canceledTransactions.begin(),
-           canceledTransactions.end(),
-           [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-           { return get<0>(p) == transactionId; });
-
+        auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
         // can potentially erase info?
         if (iter != canceledTransactions.end()) {
             return true;

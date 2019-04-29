@@ -289,16 +289,25 @@ void hostNodePriceScheme::handleTimeOutMessage(routerMsg* ttmsg) {
     int destination = toutMsg->getReceiver();
     int transactionId = toutMsg->getTransactionId();
     deque<routerMsg*> *transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
-    cout << "timing out transaction " << transactionId << endl; 
+    // cout << "timing out transaction " << transactionId << endl; 
     if (ttmsg->isSelfMessage()) {
+        // if transaction was successful don't do anything more
+        if (successfulDoNotSendTimeOut.count(transactionId) > 0) {
+            successfulDoNotSendTimeOut.erase(toutMsg->getTransactionId());
+            ttmsg->decapsulate();
+            delete toutMsg;
+            delete ttmsg;
+            return;
+        }
+
         // check if txn is still in just sender queue, just delete and return then
-        auto iter = find_if(transList->begin(),
-           transList->end(),
+        auto iter = find_if(transList->end(),
+           transList->begin(),
            [&transactionId](const routerMsg* p)
            { transactionMsg *transMsg = check_and_cast<transactionMsg *>(p->getEncapsulatedPacket());
              return transMsg->getTransactionId()  == transactionId; });
 
-        if (iter!=transList->end()) {
+        if (iter!=transList->begin()) {
             deleteTransaction(*iter);
             transList->erase(iter);
             ttmsg->decapsulate();
@@ -395,12 +404,8 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
             transMsg->getAmount();
         
         if (_timeoutEnabled) {
-            auto iter = find_if(canceledTransactions.begin(),
-               canceledTransactions.end(),
-               [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-               { return get<0>(p) == transactionId; });
-
-            if (iter!=canceledTransactions.end()){
+            auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+            if (iter != canceledTransactions.end()){
                 canceledTransactions.erase(iter);
             }
         }
@@ -557,12 +562,9 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
 
     if (aMsg->getIsSuccess() == false) {
         // make sure transaction isn't cancelled yet
-        auto iter = find_if(canceledTransactions.begin(),
-                canceledTransactions.end(),
-            [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-            { return get<0>(p) == transactionId; });
+        auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
     
-        if (iter!=canceledTransactions.end()) {
+        if (iter != canceledTransactions.end()) {
             if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd)
                 statAmtFailed[destNode] += aMsg->getAmount();
         } 

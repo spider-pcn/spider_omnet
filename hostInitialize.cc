@@ -451,16 +451,7 @@ vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, 
 
 
 
-vector<int> breadthFirstSearchByGraph(int sender, int receiver, map<int, vector<int>> graph){
-    /* print graph
-    for (auto node: graph){
-        cout << node.first << ": ";
-        printVector(node.second);
-        cout <<endl;
-
-    }*/
-
-
+vector<int> breadthFirstSearchByGraph(int sender, int receiver, map<int, set<int>> graph){
     //TODO: fix, and add to header
     deque<vector<int>> nodesToVisit = {};
     bool visitedNodes[_numNodes];
@@ -473,21 +464,22 @@ vector<int> breadthFirstSearchByGraph(int sender, int receiver, map<int, vector<
     temp.push_back(sender);
     nodesToVisit.push_back(temp);
 
-    while ((int)nodesToVisit.size()>0){
+    while ((int) nodesToVisit.size() > 0){
         vector<int> current = nodesToVisit[0];
         nodesToVisit.pop_front();
         int lastNode = current.back();
-        for (int i=0; i<(int)graph[lastNode].size();i++){
-            if (!visitedNodes[graph[lastNode][i]]){
+        for (auto iter = graph[lastNode].begin(); iter != graph[lastNode].end(); iter++){
+            int thisNode = *iter;
+            if (!visitedNodes[thisNode]){
                 temp = current; // assignment copies in case of vector
-                temp.push_back(graph[lastNode][i]);
+                temp.push_back(thisNode);
                 nodesToVisit.push_back(temp);
-                visitedNodes[graph[lastNode][i]] = true;
-                if (graph[lastNode][i]==receiver)
+                visitedNodes[thisNode] = true;
+                if (thisNode == receiver)
                     return temp;
-            } //end if (!visitedNodes[graph[lastNode][i]])
-        }//end for (i)
-    }//end while
+            } 
+        }
+    }
     vector<int> empty = {};
     return empty;
 }

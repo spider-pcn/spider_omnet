@@ -18,14 +18,14 @@ int _numAttemptsLndBaseline;
   delay, as paths are calculated using BFS (not weight ed edges) */
 void hostNodeLndBaseline::initializeMyChannels(){
     //not going to store delay, because using BFS to find shortest paths
-    _activeChannels = {};
+    _activeChannels.clear();
     for (auto nodeIter: _channels){
         int node = nodeIter.first;
         _activeChannels[node] = {};
         vector<pair<int, int>> edgeDelayVec = nodeIter.second;
         for (auto edgeIter: edgeDelayVec){
             int destNode = edgeIter.first;
-            _activeChannels[node].push_back(destNode);
+            _activeChannels[node].insert(destNode);
         }
     }
 }
@@ -41,7 +41,7 @@ vector<int>  hostNodeLndBaseline::generateNextPath(int destNodePath){
             //add back to _activeChannels
             int sourceNode = get<0>(get<1>(currentEdge));
             int destNode = get<1>(get<1>(currentEdge));
-            _activeChannels[sourceNode].push_back(destNode);
+            _activeChannels[sourceNode].insert(destNode);
 
             //erase, and make sure to restore heap properties
             _prunedChannelsList.pop_front();
@@ -60,8 +60,8 @@ void hostNodeLndBaseline::pruneEdge(int sourceNode, int destNode){
     //prune edge if not already pruned.
     tuple<int, int> edgeTuple = make_tuple(sourceNode, destNode);        
 
-    auto iter = find(_activeChannels[sourceNode].begin(), _activeChannels[sourceNode].end(), destNode); 
-    if (iter != _activeChannels[sourceNode].end() )
+    auto iter = _activeChannels[sourceNode].find(destNode); 
+    if (iter != _activeChannels[sourceNode].end())
     {
         //prune edge and add to heap
         _activeChannels[sourceNode].erase(iter);
@@ -236,12 +236,9 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
     double largerTxnId = aMsg->getLargerTxnId();
     //guaranteed to be at last step of the path
     
-    auto iter = find_if(canceledTransactions.begin(),
-         canceledTransactions.end(),
-         [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-         { return get<0>(p) == transactionId; });
-
+    auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
     int numPathsAttempted = aMsg->getPathIndex() + 1;
+
     if (aMsg->getIsSuccess() || numPathsAttempted == _numAttemptsLndBaseline || 
             (_timeoutEnabled && iter != canceledTransactions.end())) //no more attempts allowed
     {

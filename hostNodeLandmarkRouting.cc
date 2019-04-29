@@ -125,11 +125,7 @@ void hostNodeLandmarkRouting::handleTransactionMessageSpecialized(routerMsg* ttm
             transMsg->getAmount();
 
         if (_timeoutEnabled) {
-            auto iter = find_if(canceledTransactions.begin(),
-               canceledTransactions.end(),
-               [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-               { return get<0>(p) == transactionId; });
-
+            auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
             if (iter!=canceledTransactions.end()){
                 canceledTransactions.erase(iter);
             }
@@ -221,11 +217,7 @@ void hostNodeLandmarkRouting::handleAckMessageTimeOut(routerMsg* ttmsg){
         if (totalAmtReceived != transToAmtLeftToComplete[transactionId].amtSent) 
             return;
         
-        auto iter = find_if(canceledTransactions.begin(),
-             canceledTransactions.end(),
-             [&transactionId](const tuple<int, simtime_t, int, int, int>& p)
-             { return get<0>(p) == transactionId; });
-        
+        auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
         if (iter!=canceledTransactions.end()) {
             canceledTransactions.erase(iter);
         }

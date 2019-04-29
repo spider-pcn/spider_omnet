@@ -11,7 +11,7 @@ class hostNodeLndBaseline : public hostNodeBase {
     private:
 
         vector<simsignal_t> numPathsPerTransPerDestSignals = {};  
-        map<int, vector<int>> _activeChannels;
+        map<int, set<int>> _activeChannels;
 
         //heap for oldest channel we pruned first
         list <tuple<simtime_t, tuple<int, int>>> _prunedChannelsList;
