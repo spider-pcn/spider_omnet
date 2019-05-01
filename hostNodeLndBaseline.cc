@@ -239,8 +239,7 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
     auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
     int numPathsAttempted = aMsg->getPathIndex() + 1;
 
-    if (aMsg->getIsSuccess() || numPathsAttempted == _numAttemptsLndBaseline || 
-            (_timeoutEnabled && iter != canceledTransactions.end())) //no more attempts allowed
+    if (aMsg->getIsSuccess()) //no more attempts allowed
     {
         if (iter != canceledTransactions.end())
             canceledTransactions.erase(iter);
@@ -255,7 +254,7 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
             if (splitInfo->numTotal == splitInfo->numReceived) {
                 statNumCompleted[destNode] += 1; 
                 statRateCompleted[destNode] += 1;
-                _transactionCompletionBySize[splitInfo->numTotal] += 1;
+                _transactionCompletionBySize[splitInfo->totalAmount] += 1;
                 double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                 statCompletionTimes[destNode] += timeTaken * 1000;
             }
@@ -264,6 +263,16 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
         delete transMsg;
         hostNodeBase::handleAckMessage(msg); 
     }
+    else if (numPathsAttempted == _numAttemptsLndBaseline || 
+            (_timeoutEnabled && iter != canceledTransactions.end())) 
+    {
+        if (iter != canceledTransactions.end())
+            canceledTransactions.erase(iter);
+
+        aMsg->decapsulate();
+        delete transMsg;
+        hostNodeBase::handleAckMessage(msg);
+    } 
     else
     { //allowed more attempts
         int newIndex = aMsg->getPathIndex() + 1;

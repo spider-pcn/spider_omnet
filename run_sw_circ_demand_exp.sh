@@ -56,7 +56,7 @@ fi
 echo $pathChoice
 
 balance_scale=("1250" "2500" "5000" "10000") 
-for num in 1
+for num in {1..5}
 do
 
     for balance in "${balance_scale[@]}"
@@ -180,7 +180,7 @@ do
         if [ "$random_init_bal" = true ] ; then suffix="randomInitBal_"; else suffix=""; fi
         if [ "$random_capacity" = true ]; then suffix="${suffix}randomCapacity_"; fi
         echo $suffix
-        graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix}${balance}_delay${delay}_demand${scale}0_${suffix}
+        graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix}${balance}_circ${num}_delay${delay}_demand${scale}0_${suffix}
         vec_file_prefix=${PATH_NAME}results/${prefix}_${payment_graph_type}_net_${balance}_
         
         #routing schemes where number of path choices doesn't matter

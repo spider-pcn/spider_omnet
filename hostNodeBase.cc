@@ -1160,6 +1160,7 @@ void hostNodeBase::initialize() {
         _loggingEnabled = par("loggingEnabled");
         _priceSchemeEnabled = par("priceSchemeEnabled");
         _splittingEnabled = par("splittingEnabled");
+        cout << "splitting" << _splittingEnabled << endl;
         _serviceArrivalWindow = par("serviceArrivalWindow");
 
         _hasQueueCapacity = true;
@@ -1176,7 +1177,7 @@ void hostNodeBase::initialize() {
         _kspYenEnabled = par("kspYenEnabled");
         _obliviousRoutingEnabled = par("obliviousRoutingEnabled");
 
-        _splitSize = 1.0;
+        _splitSize = 5.0;
 
         _lndBaselineEnabled = par("lndBaselineEnabled");
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");

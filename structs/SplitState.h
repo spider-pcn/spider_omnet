@@ -9,4 +9,5 @@ public:
     int numArrived;
     int numAttempted;
     double firstAttemptTime = -1;
+    double totalAmount;
 };

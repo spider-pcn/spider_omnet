@@ -586,7 +586,7 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
             if (splitInfo->numTotal == splitInfo->numReceived) {
                 statNumCompleted[destNode] += 1; 
                 statRateCompleted[destNode] += 1;
-                _transactionCompletionBySize[splitInfo->numTotal] += 1;
+                _transactionCompletionBySize[splitInfo->totalAmount] += 1;
                 double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                 statCompletionTimes[destNode] += timeTaken * 1000;
             }

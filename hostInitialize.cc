@@ -218,8 +218,9 @@ void generateTransUnitList(string workloadFile){
                  lastTime = timeSent;
             // instantiate all the transUnits that need to be sent
             int numSplits = 0;
-            while (amount >= _splitSize && (_waterfillingEnabled || _priceSchemeEnabled || _lndBaselineEnabled) && 
-                    _splittingEnabled) {
+            double totalAmount = amount;
+            while (amount >= _splitSize && (_waterfillingEnabled || _priceSchemeEnabled || _lndBaselineEnabled)
+                   && _splittingEnabled) {
                 TransUnit tempTU = TransUnit(_splitSize, timeSent, 
                         sender, receiver, priorityClass, hasTimeOut, timeOut, largerTxnID);
                 amount -= _splitSize;
@@ -241,6 +242,7 @@ void generateTransUnitList(string workloadFile){
             temp.numReceived = 0;
             temp.numArrived = 0;
             temp.numAttempted = 0;
+            temp.totalAmount = totalAmount; 
             temp.firstAttemptTime = -1;
             _numSplits[sender][largerTxnID] = temp;
 
