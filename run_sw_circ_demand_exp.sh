@@ -56,9 +56,9 @@ fi
 echo $pathChoice
 
 balance_scale=("600" "1200" "2400" "4800" "9600") 
-for num in {1..5}
+for num in {0..4}
 do
-
+    echo "doing run $num"
     for balance in "${balance_scale[@]}"
     do
         prefix="sw_50_routers"

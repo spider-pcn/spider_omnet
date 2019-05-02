@@ -62,7 +62,7 @@ mkdir -p ${PATH_NAME}
 array=(11) #10 11 13 22 24)
 for i in "${array[@]}" 
 do
-    for balance in 1250 2500 5000 10000
+    for balance in 600 1200 2400 4800 9600
     do 
         network="${prefix[i]}_circ_net"
         topofile="${PATH_NAME}${prefix[i]}_topo${balance}.txt"
@@ -104,7 +104,7 @@ do
     done
 
     # create 5 workload files for 5 runs
-    for num in {1..5}
+    for num in {0..4}
     do
 
         # create workload files and run different demand levels
