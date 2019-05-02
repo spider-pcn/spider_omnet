@@ -239,40 +239,33 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
     auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
     int numPathsAttempted = aMsg->getPathIndex() + 1;
 
-    if (aMsg->getIsSuccess()) //no more attempts allowed
+    if (aMsg->getIsSuccess() || (numPathsAttempted == _numAttemptsLndBaseline || 
+            (_timeoutEnabled && iter != canceledTransactions.end()))) //no more attempts allowed
     {
         if (iter != canceledTransactions.end())
             canceledTransactions.erase(iter);
 
-        SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
-        splitInfo->numReceived += 1;
+        if (aMsg->getIsSuccess()) {
+            SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
+            splitInfo->numReceived += 1;
 
-        if (transMsg->getTimeSent() >= _transStatStart && 
-                transMsg->getTimeSent() <= _transStatEnd) {
-            statAmtCompleted[destNode] += aMsg->getAmount();
+            if (transMsg->getTimeSent() >= _transStatStart && 
+                    transMsg->getTimeSent() <= _transStatEnd) {
+                statAmtCompleted[destNode] += aMsg->getAmount();
 
-            if (splitInfo->numTotal == splitInfo->numReceived) {
-                statNumCompleted[destNode] += 1; 
-                statRateCompleted[destNode] += 1;
-                _transactionCompletionBySize[splitInfo->totalAmount] += 1;
-                double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
-                statCompletionTimes[destNode] += timeTaken * 1000;
+                if (splitInfo->numTotal == splitInfo->numReceived) {
+                    statNumCompleted[destNode] += 1; 
+                    statRateCompleted[destNode] += 1;
+                    _transactionCompletionBySize[splitInfo->totalAmount] += 1;
+                    double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
+                    statCompletionTimes[destNode] += timeTaken * 1000;
+                }
             }
         }
         aMsg->decapsulate();
         delete transMsg;
         hostNodeBase::handleAckMessage(msg); 
     }
-    else if (numPathsAttempted == _numAttemptsLndBaseline || 
-            (_timeoutEnabled && iter != canceledTransactions.end())) 
-    {
-        if (iter != canceledTransactions.end())
-            canceledTransactions.erase(iter);
-
-        aMsg->decapsulate();
-        delete transMsg;
-        hostNodeBase::handleAckMessage(msg);
-    } 
     else
     { //allowed more attempts
         int newIndex = aMsg->getPathIndex() + 1;

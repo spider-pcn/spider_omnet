@@ -55,7 +55,7 @@ fi
 
 echo $pathChoice
 
-balance_scale=("1250" "2500" "5000" "10000") 
+balance_scale=("600" "1200" "2400" "4800" "9600") 
 for num in {1..5}
 do
 
