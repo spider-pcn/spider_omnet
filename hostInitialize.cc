@@ -184,12 +184,14 @@ void generateTransUnitList(string workloadFile){
             double largerTxnID = lineNum;
             double hasTimeOut = _timeoutEnabled;
             
-            if (_transactionArrivalBySize.count(amount) > 0) {
-                _transactionArrivalBySize[amount] += 1;
-            }
-            else {
-                _transactionCompletionBySize[amount] = 0;
-                _transactionArrivalBySize[amount] = 0;
+            if (timeSent > _transStatStart && timeSent < _transStatEnd) {
+                if (_transactionArrivalBySize.count(amount) > 0) {
+                    _transactionArrivalBySize[amount] += 1;
+                }
+                else {
+                    _transactionCompletionBySize[amount] = 0;
+                    _transactionArrivalBySize[amount] = 0;
+                }
             }
 
             if (data.size()>5 && _timeoutEnabled){

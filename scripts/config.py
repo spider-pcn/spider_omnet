@@ -132,3 +132,14 @@ for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "nValue",
 INTERESTING_SIGNALS["per_src_dest_plot"] = per_dest_list
 INTERESTING_SIGNALS["per_channel_plot"] = per_channel_list
 
+
+## ggplot related constants
+PLOT_DIR = "data/"
+SUMMARY_DIR = "figures/timeouts/"
+
+# define scheme codes for ggplot
+SCHEME_CODE = { "priceSchemeWindow": "PS",\
+        "lndBaseline": "LND",\
+        "landmarkRouting": "LR",\
+        "shortestPath": "SP",\
+        "waterfilling": "WF"}

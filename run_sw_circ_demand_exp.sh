@@ -212,7 +212,7 @@ do
                   --detail $signalsEnabled \
                   --vec_file ${vec_file_path} \
                   --sca_file ${sca_file_path} \
-                  --save ${graph_op_prefix}${routing_scheme}_${pathChoice} \
+                  --save ${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices} \
                   --balance \
                   --queue_info --timeouts --frac_completed \
                   --frac_completed_window \
