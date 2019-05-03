@@ -146,7 +146,7 @@ def generate_graph(size, graph_type):
 # generate extra end host nodes if need be
 # make the first line list of landmarks for this topology
 def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts,\
-        randomize_init_bal=False, random_channel_capacity=False, is_lnd=False):
+        randomize_init_bal=False, random_channel_capacity=False, lnd_capacity=False, is_lnd=False):
     f1 = open(output_filename, "w+")
 
     offset = G.number_of_nodes()
@@ -187,6 +187,10 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
     sum_weights = sum(weights.values())
     capacity_dict = dict()
 
+    # get lnd capacity data
+    lnd_capacities_graph = nx.read_edgelist(LND_FILE_PATH + 'lnd_dec4_2018_reducedsize' + '.edgelist')
+    lnd_capacities = nx.get_edge_attributes(lnd_capacities_graph, 'capacity').values() 
+
     # write rest of topology
     for e in G.edges():
 
@@ -197,11 +201,19 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
             while balance_for_this_channel < 2:
                 balance_for_this_channel = round(np.random.normal(balance_per_channel, \
                         0.75 * balance_per_channel))
+        
+        elif lnd_capacity:
+            balance_for_this_channel = -1
+            while balance_for_this_channel < 2:
+                balance_for_this_channel = round(np.random.choice(lnd_capacities) * \
+                    (balance_per_channel / np.mean(lnd_capacities)))
+        
         elif is_lnd and "uniform" not in output_filename:
             if "lessScale" in output_filename:
                 balance_for_this_channel = G[e[0]][e[1]]['capacity']/1000 
             else:
                 balance_for_this_channel = G[e[0]][e[1]]['capacity']/10000 
+        
         else:
             balance_for_this_channel = balance_per_channel
 
@@ -287,7 +299,7 @@ args.lnd_capacity = args.lnd_capacity == 'true'
 
 print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename, \
         args.separate_end_hosts, args.randomize_start_bal, args.random_channel_capacity,\
-        args.graph_type.startswith('lnd_'))
+        args.lnd_capacity, args.graph_type.startswith('lnd_'))
 network_base = os.path.basename(args.network_name)
 
 for routing_alg in routing_alg_list:
