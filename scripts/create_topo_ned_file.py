@@ -193,9 +193,10 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         f1.write(str(e[0]) + "r " + str(e[1]) +  "r ")
         f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
         if random_channel_capacity:
-            balance_for_this_channel = round(np.random.normal(balance_per_channel, 0.75 * balance_per_channel))
-            if balance_for_this_channel < 2:
-                balance_for_this_channel = 2
+            balance_for_this_channel = -1
+            while balance_for_this_channel < 2:
+                balance_for_this_channel = round(np.random.normal(balance_per_channel, \
+                        0.75 * balance_per_channel))
         elif is_lnd and "uniform" not in output_filename:
             if "lessScale" in output_filename:
                 balance_for_this_channel = G[e[0]][e[1]]['capacity']/1000 
@@ -244,6 +245,8 @@ parser.add_argument('--randomize-start-bal', type=str, dest='randomize_start_bal
         help='Do not start from pergect balance, but rather randomize it', default='False')
 parser.add_argument('--random-channel-capacity', type=str, dest='random_channel_capacity', \
         help='Give channels a random balance between bal/2 and bal', default='False')
+parser.add_argument('--lnd-channel-capacity', type=str, dest='lnd_capacity', \
+        help='Give channels a random balance sampled from lnd', default='False')
 routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting', 'lndBaseline']
 
 
@@ -280,6 +283,7 @@ else:
 
 args.randomize_start_bal = args.randomize_start_bal == 'true'
 args.random_channel_capacity = args.random_channel_capacity == 'true'
+args.lnd_capacity = args.lnd_capacity == 'true'
 
 print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename, \
         args.separate_end_hosts, args.randomize_start_bal, args.random_channel_capacity,\

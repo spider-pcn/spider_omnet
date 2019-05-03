@@ -6,10 +6,12 @@ balance=100
 
 demand_scale=("1" "3" "5" "7") 
 routing_scheme=$1
-pathChoice=$2
+capacity_type=$2
+pathChoice=$3
 echo $routing_scheme
 random_init_bal=false
 random_capacity=false
+lnd_capacity=false
 
 widestPathsEnabled=false
 obliviousRoutingEnabled=false
@@ -53,6 +55,23 @@ if [ -z "$pathChoice" ]; then
     pathChoice="shortest"
 fi
 
+
+prefix="sw_50_routers"
+workload_prefix="sw_50_routers"
+if [ -z "$capacity_type" ]; then
+    random_capacity=false
+    lnd_capacity=false
+    echo "uniform dist"
+elif [ $capacity_type == "random" ]; then
+    random_capacity=true
+    prefix="sw_50_routers_randomCap"
+    echo "normal dist"
+elif [ $capacity_type == "lnd" ]; then
+    lnd_capacity=true
+    prefix="sw_50_routers_lndCap"
+    echo "lnd_dist"
+fi
+
 echo $pathChoice
 
 balance_scale=("600" "1200" "2400" "4800" "9600") 
@@ -61,7 +80,6 @@ do
     echo "doing run $num"
     for balance in "${balance_scale[@]}"
     do
-        prefix="sw_50_routers"
         network="${prefix}_circ_net"
         topofile="${PATH_NAME}${prefix}_topo${balance}.txt"
         graph_type="small_world"
@@ -69,7 +87,7 @@ do
         scale="3"
         
         # generate the graph first to ned file
-        workloadname="${prefix}_circ${num}_demand${scale}"
+        workloadname="${workload_prefix}_circ${num}_demand${scale}"
         workload="${PATH_NAME}$workloadname"
         inifile="${PATH_NAME}${workloadname}_default.ini"
         payment_graph_topo="custom"
@@ -178,7 +196,6 @@ do
         payment_graph_type='circ' 
         if [ "$timeoutEnabled" = true ] ; then timeout="timeouts"; else timeout="no_timeouts"; fi
         if [ "$random_init_bal" = true ] ; then suffix="randomInitBal_"; else suffix=""; fi
-        if [ "$random_capacity" = true ]; then suffix="${suffix}randomCapacity_"; fi
         echo $suffix
         graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix}${balance}_circ${num}_delay${delay}_demand${scale}0_${suffix}
         vec_file_prefix=${PATH_NAME}results/${prefix}_${payment_graph_type}_net_${balance}_
