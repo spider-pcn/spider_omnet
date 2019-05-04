@@ -33,8 +33,13 @@ public:
     double lambda; //Price due to load ($\lambda$)
     int numUpdateMessages; // in the last _Tquery interval
     double updateRate; // rate of sending update messages
-    list<tuple<simtime_t, simtime_t>> serviceArrivalTimeStamps; //each entry is service,arrival time of last n serviced txns
-    list<simtime_t> arrivalTimeStamps; //each entry arrival time of last n transactions that arrived (may have been dropped)
+    
+    double sumArrivalWindowTxns = 0;
+    double sumServiceWindowTxns = 0;
+    list<tuple<double, simtime_t, simtime_t>> serviceArrivalTimeStamps; //each entry is amount and service and arrival time of 
+    // last n serviced txns
+    list<tuple<double, simtime_t>> arrivalTimeStamps; 
+    //each entry arrival time of last n transactions that arrived and their sizes (may have been dropped)
 
     double lastLambdaGrad = 0; // for accelerated gradient descent
     double yLambda; // Nesterov's equation y

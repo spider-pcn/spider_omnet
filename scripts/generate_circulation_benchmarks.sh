@@ -124,7 +124,7 @@ do
         do
 
             # generate the graph first to ned file
-            workloadname="${prefix_to_use}_circ${num}_demand${scale}"
+            workloadname="${prefix[i]}_circ${num}_demand${scale}"
             workload="${PATH_NAME}$workloadname"
             inifile="${PATH_NAME}${workloadname}_default.ini"
             payment_graph_topo="custom"

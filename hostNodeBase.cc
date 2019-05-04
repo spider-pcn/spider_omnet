@@ -646,8 +646,18 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
         //at the sender
         int destNode = transMsg->getReceiver();
         int nextNode = ttmsg->getRoute()[hopcount+1];
+        PaymentChannel *neighbor = &(nodeToPaymentChannel[nextNode]);
         q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
         tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
+
+        // mark the arrival
+        neighbor->arrivalTimeStamps.push_back(make_tuple(transMsg->getAmount(), simTime()));
+        neighbor->sumArrivalWindowTxns += transMsg->getAmount();
+        if (neighbor->arrivalTimeStamps.size() > _serviceArrivalWindow) {
+            double frontAmt = get<0>(neighbor->serviceArrivalTimeStamps.front());
+            neighbor->arrivalTimeStamps.pop_front(); 
+            neighbor->sumArrivalWindowTxns -= frontAmt;
+        }
 
         // if there is insufficient balance at the first node, return failure
         if (_hasQueueCapacity && _queueCapacity == 0) {
@@ -953,7 +963,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
             PaymentChannel *neighborChannel = &(nodeToPaymentChannel[it->first]);   
 
             auto lastTransTimes =  neighborChannel->serviceArrivalTimeStamps.back();
-            double curQueueingDelay = get<0>(lastTransTimes).dbl() - get<1>(lastTransTimes).dbl();
+            double curQueueingDelay = get<1>(lastTransTimes).dbl() - get<2>(lastTransTimes).dbl();
             neighborChannel->queueDelayEWMA = 0.6*curQueueingDelay + 0.4*neighborChannel->queueDelayEWMA;
 
             if (neighborChannel->queueDelayEWMA > _queueDelayThreshold) {
@@ -1097,9 +1107,13 @@ bool hostNodeBase::forwardTransactionMessage(routerMsg *msg, simtime_t arrivalTi
         msg->setHopCount(msg->getHopCount()+1);
 
         // update service arrival times
-        neighbor->serviceArrivalTimeStamps.push_back(make_tuple(simTime(), arrivalTime));
-        if (neighbor->serviceArrivalTimeStamps.size() > _serviceArrivalWindow)
-           neighbor->serviceArrivalTimeStamps.pop_front(); 
+        neighbor->serviceArrivalTimeStamps.push_back(make_tuple(transMsg->getAmount(), simTime(), arrivalTime));
+        neighbor->sumServiceWindowTxns += transMsg->getAmount();
+        if (neighbor->serviceArrivalTimeStamps.size() > _serviceArrivalWindow) {
+            double frontAmt = get<0>(neighbor->serviceArrivalTimeStamps.front());
+            neighbor->serviceArrivalTimeStamps.pop_front(); 
+            neighbor->sumServiceWindowTxns -= frontAmt;
+        }
 
         // add amount to outgoing map
         map<Id, double> *outgoingTransUnits = &(neighbor->outgoingTransUnits);
