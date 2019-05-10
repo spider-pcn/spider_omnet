@@ -385,7 +385,7 @@ def plot_per_payment_channel_stats(args, text_to_add):
             
         if args.queue_info:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numInQueue", True)
-            plot_relevant_stats(data_to_plot, pdf, "Number in Queue")
+            plot_relevant_stats(data_to_plot, pdf, "Queue Size")
 
         if args.queue_delay:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "queueDelayEWMA", True)

@@ -1080,7 +1080,7 @@ void routerNode::handleTransactionMessage(routerMsg* ttmsg){
          handleAckMessage(failedAckMsg);
       }
     }
-    else if (_hasQueueCapacity && _queueCapacity<=(*q).size()){ 
+    else if (_hasQueueCapacity && _queueCapacity<= getTotalAmount(*q)) { 
         //failed transaction, queue at capacity, others are in queue so no point trying this txn
       routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
       handleAckMessage(failedAckMsg);

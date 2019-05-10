@@ -2,7 +2,7 @@
 #include <queue>
 
 #define MSGSIZE 100
-#define MAX_SENDER_PER_DEST_QUEUE 2000
+#define MAX_SENDER_PER_DEST_QUEUE 10000
 
 //global parameters
 map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
@@ -666,7 +666,7 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
                 handleAckMessage(failedAckMsg);
             }
         }
-        else if (_hasQueueCapacity && (*q).size() >= _queueCapacity) {
+        else if (_hasQueueCapacity && getTotalAmount((*q)) >= _queueCapacity) {
             // there are other transactions ahead in the queue so don't attempt to forward 
             routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
             handleAckMessage(failedAckMsg);
@@ -1178,7 +1178,7 @@ void hostNodeBase::initialize() {
         _serviceArrivalWindow = par("serviceArrivalWindow");
 
         _hasQueueCapacity = true;
-        _queueCapacity = 100;
+        _queueCapacity = 500;
 
         _transStatStart = par("transStatStart");
         _transStatEnd = par("transStatEnd");
