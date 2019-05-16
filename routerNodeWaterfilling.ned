@@ -1,4 +1,4 @@
-simple routerNode
+simple routerNodeWaterfilling
 {
 	parameters:
 	    bool isHost = false;

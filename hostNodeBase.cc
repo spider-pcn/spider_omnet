@@ -772,7 +772,7 @@ void hostNodeBase::handleAckMessageSpecialized(routerMsg* ttmsg) {
 
 
 /* default routine for handling an ack that is responsible for 
- * updating outgoingtransunits and incoming trans units 
+ * updating outgoing transunits and incoming trans units 
  * and triggering an update message to the next node on the path
  * before forwarding the ack back to the previous node
  */
@@ -816,7 +816,7 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
 
 
 
-/* handles to logic for ack messages in the presence of timeouts
+/* handles the logic for ack messages in the presence of timeouts
  * in particular, removes the transaction from the cancelled txns
  * to mark that it has been received 
  * it uses the successfulDoNotSendTimeout to detect if txns have
@@ -827,8 +827,6 @@ void hostNodeBase::handleAckMessageTimeOut(routerMsg* ttmsg){
     int transactionId = aMsg->getTransactionId();
     
     //TODO: what if there are multiple HTLC's per transaction? 
-
-
     // only if it isn't waterfilling
     if (aMsg->getIsSuccess()) {
         auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
@@ -865,7 +863,7 @@ void hostNodeBase::handleUpdateMessage(routerMsg* msg) {
             _capacities[senderReceiverTuple] -= (_rebalancingUpFactor - 1)*prevChannel->origTotalCapacity;
 
             prevChannel->numRebalanceEvents += 1;
-            prevChannel->amtAdded -= (_rebalancingUpFactor - 1)*prevChannel->origTotalCapacity;
+            prevChannel->amtAdded -= (_rebalancingUpFactor - 1) * prevChannel->origTotalCapacity;
         }
     }
 
@@ -1406,7 +1404,7 @@ void hostNodeBase::finish() {
  */
 void hostNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
     bool successful = true;
-    while((int)q.size() > 0 && successful) {
+    while ((int)q.size() > 0 && successful) {
         pop_heap(q.begin(), q.end(), sortFIFO);
         successful = forwardTransactionMessage(get<2>(q.back()), get<4>(q.back()));
         if (successful){

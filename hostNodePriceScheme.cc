@@ -665,7 +665,6 @@ void hostNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
         auto firstTransTimes = neighborChannel->serviceArrivalTimeStamps.front();
         auto lastTransTimes =  neighborChannel->serviceArrivalTimeStamps.back();
         double serviceTimeDiff = get<1>(lastTransTimes).dbl() - get<1>(firstTransTimes).dbl(); 
-        // double arrivalTimeDiff = get<1>(lastTransTimes).dbl() - get<1>(firstTransTimes).dbl(); 
         double arrivalTimeDiff = get<1>(neighborChannel->arrivalTimeStamps.back()).dbl() - 
             get<1>(neighborChannel->arrivalTimeStamps.front()).dbl();
         

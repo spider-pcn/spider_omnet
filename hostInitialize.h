@@ -1,4 +1,4 @@
-#include "routerNode.h"
+#include "routerNodeBase.h"
 
 
 //initialization functions
