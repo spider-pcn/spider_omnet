@@ -81,9 +81,16 @@ def write_ned_file(topo_filename, output_filename, network_name, routing_alg):
     print routing_alg
     if (routing_alg == 'shortestPath'):
         host_node_type = 'hostNodeBase'
+        router_node_type = 'routerNodeBase'
     else:
         host_node_type = 'hostNode' + routing_alg[0].upper() + routing_alg[1:]
-    outfile.write("import routerNode;\n")
+        if (routing_alg == 'landmarkRouting'):
+            router_node_type = 'routerNodeWaterfilling'
+        else:
+            router_node_type = 'routerNode' + routing_alg[0].upper() + routing_alg[1:]
+        print router_node_type
+
+    outfile.write("import " + router_node_type + ";\n")
     outfile.write("import " + host_node_type + ";\n\n")
 
     outfile.write("network " + network_name + "_" + routing_alg + "\n")
@@ -96,7 +103,7 @@ def write_ned_file(topo_filename, output_filename, network_name, routing_alg):
     outfile.write('\t\tdouble linkDataRate @unit("Gbps") = default(1Gbps);\n')
     outfile.write('\tsubmodules:\n')
     outfile.write('\t\thost['+str(max_host)+']: ' + host_node_type + ' {} \n')
-    outfile.write('\t\trouter['+str(max_router)+']: routerNode {} \n')
+    outfile.write('\t\trouter['+str(max_router)+']: ' + router_node_type + ' {} \n')
     outfile.write('connections: \n')
 
     for link in linklist:

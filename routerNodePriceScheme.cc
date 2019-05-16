@@ -205,8 +205,15 @@ void routerNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
         // double arrivalTimeDiff = get<1>(lastTransTimes).dbl() - get<1>(firstTransTimes).dbl(); 
         double arrivalTimeDiff = get<1>(neighborChannel->arrivalTimeStamps.back()).dbl() - 
             get<1>(neighborChannel->arrivalTimeStamps.front()).dbl();
+
+        // correction for really large service/arrival rate initially
+        if (neighborChannel->serviceArrivalTimeStamps.size() < 0.3 * _serviceArrivalWindow)
+            serviceTimeDiff = 0.01;
+        if (neighborChannel->arrivalTimeStamps.size() < 0.3 * _serviceArrivalWindow)
+            arrivalTimeDiff = 0.01;
         
         neighborChannel->serviceRate = neighborChannel->sumServiceWindowTxns / serviceTimeDiff;
+        cout << " service rate for " << it->first << " " << neighborChannel->serviceRate << endl;
         neighborChannel->arrivalRate = neighborChannel->sumArrivalWindowTxns / arrivalTimeDiff;
         neighborChannel->lastQueueSize = getTotalAmount(neighborChannel->queuedTransUnits);
 

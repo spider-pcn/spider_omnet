@@ -358,6 +358,7 @@ bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime
         msg->setHopCount(msg->getHopCount()+1);
 
         // update service arrival times
+        cout << " servicing something at " << myIndex() <<  " to "  << nextDest <<  endl;
         neighbor->serviceArrivalTimeStamps.push_back(make_tuple(transMsg->getAmount(), simTime(), arrivalTime));
         neighbor->sumServiceWindowTxns += transMsg->getAmount();
         if (neighbor->serviceArrivalTimeStamps.size() > _serviceArrivalWindow) {
