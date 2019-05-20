@@ -35,6 +35,7 @@
  *     int pathIndex;
  *     bool isAttempted;
  *     double largerTxnId;
+ *     bool isMarked;
  * }
  * </pre>
  */
@@ -53,6 +54,7 @@ class transactionMsg : public ::omnetpp::cPacket
     int pathIndex;
     bool isAttempted;
     double largerTxnId;
+    bool isMarked;
 
   private:
     void copy(const transactionMsg& other);
@@ -95,6 +97,8 @@ class transactionMsg : public ::omnetpp::cPacket
     virtual void setIsAttempted(bool isAttempted);
     virtual double getLargerTxnId() const;
     virtual void setLargerTxnId(double largerTxnId);
+    virtual bool getIsMarked() const;
+    virtual void setIsMarked(bool isMarked);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const transactionMsg& obj) {obj.parsimPack(b);}

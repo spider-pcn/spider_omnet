@@ -193,6 +193,7 @@ transactionMsg::transactionMsg(const char *name, short kind) : ::omnetpp::cPacke
     this->pathIndex = 0;
     this->isAttempted = false;
     this->largerTxnId = 0;
+    this->isMarked = false;
 }
 
 transactionMsg::transactionMsg(const transactionMsg& other) : ::omnetpp::cPacket(other)
@@ -226,6 +227,7 @@ void transactionMsg::copy(const transactionMsg& other)
     this->pathIndex = other.pathIndex;
     this->isAttempted = other.isAttempted;
     this->largerTxnId = other.largerTxnId;
+    this->isMarked = other.isMarked;
 }
 
 void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -243,6 +245,7 @@ void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->pathIndex);
     doParsimPacking(b,this->isAttempted);
     doParsimPacking(b,this->largerTxnId);
+    doParsimPacking(b,this->isMarked);
 }
 
 void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -260,6 +263,7 @@ void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->pathIndex);
     doParsimUnpacking(b,this->isAttempted);
     doParsimUnpacking(b,this->largerTxnId);
+    doParsimUnpacking(b,this->isMarked);
 }
 
 double transactionMsg::getAmount() const
@@ -382,6 +386,16 @@ void transactionMsg::setLargerTxnId(double largerTxnId)
     this->largerTxnId = largerTxnId;
 }
 
+bool transactionMsg::getIsMarked() const
+{
+    return this->isMarked;
+}
+
+void transactionMsg::setIsMarked(bool isMarked)
+{
+    this->isMarked = isMarked;
+}
+
 class transactionMsgDescriptor : public omnetpp::cClassDescriptor
 {
   private:
@@ -447,7 +461,7 @@ const char *transactionMsgDescriptor::getProperty(const char *propertyname) cons
 int transactionMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 12+basedesc->getFieldCount() : 12;
+    return basedesc ? 13+basedesc->getFieldCount() : 13;
 }
 
 unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
@@ -471,8 +485,9 @@ unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<12) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<13) ? fieldTypeFlags[field] : 0;
 }
 
 const char *transactionMsgDescriptor::getFieldName(int field) const
@@ -496,8 +511,9 @@ const char *transactionMsgDescriptor::getFieldName(int field) const
         "pathIndex",
         "isAttempted",
         "largerTxnId",
+        "isMarked",
     };
-    return (field>=0 && field<12) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<13) ? fieldNames[field] : nullptr;
 }
 
 int transactionMsgDescriptor::findField(const char *fieldName) const
@@ -516,6 +532,7 @@ int transactionMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='p' && strcmp(fieldName, "pathIndex")==0) return base+9;
     if (fieldName[0]=='i' && strcmp(fieldName, "isAttempted")==0) return base+10;
     if (fieldName[0]=='l' && strcmp(fieldName, "largerTxnId")==0) return base+11;
+    if (fieldName[0]=='i' && strcmp(fieldName, "isMarked")==0) return base+12;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -540,8 +557,9 @@ const char *transactionMsgDescriptor::getFieldTypeString(int field) const
         "int",
         "bool",
         "double",
+        "bool",
     };
-    return (field>=0 && field<12) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<13) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **transactionMsgDescriptor::getFieldPropertyNames(int field) const
@@ -620,6 +638,7 @@ std::string transactionMsgDescriptor::getFieldValueAsString(void *object, int fi
         case 9: return long2string(pp->getPathIndex());
         case 10: return bool2string(pp->getIsAttempted());
         case 11: return double2string(pp->getLargerTxnId());
+        case 12: return bool2string(pp->getIsMarked());
         default: return "";
     }
 }
@@ -646,6 +665,7 @@ bool transactionMsgDescriptor::setFieldValueAsString(void *object, int field, in
         case 9: pp->setPathIndex(string2long(value)); return true;
         case 10: pp->setIsAttempted(string2bool(value)); return true;
         case 11: pp->setLargerTxnId(string2double(value)); return true;
+        case 12: pp->setIsMarked(string2bool(value)); return true;
         default: return false;
     }
 }

@@ -36,6 +36,7 @@
  *     bool hasTimeOut;
  *     double timeOut;
  *     double largerTxnId;
+ *     bool isMarked;
  * }
  * </pre>
  */
@@ -55,6 +56,7 @@ class ackMsg : public ::omnetpp::cPacket
     bool hasTimeOut;
     double timeOut;
     double largerTxnId;
+    bool isMarked;
 
   private:
     void copy(const ackMsg& other);
@@ -99,6 +101,8 @@ class ackMsg : public ::omnetpp::cPacket
     virtual void setTimeOut(double timeOut);
     virtual double getLargerTxnId() const;
     virtual void setLargerTxnId(double largerTxnId);
+    virtual bool getIsMarked() const;
+    virtual void setIsMarked(bool isMarked);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const ackMsg& obj) {obj.parsimPack(b);}

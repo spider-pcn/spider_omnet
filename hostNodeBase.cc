@@ -255,6 +255,7 @@ routerMsg* hostNodeBase::generateTransactionMessageForPath(double amt,
     msg->setTimeOut(transMsg->getTimeOut());
     msg->setTransactionId(transMsg->getTransactionId());
     msg->setLargerTxnId(transMsg->getLargerTxnId());
+    msg->setIsMarked(false);
 
     // find htlc for txn
     int transactionId = transMsg->getTransactionId();    
@@ -298,6 +299,7 @@ routerMsg *hostNodeBase::generateTransactionMessage(TransUnit unit) {
     msg->setHasTimeOut(unit.hasTimeOut);
     msg->setTimeOut(unit.timeOut);
     msg->setLargerTxnId(unit.largerTxnId);
+    msg->setIsMarked(false);
     
     sprintf(msgname, "tic-%d-to-%d router-transaction-Msg %f", unit.sender, unit.receiver, unit.timeSent);
     
@@ -390,6 +392,7 @@ routerMsg *hostNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     aMsg->setLargerTxnId(transMsg->getLargerTxnId());
     aMsg->setPriorityClass(transMsg->getPriorityClass());
     aMsg->setTimeOut(transMsg->getTimeOut());
+    aMsg->setIsMarked(transMsg->getIsMarked());
     if (!isSuccess){
         aMsg->setFailedHopNum((route.size()-1) - ttmsg->getHopCount());
     }

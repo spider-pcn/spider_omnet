@@ -283,13 +283,16 @@ void hostNodePriceScheme::handleMessage(cMessage *msg) {
     }
 }
 
+/* handler for timeout messages that is responsible for removing messages from 
+ * sender queues if they haven't been sent yet and sends explicit time out messages
+ * for messages that have been sent on a path already
+ */
 void hostNodePriceScheme::handleTimeOutMessage(routerMsg* ttmsg) {
-    // hostNodeBase::handleTimeOutMessage(ttmsg);
     timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
     int destination = toutMsg->getReceiver();
     int transactionId = toutMsg->getTransactionId();
     deque<routerMsg*> *transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
-    // cout << "timing out transaction " << transactionId << endl; 
+    
     if (ttmsg->isSelfMessage()) {
         // if transaction was successful don't do anything more
         if (successfulDoNotSendTimeOut.count(transactionId) > 0) {
@@ -431,6 +434,7 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                          (_windowEnabled && pathInfo->sumOfTransUnitsInFlight < pathInfo->window))) {
                     
                     ttmsg->setRoute(pathInfo->path);
+                    ttmsg->setHopCount(0);
                     transMsg->setPathIndex(pathIndex);
                     handleTransactionMessage(ttmsg, true /*revisit*/);
 
@@ -445,14 +449,6 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                         if (transMsg->getTimeSent() >= _transStatStart && 
                             transMsg->getTimeSent() <= _transStatEnd) 
                             statRateAttempted[destNode] += 1;
-                        // /cout << "attempting transaction " << transactionId << endl;
-
-                        // generate time out message here
-                        // because queue is LIFO
-                        /*if (_timeoutEnabled) {
-                            routerMsg *toutMsg = generateTimeOutMessage(ttmsg);
-                            scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
-                        }*/
                     }
                     
                     if (transMsg->getTimeSent() >= _transStatStart && 
@@ -1021,13 +1017,6 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         // update the number attempted to this destination and on this path
         p->statRateAttempted = p->statRateAttempted + 1;
 
-        // generate time out message here
-        // because queue is LIFO
-        /*if (_timeoutEnabled) {
-            routerMsg *toutMsg = generateTimeOutMessage(msgToSend);
-            scheduleAt(simTime() + transMsg->getTimeOut(), toutMsg );
-        }*/
-
         // first attempt of larger txn
         SplitState* splitInfo = &(_numSplits[myIndex()][transMsg->getLargerTxnId()]);
         if (splitInfo->numAttempted == 0) {
@@ -1052,9 +1041,6 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
         //if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0){
         cancelEvent(ttmsg);
         scheduleAt(p->timeToNextSend, ttmsg);
-        /*} else {
-            p->isSendTimerSet = false;
-        }*/
     }
     else{ 
         //no trans to send

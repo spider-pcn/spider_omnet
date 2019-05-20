@@ -27,5 +27,6 @@ packet transactionMsg
     int pathIndex;
     bool isAttempted; 
     double largerTxnId;
+    bool isMarked;
 }
 

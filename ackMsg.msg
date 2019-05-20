@@ -29,5 +29,6 @@ packet ackMsg
     bool hasTimeOut;
     double timeOut;
     double largerTxnId;
+    bool isMarked;
  }
 

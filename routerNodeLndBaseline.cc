@@ -29,6 +29,7 @@ routerMsg *routerNodeLndBaseline::generateAckMessage(routerMsg* ttmsg, bool isSu
     aMsg->setHtlcIndex(transMsg->getHtlcIndex());
     aMsg->setPathIndex(transMsg->getPathIndex());
     aMsg->setLargerTxnId(transMsg->getLargerTxnId());
+    aMsg->setIsMarked(transMsg->getIsMarked());
     if (!isSuccess){
         aMsg->setFailedHopNum((route.size() - 1) - ttmsg->getHopCount());
     }

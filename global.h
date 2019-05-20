@@ -102,22 +102,26 @@ extern double _xi; // how fast you want to drain the queue relative to network r
 extern double _routerQueueDrainTime;
 extern int _serviceArrivalWindow;
 
+// overall knobs
 extern bool _signalsEnabled;
 extern bool _loggingEnabled;
 extern double _ewmaFactor;
 
+// path choices knob
 extern bool _widestPathsEnabled;
 extern bool _kspYenEnabled;
 extern bool _obliviousRoutingEnabled;
 
+// queue knobs
 extern bool _hasQueueCapacity;
 extern int _queueCapacity;
 extern double _epsilon;
 
-
+// speeding up price scheme
 extern bool _nesterov;
 extern bool _secondOrderOptimization;
 
+// experiments related parameters to control statistics
 extern double _transStatStart;
 extern double _transStatEnd;
 extern double _waterfillingStartTime;
@@ -132,3 +136,8 @@ extern double _rebalancingUpFactor;
 extern double _queueDelayThreshold;
 extern double _gamma;
 extern double _maxGammaImbalanceQueueSize;
+
+// DCTCP params
+extern double _windowAlpha;
+extern double _windowBeta;
+extern double _qEcnThreshold;

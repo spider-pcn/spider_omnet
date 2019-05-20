@@ -194,6 +194,7 @@ ackMsg::ackMsg(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
     this->hasTimeOut = false;
     this->timeOut = 0;
     this->largerTxnId = 0;
+    this->isMarked = false;
 }
 
 ackMsg::ackMsg(const ackMsg& other) : ::omnetpp::cPacket(other)
@@ -228,6 +229,7 @@ void ackMsg::copy(const ackMsg& other)
     this->hasTimeOut = other.hasTimeOut;
     this->timeOut = other.timeOut;
     this->largerTxnId = other.largerTxnId;
+    this->isMarked = other.isMarked;
 }
 
 void ackMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -246,6 +248,7 @@ void ackMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->hasTimeOut);
     doParsimPacking(b,this->timeOut);
     doParsimPacking(b,this->largerTxnId);
+    doParsimPacking(b,this->isMarked);
 }
 
 void ackMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -264,6 +267,7 @@ void ackMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->hasTimeOut);
     doParsimUnpacking(b,this->timeOut);
     doParsimUnpacking(b,this->largerTxnId);
+    doParsimUnpacking(b,this->isMarked);
 }
 
 int ackMsg::getTransactionId() const
@@ -396,6 +400,16 @@ void ackMsg::setLargerTxnId(double largerTxnId)
     this->largerTxnId = largerTxnId;
 }
 
+bool ackMsg::getIsMarked() const
+{
+    return this->isMarked;
+}
+
+void ackMsg::setIsMarked(bool isMarked)
+{
+    this->isMarked = isMarked;
+}
+
 class ackMsgDescriptor : public omnetpp::cClassDescriptor
 {
   private:
@@ -461,7 +475,7 @@ const char *ackMsgDescriptor::getProperty(const char *propertyname) const
 int ackMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 13+basedesc->getFieldCount() : 13;
+    return basedesc ? 14+basedesc->getFieldCount() : 14;
 }
 
 unsigned int ackMsgDescriptor::getFieldTypeFlags(int field) const
@@ -486,8 +500,9 @@ unsigned int ackMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<13) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<14) ? fieldTypeFlags[field] : 0;
 }
 
 const char *ackMsgDescriptor::getFieldName(int field) const
@@ -512,8 +527,9 @@ const char *ackMsgDescriptor::getFieldName(int field) const
         "hasTimeOut",
         "timeOut",
         "largerTxnId",
+        "isMarked",
     };
-    return (field>=0 && field<13) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<14) ? fieldNames[field] : nullptr;
 }
 
 int ackMsgDescriptor::findField(const char *fieldName) const
@@ -533,6 +549,7 @@ int ackMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='h' && strcmp(fieldName, "hasTimeOut")==0) return base+10;
     if (fieldName[0]=='t' && strcmp(fieldName, "timeOut")==0) return base+11;
     if (fieldName[0]=='l' && strcmp(fieldName, "largerTxnId")==0) return base+12;
+    if (fieldName[0]=='i' && strcmp(fieldName, "isMarked")==0) return base+13;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -558,8 +575,9 @@ const char *ackMsgDescriptor::getFieldTypeString(int field) const
         "bool",
         "double",
         "double",
+        "bool",
     };
-    return (field>=0 && field<13) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<14) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **ackMsgDescriptor::getFieldPropertyNames(int field) const
@@ -639,6 +657,7 @@ std::string ackMsgDescriptor::getFieldValueAsString(void *object, int field, int
         case 10: return bool2string(pp->getHasTimeOut());
         case 11: return double2string(pp->getTimeOut());
         case 12: return double2string(pp->getLargerTxnId());
+        case 13: return bool2string(pp->getIsMarked());
         default: return "";
     }
 }
@@ -666,6 +685,7 @@ bool ackMsgDescriptor::setFieldValueAsString(void *object, int field, int i, con
         case 10: pp->setHasTimeOut(string2bool(value)); return true;
         case 11: pp->setTimeOut(string2double(value)); return true;
         case 12: pp->setLargerTxnId(string2double(value)); return true;
+        case 13: pp->setIsMarked(string2bool(value)); return true;
         default: return false;
     }
 }
