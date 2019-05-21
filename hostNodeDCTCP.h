@@ -23,6 +23,6 @@ class hostNodeDCTCP : public hostNodeBase {
         virtual void handleClearStateMessage(routerMsg *msg) override;
 
         // helper method
-        virtual void sendNextTransactionOnPath(int destNode, int pathIndex);
+        virtual void sendMoreTransactionsOnPath(int destNode, int pathIndex);
 };
 #endif

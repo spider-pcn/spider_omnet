@@ -9,6 +9,6 @@ using namespace omnetpp;
 class routerNodeLndBaseline : public routerNodeBase {
     protected:
         // messsage helpers
-        virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true);
+        virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true) override;
 };
 #endif

@@ -85,7 +85,7 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
     destNodeToNumTransPending[destNode] -= 1;     
     hostNodeBase::handleAckMessage(ttmsg);
 
-    sendNextTransactionOnPath(destNode, pathIndex);
+    sendMoreTransactionsOnPath(destNode, pathIndex);
 }
 
 
@@ -319,45 +319,44 @@ void hostNodeDCTCP::handleClearStateMessage(routerMsg *ttmsg) {
 
 /* helper method to remove a transaction from the sender queue and send it on a particular path
  * to the given destination */
-void hostNodeDCTCP::sendNextTransactionOnPath(int destNode, int pathIndex) {
+void hostNodeDCTCP::sendMoreTransactionsOnPath(int destNode, int pathIndex) {
     transactionMsg *transMsg;
     routerMsg *msgToSend;
     //remove the transaction $tu$ at the head of the queue if one exists
-    if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {
+    while (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {
         routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
         transMsg = check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
-    } else
-        return;
 
-    PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
-    if (pathInfo->sumOfTransUnitsInFlight + transMsg->getAmount() <= pathInfo->window) {
-        // remove the transaction from queue and send it on the path
-        nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
-        msgToSend->setRoute(pathInfo->path);
-        msgToSend->setHopCount(0);
-        transMsg->setPathIndex(pathIndex);
-        handleTransactionMessage(msgToSend, true /*revisit*/);
+        PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
+        if (pathInfo->sumOfTransUnitsInFlight + transMsg->getAmount() <= pathInfo->window) {
+            // remove the transaction from queue and send it on the path
+            nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
+            msgToSend->setRoute(pathInfo->path);
+            msgToSend->setHopCount(0);
+            transMsg->setPathIndex(pathIndex);
+            handleTransactionMessage(msgToSend, true /*revisit*/);
 
-        // first attempt of larger txn
-        SplitState* splitInfo = &(_numSplits[myIndex()][transMsg->getLargerTxnId()]);
-        if (splitInfo->numAttempted == 0) {
-            splitInfo->numAttempted += 1;
+            // first attempt of larger txn
+            SplitState* splitInfo = &(_numSplits[myIndex()][transMsg->getLargerTxnId()]);
+            if (splitInfo->numAttempted == 0) {
+                splitInfo->numAttempted += 1;
+                if (transMsg->getTimeSent() >= _transStatStart && 
+                    transMsg->getTimeSent() <= _transStatEnd) 
+                    statRateAttempted[destNode] += 1;
+            }
+            
             if (transMsg->getTimeSent() >= _transStatStart && 
-                transMsg->getTimeSent() <= _transStatEnd) 
-                statRateAttempted[destNode] += 1;
-        }
-        
-        if (transMsg->getTimeSent() >= _transStatStart && 
-                transMsg->getTimeSent() <= _transStatEnd) {
-            statAmtAttempted[destNode] += transMsg->getAmount();
-        }
-        
-        // update stats
-        pathInfo->statRateAttempted += 1;
-        pathInfo->sumOfTransUnitsInFlight += transMsg->getAmount();
+                    transMsg->getTimeSent() <= _transStatEnd) {
+                statAmtAttempted[destNode] += transMsg->getAmount();
+            }
+            
+            // update stats
+            pathInfo->statRateAttempted += 1;
+            pathInfo->sumOfTransUnitsInFlight += transMsg->getAmount();
 
-        // necessary for knowing what path to remove transaction in flight funds from
-        tuple<int,int> key = make_tuple(transMsg->getTransactionId(), pathIndex); 
-        transPathToAckState[key].amtSent += transMsg->getAmount();
+            // necessary for knowing what path to remove transaction in flight funds from
+            tuple<int,int> key = make_tuple(transMsg->getTransactionId(), pathIndex); 
+            transPathToAckState[key].amtSent += transMsg->getAmount();
+        }
     }
 }

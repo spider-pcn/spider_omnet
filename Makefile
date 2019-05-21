@@ -42,6 +42,7 @@ OBJS = \
     $O/routerNodeWaterfilling.o \
     $O/routerNodePriceScheme.o \
     $O/routerNodeLndBaseline.o \
+    $O/routerNodeDCTCP.o \
     $O/ackMsg_m.o \
     $O/priceQueryMsg_m.o \
     $O/priceUpdateMsg_m.o \
