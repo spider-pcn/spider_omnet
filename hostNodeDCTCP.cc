@@ -161,6 +161,30 @@ void hostNodeDCTCP::handleTimeOutMessage(routerMsg* ttmsg) {
     }
 }
 
+/* initialize data for for the paths supplied to the destination node
+ * and also fix the paths for susbequent transactions to this destination
+ * and register signals that are path specific
+ */
+void hostNodeDCTCP::initializePathInfo(vector<vector<int>> kShortestPaths, int destNode){
+    for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
+        // initialize pathInfo
+        PathInfo temp = {};
+        temp.path = kShortestPaths[pathIdx];
+        temp.window = 100;
+        // TODO: change this to something sensible
+        temp.rttMin = (kShortestPaths[pathIdx].size() - 1) * 2 * _avgDelay/1000.0;
+        nodeToShortestPathsMap[destNode][pathIdx] = temp;
+
+        //initialize signals
+        simsignal_t signal;
+        signal = registerSignalPerDestPath("sumOfTransUnitsInFlight", pathIdx, destNode);
+        nodeToShortestPathsMap[destNode][pathIdx].sumOfTransUnitsInFlightSignal = signal;
+
+        signal = registerSignalPerDestPath("window", pathIdx, destNode);
+        nodeToShortestPathsMap[destNode][pathIdx].windowSignal = signal;
+   }
+}
+
 /* main routine for handling a new transaction under DCTCP
  * In particular, only sends out transactions if the window permits it */
 void hostNodeDCTCP::handleTransactionMessageSpecialized(routerMsg* ttmsg){
@@ -190,7 +214,14 @@ void hostNodeDCTCP::handleTransactionMessageSpecialized(routerMsg* ttmsg){
             }
         }
     }
-    
+
+    // initiate paths and windows if it is a new destination
+    if (nodeToShortestPathsMap.count(destNode) == 0 && ttmsg->isSelfMessage()){
+        vector<vector<int>> kShortestRoutes = getKPaths(transMsg->getSender(),destNode, _kValue);
+        initializePathInfo(kShortestRoutes, destNode);
+    }
+
+
     // at destination, add to incoming transUnits and trigger ack
     if (transMsg->getReceiver() == myIndex()) {
         int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
@@ -358,5 +389,7 @@ void hostNodeDCTCP::sendMoreTransactionsOnPath(int destNode, int pathIndex) {
             tuple<int,int> key = make_tuple(transMsg->getTransactionId(), pathIndex); 
             transPathToAckState[key].amtSent += transMsg->getAmount();
         }
+        else 
+            return;
     }
 }

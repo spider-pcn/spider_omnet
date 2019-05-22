@@ -1195,7 +1195,7 @@ void hostNodeBase::initialize() {
         _kspYenEnabled = par("kspYenEnabled");
         _obliviousRoutingEnabled = par("obliviousRoutingEnabled");
 
-        _splitSize = 5.0;
+        _splitSize = 1.0;
 
         _lndBaselineEnabled = par("lndBaselineEnabled");
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");
@@ -1226,7 +1226,7 @@ void hostNodeBase::initialize() {
         _epsilon = pow(10, -6);
         cout << "epsilon" << _epsilon << endl;
         
-        if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled){
+        if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled || _dctcpEnabled){
            _kValue = par("numPathChoices");
         }
 

@@ -57,7 +57,7 @@ serviceArrivalWindow=300
 #DCTCP parameters
 windowBeta=0.2
 windowAlpha=0.5
-queueThreshold=30
+queueThreshold=10
 
 for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
 do
@@ -110,7 +110,7 @@ do
         
         # set delay amount
         if [[ (${prefix[i]:0:3} == "two") || (${prefix[i]:0:5} == "three") ]]; then
-            delay="60"
+            delay="120"
         else
             delay="30"
         fi

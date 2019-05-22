@@ -35,7 +35,8 @@ parser.add_argument('--kappa', type=float, help='step size for lambda', dest='ka
 parser.add_argument('--alpha', type=float, help='step size for rate', dest='alpha', default=0.01)
 parser.add_argument('--window-alpha', type=float, help='size for window inc', dest='windowAlpha', default=0.01)
 parser.add_argument('--window-beta', type=float, help='size for window dec', dest='windowBeta', default=0.01)
-parser.add_argument('--queue-threshold', type=float, help='ecn queue threshold', default=30)
+parser.add_argument('--queue-threshold', type=float, help='ecn queue threshold', dest='queueThreshold', \
+        default=30)
 parser.add_argument('--rho', type=float, help='nesterov or accelerated gradient parameter', dest='rho', default=0.05)
 parser.add_argument('--capacityFactor', type=float, help='fraction of capacity used for lambda', dest='capacityFactor')
 parser.add_argument('--update-query-time', type=float, help='time of update and query', \

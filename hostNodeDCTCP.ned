@@ -65,7 +65,7 @@ simple hostNodeDCTCP
 		
 		@display("i=block/routing"); 
 
-		@signal[numInQueuePerChannel*](type="unsigned long"); 
+		@signal[numInQueuePerChannel*](type="double"); 
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
 
 		@signal[numProcessedPerChannel*](type="long");  

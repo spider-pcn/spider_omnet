@@ -211,7 +211,7 @@ void generateTransUnitList(string workloadFile){
                 if (timeSent < _landmarkRoutingStartTime || timeSent > _shortestPathEndTime) 
                     continue;
             }
-            else if (!_priceSchemeEnabled) {// shortest path
+            else if (!_priceSchemeEnabled && !_dctcpEnabled) {// shortest path
                 if (timeSent < _shortestPathStartTime || timeSent > _shortestPathEndTime) 
                     continue;
             }
@@ -221,7 +221,7 @@ void generateTransUnitList(string workloadFile){
             // instantiate all the transUnits that need to be sent
             int numSplits = 0;
             double totalAmount = amount;
-            while (amount >= _splitSize && (_waterfillingEnabled || _priceSchemeEnabled || _lndBaselineEnabled)
+            while (amount >= _splitSize && (_waterfillingEnabled || _priceSchemeEnabled || _lndBaselineEnabled || _dctcpEnabled)
                    && _splittingEnabled) {
                 TransUnit tempTU = TransUnit(_splitSize, timeSent, 
                         sender, receiver, priorityClass, hasTimeOut, timeOut, largerTxnID);
@@ -536,7 +536,8 @@ map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> cha
         end = route[i+1];
         //only erase if edge is between two router nodes
         if (start >= _numHostNodes && end >= _numHostNodes) {
-            vector< pair <int, int> >::iterator it = find_if(channels[start].begin(),channels[start].end(),bind1st(pair_equal_to<int,int>(),end));
+            vector< pair <int, int> >::iterator it = find_if(channels[start].begin(),channels[start].end(),
+                    bind1st(pair_equal_to<int,int>(),end));
             channels[start].erase(it);
         }
     }
