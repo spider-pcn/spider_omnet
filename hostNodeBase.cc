@@ -39,6 +39,7 @@ map<tuple<int,int>,double> _capacities;
 
 // controls algorithm and what is outputted
 bool _waterfillingEnabled;
+bool _dctcpEnabled;
 bool _timeoutEnabled;
 bool _loggingEnabled;
 bool _signalsEnabled;
@@ -153,7 +154,8 @@ void hostNodeBase::generateNextTransaction() {
       
       routerMsg *msg = generateTransactionMessage(j); //TODO: flag to whether to calculate path
 
-      if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled || _lndBaselineEnabled){
+      if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled || _lndBaselineEnabled 
+              || _dctcpEnabled){
          vector<int> blankPath = {};
          //Radhika TODO: maybe no need to compute path to begin with?
          msg->setRoute(blankPath);
@@ -1174,6 +1176,7 @@ void hostNodeBase::initialize() {
         _signalsEnabled = par("signalsEnabled");
         _loggingEnabled = par("loggingEnabled");
         _priceSchemeEnabled = par("priceSchemeEnabled");
+        _dctcpEnabled = par("dctcpEnabled");
         _splittingEnabled = par("splittingEnabled");
         cout << "splitting" << _splittingEnabled << endl;
         _serviceArrivalWindow = par("serviceArrivalWindow");

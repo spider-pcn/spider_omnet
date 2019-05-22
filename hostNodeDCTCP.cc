@@ -12,9 +12,9 @@ void hostNodeDCTCP::initialize(){
     
     if (myIndex() == 0) {
         // parameters
-        _windowAlpha = 0.2;
-        _windowBeta = 0.5;
-        _qEcnThreshold = 20; 
+        _windowAlpha = par("windowAlpha");
+        _windowBeta = par("windowBeta");
+        _qEcnThreshold = par("queueThreshold"); 
     }
 
 }

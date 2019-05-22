@@ -16,7 +16,7 @@ parser.add_argument('--window-enabled', type=str, help='is window enabled?', des
 parser.add_argument('--timeout-clear-rate', type=str, help='rate of clearing data after timeouts', dest='timeoutClearRate', default='0.5')
 parser.add_argument('--timeout-enabled', type=str, help='are timeouts enabled?', dest='timeoutEnabled', default='true')
 parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, LP,' +
-        'silentWhispers, smoothWaterfilling, priceScheme, landmarkRouting, lndBaseline],' +  
+        'silentWhispers, smoothWaterfilling, priceScheme, landmarkRouting, lndBaseline, DCTCP],' +  
         'else will default to waterfilling', 
         dest='routingScheme', default='default')
 parser.add_argument('--num-path-choices', type=str, help='number of path choices', dest='numPathChoices', default='default')
@@ -33,6 +33,9 @@ parser.add_argument('--capacity', type=int,help='mean cap for topology')
 parser.add_argument('--eta', type=float, help='step size for mu', dest='eta', default=0.01)
 parser.add_argument('--kappa', type=float, help='step size for lambda', dest='kappa', default=0.01)
 parser.add_argument('--alpha', type=float, help='step size for rate', dest='alpha', default=0.01)
+parser.add_argument('--window-alpha', type=float, help='size for window inc', dest='windowAlpha', default=0.01)
+parser.add_argument('--window-beta', type=float, help='size for window dec', dest='windowBeta', default=0.01)
+parser.add_argument('--queue-threshold', type=float, help='ecn queue threshold', default=30)
 parser.add_argument('--rho', type=float, help='nesterov or accelerated gradient parameter', dest='rho', default=0.05)
 parser.add_argument('--capacityFactor', type=float, help='fraction of capacity used for lambda', dest='capacityFactor')
 parser.add_argument('--update-query-time', type=float, help='time of update and query', \
@@ -85,7 +88,7 @@ if args.capacity is not None:
 #arg parse might support a cleaner way to deal with this
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
         'smoothWaterfilling', 'priceSchemeWindow', 'priceSchemeWindowNoQueue', 'priceSchemeWindowNoSplit',\
-        'landmarkRouting', 'lndBaseline', 'priceSchemeNoQueue', 'lndBaselineSplit']:
+        'landmarkRouting', 'lndBaseline', 'priceSchemeNoQueue', 'lndBaselineSplit', 'DCTCP']:
     if args.routingScheme != 'default':
         print "******************"
         print "WARNING: ill-specified routing scheme, defaulting to waterfilling,",\
@@ -176,6 +179,12 @@ if args.routingScheme == 'landmarkRouting':
 
 if 'lndBaseline' in args.routingScheme:
     f.write("**.lndBaselineEnabled = true\n")
+
+if 'DCTCP' in args.routingScheme:
+    f.write("**.dctcpEnabled = true\n")
+    f.write("**.windowAlpha = " + str(args.windowAlpha) + "\n")
+    f.write("**.windowBeta = " + str(args.windowBeta) + "\n")
+    f.write("**.queueThreshold = " + str(args.queueThreshold) + "\n")
 
 if args.pathChoice == "oblivious":
     f.write("**.obliviousRoutingEnabled = true\n")

@@ -46,12 +46,13 @@ xi=1
 routerQueueDrainTime=5
 serviceArrivalWindow=300
 
-cp hostNodeBase.ned ${PATH_NAME}
-cp hostNodeWaterfilling.ned ${PATH_NAME}
+
+for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
+do
+    cp hostNode${suffix}.ned ${PATH_NAME}
+    cp routerNode${suffix}.ned ${PATH_NAME}
+done
 cp hostNodeLandmarkRouting.ned ${PATH_NAME}
-cp hostNodePriceScheme.ned ${PATH_NAME}
-cp hostNodeLndBaseline.ned ${PATH_NAME}
-cp routerNode.ned ${PATH_NAME}
 
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"

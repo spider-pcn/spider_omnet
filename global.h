@@ -141,3 +141,4 @@ extern double _maxGammaImbalanceQueueSize;
 extern double _windowAlpha;
 extern double _windowBeta;
 extern double _qEcnThreshold;
+extern bool _dctcpEnabled;

@@ -54,7 +54,12 @@ xi=1
 routerQueueDrainTime=5
 serviceArrivalWindow=300
 
-for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme"
+#DCTCP parameters
+windowBeta=0.2
+windowAlpha=0.5
+queueThreshold=30
+
+for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
 do
     cp hostNode${suffix}.ned ${PATH_NAME}
     cp routerNode${suffix}.ned ${PATH_NAME}
@@ -239,7 +244,11 @@ do
                         --transStatStart $transStatStart\
                         --transStatEnd $transStatEnd\
                         --path-choice $pathChoice\
-                        --balance $balance
+                        --balance $balance \
+                        --window-alpha $windowAlpha \
+                        --window-beta $windowBeta \
+                        --queue-threshold $queueThreshold 
+
 
                 # run the omnetexecutable with the right parameters
                 # in the background

@@ -266,7 +266,7 @@ parser.add_argument('--random-channel-capacity', type=str, dest='random_channel_
         help='Give channels a random balance between bal/2 and bal', default='False')
 parser.add_argument('--lnd-channel-capacity', type=str, dest='lnd_capacity', \
         help='Give channels a random balance sampled from lnd', default='False')
-routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting', 'lndBaseline']
+routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting', 'lndBaseline', 'DCTCP']
 
 
 args = parser.parse_args()
