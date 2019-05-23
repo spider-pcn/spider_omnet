@@ -153,7 +153,10 @@ simple hostNodePriceScheme
                 @signal[rateSentPerDestPerPath*](type="double"); 
 		@statisticTemplate[rateSentPerDestPerPathTemplate](record=vector, stats);	
 		
-		@signal[timeToNextSendPerDestPerPath*](type="simtime_t"); 
+                @signal[rateOfAcksPerDestPerPath*](type="double"); 
+		@statisticTemplate[rateOfAcksPerDestPerPathTemplate](record=vector, stats);
+	
+        	@signal[timeToNextSendPerDestPerPath*](type="simtime_t"); 
 		@statisticTemplate[timeToNextSendPerDestPerPathTemplate](record=vector, stats);
 		
 		@signal[sumOfTransUnitsInFlightPerDestPerPath*](type="double"); 

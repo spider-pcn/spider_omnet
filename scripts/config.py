@@ -118,7 +118,7 @@ for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", \
     INTERESTING_SIGNALS[signal] = signal + "PerDest"
     per_dest_list.append(signal + "PerDest")
 per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", \
-        "rateToSendTransPerDestPerPath", "rateSentPerDestPerPath", \
+        "rateToSendTransPerDestPerPath", "rateSentPerDestPerPath", "rateOfAcksPerDestPerPath", \
         "sumOfTransUnitsInFlightPerDestPerPath", "windowPerDestPerPath", \
         "priceLastSeenPerDestPerPath", "numTimedOutPerDest"])
 

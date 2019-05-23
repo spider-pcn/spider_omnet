@@ -128,53 +128,22 @@ simple hostNodeDCTCP
 		@signal[rateAttemptedPerDestPerPath*](type="long"); 
 		@statisticTemplate[rateAttemptedPerDestPerPathTemplate](record=vector, stats);
 		
-		//has queue capacity specific signals
+                @signal[rateOfAcksPerDestPerPath*](type="double"); 
+		@statisticTemplate[rateOfAcksPerDestPerPathTemplate](record=vector, stats);
+		
+                //has queue capacity specific signals
 		@signal[numFailedPerDest*](type="long");  
 		@statisticTemplate[numFailedPerDestTemplate](record=vector, stats);
 		
 		@signal[rateFailedPerDest*](type="long");  
 		@statisticTemplate[rateFailedPerDestTemplate](record=vector, stats);
-		
-		//price scheme payment channel specific signals
-		@signal[nValuePerChannel*](type="double"); 
-		@statisticTemplate[nValuePerChannelTemplate](record=vector, stats);
-		
-		@signal[xLocalPerChannel*](type="double"); 
-		@statisticTemplate[xLocalPerChannelTemplate](record=vector, stats);
-
-		@signal[lambdaPerChannel*](type="double"); 
-		@statisticTemplate[lambdaPerChannelTemplate](record=vector, stats);
-		
-		@signal[muLocalPerChannel*](type="double"); 
-		@statisticTemplate[muLocalPerChannelTemplate](record=vector, stats);
-		
-		@signal[muRemotePerChannel*](type="double"); 
-		@statisticTemplate[muRemotePerChannelTemplate](record=vector, stats);
-		
-		//price scheme path specific signals
-		@signal[rateToSendTransPerDestPerPath*](type="double"); 
-		@statisticTemplate[rateToSendTransPerDestPerPathTemplate](record=vector, stats);
-
-                @signal[rateSentPerDestPerPath*](type="double"); 
-		@statisticTemplate[rateSentPerDestPerPathTemplate](record=vector, stats);	
-		
-		@signal[timeToNextSendPerDestPerPath*](type="simtime_t"); 
-		@statisticTemplate[timeToNextSendPerDestPerPathTemplate](record=vector, stats);
-		
+				
+		//price scheme path specific signals		
 		@signal[sumOfTransUnitsInFlightPerDestPerPath*](type="double"); 
 		@statisticTemplate[sumOfTransUnitsInFlightPerDestPerPathTemplate](record=vector, stats);
 			
         	@signal[windowPerDestPerPath*](type="double"); 
-		@statisticTemplate[windowPerDestPerPathTemplate](record=vector, stats);
-
-		@signal[priceLastSeenPerDestPerPath*](type="double"); 
-		@statisticTemplate[priceLastSeenPerDestPerPathTemplate](record=vector, stats);
-		
-		@signal[isSendTimerSetPerDestPerPath*](type="bool"); 
-		@statisticTemplate[isSendTimerSetPerDestPerPathTemplate](record=vector, stats);
-		
-		
-		
+		@statisticTemplate[windowPerDestPerPathTemplate](record=vector, stats);		
 
 	gates:
 		input in[];

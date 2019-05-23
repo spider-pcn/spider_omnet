@@ -36,6 +36,7 @@ struct PathInfo{
         double lastTransSize = 0.0;
         double amtAllowedToSend = 0.0;
         bool isSendTimerSet = false;
+        double amtAcked = 0;
 
         // number and rate of txns sent to a particular destination on this path
         double nValue = 0;
@@ -51,6 +52,7 @@ struct PathInfo{
         simsignal_t windowSignal;
         simsignal_t priceLastSeenSignal;
         simsignal_t isSendTimerSetSignal;
+        simsignal_t rateOfAcksSignal;
 
 
 };

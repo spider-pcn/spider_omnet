@@ -75,6 +75,7 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
             }
         }
         nodeToShortestPathsMap[destNode][pathIndex].statRateCompleted += 1;
+        nodeToShortestPathsMap[destNode][pathIndex].amtAcked += aMsg->getAmount();
     }
 
     //increment transaction amount ack on a path. 
@@ -182,6 +183,9 @@ void hostNodeDCTCP::initializePathInfo(vector<vector<int>> kShortestPaths, int d
 
         signal = registerSignalPerDestPath("window", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].windowSignal = signal;
+
+        signal = registerSignalPerDestPath("rateOfAcks", pathIdx, destNode);
+        nodeToShortestPathsMap[destNode][pathIdx].rateOfAcksSignal = signal;
    }
 }
 
@@ -298,7 +302,7 @@ void hostNodeDCTCP::handleStatMessage(routerMsg* ttmsg){
         for (auto it = 0; it < _numHostNodes; it++){ 
             if (it != getIndex() && _destList[myIndex()].count(it) > 0) {
                 if (nodeToShortestPathsMap.count(it) > 0) {
-                    for (auto p: nodeToShortestPathsMap[it]){
+                    for (auto& p: nodeToShortestPathsMap[it]){
                         int pathIndex = p.first;
                         PathInfo *pInfo = &(p.second);
 
@@ -306,6 +310,8 @@ void hostNodeDCTCP::handleStatMessage(routerMsg* ttmsg){
                         emit(pInfo->sumOfTransUnitsInFlightSignal, 
                                 pInfo->sumOfTransUnitsInFlight);
                         emit(pInfo->windowSignal, pInfo->window);
+                        emit(pInfo->rateOfAcksSignal, pInfo->amtAcked/_statRate);
+                        pInfo->amtAcked = 0;
                     }
                 }
             }        
