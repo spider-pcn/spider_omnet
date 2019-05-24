@@ -20,6 +20,7 @@ simple hostNodeWaterfilling
                 bool landmarkRoutingEnabled = default(false);
                 bool lndBaselineEnabled = default(false);
                 bool splittingEnabled = default(true);
+                bool dctcpEnabled = default(false);
 
                 bool rebalancingEnabled = default(false);
                 double queueDelayThreshold = default(3.0);

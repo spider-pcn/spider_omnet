@@ -41,7 +41,12 @@ xi=1
 routerQueueDrainTime=5
 serviceArrivalWindow=300
 
-for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme"
+#DCTCP parameters
+windowBeta=0.2
+windowAlpha=0.5
+queueThreshold=10
+
+for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
 do
     cp hostNode${suffix}.ned ${PATH_NAME}
     cp routerNode${suffix}.ned ${PATH_NAME}

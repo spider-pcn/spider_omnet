@@ -19,6 +19,7 @@ simple hostNodeBase
 		bool smoothWaterfillingEnabled = default(false);
                 bool landmarkRoutingEnabled = default(false);
                 bool lndBaselineEnabled = default(false);
+                bool dctcpEnabled = default(false);
 
                 bool widestPathsEnabled = default(false);
                 bool obliviousRoutingEnabled = default(false);

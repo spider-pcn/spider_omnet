@@ -20,6 +20,7 @@ simple hostNodeLandmarkRouting
                 bool windowEnabled = default(false);
                 bool landmarkRoutingEnabled = default(false);
                 bool lndBaselineEnabled = default(false);
+                bool dctcpEnabled = default(false);
 		int numPathChoices = default(4);
 
                 bool rebalancingEnabled = default(false);
