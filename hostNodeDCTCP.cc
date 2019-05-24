@@ -5,6 +5,7 @@ Define_Module(hostNodeDCTCP);
 double _windowAlpha;
 double _windowBeta;
 double _qEcnThreshold;
+double _minDCTCPWindow;
 
 /* initialization function to initialize parameters */
 void hostNodeDCTCP::initialize(){
@@ -14,7 +15,8 @@ void hostNodeDCTCP::initialize(){
         // parameters
         _windowAlpha = par("windowAlpha");
         _windowBeta = par("windowBeta");
-        _qEcnThreshold = par("queueThreshold"); 
+        _qEcnThreshold = par("queueThreshold");
+        _minDCTCPWindow = 5;
     }
 
 }
@@ -33,8 +35,11 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
     double largerTxnId = aMsg->getLargerTxnId();
 
     // window update based on marked or unmarked packet
-    if (aMsg->getIsMarked())
+    if (aMsg->getIsMarked()) {
         nodeToShortestPathsMap[destNode][pathIndex].window  -= _windowBeta;
+        nodeToShortestPathsMap[destNode][pathIndex].window = max(_minDCTCPWindow, 
+                nodeToShortestPathsMap[destNode][pathIndex].window);
+    }
     else {
         double sumWindows = 0;
         for (auto p: nodeToShortestPathsMap[destNode])
@@ -171,7 +176,7 @@ void hostNodeDCTCP::initializePathInfo(vector<vector<int>> kShortestPaths, int d
         // initialize pathInfo
         PathInfo temp = {};
         temp.path = kShortestPaths[pathIdx];
-        temp.window = 100;
+        temp.window = _minDCTCPWindow;
         // TODO: change this to something sensible
         temp.rttMin = (kShortestPaths[pathIdx].size() - 1) * 2 * _avgDelay/1000.0;
         nodeToShortestPathsMap[destNode][pathIdx] = temp;
@@ -246,10 +251,14 @@ void hostNodeDCTCP::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     else if (ttmsg->isSelfMessage()) {
         // at sender, either queue up or send on a path that allows you to send
         DestInfo* destInfo = &(nodeToDestInfo[destNode]);
+
        
         //send on a path if no txns queued up and timer was in the path
         if ((destInfo->transWaitingToBeSent).size() > 0) {
             pushIntoSenderQueue(destInfo, ttmsg);
+            for (auto p: nodeToShortestPathsMap[destNode]) {
+                sendMoreTransactionsOnPath(destNode, p.first);
+            }
         } else {
             for (auto p: nodeToShortestPathsMap[destNode]) {
                 int pathIndex = p.first;
