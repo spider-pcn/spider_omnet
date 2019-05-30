@@ -264,6 +264,7 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                 color_cycle_for_path = cycle(['r', 'g', 'b', 'y', 'c', 'm', 'y', 'k'])
                 if signal_type == "Price per path":
                     num_paths.append(len(info.items()))
+                sum_values, num_values = 0.0, 0.0
                 for path, path_signals in info.items():
                     time = [t[0] for t in path_signals]
                     values = [t[1] for t in path_signals]
@@ -280,7 +281,9 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                     start = int(len(values)/4)
                     plt.plot(time, values, \
                             label=label_name + "(" + str(np.average(values[start:])) + ")", color=c)
-                plt.title(signal_type + " " + str(router) + "->" + str(channel))
+                    sum_values += np.average(values[start:])
+                    num_values += 1
+                plt.title(signal_type + " " + str(router) + "->" + str(channel) + "(" + str(sum_values/num_values) + ")")
                 plt.xlabel("Time")
                 plt.ylabel(signal_type)
                 plt.legend()

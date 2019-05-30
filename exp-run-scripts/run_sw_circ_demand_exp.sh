@@ -183,7 +183,10 @@ do
                     --transStatEnd $transStatEnd\
                     --path-choice $pathChoice\
                     --balance $balance\
-                    --circ-num $num
+                    --circ-num $num \
+                    --window-alpha $windowAlpha \
+                    --window-beta $windowBeta \
+                    --queue-threshold $queueThreshold 
 
             # run the omnetexecutable with the right parameters
             # in the background
@@ -242,7 +245,7 @@ do
                   --waiting --bottlenecks --probabilities \
                   --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
                   --inflight_incoming --rate_to_send --price --mu_remote --demand \
-                  --rate_sent --amt_inflight_per_path
+                  --rate_sent --amt_inflight_per_path --rate_acked
               done
           fi
 

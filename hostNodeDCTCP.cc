@@ -16,7 +16,7 @@ void hostNodeDCTCP::initialize(){
         _windowAlpha = par("windowAlpha");
         _windowBeta = par("windowBeta");
         _qEcnThreshold = par("queueThreshold");
-        _minDCTCPWindow = 5;
+        _minDCTCPWindow = 3;
     }
 
 }
@@ -176,7 +176,7 @@ void hostNodeDCTCP::initializePathInfo(vector<vector<int>> kShortestPaths, int d
         // initialize pathInfo
         PathInfo temp = {};
         temp.path = kShortestPaths[pathIdx];
-        temp.window = _minDCTCPWindow;
+        temp.window = 10;// _minDCTCPWindow;
         // TODO: change this to something sensible
         temp.rttMin = (kShortestPaths[pathIdx].size() - 1) * 2 * _avgDelay/1000.0;
         nodeToShortestPathsMap[destNode][pathIdx] = temp;
@@ -251,17 +251,20 @@ void hostNodeDCTCP::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     else if (ttmsg->isSelfMessage()) {
         // at sender, either queue up or send on a path that allows you to send
         DestInfo* destInfo = &(nodeToDestInfo[destNode]);
-
+            
+        // use a random ordering on the path indices
+        vector<int> pathIndices;
+        for (int i = 0; i < nodeToShortestPathsMap[destNode].size(); ++i) pathIndices.push_back(i);
+        random_shuffle(pathIndices.begin(), pathIndices.end());
        
         //send on a path if no txns queued up and timer was in the path
         if ((destInfo->transWaitingToBeSent).size() > 0) {
             pushIntoSenderQueue(destInfo, ttmsg);
-            for (auto p: nodeToShortestPathsMap[destNode]) {
-                sendMoreTransactionsOnPath(destNode, p.first);
-            }
+            sendMoreTransactionsOnPath(destNode, -1);
         } else {
-            for (auto p: nodeToShortestPathsMap[destNode]) {
-                int pathIndex = p.first;
+            // try the first path in this random ordering
+            for (auto p : pathIndices) {
+                int pathIndex = p;
                 PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
                 
                 if (pathInfo->sumOfTransUnitsInFlight + transMsg->getAmount() <= pathInfo->window) {
@@ -364,14 +367,30 @@ void hostNodeDCTCP::handleClearStateMessage(routerMsg *ttmsg) {
 }
 
 /* helper method to remove a transaction from the sender queue and send it on a particular path
- * to the given destination */
-void hostNodeDCTCP::sendMoreTransactionsOnPath(int destNode, int pathIndex) {
+ * to the given destination (or multiplexes across all paths) */
+void hostNodeDCTCP::sendMoreTransactionsOnPath(int destNode, int pathId) {
     transactionMsg *transMsg;
     routerMsg *msgToSend;
+    int randomIndex;
+
+    // construct a vector with the path indices
+    vector<int> pathIndices;
+    for (int i = 0; i < nodeToShortestPathsMap[destNode].size(); ++i) pathIndices.push_back(i);
+
     //remove the transaction $tu$ at the head of the queue if one exists
     while (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {
         routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
         transMsg = check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
+
+        // pick a path at random to try and send on unless a path is given
+        int pathIndex;
+        if (pathId != -1)
+            pathIndex = pathId;
+        else {
+            randomIndex = rand() % pathIndices.size();
+            pathIndex = pathIndices[randomIndex];
+        }
+
 
         PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
         if (pathInfo->sumOfTransUnitsInFlight + transMsg->getAmount() <= pathInfo->window) {
@@ -404,7 +423,15 @@ void hostNodeDCTCP::sendMoreTransactionsOnPath(int destNode, int pathIndex) {
             tuple<int,int> key = make_tuple(transMsg->getTransactionId(), pathIndex); 
             transPathToAckState[key].amtSent += transMsg->getAmount();
         }
-        else 
-            return;
+        else {
+            // if this path is the only path you are trying and it is exhausted, return
+            if (pathId != -1)
+                return;
+
+            // if no paths left to multiplex, return
+            pathIndices.erase(pathIndices.begin() + randomIndex);
+            if (pathIndices.size() == 0)
+                return;
+        }
     }
 }
