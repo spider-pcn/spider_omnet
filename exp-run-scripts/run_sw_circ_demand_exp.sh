@@ -45,6 +45,7 @@ serviceArrivalWindow=300
 windowBeta=0.2
 windowAlpha=0.5
 queueThreshold=10
+balanceThreshold=0.1
 
 for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
 do
@@ -52,6 +53,7 @@ do
     cp routerNode${suffix}.ned ${PATH_NAME}
 done
 cp hostNodeLandmarkRouting.ned ${PATH_NAME}
+cp routerNodeDCTCPBal.ned ${PATH_NAME}
 
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_NAME}
@@ -186,7 +188,8 @@ do
                     --circ-num $num \
                     --window-alpha $windowAlpha \
                     --window-beta $windowBeta \
-                    --queue-threshold $queueThreshold 
+                    --queue-threshold $queueThreshold \
+                    --balance-ecn-threshold $balanceThreshold 
 
             # run the omnetexecutable with the right parameters
             # in the background

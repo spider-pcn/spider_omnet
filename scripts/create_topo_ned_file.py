@@ -83,8 +83,12 @@ def write_ned_file(topo_filename, output_filename, network_name, routing_alg):
         host_node_type = 'hostNodeBase'
         router_node_type = 'routerNodeBase'
     else:
-        host_node_type = 'hostNode' + routing_alg[0].upper() + routing_alg[1:]
-        if (routing_alg == 'landmarkRouting'):
+        if routing_alg == 'DCTCPBal':
+            host_node_type = 'hostNodeDCTCP'
+        else:
+            host_node_type = 'hostNode' + routing_alg[0].upper() + routing_alg[1:]
+        
+        if routing_alg == 'landmarkRouting':
             router_node_type = 'routerNodeWaterfilling'
         else:
             router_node_type = 'routerNode' + routing_alg[0].upper() + routing_alg[1:]
@@ -266,7 +270,8 @@ parser.add_argument('--random-channel-capacity', type=str, dest='random_channel_
         help='Give channels a random balance between bal/2 and bal', default='False')
 parser.add_argument('--lnd-channel-capacity', type=str, dest='lnd_capacity', \
         help='Give channels a random balance sampled from lnd', default='False')
-routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting', 'lndBaseline', 'DCTCP']
+routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting', 'lndBaseline', 'DCTCP'\
+        , 'DCTCPBal']
 
 
 args = parser.parse_args()

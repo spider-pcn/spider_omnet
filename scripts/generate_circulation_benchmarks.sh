@@ -53,6 +53,7 @@ do
     cp routerNode${suffix}.ned ${PATH_NAME}
 done
 cp hostNodeLandmarkRouting.ned ${PATH_NAME}
+cp routerNodeDCTCPBal.ned ${PATH_NAME}
 
 arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"

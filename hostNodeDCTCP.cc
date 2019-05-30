@@ -6,6 +6,7 @@ double _windowAlpha;
 double _windowBeta;
 double _qEcnThreshold;
 double _minDCTCPWindow;
+double _balEcnThreshold;
 
 /* initialization function to initialize parameters */
 void hostNodeDCTCP::initialize(){
@@ -16,6 +17,7 @@ void hostNodeDCTCP::initialize(){
         _windowAlpha = par("windowAlpha");
         _windowBeta = par("windowBeta");
         _qEcnThreshold = par("queueThreshold");
+        _balEcnThreshold = par("balanceThreshold");
         _minDCTCPWindow = 3;
     }
 
