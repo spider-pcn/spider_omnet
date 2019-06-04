@@ -18,7 +18,7 @@ void hostNodeDCTCP::initialize(){
         _windowBeta = par("windowBeta");
         _qEcnThreshold = par("queueThreshold");
         _balEcnThreshold = par("balanceThreshold");
-        _minDCTCPWindow = 3;
+        _minDCTCPWindow = 5;
     }
 
 }

@@ -46,15 +46,14 @@ scheme_list = args.scheme_list
 
 
 output_file = open(PLOT_DIR + args.save, "w+")
-output_file.write("Scheme,Credit,Size,Prob,Demand\n")
+output_file.write("Scheme,Credit,SuccVol,Demand\n")
 
 
 # go through all relevant files and aggregate probability by size
 for credit in credit_list:
     for scheme in scheme_list:
         for path_type in path_type_list:
-            size_to_arrival = {} 
-            size_to_completion = {}
+            succ_volume_list = []
             for run_num in range(1, args.num_max + 1):
                 file_name = topo + "_" + args.payment_graph_type + "_" + str(credit) + "_" + scheme + "_" + \
                         args.payment_graph_type + str(run_num) + \
@@ -62,19 +61,22 @@ for credit in credit_list:
                 if scheme != "shortestPath":
                     filename += "_" + str(num_paths)
                 filename += "-#0.sca"
-                
+               
+               # num_completed will always be populated first and the next
+               # entry will be arrived for the same flow
+               # based on file structure
                 with open(SUMMARY_DIR + file_name) as f:
                     for line in f:
-                        if "size" in line:
-                            parts = shlex.split(line)
-                            num_completed = float(parts[-1])
-                            sub_parts = parts[-2].split()
-                            size = int(sub_parts[1][:-1])
-                            num_arrived = float(sub_parts[3][1:-1])
-                            size_to_arrival[size] = size_to_arrival.get(size, 0) + num_arrived
-                            size_to_completion[size] = size_to_completion.get(size, 0) + num_completed
+                        if "->" in line:
+                            if "amtCompleted" in line:
+                                parts = shlex.split(line)
+                                num_completed = float(parts[-1])
+                            if "amtArrived" in line:
+                                parts = shlex.split(line)
+                                num_arrived = float(parts[-1])
+                                flow_succ_list.append(num_completed/num_arrived)
 
-            for size in sorted(size_to_completion.keys()):
+            for entry in sorted(flow_succ_list):
                 output_file.write(str(SCHEME_CODE[scheme]) +  "," + str(credit) +  "," + \
-                    "%f,%f,%f\n" % (size, size_to_completion[size]/size_to_arrival[size], demand))
+                    "%f,%f\n" % (entry, demand))
 output_file.close()
