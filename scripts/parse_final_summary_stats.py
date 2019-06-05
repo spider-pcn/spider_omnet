@@ -44,6 +44,7 @@ credit_list = args.credit_list
 demand = args.demand
 path_type_list = args.path_type_list
 scheme_list = args.scheme_list
+path_num_list = args.path_num_list
 
 output_file = open(PLOT_DIR + args.save, "w+")
 output_file.write("Scheme,Credit,NumPaths,PathType,SuccRatio,SuccRationMin,SuccRatioMax,SuccVolume,SuccVolumeMin," +\
@@ -55,10 +56,10 @@ for credit in credit_list:
         for path_type in path_type_list:
             for num_paths in path_num_list:
                 succ_ratios, succ_vols,comp_times = [], [], []
-                for run_num in range(1, args.num_max + 1):
+                for run_num in range(0, args.num_max  + 1):
                     file_name = topo + str(credit) + "_" + args.payment_graph_type + str(run_num) + \
                         "_delay" + str(delay) + "_demand" + str(demand) + "_" + scheme + "_" + path_type \
-                        + str(num_paths) + "_summary.txt"
+                        + "_" + str(num_paths) + "_summary.txt"
                     
                     with open(SUMMARY_DIR + file_name) as f:
                         for line in f:
@@ -72,9 +73,10 @@ for credit in credit_list:
                         succ_vols.append(succ_volume)
                         comp_times.append(comp_time)
 
-                output_file.write(str(SCHEME_CODE[scheme]) + "," + str(credit) +  "," + \
-                        + str(num_paths) + "," + \
-                        path_type + "," + "%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (stat.mean(succ_ratios), min(succ_ratios), \
+                output_file.write(SCHEME_CODE[scheme] + "," + str(credit) +  "," \
+                        + str(num_paths) + "," \
+                        + str(path_type) + "," \
+                        + ("%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (stat.mean(succ_ratios), min(succ_ratios), \
                         max(succ_ratios), stat.mean(succ_vols), min(succ_vols),  max(succ_vols), \
-                        stat.mean(comp_times), min(comp_times), max(comp_times)))
+                        stat.mean(comp_times), min(comp_times), max(comp_times))))
 output_file.close()

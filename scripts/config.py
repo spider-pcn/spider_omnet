@@ -136,10 +136,13 @@ INTERESTING_SIGNALS["per_channel_plot"] = per_channel_list
 ## ggplot related constants
 PLOT_DIR = "data/"
 SUMMARY_DIR = "figures/timeouts/"
+RESULT_DIR = "../benchmarks/circulations/results/"
 
 # define scheme codes for ggplot
 SCHEME_CODE = { "priceSchemeWindow": "PS",\
         "lndBaseline": "LND",\
         "landmarkRouting": "LR",\
         "shortestPath": "SP",\
-        "waterfilling": "WF"}
+        "waterfilling": "WF",\
+        "DCTCP": "DCTCP",\
+        "DCTCPBal": "DCTCPBal"}
