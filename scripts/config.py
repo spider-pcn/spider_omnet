@@ -135,6 +135,7 @@ INTERESTING_SIGNALS["per_channel_plot"] = per_channel_list
 
 ## ggplot related constants
 PLOT_DIR = "data/"
+GGPLOT_DATA_DIR = "ggplot_data/"
 SUMMARY_DIR = "figures/timeouts/"
 RESULT_DIR = "../benchmarks/circulations/results/"
 

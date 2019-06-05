@@ -46,7 +46,7 @@ path_type_list = args.path_type_list
 scheme_list = args.scheme_list
 path_num_list = args.path_num_list
 
-output_file = open(PLOT_DIR + args.save, "w+")
+output_file = open(GGPLOT_DATA_DIR + args.save, "w+")
 output_file.write("Scheme,Credit,NumPaths,PathType,SuccRatio,SuccRationMin,SuccRatioMax,SuccVolume,SuccVolumeMin," +\
         "SuccVolumeMax,CompTime,CompTimeMin,CompTimeMax\n")
 
@@ -69,8 +69,8 @@ for credit in credit_list:
                                 succ_volume = float(line.split(" ")[5])
                             elif line.startswith("Avg completion time"):
                                 comp_time = float(line.split(" ")[3][:-1])
-                        succ_ratios.append(succ_ratio)
-                        succ_vols.append(succ_volume)
+                        succ_ratios.append(succ_ratio * 100)
+                        succ_vols.append(succ_volume * 100)
                         comp_times.append(comp_time)
 
                 output_file.write(SCHEME_CODE[scheme] + "," + str(credit) +  "," \

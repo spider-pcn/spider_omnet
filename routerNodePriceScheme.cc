@@ -213,7 +213,6 @@ void routerNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
             arrivalTimeDiff = 0.01;
         
         neighborChannel->serviceRate = neighborChannel->sumServiceWindowTxns / serviceTimeDiff;
-        cout << " service rate for " << it->first << " " << neighborChannel->serviceRate << endl;
         neighborChannel->arrivalRate = neighborChannel->sumArrivalWindowTxns / arrivalTimeDiff;
         neighborChannel->lastQueueSize = getTotalAmount(neighborChannel->queuedTransUnits);
 

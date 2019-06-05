@@ -50,7 +50,7 @@ scheme_list = args.scheme_list
 
 
 
-output_file = open(PLOT_DIR + args.save, "w+")
+output_file = open(GGPLOT_DATA_DIR + args.save, "w+")
 output_file.write("Scheme,Credit,SuccVol,Demand\n")
 
 
@@ -77,7 +77,7 @@ for scheme in scheme_list:
                     if "amtArrived" in line:
                         parts = shlex.split(line)
                         num_arrived = float(parts[-1])
-                        flow_succ_list.append(num_completed/num_arrived)
+                        flow_succ_list.append(num_completed * 100 /num_arrived)
 
     for entry in sorted(flow_succ_list):
         output_file.write(str(SCHEME_CODE[scheme]) +  "," + str(credit) +  "," + \

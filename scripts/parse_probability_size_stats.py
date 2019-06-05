@@ -3,6 +3,32 @@ import argparse
 import statistics as stat
 from config import *
 import shlex
+import numpy as np
+
+# figure out what the size buckets should be for a given number of buckets
+# say you want 20 buckets, you want to make them equally sized in the number
+# of transactions in a bucket (based on the skew of transaction sizes), so the
+# larger transactions span a wider range but at the smaller end, the buckets
+# are narrower
+def compute_buckets(num_buckets, dist_filename):
+    amt_dist = np.load(dist_filename)
+    num_amts = amt_dist.item().get('p').size
+    pdf = amt_dist.item().get('p')
+    cdf = np.cumsum(pdf)
+
+    gap = 1.0 / num_buckets
+    break_point = gap
+    buckets = []
+
+    # return all the bucket end markers
+    for i, c in enumerate(cdf):
+        if c >= break_point:
+            print break_point, i, c
+            buckets.append(int(round(amt_dist.item().get('bins')[i], 1)))
+            break_point += gap
+    # buckets.append(int(round(amt_dist.item().get('bins')[-1], 1)))
+    print buckets, len(buckets)
+    return buckets
 
 delay = 30
 
@@ -36,6 +62,9 @@ parser.add_argument('--save',
 parser.add_argument('--num-max',
         type=int,
         help='Single number denoting the maximum number of runs to aggregate data over', default="5")
+parser.add_argument('--num-buckets',
+        type=int,
+        help='Single number denoting the maximum number of buckets to group txn sizes into', default="20")
 
 # collect all arguments
 args = parser.parse_args()
@@ -47,12 +76,10 @@ num_paths = args.path_num
 scheme_list = args.scheme_list
 
 
-
-
-
-output_file = open(PLOT_DIR + args.save, "w+")
+output_file = open(GGPLOT_DATA_DIR + args.save, "w+")
 output_file.write("Scheme,Credit,Size,Prob,Demand\n")
 
+buckets = compute_buckets(args.num_buckets, KAGGLE_AMT_DIST_FILENAME)
 
 # go through all relevant files and aggregate probability by size
 for scheme in scheme_list:
@@ -74,9 +101,10 @@ for scheme in scheme_list:
                     sub_parts = parts[-2].split()
                     size = int(sub_parts[1][:-1])
                     num_arrived = float(sub_parts[3][1:-1])
+                    bucket = buckets[np.searchsorted(buckets, size)]
                     if num_arrived > 0:
-                        size_to_arrival[size] = size_to_arrival.get(size, 0) + num_arrived
-                        size_to_completion[size] = size_to_completion.get(size, 0) + num_completed
+                        size_to_arrival[bucket] = size_to_arrival.get(size, 0) + num_arrived
+                        size_to_completion[bucket] = size_to_completion.get(size, 0) + num_completed
 
     for size in sorted(size_to_completion.keys()):
         output_file.write(str(SCHEME_CODE[scheme]) +  "," + str(credit) +  "," + \
