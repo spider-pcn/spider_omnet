@@ -253,7 +253,7 @@ parser = argparse.ArgumentParser(description="Create arbitrary topologies to run
 parser.add_argument('--num-nodes', type=int, dest='num_nodes', help='number of nodes in the graph', default=20)
 parser.add_argument('--delay-per-channel', type=int, dest='delay_per_channel', \
         help='delay between nodes (ms)', default=30)
-parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'hotnets_topo', 'simple_line', \
+parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'hotnets_topo', 'simple_line', 'toy_dctcp', \
         'simple_deadlock', 'simple_topologies', 'lnd_dec4_2018','lnd_dec4_2018lessScale', \
         'lnd_gaussian', 'lnd_uniform', 'tree', 'random'], \
         help='type of graph (Small world or scale free or custom topology list)', default='small_world')
@@ -294,6 +294,8 @@ elif args.graph_type in ['small_world', 'scale_free', 'tree', 'random']:
     if "sparse" in args.topo_filename:
         args.graph_type = args.graph_type + "_sparse"
     G = generate_graph(args.num_nodes, args.graph_type)
+elif args.graph_type == 'toy_dctcp':
+    G = toy_dctcp_graph
 elif args.graph_type == 'hotnets_topo':
     G = hotnets_topo_graph
 elif args.graph_type == 'simple_deadlock':

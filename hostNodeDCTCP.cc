@@ -21,6 +21,16 @@ void hostNodeDCTCP::initialize(){
         _minDCTCPWindow = 5;
     }
 
+     //initialize signals with all other nodes in graph
+    // that there is demand for
+    for (int i = 0; i < _numHostNodes; ++i) {
+        if (_destList[myIndex()].count(i) > 0) {
+            simsignal_t signal;
+            signal = registerSignalPerDest("numWaiting", i, "_Total");
+            numWaitingPerDestSignals[i] = signal;
+        }
+    }
+
 }
 
 /* specialized ack handler that does the routine if this is DCTCP
@@ -328,6 +338,8 @@ void hostNodeDCTCP::handleStatMessage(routerMsg* ttmsg){
                         pInfo->amtAcked = 0;
                     }
                 }
+                emit(numWaitingPerDestSignals[it], 
+                    nodeToDestInfo[it].transWaitingToBeSent.size()); 
             }        
         }
     } 

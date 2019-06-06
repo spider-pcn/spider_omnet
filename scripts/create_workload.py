@@ -33,6 +33,20 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
             amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
         graph = hotnets_topo_graph
 
+    elif payment_graph_topo == 'toy_dctcp':
+        '''start_nodes = [0, 1, 2, 2]
+        end_nodes = [2, 2, 1, 0]
+        amt_relative = [1, 1, 1, 1]
+        print "here generating topo"
+        amt_absolute = [SCALE_AMOUNT * MEAN_RATE * x for x in amt_relative] 
+        '''
+        start_nodes = [0, 1]
+        end_nodes = [1, 0]
+        amt_relative = [1, 1]
+        print "here generating topo"
+        amt_absolute = [SCALE_AMOUNT * MEAN_RATE * x for x in amt_relative]
+        graph = toy_dctcp_graph
+
     elif payment_graph_topo == 'simple_deadlock':
         start_nodes = [1,0,2]
         end_nodes = [2,2,0]
@@ -95,7 +109,9 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         start_nodes.append(i)
         end_nodes.append(j)
         amt_relative.append(demand_dict[i, j])
-    amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+    amt_absolute = [SCALE_AMOUNT * MEAN_RATE * x for x in amt_relative]
+
+    print amt_absolute
 
 
     if generate_json_also:
@@ -486,7 +502,7 @@ def dag_demand(node_list, mean, std_dev, skew_param=5,gen_method="topological_so
 # parse arguments
 parser = argparse.ArgumentParser(description="Create arbitrary txn workloads to run the omnet simulator on")
 parser.add_argument('--graph-topo', \
-        choices=['hotnets_topo', 'simple_line', 'simple_deadlock', 'custom', 'hardcoded_circ'],\
+        choices=['hotnets_topo', 'simple_line', 'simple_deadlock', 'custom', 'hardcoded_circ', 'toy_dctcp'],\
         help='type of graph (Small world or scale free or custom topology)', default='simple_line')
 parser.add_argument('--payment-graph-dag-percentage', type=int,\
 	help='percentage of circulation to put in the payment graph', default=0)

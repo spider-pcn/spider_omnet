@@ -13,6 +13,7 @@ class hostNodeDCTCP : public hostNodeBase {
     private:
         // DCTCP signals
         //
+        map<int, simsignal_t> numWaitingPerDestSignals = {};
 
     protected:
         virtual void initialize() override;
