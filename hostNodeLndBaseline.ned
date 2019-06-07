@@ -10,6 +10,7 @@ simple hostNodeLndBaseline
 		double statRate = default(0.2);
 		bool signalsEnabled = default(false);
 		bool loggingEnabled = default(false);
+                double splitSize = default(5.0);
 
 		bool timeoutEnabled = default(false);
 		double timeoutClearRate = default(0.5);

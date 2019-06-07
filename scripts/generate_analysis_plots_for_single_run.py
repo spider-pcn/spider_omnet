@@ -94,6 +94,9 @@ parser.add_argument('--rate_sent',
 parser.add_argument('--rate_acked',
         action='store_true',
         help='Plot the per path rate at which acks are received')
+parser.add_argument('--fraction_marked',
+        action='store_true',
+        help='Plot the per path marked acks out of all acks received')
 parser.add_argument('--amt_inflight_per_path',
         action='store_true',
         help='Plot the per path amt inflight when price based scheme is used')
@@ -510,6 +513,10 @@ def plot_per_src_dest_stats(args, text_to_add):
         if args.rate_acked:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateOfAcks", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Rate acknowledged", per_path_info=True)    
+
+        if args.fraction_marked:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "fractionMarked", False, True)
+            plot_relevant_stats(data_to_plot, pdf, "Fraction of packets marked", per_path_info=True)  
         
         if args.amt_inflight_per_path:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, \

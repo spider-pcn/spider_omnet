@@ -26,6 +26,7 @@ signalsEnabled=true
 loggingEnabled=false
 transStatStart=2000
 transStatEnd=3000
+mtu=1.0
 
 # scheme specific parameters
 eta=0.025
@@ -46,6 +47,7 @@ windowBeta=0.2
 windowAlpha=0.5
 queueThreshold=10
 balanceThreshold=0.1
+minDCTCPWindow=1
 
 for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
 do
@@ -189,7 +191,9 @@ do
                     --window-alpha $windowAlpha \
                     --window-beta $windowBeta \
                     --queue-threshold $queueThreshold \
-                    --balance-ecn-threshold $balanceThreshold 
+                    --balance-ecn-threshold $balanceThreshold \
+                    --mtu $mtu\
+                    --min-dctcp-window $minDCTCPWindow
 
             # run the omnetexecutable with the right parameters
             # in the background
@@ -248,7 +252,7 @@ do
                   --waiting --bottlenecks --probabilities \
                   --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
                   --inflight_incoming --rate_to_send --price --mu_remote --demand \
-                  --rate_sent --amt_inflight_per_path --rate_acked
+                  --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked
               done
           fi
 

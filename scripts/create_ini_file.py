@@ -26,6 +26,7 @@ parser.add_argument('--transStatEnd', type=int,help='when to end stats collectio
 parser.add_argument('--path-choice', type=str, help='type of path choices', dest='pathChoice', default='shortest',
         choices=['widest', 'oblivious', 'kspYen', 'shortest'])
 parser.add_argument('--capacity', type=int,help='mean cap for topology')
+parser.add_argument('--mtu', type=float,help='smallest indivisible unit', default=5.0)
 
 
 
@@ -33,12 +34,6 @@ parser.add_argument('--capacity', type=int,help='mean cap for topology')
 parser.add_argument('--eta', type=float, help='step size for mu', dest='eta', default=0.01)
 parser.add_argument('--kappa', type=float, help='step size for lambda', dest='kappa', default=0.01)
 parser.add_argument('--alpha', type=float, help='step size for rate', dest='alpha', default=0.01)
-parser.add_argument('--window-alpha', type=float, help='size for window inc', dest='windowAlpha', default=0.01)
-parser.add_argument('--window-beta', type=float, help='size for window dec', dest='windowBeta', default=0.01)
-parser.add_argument('--queue-threshold', type=float, help='ecn queue threshold', dest='queueThreshold', \
-        default=30)
-parser.add_argument('--balance-ecn-threshold', type=float, help='ecn balance threshold', dest='balEcnThreshold', \
-        default=0.1)
 parser.add_argument('--rho', type=float, help='nesterov or accelerated gradient parameter', dest='rho', default=0.05)
 parser.add_argument('--capacityFactor', type=float, help='fraction of capacity used for lambda', dest='capacityFactor')
 parser.add_argument('--update-query-time', type=float, help='time of update and query', \
@@ -66,6 +61,15 @@ parser.add_argument('--rebalancing-queue-delay-threshold', type=int, help='thres
         dest='rebalancingQueueDelayThreshold', default=3)
 parser.add_argument('--gamma-imbalance-queue-size', type=float, help='threshold queue size for rebalancing', 
         dest='gammaImbalanceQueueSize', default=5)
+
+# dctcp arguments
+parser.add_argument('--window-alpha', type=float, help='size for window inc', dest='windowAlpha', default=0.01)
+parser.add_argument('--window-beta', type=float, help='size for window dec', dest='windowBeta', default=0.01)
+parser.add_argument('--queue-threshold', type=float, help='ecn queue threshold', dest='queueThreshold', \
+        default=30)
+parser.add_argument('--balance-ecn-threshold', type=float, help='ecn balance threshold', dest='balEcnThreshold', \
+        default=0.1)
+parser.add_argument('--min-dctcp-window', type=float, help='min window size for dctcp', dest='minDCTCPWindow', default=5)
 
 
 args = parser.parse_args()
@@ -148,6 +152,7 @@ f.write("**.numPathChoices = " + args.numPathChoices + "\n")
 f.write("**.serviceArrivalWindow = " + str(args.serviceArrivalWindow) + "\n")
 f.write("**.transStatStart = " + str(args.transStatStart) + "\n")
 f.write("**.transStatEnd = " + str(args.transStatEnd) + "\n")
+f.write("**.splitSize = " + str(args.mtu) + "\n")
 
 if args.routingScheme in ['waterfilling', 'smoothWaterfilling']:
     f.write("**.waterfillingEnabled = true\n")
@@ -189,6 +194,7 @@ if 'DCTCP' in args.routingScheme:
     f.write("**.windowBeta = " + str(args.windowBeta) + "\n")
     f.write("**.queueThreshold = " + str(args.queueThreshold) + "\n")
     f.write("**.balanceThreshold = " + str(args.balEcnThreshold) + "\n")
+    f.write("**.minDCTCPWindow = " + str(args.minDCTCPWindow) + "\n")
 
 if args.pathChoice == "oblivious":
     f.write("**.obliviousRoutingEnabled = true\n")

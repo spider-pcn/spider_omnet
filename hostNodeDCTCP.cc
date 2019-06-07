@@ -18,7 +18,7 @@ void hostNodeDCTCP::initialize(){
         _windowBeta = par("windowBeta");
         _qEcnThreshold = par("queueThreshold");
         _balEcnThreshold = par("balanceThreshold");
-        _minDCTCPWindow = 5;
+        _minDCTCPWindow = par("minDCTCPWindow");
     }
 
      //initialize signals with all other nodes in graph
@@ -51,12 +51,14 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
         nodeToShortestPathsMap[destNode][pathIndex].window  -= _windowBeta;
         nodeToShortestPathsMap[destNode][pathIndex].window = max(_minDCTCPWindow, 
                 nodeToShortestPathsMap[destNode][pathIndex].window);
+        nodeToShortestPathsMap[destNode][pathIndex].markedPackets += 1; 
     }
     else {
         double sumWindows = 0;
         for (auto p: nodeToShortestPathsMap[destNode])
             sumWindows += p.second.window;
         nodeToShortestPathsMap[destNode][pathIndex].window += _windowAlpha / sumWindows;
+        nodeToShortestPathsMap[destNode][pathIndex].unmarkedPackets += 1; 
     }
 
     // general bookkeeping to track completion state
@@ -203,6 +205,9 @@ void hostNodeDCTCP::initializePathInfo(vector<vector<int>> kShortestPaths, int d
 
         signal = registerSignalPerDestPath("rateOfAcks", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].rateOfAcksSignal = signal;
+        
+        signal = registerSignalPerDestPath("fractionMarked", pathIdx, destNode);
+        nodeToShortestPathsMap[destNode][pathIdx].fractionMarkedSignal = signal;
    }
 }
 
@@ -335,7 +340,11 @@ void hostNodeDCTCP::handleStatMessage(routerMsg* ttmsg){
                                 pInfo->sumOfTransUnitsInFlight);
                         emit(pInfo->windowSignal, pInfo->window);
                         emit(pInfo->rateOfAcksSignal, pInfo->amtAcked/_statRate);
+                        emit(pInfo->fractionMarkedSignal, pInfo->markedPackets/(pInfo->markedPackets + pInfo->unmarkedPackets));
+                        
                         pInfo->amtAcked = 0;
+                        pInfo->unmarkedPackets = 0;
+                        pInfo->markedPackets = 0;
                     }
                 }
                 emit(numWaitingPerDestSignals[it], 

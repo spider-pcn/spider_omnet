@@ -10,6 +10,7 @@ simple hostNodeDCTCP
 		double statRate = default(0.2);
 		bool signalsEnabled = default(false);
 		bool loggingEnabled = default(false);
+                double splitSize = default(5.0);
 
 		bool timeoutEnabled = default(true);
 		double timeoutClearRate = default(0.5);
@@ -41,6 +42,7 @@ simple hostNodeDCTCP
                 double windowBeta = default(0.2);
                 double queueThreshold = default(30);
                 double balanceThreshold = default(0.01);
+                double minDCTCPWindow = default(5.0);
                 
                 bool useQueueEquation = default(true);
                 bool splittingEnabled = default(true);
@@ -132,6 +134,9 @@ simple hostNodeDCTCP
                 @signal[rateOfAcksPerDestPerPath*](type="double"); 
 		@statisticTemplate[rateOfAcksPerDestPerPathTemplate](record=vector, stats);
 		
+                @signal[fractionMarkedPerDestPerPath*](type="double"); 
+		@statisticTemplate[fractionMarkedPerDestPerPathTemplate](record=vector, stats);
+                
                 //has queue capacity specific signals
 		@signal[numFailedPerDest*](type="long");  
 		@statisticTemplate[numFailedPerDestTemplate](record=vector, stats);

@@ -1195,7 +1195,7 @@ void hostNodeBase::initialize() {
         _kspYenEnabled = par("kspYenEnabled");
         _obliviousRoutingEnabled = par("obliviousRoutingEnabled");
 
-        _splitSize = 5.0;
+        _splitSize = par("splitSize");
 
         _lndBaselineEnabled = par("lndBaselineEnabled");
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");

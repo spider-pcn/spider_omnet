@@ -18,6 +18,14 @@ struct PathInfo{
         simsignal_t probeBackPerDestPerPathSignal;
         simsignal_t rateCompletedPerDestPerPathSignal;
         simsignal_t rateAttemptedPerDestPerPathSignal;
+
+        // signal for dctcp
+        simsignal_t fractionMarkedSignal;
+        simsignal_t rateOfAcksSignal;
+        double markedPackets = 0;
+        double unmarkedPackets = 0;
+        double amtAcked = 0;
+        
         int statRateCompleted = 0;
         int statRateAttempted = 0;
 
@@ -36,7 +44,6 @@ struct PathInfo{
         double lastTransSize = 0.0;
         double amtAllowedToSend = 0.0;
         bool isSendTimerSet = false;
-        double amtAcked = 0;
 
         // number and rate of txns sent to a particular destination on this path
         double nValue = 0;
@@ -52,7 +59,6 @@ struct PathInfo{
         simsignal_t windowSignal;
         simsignal_t priceLastSeenSignal;
         simsignal_t isSendTimerSetSignal;
-        simsignal_t rateOfAcksSignal;
 
 
 };
