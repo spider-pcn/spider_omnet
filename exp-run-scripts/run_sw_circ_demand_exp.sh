@@ -45,7 +45,7 @@ serviceArrivalWindow=300
 #DCTCP parameters
 windowBeta=0.2
 windowAlpha=0.5
-queueThreshold=10
+queueThreshold=40
 balanceThreshold=0.1
 minDCTCPWindow=1
 

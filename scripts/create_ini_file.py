@@ -86,6 +86,9 @@ if args.circNum != None:
     configname += "_circ" + str(args.circNum)
 if args.demandScale != None:
     configname += "_demand" + str(args.demandScale)
+if 'newseed' in args.workload_filename:
+    configname += "_newseed"
+
 
 print "in ini file, path choice", args.pathChoice, " capacity : ",args.capacity
 configname += "_" + args.pathChoice

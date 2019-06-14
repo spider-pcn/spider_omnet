@@ -162,18 +162,17 @@ do
             echo $inifile
             echo $graph_type
 
-            # STEP 2: create transactions corresponding to this experiment run
-           # $PYTHON scripts/create_workload.py $workload poisson \
-           #         --graph-topo $payment_graph_topo \
-           #         --payment-graph-dag-percentage 0\
-           #         --topo-filename $topofile\
-           #         --experiment-time $simulationLength \
-           #         --balance-per-channel $balance\
-           #         --generate-json-also \
-           #         --timeout-value 5 \
-           #         --scale-amount $scale \
-           #         --kaggle-size
-
+            # STEP 1: create transactions corresponding to this experiment run
+            $PYTHON scripts/create_workload.py $workload poisson \
+                    --graph-topo $payment_graph_topo \
+                    --payment-graph-dag-percentage 0\
+                    --topo-filename $topofile\
+                    --experiment-time $simulationLength \
+                    --balance-per-channel $balance\
+                    --generate-json-also \
+                    --timeout-value 5 \
+                    --scale-amount $scale \
+                    --run-num 0 
 
             # STEP 3: run the experiment
             # routing schemes where number of path choices doesn't matter

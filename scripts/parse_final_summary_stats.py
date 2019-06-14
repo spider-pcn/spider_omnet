@@ -23,6 +23,9 @@ parser.add_argument('--demand',
 parser.add_argument('--path-type-list',
         nargs="*",
         help='types of paths to collect data for', default=["shortest"])
+parser.add_argument('--queue-threshold-list',
+        nargs="*",
+        help='queue thresholds to collect info for', default=[None])
 parser.add_argument('--path-num-list',
         nargs="*",
         help='number of paths to collect data for', default=[4])
@@ -45,38 +48,44 @@ demand = args.demand
 path_type_list = args.path_type_list
 scheme_list = args.scheme_list
 path_num_list = args.path_num_list
+queue_threshold_list = args.queue_threshold_list
 
 output_file = open(GGPLOT_DATA_DIR + args.save, "w+")
-output_file.write("Scheme,Credit,NumPaths,PathType,SuccRatio,SuccRationMin,SuccRatioMax,SuccVolume,SuccVolumeMin," +\
+output_file.write("Scheme,Credit,NumPaths,PathType,Threshold,SuccRatio,SuccRationMin,SuccRatioMax,SuccVolume,SuccVolumeMin," +\
         "SuccVolumeMax,CompTime,CompTimeMin,CompTimeMax\n")
 
 # go through all relevant files and aggregate info
 for credit in credit_list:
     for scheme in scheme_list:
         for path_type in path_type_list:
-            for num_paths in path_num_list:
-                succ_ratios, succ_vols,comp_times = [], [], []
-                for run_num in range(0, args.num_max  + 1):
-                    file_name = topo + str(credit) + "_" + args.payment_graph_type + str(run_num) + \
-                        "_delay" + str(delay) + "_demand" + str(demand) + "_" + scheme + "_" + path_type \
-                        + "_" + str(num_paths) + "_summary.txt"
-                    
-                    with open(SUMMARY_DIR + file_name) as f:
-                        for line in f:
-                            if line.startswith("Success ratio"):
-                                succ_ratio = float(line.split(" ")[4])
-                            elif line.startswith("Success volume"):
-                                succ_volume = float(line.split(" ")[5])
-                            elif line.startswith("Avg completion time"):
-                                comp_time = float(line.split(" ")[3][:-1])
-                        succ_ratios.append(succ_ratio * 100)
-                        succ_vols.append(succ_volume * 100)
-                        comp_times.append(comp_time)
+            for queue_threshold in queue_threshold_list:
+                for num_paths in path_num_list:
+                    succ_ratios, succ_vols,comp_times = [], [], []
+                    for run_num in range(0, args.num_max  + 1):
+                        file_name = topo + str(credit) + "_" + args.payment_graph_type + str(run_num) + \
+                            "_delay" + str(delay) + "_demand" + str(demand) + "_" + scheme + "_" + path_type \
+                            + "_" + str(num_paths) 
+                        if queue_threshold is not None:
+                            file_name += "_" + str(queue_threshold)
+                        file_name += "_summary.txt"
+                        
+                        with open(SUMMARY_DIR + file_name) as f:
+                            for line in f:
+                                if line.startswith("Success ratio"):
+                                    succ_ratio = float(line.split(" ")[4])
+                                elif line.startswith("Success volume"):
+                                    succ_volume = float(line.split(" ")[5])
+                                elif line.startswith("Avg completion time"):
+                                    comp_time = float(line.split(" ")[3][:-1])
+                            succ_ratios.append(succ_ratio * 100)
+                            succ_vols.append(succ_volume * 100)
+                            comp_times.append(comp_time)
 
-                output_file.write(SCHEME_CODE[scheme] + "," + str(credit) +  "," \
-                        + str(num_paths) + "," \
-                        + str(path_type) + "," \
-                        + ("%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (stat.mean(succ_ratios), min(succ_ratios), \
-                        max(succ_ratios), stat.mean(succ_vols), min(succ_vols),  max(succ_vols), \
-                        stat.mean(comp_times), min(comp_times), max(comp_times))))
+                    output_file.write(SCHEME_CODE[scheme] + "," + str(credit) +  "," \
+                            + str(num_paths) + "," \
+                            + str(path_type) + "," \
+                            + str(queue_threshold) + "," \
+                            + ("%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (stat.mean(succ_ratios), min(succ_ratios), \
+                            max(succ_ratios), stat.mean(succ_vols), min(succ_vols),  max(succ_vols), \
+                            stat.mean(comp_times), min(comp_times), max(comp_times))))
 output_file.close()

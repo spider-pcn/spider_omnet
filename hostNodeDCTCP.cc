@@ -26,6 +26,9 @@ void hostNodeDCTCP::initialize(){
     for (int i = 0; i < _numHostNodes; ++i) {
         if (_destList[myIndex()].count(i) > 0) {
             simsignal_t signal;
+            signal = registerSignalPerDest("demandEstimate", i, "");
+            demandEstimatePerDestSignals[i] = signal;
+            
             signal = registerSignalPerDest("numWaiting", i, "_Total");
             numWaitingPerDestSignals[i] = signal;
         }
@@ -190,7 +193,7 @@ void hostNodeDCTCP::initializePathInfo(vector<vector<int>> kShortestPaths, int d
         // initialize pathInfo
         PathInfo temp = {};
         temp.path = kShortestPaths[pathIdx];
-        temp.window = 10;// _minDCTCPWindow;
+        temp.window = _minDCTCPWindow;
         // TODO: change this to something sensible
         temp.rttMin = (kShortestPaths[pathIdx].size() - 1) * 2 * _avgDelay/1000.0;
         nodeToShortestPathsMap[destNode][pathIdx] = temp;
@@ -348,7 +351,9 @@ void hostNodeDCTCP::handleStatMessage(routerMsg* ttmsg){
                     }
                 }
                 emit(numWaitingPerDestSignals[it], 
-                    nodeToDestInfo[it].transWaitingToBeSent.size()); 
+                    nodeToDestInfo[it].transWaitingToBeSent.size());
+                emit(demandEstimatePerDestSignals[it], nodeToDestInfo[it].transSinceLastInterval/_statRate);
+                nodeToDestInfo[it].transSinceLastInterval = 0;
             }        
         }
     } 

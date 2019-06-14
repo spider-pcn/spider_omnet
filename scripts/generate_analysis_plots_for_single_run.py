@@ -258,10 +258,11 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
         plt.rc('axes', prop_cycle = (cycler('color', ['r', 'g', 'b', 'y', 'c', 'm', 'y', 'k']) +
             cycler('linestyle', ['-']*8)))
                 #, '--', ':', '-.', '-', '--', ':', '-.'])))
-        
+
         
         i = 0
         for channel, info in channel_info.items():
+
             # plot one plot per src dest pair and multiple lines per path
             if per_path_info:
                 color_cycle_for_path = cycle(['r', 'g', 'b', 'y', 'c', 'm', 'y', 'k'])
@@ -277,7 +278,8 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                     if window_info is not None:
                         window_signals = window_info[router][channel][path]
                         window_val = [t[1] for t in window_signals]
-                        label_name = str(path) + "_Window"
+                        start = int(len(window_val)/4)
+                        label_name = str(path) + "_Window" + "(" + str(np.average(window_val[start:])) + ")"
                         plt.plot(time, window_val, label=label_name, linestyle="--", color=c)
                     
                     label_name = str(path)
@@ -299,12 +301,18 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                 time = [t[0] for t in info]
                 values = [t[1] for t in info]
                 label_name = str(router) + "->" + str(channel)
+                if compute_router_wealth:
+                    channel_bal_timeseries.append((time, values))
+
+                if signal_type == "Balance" and "toy" in args.save:
+                    if (router == 0 and channel != 1) or (router == 1 and channel != 0):
+                        continue
+
 
                 start = int(len(values)/4)
                 plt.plot(time, values, label=label_name + \
                         "(" + str(np.average(values[start:])) + ")")
-                if compute_router_wealth:
-                    channel_bal_timeseries.append((time, values))
+                
                 i += 1
 
         # aggregate info for all router's wealth

@@ -34,15 +34,9 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         graph = hotnets_topo_graph
 
     elif payment_graph_topo == 'toy_dctcp':
-        '''start_nodes = [0, 1, 2, 2]
-        end_nodes = [2, 2, 1, 0]
-        amt_relative = [1, 1, 1, 1]
-        print "here generating topo"
-        amt_absolute = [SCALE_AMOUNT * MEAN_RATE * x for x in amt_relative] 
-        '''
-        start_nodes = [0, 1]
-        end_nodes = [1, 0]
-        amt_relative = [1, 1]
+        start_nodes = [2, 4, 6, 8, 10, 3, 5, 7, 9, 11]
+        end_nodes = [3, 5, 7, 9, 11, 2, 4, 6, 8, 10]
+        amt_relative = [1] * 10
         print "here generating topo"
         amt_absolute = [SCALE_AMOUNT * MEAN_RATE * x for x in amt_relative]
         graph = toy_dctcp_graph
@@ -109,7 +103,8 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         start_nodes.append(i)
         end_nodes.append(j)
         amt_relative.append(demand_dict[i, j])
-    amt_absolute = [SCALE_AMOUNT * MEAN_RATE * x for x in amt_relative]
+    if payment_graph_topo != 'hardcoded_circ':
+        amt_absolute = [SCALE_AMOUNT * MEAN_RATE * x for x in amt_relative]
 
     print amt_absolute
 
@@ -132,6 +127,9 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
 def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
         workload_type, total_time, log_normal, kaggle_size, txn_size_mean, timeout_value, mode="w", start_time=0):
     outfile = open(filename, mode)
+    if "newseed" in filename:
+        print "newseed"
+        np.random.seed(12493)
 
     if distribution == 'uniform':
         # constant transaction size generated at uniform intervals
@@ -185,6 +183,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
 
                 outfile.write(str(txn_size) + " " + str(current_time + start_time) + " " + str(start_nodes[k]) \
                         + " " + str(end_nodes[k]) + " 0 " + str(timeout_value) + "\n")
+
                 time_incr = np.random.exponential(beta)
                 current_time = current_time + time_incr 
 
@@ -213,6 +212,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
                 current_time = current_time + time_incr
 
     outfile.close()
+    np.random.seed(SEED_LIST[args.run_num])
 
 
 
@@ -315,10 +315,12 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     print circ_frac
     print dag_frac
 
-    """
-    pkl_op = open('lnd_demand.pkl', 'wb')
+
+    '''
+    pkl_op = open(filename + '_demand.pkl', 'wb')
     pickle.dump(demand_dict, pkl_op)
-    pkl_op.close()"""
+    pkl_op.close()
+    '''
     
 
     if "two_node_imbalance" in filename:

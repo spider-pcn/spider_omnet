@@ -18,9 +18,35 @@ void routerNodeDCTCP::handleTransactionMessage(routerMsg *ttmsg) {
     vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
     q = &(neighbor->queuedTransUnits);
 
+
+
     if (getTotalAmount(*q) > _qEcnThreshold)
         transMsg->setIsMarked(true); 
     
     ttmsg->encapsulate(transMsg);
     routerNodeBase::handleTransactionMessage(ttmsg);
 }
+
+/* handler for the statistic message triggered every x seconds to also
+ * output DCTCP scheme stats in addition to the default
+ */
+void routerNodeDCTCP::handleStatMessage(routerMsg* ttmsg) {
+    if (_signalsEnabled) {
+        // per router payment channel stats
+        for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
+            int node = it->first; //key
+            PaymentChannel* p = &(nodeToPaymentChannel[node]);
+        
+            // get latest queueing delay
+            auto lastTransTimes =  p->serviceArrivalTimeStamps.back();
+            double curQueueingDelay = get<1>(lastTransTimes).dbl() - get<2>(lastTransTimes).dbl();
+            p->queueDelayEWMA = 0.6*curQueueingDelay + 0.4*p->queueDelayEWMA;
+            
+            emit(p->queueDelayEWMASignal, p->queueDelayEWMA);
+        }
+    }
+
+    // call the base method to output rest of the stats
+    routerNodeBase::handleStatMessage(ttmsg);
+}
+
