@@ -2,7 +2,6 @@
 #define INITIALIZE_H
 #include "hostInitialize.h"
 
-
 bool probesRecent(map<int, PathInfo> probes){
     for (auto iter : probes){
         int key = iter.first;
@@ -328,6 +327,12 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
     auto tempChannels = _channels;
     for ( int it = 0; it < k; it++ ){
         route = dijkstraInputGraph(sender, receiver, tempChannels);
+        
+        // update cannonical RTT
+        double sumRTT = (route.size() - 1) * 2 * _avgDelay / 1000.0;
+        sumRTT += _cannonicalRTT * _totalPaths;
+        _totalPaths += 1;
+        _cannonicalRTT = sumRTT / _totalPaths;
 
         if (route.size() <= 1){
             return shortestRoutes;
@@ -412,12 +417,20 @@ vector<vector<int>> getKPaths(int sender, int receiver, int k) {
     
     vector<vector<int>> finalPaths;
     int numPaths = 0;
+    double sumRTT = 0;
     for (vector<int> path : _pathsMap[sender][receiver]) {
         if (numPaths >= k)
             break;
         finalPaths.push_back(path);
+        sumRTT += (path.size() - 1) * 2 * _avgDelay / 1000.0;
         numPaths++;
     }
+
+    // update cannonical RTT
+    sumRTT += _cannonicalRTT * _totalPaths;
+    _totalPaths += numPaths;
+    _cannonicalRTT = sumRTT / _totalPaths;
+    
     return finalPaths;
 }
 

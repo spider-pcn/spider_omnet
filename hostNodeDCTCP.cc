@@ -49,6 +49,8 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
     int transactionId = aMsg->getTransactionId();
     double largerTxnId = aMsg->getLargerTxnId();
 
+
+
     // window update based on marked or unmarked packet
     if (aMsg->getIsMarked()) {
         nodeToShortestPathsMap[destNode][pathIndex].window  -= _windowBeta;
@@ -103,11 +105,11 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
     //increment transaction amount ack on a path. 
     tuple<int,int> key = make_tuple(transactionId, pathIndex);
     transPathToAckState[key].amtReceived += aMsg->getAmount();
-    
+
     nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= aMsg->getAmount();
     destNodeToNumTransPending[destNode] -= 1;     
     hostNodeBase::handleAckMessage(ttmsg);
-
+    
     sendMoreTransactionsOnPath(destNode, pathIndex);
 }
 
@@ -314,7 +316,7 @@ void hostNodeDCTCP::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                     // necessary for knowing what path to remove transaction in flight funds from
                     tuple<int,int> key = make_tuple(transMsg->getTransactionId(), pathIndex); 
                     transPathToAckState[key].amtSent += transMsg->getAmount();
-                
+                    
                     return;
                 }
             }

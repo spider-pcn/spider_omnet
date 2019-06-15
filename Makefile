@@ -36,6 +36,7 @@ OBJS = \
     $O/hostNodeWaterfilling.o \
     $O/hostNodeLandmarkRouting.o \
     $O/hostNodePriceScheme.o \
+    $O/hostNodePropFairPriceScheme.o \
     $O/hostNodeLndBaseline.o \
     $O/hostNodeDCTCP.o \
     $O/routerNodeBase.o \

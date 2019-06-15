@@ -69,6 +69,7 @@ do
 done
 cp hostNodeLandmarkRouting.ned ${PATH_NAME}
 cp routerNodeDCTCPBal.ned ${PATH_NAME}
+cp hostNodePropFairPriceScheme.ned ${PATH_NAME}
 
 
 arraylength=${#prefix[@]}

@@ -16,7 +16,8 @@ parser.add_argument('--window-enabled', type=str, help='is window enabled?', des
 parser.add_argument('--timeout-clear-rate', type=str, help='rate of clearing data after timeouts', dest='timeoutClearRate', default='0.5')
 parser.add_argument('--timeout-enabled', type=str, help='are timeouts enabled?', dest='timeoutEnabled', default='true')
 parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, LP,' +
-        'silentWhispers, smoothWaterfilling, priceScheme, landmarkRouting, lndBaseline, DCTCP, DCTCPBal],' +  
+        'silentWhispers, smoothWaterfilling, priceScheme, landmarkRouting, lndBaseline, DCTCP, DCTCPBal,\
+                DCTCPRate],' +  
         'else will default to waterfilling', 
         dest='routingScheme', default='default')
 parser.add_argument('--num-path-choices', type=str, help='number of path choices', dest='numPathChoices', default='default')
@@ -98,7 +99,8 @@ if args.capacity is not None:
 #arg parse might support a cleaner way to deal with this
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
         'smoothWaterfilling', 'priceSchemeWindow', 'priceSchemeWindowNoQueue', 'priceSchemeWindowNoSplit',\
-        'landmarkRouting', 'lndBaseline', 'priceSchemeNoQueue', 'lndBaselineSplit', 'DCTCP', 'DCTCPBal']:
+        'landmarkRouting', 'lndBaseline', 'priceSchemeNoQueue', 'lndBaselineSplit', 'DCTCP', 'DCTCPBal', \
+        'DCTCPRate']:
     if args.routingScheme != 'default':
         print "******************"
         print "WARNING: ill-specified routing scheme, defaulting to waterfilling,",\
@@ -198,6 +200,7 @@ if 'DCTCP' in args.routingScheme:
     f.write("**.queueThreshold = " + str(args.queueThreshold) + "\n")
     f.write("**.balanceThreshold = " + str(args.balEcnThreshold) + "\n")
     f.write("**.minDCTCPWindow = " + str(args.minDCTCPWindow) + "\n")
+    f.write("**.minRate = " + str(args.minRate) + "\n")
 
 if args.pathChoice == "oblivious":
     f.write("**.obliviousRoutingEnabled = true\n")

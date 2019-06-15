@@ -101,6 +101,10 @@ extern double _avgDelay;
 extern double _xi; // how fast you want to drain the queue relative to network rtt - want this to be less than 1
 extern double _routerQueueDrainTime;
 extern int _serviceArrivalWindow;
+extern double _minWindow;
+extern bool _reschedulingEnabled;
+extern double _smallRate;
+extern double _tokenBucketCapacity;
 
 // overall knobs
 extern bool _signalsEnabled;
@@ -143,3 +147,5 @@ extern double _windowBeta;
 extern double _qEcnThreshold;
 extern double _balEcnThreshold;
 extern bool _dctcpEnabled;
+extern double _cannonicalRTT; // for prop fair price scheme version - specific to a topology
+extern double _totalPaths; // total number of paths over which cannonical RTT was computed
