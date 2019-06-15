@@ -6,6 +6,7 @@ bool probesRecent(map<int, PathInfo> probes);
 void generateChannelsBalancesMap(string);
 void setNumNodes(string);
 void updateMaxTravelTime(vector<int> route);
+void updateCannonicalRTT(vector<int> route);
 
 //get path functions
 vector<int> getRoute(int sender, int receiver);

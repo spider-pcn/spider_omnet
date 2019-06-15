@@ -315,6 +315,13 @@ double bottleneckOnPath(vector<int> route) {
     return min;
 }
 
+void updateCannonicalRTT(vector<int> route) {
+        // update cannonical RTT
+        double sumRTT = (route.size() - 1) * 2 * _avgDelay / 1000.0;
+        sumRTT += _cannonicalRTT * _totalPaths;
+        _totalPaths += 1;
+        _cannonicalRTT = sumRTT / _totalPaths;
+}
 
 vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
     //do searching without regard for channel capacities, DFS right now
@@ -328,17 +335,12 @@ vector<vector<int>> getKShortestRoutes(int sender, int receiver, int k){
     for ( int it = 0; it < k; it++ ){
         route = dijkstraInputGraph(sender, receiver, tempChannels);
         
-        // update cannonical RTT
-        double sumRTT = (route.size() - 1) * 2 * _avgDelay / 1000.0;
-        sumRTT += _cannonicalRTT * _totalPaths;
-        _totalPaths += 1;
-        _cannonicalRTT = sumRTT / _totalPaths;
-
         if (route.size() <= 1){
             return shortestRoutes;
         }
         else{
             updateMaxTravelTime(route);
+            updateCannonicalRTT(route);
             shortestRoutes.push_back(route);
         }
         if (_loggingEnabled) {
@@ -422,15 +424,10 @@ vector<vector<int>> getKPaths(int sender, int receiver, int k) {
         if (numPaths >= k)
             break;
         finalPaths.push_back(path);
-        sumRTT += (path.size() - 1) * 2 * _avgDelay / 1000.0;
-        numPaths++;
+        updateMaxTravelTime(path);
+        updateCannonicalRTT(path);
     }
 
-    // update cannonical RTT
-    sumRTT += _cannonicalRTT * _totalPaths;
-    _totalPaths += numPaths;
-    _cannonicalRTT = sumRTT / _totalPaths;
-    
     return finalPaths;
 }
 

@@ -401,7 +401,7 @@ void hostNodePropFairPriceScheme::handleStatMessage(routerMsg* ttmsg){
 
                         //signals for price scheme per path
                         emit(pInfo->rateToSendTransSignal, pInfo->rateToSendTrans);
-                        emit(pInfo->rateActuallySentSignal, pInfo->rateSentOnPath);
+                        emit(pInfo->rateActuallySentSignal, pInfo->nValue /_statRate);
                         emit(pInfo->sumOfTransUnitsInFlightSignal, 
                                 pInfo->sumOfTransUnitsInFlight);
                         emit(pInfo->windowSignal, pInfo->window);
@@ -411,6 +411,7 @@ void hostNodePropFairPriceScheme::handleStatMessage(routerMsg* ttmsg){
                         pInfo->amtAcked = 0;
                         pInfo->unmarkedPackets = 0;
                         pInfo->markedPackets = 0;
+                        pInfo->nValue = 0;
                     }
                 }
 
