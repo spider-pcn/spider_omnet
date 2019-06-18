@@ -895,7 +895,7 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
         delete ttmsg;
     }
     else {
-        scheduleAt(simTime()+_statRate, ttmsg);
+        scheduleAt(simTime() + _statRate, ttmsg);
     }
     
     if (_signalsEnabled) {

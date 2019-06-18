@@ -16,6 +16,7 @@ bool _reschedulingEnabled; // whether timers can be rescheduled
 /* new variables */
 double _cannonicalRTT = 0;
 double _totalPaths = 0;
+double computeDemandRate = 0.5;
 
 /* DCTCP borrowed fields 
 double _windowAlpha;
@@ -45,6 +46,18 @@ routerMsg *hostNodePropFairPriceScheme::generateTriggerTransactionSendMessage(ve
     return rMsg;
 }
 
+/* generate statistic trigger message every x seconds
+ * to output all statistics which can then be plotted
+ */
+routerMsg *hostNodePropFairPriceScheme::generateComputeDemandMessage(){
+    char msgname[MSGSIZE];
+    sprintf(msgname, "node-%d computeDemandMsg", myIndex());
+    routerMsg *rMsg = new routerMsg(msgname);
+    rMsg->setMessageType(COMPUTE_DEMAND_MSG);
+    return rMsg;
+}
+
+
 
 /* check if all the provided rates are non-negative and also verify
  *  that their sum is less than the demand, return false otherwise
@@ -64,6 +77,10 @@ bool hostNodePropFairPriceScheme::ratesFeasible(vector<PathRateTuple> actualRate
  */
 vector<PathRateTuple> hostNodePropFairPriceScheme::computeProjection(
         vector<PathRateTuple> recommendedRates, double demand) {
+    /* to resolve issues very early on when demand hasn't been computed yet */
+    if (demand == 0)
+        demand = 1;
+
     auto compareRates = [](PathRateTuple rate1, PathRateTuple rate2) {
             return (get<1>(rate1) < get<1>(rate2));
     };
@@ -95,7 +112,6 @@ vector<PathRateTuple> hostNodePropFairPriceScheme::computeProjection(
     for (auto p : recommendedRates) {
         double rate = get<1>(p);
         int pathIndex = get<0>(p);
-        cout << "rate " << rate << endl;
         if (rate > 0) {
             if (firstPositiveIndex == -1) 
                 firstPositiveIndex = i;
@@ -172,6 +188,14 @@ void hostNodePropFairPriceScheme::handleMessage(cMessage *msg) {
              handleTriggerTransactionSendMessage(ttmsg);
              if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
              break;
+    
+        case COMPUTE_DEMAND_MSG:
+             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                 <<": RECEIVED COMPUTE_DEMAND MSG] "<< ttmsg->getName() << endl;
+             handleComputeDemandMessage(ttmsg);
+             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+             break;
+
 
         default:
              hostNodeBase::handleMessage(msg);
@@ -385,6 +409,28 @@ void hostNodePropFairPriceScheme::handleTransactionMessageSpecialized(routerMsg*
     }
 }
 
+/* handler for compute demand message triggered every y seconds simply to comput the demand per destination
+ */
+void hostNodePropFairPriceScheme::handleComputeDemandMessage(routerMsg* ttmsg){
+    // reschedule this message to be sent again
+    if (simTime() > _simulationLength){
+        delete ttmsg;
+    }
+    else {
+        scheduleAt(simTime() + computeDemandRate, ttmsg);
+    }
+
+    for (auto it = 0; it < _numHostNodes; it++){ 
+        if (it != getIndex() && _destList[myIndex()].count(it) > 0) {
+            //nodeToDestInfo[it].demand = (myIndex() == 0) ? 100 : 250 ;
+            DestInfo* destInfo = &(nodeToDestInfo[it]);
+            double newDemand = destInfo->transSinceLastInterval / computeDemandRate;
+            destInfo->demand = (1 - _zeta) * destInfo->demand + _zeta * newDemand;
+            destInfo->transSinceLastInterval = 0;
+        }
+    }
+}
+
 
 /* handler for the statistic message triggered every x seconds to also
  * output the price based scheme stats in addition to the default
@@ -414,9 +460,6 @@ void hostNodePropFairPriceScheme::handleStatMessage(routerMsg* ttmsg){
                         pInfo->nValue = 0;
                     }
                 }
-
-                nodeToDestInfo[it].demand = nodeToDestInfo[it].transSinceLastInterval / _statRate;
-                nodeToDestInfo[it].transSinceLastInterval = 0;
 
                 emit(demandEstimatePerDestSignals[it], nodeToDestInfo[it].demand);
                 emit(numWaitingPerDestSignals[it], 
@@ -474,13 +517,13 @@ void hostNodePropFairPriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
     }
 
     vector<PathRateTuple> projectedRates = 
-        computeProjection(pathRateTuples, 1.1 * nodeToDestInfo[destNode].demand);
+        computeProjection(pathRateTuples, 1.7 * nodeToDestInfo[destNode].demand);
 
     // reassign all path's rates to the projected rates and 
     // make sure it is atleast minPriceRate for every path
     for (auto p : projectedRates) {
         int index = get<0>(p);
-        double newRate = get<1>(p);
+        double newRate = max(get<1>(p), _minPriceRate);
         updateTimers(destNode, index, newRate);
     }
 
@@ -740,6 +783,8 @@ void hostNodePropFairPriceScheme::initialize() {
         _windowBeta = par("windowBeta");
         _qEcnThreshold = par("queueThreshold");
         _balEcnThreshold = par("balanceThreshold");
+        _zeta = par("zeta"); // ewma for d_ij every source dest demand
+        _minPriceRate = par("minRate");
     }
 
     //initialize signals with all other nodes in graph
@@ -754,4 +799,8 @@ void hostNodePropFairPriceScheme::initialize() {
             numWaitingPerDestSignals[i] = signal;
         }
     }
+
+    // trigger the message to compute demand to all destinations periodically
+    routerMsg *computeDemandMsg = generateComputeDemandMessage();
+    scheduleAt(simTime() + 0, computeDemandMsg);
 }

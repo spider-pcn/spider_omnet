@@ -105,6 +105,7 @@ extern double _minWindow;
 extern bool _reschedulingEnabled;
 extern double _smallRate;
 extern double _tokenBucketCapacity;
+extern double _zeta;
 
 // overall knobs
 extern bool _signalsEnabled;

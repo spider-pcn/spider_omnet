@@ -8,7 +8,7 @@ double _ewmaFactor;
 double _Tau;
 double _Normalizer;
 bool _smoothWaterfillingEnabled;
-#define SMALLEST_INDIVISIBLE_UNIT 5
+#define SMALLEST_INDIVISIBLE_UNIT 1 
 
 Define_Module(hostNodeWaterfilling);
 
