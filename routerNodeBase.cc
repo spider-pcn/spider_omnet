@@ -377,7 +377,7 @@ bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime
         neighbor->balance = newBalance;
         neighbor-> balanceEWMA = (1 -_ewmaFactor) * neighbor->balanceEWMA + 
             (_ewmaFactor) * newBalance;
-        
+
         if (_loggingEnabled) cout << "forwardTransactionMsg send: " << simTime() << endl;
         send(msg, nodeToPaymentChannel[nextDest].gate);
         return true;

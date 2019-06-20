@@ -1389,6 +1389,7 @@ void hostNodeBase::finish() {
         recordScalar("delta", _delta);
         recordScalar("average delay", _avgDelay/1000.0);
         recordScalar("epsilon", _epsilon);
+        recordScalar("cannonical RTT", _cannonicalRTT);
 
         for (auto const& x : _transactionCompletionBySize) {
             double amount = x.first;

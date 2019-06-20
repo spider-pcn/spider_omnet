@@ -163,4 +163,5 @@ SCHEME_CODE = { "priceSchemeWindow": "PS",\
         "shortestPath": "SP",\
         "waterfilling": "WF",\
         "DCTCP": "DCTCP",\
+        "DCTCPRate": "DCTCPRate", \
         "DCTCPBal": "DCTCPBal"}

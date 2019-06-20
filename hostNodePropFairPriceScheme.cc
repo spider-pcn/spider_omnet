@@ -336,13 +336,18 @@ void hostNodePropFairPriceScheme::handleTransactionMessageSpecialized(routerMsg*
     else if (ttmsg->isSelfMessage()) {
         // at sender, either queue up or send on a path that allows you to send
         DestInfo* destInfo = &(nodeToDestInfo[destNode]);
+
+        // use a random ordering on the path indices
+        vector<int> pathIndices;
+        for (int i = 0; i < nodeToShortestPathsMap[destNode].size(); ++i) pathIndices.push_back(i);
+        random_shuffle(pathIndices.begin(), pathIndices.end());
        
         //send on a path if no txns queued up and timer was in the path
         if ((destInfo->transWaitingToBeSent).size() > 0) {
             pushIntoSenderQueue(destInfo, ttmsg);
         } else {
-            for (auto p: nodeToShortestPathsMap[destNode]) {
-                int pathIndex = p.first;
+            for (auto p: pathIndices) {
+                int pathIndex = p;
                 PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
                 pathInfo->window = max(pathInfo->rateToSendTrans * pathInfo->rttMin, _minWindow);
                 

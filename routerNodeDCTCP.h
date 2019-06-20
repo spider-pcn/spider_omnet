@@ -9,7 +9,7 @@ using namespace omnetpp;
 class routerNodeDCTCP : public routerNodeBase {
     protected:
         // messsage helpers
-        virtual void handleTransactionMessage(routerMsg *msg) override;
         virtual void handleStatMessage(routerMsg* ttmsg) override;
+        virtual bool forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) override;
 };
 #endif
