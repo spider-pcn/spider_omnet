@@ -43,6 +43,7 @@ simple hostNodePropFairPriceScheme
                 double queueThreshold = default(30);
                 double balanceThreshold = default(0.01);
                 double minDCTCPWindow = default(5.0);
+                double rateDecreaseFrequency = default(5.0);
 
                 bool useQueueEquation = default(true);
                 bool splittingEnabled = default(true);
@@ -166,6 +167,9 @@ simple hostNodePropFairPriceScheme
 	
                 @signal[fractionMarkedPerDestPerPath*](type="double"); 
 		@statisticTemplate[fractionMarkedPerDestPerPathTemplate](record=vector, stats);
+                
+                @signal[smoothedFractionMarkedPerDestPerPath*](type="double"); 
+		@statisticTemplate[smoothedFractionMarkedPerDestPerPathTemplate](record=vector, stats);
         	
                 @signal[timeToNextSendPerDestPerPath*](type="simtime_t"); 
 		@statisticTemplate[timeToNextSendPerDestPerPathTemplate](record=vector, stats);

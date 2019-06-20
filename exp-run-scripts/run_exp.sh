@@ -56,11 +56,12 @@ routerQueueDrainTime=5
 serviceArrivalWindow=300
 
 #DCTCP parameters
-windowBeta=0.2
+windowBeta=0.05
 windowAlpha=0.5
-queueThreshold=10
-balanceThreshold=0.1
+queueThreshold=20
+balanceThreshold=0.01
 minDCTCPWindow=1
+rateDecreaseFrequency=3.0
 
 for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
 do
@@ -259,7 +260,8 @@ do
                         --queue-threshold $queueThreshold \
                         --balance-ecn-threshold $balanceThreshold \
                         --mtu $mtu\
-                        --min-dctcp-window $minDCTCPWindow
+                        --min-dctcp-window $minDCTCPWindow \
+                        --rate-decrease-frequency $rateDecreaseFrequency
 
 
                 # run the omnetexecutable with the right parameters

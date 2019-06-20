@@ -17,6 +17,7 @@ bool _reschedulingEnabled; // whether timers can be rescheduled
 double _cannonicalRTT = 0;
 double _totalPaths = 0;
 double computeDemandRate = 0.5;
+double rateDecreaseFrequency = 5;
 
 /* DCTCP borrowed fields 
 double _windowAlpha;
@@ -54,6 +55,18 @@ routerMsg *hostNodePropFairPriceScheme::generateComputeDemandMessage(){
     sprintf(msgname, "node-%d computeDemandMsg", myIndex());
     routerMsg *rMsg = new routerMsg(msgname);
     rMsg->setMessageType(COMPUTE_DEMAND_MSG);
+    return rMsg;
+}
+
+/* generate trigger message to compute the fraction of marked packets 
+ * on all paths to all destinations every x seconds
+ * then do the beta portion for all of those rates
+ */
+routerMsg *hostNodePropFairPriceScheme::generateTriggerRateDecreaseMessage(){
+    char msgname[MSGSIZE];
+    sprintf(msgname, "node-%d triggerRateDecreaseMsg", myIndex());
+    routerMsg *rMsg = new routerMsg(msgname);
+    rMsg->setMessageType(TRIGGER_RATE_DECREASE_MSG);
     return rMsg;
 }
 
@@ -188,7 +201,14 @@ void hostNodePropFairPriceScheme::handleMessage(cMessage *msg) {
              handleTriggerTransactionSendMessage(ttmsg);
              if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
              break;
-    
+         
+        case TRIGGER_RATE_DECREASE_MSG:
+             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                 <<": RECEIVED TRIGGER_RATE_DECREASE MSG] "<< ttmsg->getName() << endl;
+             handleTriggerRateDecreaseMessage(ttmsg);
+             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+             break;   
+        
         case COMPUTE_DEMAND_MSG:
              if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
                  <<": RECEIVED COMPUTE_DEMAND MSG] "<< ttmsg->getName() << endl;
@@ -349,7 +369,7 @@ void hostNodePropFairPriceScheme::handleTransactionMessageSpecialized(routerMsg*
             for (auto p: pathIndices) {
                 int pathIndex = p;
                 PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
-                pathInfo->window = max(pathInfo->rateToSendTrans * pathInfo->rttMin, _minWindow);
+                pathInfo->window = max(pathInfo->rateToSendTrans * pathInfo->rttMin + _qEcnThreshold + 5, _minWindow);
                 
                 if (pathInfo->rateToSendTrans > 0 && simTime() > pathInfo->timeToNextSend && 
                         pathInfo->sumOfTransUnitsInFlight + transMsg->getAmount() <= pathInfo->window) {
@@ -437,6 +457,46 @@ void hostNodePropFairPriceScheme::handleComputeDemandMessage(routerMsg* ttmsg){
 }
 
 
+/* handler for trigger rate decrease message triggered every y seconds
+ * to compute the fraction of marked packets on all paths to the destinations
+ * and perform the decrease portion of the control algorithm
+ */
+void hostNodePropFairPriceScheme::handleTriggerRateDecreaseMessage(routerMsg* ttmsg){
+    // reschedule this message to be sent again
+    if (simTime() > _simulationLength){
+        delete ttmsg;
+    }
+    else {
+        scheduleAt(simTime() + rateDecreaseFrequency, ttmsg);
+    }
+
+    // go through all destinations that have pending transactions and 
+    // update the fraction of marked packets over the last y seconds
+    for (auto it = destNodeToNumTransPending.begin(); it!=destNodeToNumTransPending.end(); it++){
+        if (it->first == myIndex()){
+            // TODO: shouldn't be happening         
+            continue;
+        }
+        
+        if (it->second>0){ 
+            //if we have transactions pending
+            for (auto p = nodeToShortestPathsMap[it->first].begin() ;
+                    p!= nodeToShortestPathsMap[it->first].end(); p++){
+                // p is per path in the destNode
+                int routeIndex = p->first;
+                PathInfo *pInfo = &(nodeToShortestPathsMap[it->first][p->first]);
+                pInfo->lastMarkedFraction = pInfo->totalMarkedPacketsForInterval/pInfo->totalPacketsForInterval;
+
+                pInfo->totalMarkedPacketsForInterval = 0;
+                pInfo->totalPacketsForInterval = 0;
+                pInfo->rateToSendTrans  -= _windowBeta * pInfo->lastMarkedFraction * pInfo->rateToSendTrans;
+                pInfo->rateToSendTrans = max(_minPriceRate, pInfo->rateToSendTrans);
+            }
+        }
+    }
+}
+
+
 /* handler for the statistic message triggered every x seconds to also
  * output the price based scheme stats in addition to the default
  */
@@ -457,8 +517,9 @@ void hostNodePropFairPriceScheme::handleStatMessage(routerMsg* ttmsg){
                                 pInfo->sumOfTransUnitsInFlight);
                         emit(pInfo->windowSignal, pInfo->window);
                         emit(pInfo->rateOfAcksSignal, pInfo->amtAcked/_statRate);
-                        emit(pInfo->fractionMarkedSignal, pInfo->markedPackets/(pInfo->markedPackets + pInfo->unmarkedPackets));
-                    
+                        emit(pInfo->fractionMarkedSignal, 
+                                pInfo->markedPackets/(pInfo->markedPackets + pInfo->unmarkedPackets));
+                        emit(pInfo->smoothedFractionMarkedSignal, pInfo->lastMarkedFraction);
                         pInfo->amtAcked = 0;
                         pInfo->unmarkedPackets = 0;
                         pInfo->markedPackets = 0;
@@ -492,13 +553,15 @@ void hostNodePropFairPriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
 
     // rate update based on marked or unmarked packet
     if (aMsg->getIsMarked()) {
-        thisPath->rateToSendTrans  -= _windowBeta/_cannonicalRTT;
-        thisPath->rateToSendTrans = max(_minPriceRate, thisPath->rateToSendTrans);
+        // thisPath->rateToSendTrans  -= _windowBeta/_cannonicalRTT;
+        // thisPath->rateToSendTrans = max(_minPriceRate, thisPath->rateToSendTrans);
         thisPath->markedPackets += 1; 
+        thisPath->totalMarkedPacketsForInterval += 1;
     }
     else {
         thisPath->unmarkedPackets += 1; 
     }
+    thisPath->totalPacketsForInterval += 1;
     
     // additive increase part
     double sumRates = 0; 
@@ -521,9 +584,11 @@ void hostNodePropFairPriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
         pathRateTuples.push_back(newTuple);
     }
 
-    vector<PathRateTuple> projectedRates = 
-        computeProjection(pathRateTuples, 1.7 * nodeToDestInfo[destNode].demand);
+    vector<PathRateTuple> projectedRates = pathRateTuples; 
+        //computeProjection(pathRateTuples, 1.7 * nodeToDestInfo[destNode].demand);
 
+   
+    
     // reassign all path's rates to the projected rates and 
     // make sure it is atleast minPriceRate for every path
     for (auto p : projectedRates) {
@@ -621,7 +686,7 @@ void hostNodePropFairPriceScheme::handleTriggerTransactionSendMessage(routerMsg*
     int pathIndex = tsMsg->getPathIndex();
     int destNode = tsMsg->getReceiver();
     PathInfo* p = &(nodeToShortestPathsMap[destNode][pathIndex]);
-    p->window = max(p->rateToSendTrans * p->rttMin, _minWindow);
+    p->window = max(p->rateToSendTrans * p->rttMin + _qEcnThreshold + 5, _minWindow);
 
     bool sentSomething = false;
     if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {
@@ -733,6 +798,9 @@ void hostNodePropFairPriceScheme::initializePathInfo(vector<vector<int>> kShorte
               
         signal = registerSignalPerDestPath("fractionMarked", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].fractionMarkedSignal = signal;
+  
+        signal = registerSignalPerDestPath("smoothedFractionMarked", pathIdx, destNode);
+        nodeToShortestPathsMap[destNode][pathIdx].smoothedFractionMarkedSignal = signal;      
         
         signal = registerSignalPerDestPath("rateOfAcks", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].rateOfAcksSignal = signal;
@@ -790,6 +858,7 @@ void hostNodePropFairPriceScheme::initialize() {
         _balEcnThreshold = par("balanceThreshold");
         _zeta = par("zeta"); // ewma for d_ij every source dest demand
         _minPriceRate = par("minRate");
+        rateDecreaseFrequency = par("rateDecreaseFrequency");
     }
 
     //initialize signals with all other nodes in graph
@@ -808,4 +877,8 @@ void hostNodePropFairPriceScheme::initialize() {
     // trigger the message to compute demand to all destinations periodically
     routerMsg *computeDemandMsg = generateComputeDemandMessage();
     scheduleAt(simTime() + 0, computeDemandMsg);
+
+    // trigger the message to compute fraction of marked packets
+    routerMsg *triggerRateDecreaseMsg = generateTriggerRateDecreaseMessage();
+    scheduleAt(simTime() + 0, triggerRateDecreaseMsg);
 }

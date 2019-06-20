@@ -124,6 +124,7 @@ INTERESTING_SIGNALS["window"] = ["windowPerDestPerPath"]
 INTERESTING_SIGNALS["sumOfTransUnitsInFlight"] = ["sumOfTransUnitsInFlightPerDestPerPath"]
 INTERESTING_SIGNALS["priceLastSeen"] = ["priceLastSeenPerDestPerPath"]
 INTERESTING_SIGNALS["fractionMarked"] = ["fractionMarkedPerDestPerPath"]
+INTERESTING_SIGNALS["smoothedFractionMarked"] = ["smoothedFractionMarkedPerDestPerPath"]
 INTERESTING_SIGNALS["rateOfAcks"] = ["rateOfAcksPerDestPerPath"]
 
 # DO NOT CHANGE THIS: PAINFULLY HARDCODED TO NOT INTERFERE WITH numTimedOutAtSender
@@ -137,7 +138,7 @@ for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", \
 per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", \
         "rateToSendTransPerDestPerPath", "rateSentPerDestPerPath", "rateOfAcksPerDestPerPath", \
         "fractionMarkedPerDestPerPath", "sumOfTransUnitsInFlightPerDestPerPath", "windowPerDestPerPath", \
-        "priceLastSeenPerDestPerPath", "numTimedOutPerDest"])
+        "priceLastSeenPerDestPerPath", "numTimedOutPerDest", "smoothedFractionMarkedPerDestPerPath"])
 
 per_channel_list = []
 for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "nValue", "serviceRate", "arrivalRate",

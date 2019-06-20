@@ -22,6 +22,7 @@ class hostNodePropFairPriceScheme : public hostNodeBase {
         virtual routerMsg *generateTriggerTransactionSendMessage(vector<int> route, 
                 int routeIndex, int destNode);
         virtual routerMsg *generateComputeDemandMessage();
+        virtual routerMsg *generateTriggerRateDecreaseMessage();
 
         // helpers
         // functions to compute projections while ensure rates are feasible
@@ -34,6 +35,7 @@ class hostNodePropFairPriceScheme : public hostNodeBase {
         virtual void handleTimeOutMessage(routerMsg *msg) override;
         virtual void handleTransactionMessageSpecialized(routerMsg *msg) override;
         virtual void handleComputeDemandMessage(routerMsg *msg);
+        virtual void handleTriggerRateDecreaseMessage(routerMsg *msg);
         virtual void handleStatMessage(routerMsg *msg) override;
         virtual void handleAckMessageSpecialized(routerMsg* ttmsg) override;
         virtual void handleClearStateMessage(routerMsg *msg) override;

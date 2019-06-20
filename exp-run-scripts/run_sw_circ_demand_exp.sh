@@ -48,6 +48,7 @@ windowAlpha=0.5
 queueThreshold=40
 balanceThreshold=0.1
 minDCTCPWindow=1
+rateDecreaseFrequency=3.0
 
 for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
 do
@@ -193,7 +194,8 @@ do
                     --queue-threshold $queueThreshold \
                     --balance-ecn-threshold $balanceThreshold \
                     --mtu $mtu\
-                    --min-dctcp-window $minDCTCPWindow
+                    --min-dctcp-window $minDCTCPWindow\
+                    --rate-decrease-frequency $rateDecreaseFrequency
 
             # run the omnetexecutable with the right parameters
             # in the background

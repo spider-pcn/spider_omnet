@@ -525,7 +525,11 @@ def plot_per_src_dest_stats(args, text_to_add):
         if args.fraction_marked:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "fractionMarked", False, True)
             plot_relevant_stats(data_to_plot, pdf, "Fraction of packets marked", per_path_info=True)  
-        
+            
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "smoothedFractionMarked", \
+                    False, True)
+            plot_relevant_stats(data_to_plot, pdf, "Fraction of packets marked in interval", per_path_info=True)  
+ 
         if args.amt_inflight_per_path:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, \
                     "sumOfTransUnitsInFlight", False, True)

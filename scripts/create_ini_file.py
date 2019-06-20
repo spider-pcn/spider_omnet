@@ -71,6 +71,8 @@ parser.add_argument('--queue-threshold', type=float, help='ecn queue threshold',
 parser.add_argument('--balance-ecn-threshold', type=float, help='ecn balance threshold', dest='balEcnThreshold', \
         default=0.1)
 parser.add_argument('--min-dctcp-window', type=float, help='min window size for dctcp', dest='minDCTCPWindow', default=5)
+parser.add_argument('--rate-decrease-frequency', type=float, help='frequency with which to perform' \
+        + 'decreases', dest='rateDecreaseFrequency', default=5)
 
 
 args = parser.parse_args()
@@ -200,6 +202,7 @@ if 'DCTCP' in args.routingScheme:
     f.write("**.queueThreshold = " + str(args.queueThreshold) + "\n")
     f.write("**.balanceThreshold = " + str(args.balEcnThreshold) + "\n")
     f.write("**.minDCTCPWindow = " + str(args.minDCTCPWindow) + "\n")
+    f.write("**.rateDecreaseFrequency = " + str(args.rateDecreaseFrequency) + "\n")
     f.write("**.minRate = " + str(args.minRate) + "\n")
 
 if args.pathChoice == "oblivious":
