@@ -254,6 +254,7 @@ void hostNodePropFairPriceScheme::handleTimeOutMessage(routerMsg* ttmsg) {
             deleteTransaction(*iter);
             transList->erase(iter);
             ttmsg->decapsulate();
+            statNumTimedOut[destination] += 1;
             delete toutMsg;
             delete ttmsg;
             return;
