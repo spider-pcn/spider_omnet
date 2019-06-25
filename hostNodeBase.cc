@@ -394,6 +394,7 @@ routerMsg *hostNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     aMsg->setLargerTxnId(transMsg->getLargerTxnId());
     aMsg->setPriorityClass(transMsg->getPriorityClass());
     aMsg->setTimeOut(transMsg->getTimeOut());
+    aMsg->setTimeAttempted(transMsg->getTimeAttempted());
     aMsg->setIsMarked(transMsg->getIsMarked());
     if (!isSuccess){
         aMsg->setFailedHopNum((route.size()-1) - ttmsg->getHopCount());
@@ -654,6 +655,7 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
         PaymentChannel *neighbor = &(nodeToPaymentChannel[nextNode]);
         q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
         tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
+        transMsg->setTimeAttempted(simTime().dbl());
 
         // mark the arrival
         neighbor->arrivalTimeStamps.push_back(make_tuple(transMsg->getAmount(), simTime()));

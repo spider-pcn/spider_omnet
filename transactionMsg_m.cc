@@ -194,6 +194,7 @@ transactionMsg::transactionMsg(const char *name, short kind) : ::omnetpp::cPacke
     this->isAttempted = false;
     this->largerTxnId = 0;
     this->isMarked = false;
+    this->timeAttempted = 0;
 }
 
 transactionMsg::transactionMsg(const transactionMsg& other) : ::omnetpp::cPacket(other)
@@ -228,6 +229,7 @@ void transactionMsg::copy(const transactionMsg& other)
     this->isAttempted = other.isAttempted;
     this->largerTxnId = other.largerTxnId;
     this->isMarked = other.isMarked;
+    this->timeAttempted = other.timeAttempted;
 }
 
 void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -246,6 +248,7 @@ void transactionMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->isAttempted);
     doParsimPacking(b,this->largerTxnId);
     doParsimPacking(b,this->isMarked);
+    doParsimPacking(b,this->timeAttempted);
 }
 
 void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -264,6 +267,7 @@ void transactionMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->isAttempted);
     doParsimUnpacking(b,this->largerTxnId);
     doParsimUnpacking(b,this->isMarked);
+    doParsimUnpacking(b,this->timeAttempted);
 }
 
 double transactionMsg::getAmount() const
@@ -396,6 +400,16 @@ void transactionMsg::setIsMarked(bool isMarked)
     this->isMarked = isMarked;
 }
 
+double transactionMsg::getTimeAttempted() const
+{
+    return this->timeAttempted;
+}
+
+void transactionMsg::setTimeAttempted(double timeAttempted)
+{
+    this->timeAttempted = timeAttempted;
+}
+
 class transactionMsgDescriptor : public omnetpp::cClassDescriptor
 {
   private:
@@ -461,7 +475,7 @@ const char *transactionMsgDescriptor::getProperty(const char *propertyname) cons
 int transactionMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 13+basedesc->getFieldCount() : 13;
+    return basedesc ? 14+basedesc->getFieldCount() : 14;
 }
 
 unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
@@ -486,8 +500,9 @@ unsigned int transactionMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<13) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<14) ? fieldTypeFlags[field] : 0;
 }
 
 const char *transactionMsgDescriptor::getFieldName(int field) const
@@ -512,8 +527,9 @@ const char *transactionMsgDescriptor::getFieldName(int field) const
         "isAttempted",
         "largerTxnId",
         "isMarked",
+        "timeAttempted",
     };
-    return (field>=0 && field<13) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<14) ? fieldNames[field] : nullptr;
 }
 
 int transactionMsgDescriptor::findField(const char *fieldName) const
@@ -533,6 +549,7 @@ int transactionMsgDescriptor::findField(const char *fieldName) const
     if (fieldName[0]=='i' && strcmp(fieldName, "isAttempted")==0) return base+10;
     if (fieldName[0]=='l' && strcmp(fieldName, "largerTxnId")==0) return base+11;
     if (fieldName[0]=='i' && strcmp(fieldName, "isMarked")==0) return base+12;
+    if (fieldName[0]=='t' && strcmp(fieldName, "timeAttempted")==0) return base+13;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
@@ -558,8 +575,9 @@ const char *transactionMsgDescriptor::getFieldTypeString(int field) const
         "bool",
         "double",
         "bool",
+        "double",
     };
-    return (field>=0 && field<13) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<14) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **transactionMsgDescriptor::getFieldPropertyNames(int field) const
@@ -639,6 +657,7 @@ std::string transactionMsgDescriptor::getFieldValueAsString(void *object, int fi
         case 10: return bool2string(pp->getIsAttempted());
         case 11: return double2string(pp->getLargerTxnId());
         case 12: return bool2string(pp->getIsMarked());
+        case 13: return double2string(pp->getTimeAttempted());
         default: return "";
     }
 }
@@ -666,6 +685,7 @@ bool transactionMsgDescriptor::setFieldValueAsString(void *object, int field, in
         case 10: pp->setIsAttempted(string2bool(value)); return true;
         case 11: pp->setLargerTxnId(string2double(value)); return true;
         case 12: pp->setIsMarked(string2bool(value)); return true;
+        case 13: pp->setTimeAttempted(string2double(value)); return true;
         default: return false;
     }
 }

@@ -23,13 +23,15 @@ struct PathInfo{
         simsignal_t fractionMarkedSignal;
         simsignal_t smoothedFractionMarkedSignal;
         simsignal_t rateOfAcksSignal;
+        simsignal_t measuredRTTSignal;
         double markedPackets = 0;
         double unmarkedPackets = 0;
         double amtAcked = 0;
         double totalMarkedPacketsForInterval = 0;
         double totalPacketsForInterval = 0;
         double lastMarkedFraction = 0;
-        
+        double measuredRTT = 0;
+
         int statRateCompleted = 0;
         int statRateAttempted = 0;
 

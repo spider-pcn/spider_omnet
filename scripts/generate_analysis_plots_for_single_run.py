@@ -94,6 +94,9 @@ parser.add_argument('--rate_sent',
 parser.add_argument('--rate_acked',
         action='store_true',
         help='Plot the per path rate at which acks are received')
+parser.add_argument('--measured_rtt',
+        action='store_true',
+        help='Plot the per path rtt')
 parser.add_argument('--fraction_marked',
         action='store_true',
         help='Plot the per path marked acks out of all acks received')
@@ -530,6 +533,10 @@ def plot_per_src_dest_stats(args, text_to_add):
                     False, True)
             plot_relevant_stats(data_to_plot, pdf, "Fraction of packets marked in interval", per_path_info=True)  
  
+        if args.measured_rtt:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "measuredRTT", False, True)
+            plot_relevant_stats(data_to_plot, pdf, "Observed RTT", per_path_info=True)  
+        
         if args.amt_inflight_per_path:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, \
                     "sumOfTransUnitsInFlight", False, True)

@@ -322,7 +322,7 @@ do
                       --waiting --bottlenecks --probabilities \
                       --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
                       --inflight_incoming --rate_to_send --price --mu_remote --demand \
-                      --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked
+                      --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked --measured_rtt
                   done
               fi
 

@@ -124,6 +124,7 @@ INTERESTING_SIGNALS["window"] = ["windowPerDestPerPath"]
 INTERESTING_SIGNALS["sumOfTransUnitsInFlight"] = ["sumOfTransUnitsInFlightPerDestPerPath"]
 INTERESTING_SIGNALS["priceLastSeen"] = ["priceLastSeenPerDestPerPath"]
 INTERESTING_SIGNALS["fractionMarked"] = ["fractionMarkedPerDestPerPath"]
+INTERESTING_SIGNALS["measuredRTT"] = ["measuredRTTPerDestPerPath"]
 INTERESTING_SIGNALS["smoothedFractionMarked"] = ["smoothedFractionMarkedPerDestPerPath"]
 INTERESTING_SIGNALS["rateOfAcks"] = ["rateOfAcksPerDestPerPath"]
 
@@ -138,7 +139,8 @@ for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", \
 per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", \
         "rateToSendTransPerDestPerPath", "rateSentPerDestPerPath", "rateOfAcksPerDestPerPath", \
         "fractionMarkedPerDestPerPath", "sumOfTransUnitsInFlightPerDestPerPath", "windowPerDestPerPath", \
-        "priceLastSeenPerDestPerPath", "numTimedOutPerDest", "smoothedFractionMarkedPerDestPerPath"])
+        "priceLastSeenPerDestPerPath", "numTimedOutPerDest", "smoothedFractionMarkedPerDestPerPath",\
+        "measuredRTTPerDestPerPath"])
 
 per_channel_list = []
 for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "nValue", "serviceRate", "arrivalRate",

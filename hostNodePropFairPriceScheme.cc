@@ -370,7 +370,6 @@ void hostNodePropFairPriceScheme::handleTransactionMessageSpecialized(routerMsg*
             for (auto p: pathIndices) {
                 int pathIndex = p;
                 PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
-                pathInfo->window = max(pathInfo->rateToSendTrans * pathInfo->rttMin + _qEcnThreshold + 5, _minWindow);
                 
                 if (pathInfo->rateToSendTrans > 0 && simTime() > pathInfo->timeToNextSend && 
                         pathInfo->sumOfTransUnitsInFlight + transMsg->getAmount() <= pathInfo->window) {
@@ -518,6 +517,7 @@ void hostNodePropFairPriceScheme::handleStatMessage(routerMsg* ttmsg){
                                 pInfo->sumOfTransUnitsInFlight);
                         emit(pInfo->windowSignal, pInfo->window);
                         emit(pInfo->rateOfAcksSignal, pInfo->amtAcked/_statRate);
+                        emit(pInfo->measuredRTTSignal, pInfo->measuredRTT);
                         emit(pInfo->fractionMarkedSignal, 
                                 pInfo->markedPackets/(pInfo->markedPackets + pInfo->unmarkedPackets));
                         emit(pInfo->smoothedFractionMarkedSignal, pInfo->lastMarkedFraction);
@@ -554,6 +554,8 @@ void hostNodePropFairPriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
 
     // rate update based on marked or unmarked packet
     if (aMsg->getIsMarked()) {
+        thisPath->window  -= _windowBeta;
+        thisPath->window = max(_minWindow, thisPath->window);
         // thisPath->rateToSendTrans  -= _windowBeta/_cannonicalRTT;
         // thisPath->rateToSendTrans = max(_minPriceRate, thisPath->rateToSendTrans);
         thisPath->markedPackets += 1; 
@@ -561,19 +563,19 @@ void hostNodePropFairPriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
     }
     else {
         thisPath->unmarkedPackets += 1; 
+        // additive increase part
+        double sumWindows = 0; 
+        for (auto p : nodeToShortestPathsMap[destNode]) 
+            sumWindows += p.second.window;
+        thisPath->window += _windowAlpha / sumWindows;
     }
     thisPath->totalPacketsForInterval += 1;
-    
-    // additive increase part
-    double sumRates = 0; 
-    for (auto p : nodeToShortestPathsMap[destNode]) 
-        sumRates += p.second.rateToSendTrans;
-    sumRates = max(sumRates, 1.0);
-    double preProjectionRate = thisPath->rateToSendTrans + _windowAlpha / 
-        (_cannonicalRTT * _cannonicalRTT * sumRates);
-    
+
+    double preProjectionRate = thisPath->window/(0.9 * thisPath->measuredRTT);
+
     // compute Projection
     vector<PathRateTuple> pathRateTuples;
+    double sumRates = 0;
     for (auto p : nodeToShortestPathsMap[destNode]) {
         sumRates += p.second.rateToSendTrans;
         double rate;
@@ -589,7 +591,6 @@ void hostNodePropFairPriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
         //computeProjection(pathRateTuples, 1.7 * nodeToDestInfo[destNode].demand);
 
    
-    
     // reassign all path's rates to the projected rates and 
     // make sure it is atleast minPriceRate for every path
     for (auto p : projectedRates) {
@@ -629,8 +630,10 @@ void hostNodePropFairPriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
                 statCompletionTimes[destNode] += timeTaken * 1000;
             }
         }
-        nodeToShortestPathsMap[destNode][pathIndex].statRateCompleted += 1;
-        nodeToShortestPathsMap[destNode][pathIndex].amtAcked += aMsg->getAmount();
+        thisPath->statRateCompleted += 1;
+        thisPath->amtAcked += aMsg->getAmount();
+        double newRTT = simTime().dbl() - aMsg->getTimeAttempted();
+        thisPath->measuredRTT = 0.1 * newRTT + 0.9 * thisPath->measuredRTT;
     }
 
     //increment transaction amount ack on a path. 
@@ -687,7 +690,6 @@ void hostNodePropFairPriceScheme::handleTriggerTransactionSendMessage(routerMsg*
     int pathIndex = tsMsg->getPathIndex();
     int destNode = tsMsg->getReceiver();
     PathInfo* p = &(nodeToShortestPathsMap[destNode][pathIndex]);
-    p->window = max(p->rateToSendTrans * p->rttMin + _qEcnThreshold + 5, _minWindow);
 
     bool sentSomething = false;
     if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {
@@ -805,6 +807,9 @@ void hostNodePropFairPriceScheme::initializePathInfo(vector<vector<int>> kShorte
         
         signal = registerSignalPerDestPath("rateOfAcks", pathIdx, destNode);
         nodeToShortestPathsMap[destNode][pathIdx].rateOfAcksSignal = signal;
+
+        signal = registerSignalPerDestPath("measuredRTT", pathIdx, destNode);
+        nodeToShortestPathsMap[destNode][pathIdx].measuredRTTSignal = signal;
    }
 }
 
@@ -850,7 +855,7 @@ void hostNodePropFairPriceScheme::initialize() {
     if (myIndex() == 0) {
         // price scheme parameters         
         _reschedulingEnabled = true;
-        _minWindow = 1.0;
+        _minWindow = par("minDCTCPWindow");
         _windowEnabled = true;
 
         _windowAlpha = par("windowAlpha");
@@ -880,6 +885,6 @@ void hostNodePropFairPriceScheme::initialize() {
     scheduleAt(simTime() + 0, computeDemandMsg);
 
     // trigger the message to compute fraction of marked packets
-    routerMsg *triggerRateDecreaseMsg = generateTriggerRateDecreaseMessage();
-    scheduleAt(simTime() + 0, triggerRateDecreaseMsg);
+    /*routerMsg *triggerRateDecreaseMsg = generateTriggerRateDecreaseMessage();
+    scheduleAt(simTime() + 0, triggerRateDecreaseMsg);*/
 }

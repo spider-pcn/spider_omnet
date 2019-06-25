@@ -28,5 +28,6 @@ packet transactionMsg
     bool isAttempted; 
     double largerTxnId;
     bool isMarked;
+    double timeAttempted;
 }
 

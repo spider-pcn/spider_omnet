@@ -171,7 +171,10 @@ simple hostNodePropFairPriceScheme
                 @signal[smoothedFractionMarkedPerDestPerPath*](type="double"); 
 		@statisticTemplate[smoothedFractionMarkedPerDestPerPathTemplate](record=vector, stats);
         	
-                @signal[timeToNextSendPerDestPerPath*](type="simtime_t"); 
+                @signal[measuredRTTPerDestPerPath*](type="double"); 
+		@statisticTemplate[measuredRTTPerDestPerPathTemplate](record=vector, stats);
+               
+                 @signal[timeToNextSendPerDestPerPath*](type="simtime_t"); 
 		@statisticTemplate[timeToNextSendPerDestPerPathTemplate](record=vector, stats);
 		
 		@signal[sumOfTransUnitsInFlightPerDestPerPath*](type="double"); 
