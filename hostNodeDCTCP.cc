@@ -135,13 +135,13 @@ void hostNodeDCTCP::handleTimeOutMessage(routerMsg* ttmsg) {
         }
 
         // check if txn is still in just sender queue, just delete and return then
-        auto iter = find_if(transList->end(),
-           transList->begin(),
+        auto iter = find_if(transList->begin(),
+           transList->end(),
            [&transactionId](const routerMsg* p)
            { transactionMsg *transMsg = check_and_cast<transactionMsg *>(p->getEncapsulatedPacket());
              return transMsg->getTransactionId()  == transactionId; });
 
-        if (iter!=transList->begin()) {
+        if (iter!=transList->end()) {
             deleteTransaction(*iter);
             transList->erase(iter);
             ttmsg->decapsulate();
