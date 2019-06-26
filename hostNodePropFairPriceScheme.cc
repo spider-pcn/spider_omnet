@@ -777,6 +777,7 @@ void hostNodePropFairPriceScheme::initializePathInfo(vector<vector<int>> kShorte
           generateTriggerTransactionSendMessage(kShortestPaths[pathIdx], pathIdx, destNode);
         temp.triggerTransSendMsg = triggerTransSendMsg;
         temp.rateToSendTrans = _minPriceRate;
+        temp.window = _minWindow;
         
         // TODO: change this to something sensible
         temp.rttMin = (kShortestPaths[pathIdx].size() - 1) * 2 * _avgDelay/1000.0;

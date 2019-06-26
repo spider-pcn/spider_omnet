@@ -41,7 +41,7 @@ struct PathInfo{
         simtime_t timeToNextSend = 0;
         double sumOfTransUnitsInFlight = 0;
         double rttMin = 0.0;
-        double window = 100;
+        double window = 1;
         double priceLastSeen = 0;
         double oldSumOfRates = 0;
         routerMsg * triggerTransSendMsg;
