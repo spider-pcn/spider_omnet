@@ -386,6 +386,13 @@ void hostNodeDCTCP::handleClearStateMessage(routerMsg *ttmsg) {
                     nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= 
                         (transPathToAckState[key].amtSent - transPathToAckState[key].amtReceived);
                     transPathToAckState.erase(key);
+                    
+                    // treat this basiscally as one marked packet
+                    // TODO: if more than one packet was in flight 
+                    nodeToShortestPathsMap[destNode][pathIndex].window  -= _windowBeta;
+                    nodeToShortestPathsMap[destNode][pathIndex].window = max(_minDCTCPWindow, 
+                         nodeToShortestPathsMap[destNode][pathIndex].window);
+                    nodeToShortestPathsMap[destNode][pathIndex].markedPackets += 1; 
                 }
             }
         }

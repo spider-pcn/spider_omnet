@@ -662,11 +662,20 @@ void hostNodePropFairPriceScheme::handleClearStateMessage(routerMsg *ttmsg) {
             // ack was not received,safely can consider this txn done
             for (auto p : nodeToShortestPathsMap[destNode]) {
                 int pathIndex = p.first;
+                PathInfo* thisPath = &(nodeToShortestPathsMap[destNode][pathIndex]);
                 tuple<int,int> key = make_tuple(transactionId, pathIndex);
                 if (transPathToAckState.count(key) != 0) {
-                    nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= 
+                    thisPath->sumOfTransUnitsInFlight -= 
                         (transPathToAckState[key].amtSent - transPathToAckState[key].amtReceived);
                     transPathToAckState.erase(key);
+
+                    // treat this basiscally as one marked packet
+                    // TODO: if more than one packet was in flight 
+                    thisPath->window  -= _windowBeta;
+                    thisPath->window = max(_minWindow, thisPath->window);
+                    thisPath->markedPackets += 1; 
+                    thisPath->totalMarkedPacketsForInterval += 1;
+                    thisPath->rateToSendTrans = thisPath->window/(0.9 * thisPath->measuredRTT);
                 }
             }
         }
