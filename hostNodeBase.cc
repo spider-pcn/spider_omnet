@@ -2,7 +2,7 @@
 #include <queue>
 
 #define MSGSIZE 100
-#define MAX_SENDER_PER_DEST_QUEUE 10000
+#define MAX_SENDER_PER_DEST_QUEUE 70000
 
 //global parameters
 map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
@@ -1184,7 +1184,7 @@ void hostNodeBase::initialize() {
         _serviceArrivalWindow = par("serviceArrivalWindow");
 
         _hasQueueCapacity = true;
-        _queueCapacity = 500;
+        _queueCapacity = 10000;
 
         _transStatStart = par("transStatStart");
         _transStatEnd = par("transStatEnd");

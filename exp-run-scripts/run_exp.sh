@@ -19,7 +19,7 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "random_30_routers" "sw_sparse_40_routers" "lnd_gaussian" "lnd_uniform" "toy_dctcp")
 
 
-demand_scale=("1") # "60" "90")
+demand_scale=("5") # "60" "90")
 routing_scheme=$1
 pathChoice=$2
 echo $routing_scheme
@@ -31,14 +31,14 @@ obliviousRoutingEnabled=false
 kspYenEnabled=false
 
 #general parameters that do not affect config names
-simulationLength=4000
-statCollectionRate=100
+simulationLength=1000
+statCollectionRate=1
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
 transStatStart=0
-transStatEnd=20000
+transStatEnd=2000
 mtu=1.0
 
 # scheme specific parameters
@@ -56,8 +56,8 @@ routerQueueDrainTime=5
 serviceArrivalWindow=300
 
 #DCTCP parameters
-windowBeta=0.05
-windowAlpha=0.5
+windowBeta=0.1
+windowAlpha=10
 queueThreshold=20
 balanceThreshold=0.01
 minDCTCPWindow=1
@@ -83,16 +83,16 @@ fi
 
 echo $pathChoice
 
-
+echo "${#num_nodes[@]}"
 
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=( 0 ) #10 11 13 22 24)
+array=( 0 1) #10 11 13 22 24)
 for i in "${array[@]}"
 do
-    for balance in 2000 9000 
+    for balance in 100 #200 300 600 900 #2000 9000 
     do
         echo ${prefix[i]}
         network="${prefix[i]}_circ_net"
@@ -174,7 +174,7 @@ do
                     --generate-json-also \
                     --timeout-value 5 \
                     --scale-amount $scale \
-                    --run-num 0 
+                    --run-num 0 \
 
             # STEP 3: run the experiment
             # routing schemes where number of path choices doesn't matter

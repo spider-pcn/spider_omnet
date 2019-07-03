@@ -633,7 +633,7 @@ void hostNodePropFairPriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
         thisPath->statRateCompleted += 1;
         thisPath->amtAcked += aMsg->getAmount();
         double newRTT = simTime().dbl() - aMsg->getTimeAttempted();
-        thisPath->measuredRTT = 0.1 * newRTT + 0.9 * thisPath->measuredRTT;
+        thisPath->measuredRTT = 0.01 * newRTT + 0.99 * thisPath->measuredRTT;
     }
 
     //increment transaction amount ack on a path. 
