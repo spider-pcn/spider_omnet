@@ -130,6 +130,9 @@ void routerNodeBase::initialize()
 
             signal = registerSignalPerChannel("numInflight", key);
             nodeToPaymentChannel[key].numInflightPerChannelSignal = signal;
+
+            signal = registerSignalPerChannel("timeInFlight", key);
+            nodeToPaymentChannel[key].timeInFlightPerChannelSignal = signal;
         }
     }
     
@@ -366,10 +369,10 @@ bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime
             neighbor->sumServiceWindowTxns -= frontAmt;
         }
 
-        // add amount to outgoing map
-        map<Id, double> *outgoingTransUnits = &(neighbor->outgoingTransUnits);
-        (*outgoingTransUnits)[make_tuple(transMsg->getTransactionId(), 
-                transMsg->getHtlcIndex())] = transMsg->getAmount();
+        // add amount to outgoing map, mark time sent
+        Id thisTrans = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
+        (neighbor->outgoingTransUnits)[thisTrans] = transMsg->getAmount();
+        neighbor->txnSentTimes[thisTrans] = simTime();
       
         // update balance
         int amt = transMsg->getAmount();
@@ -581,18 +584,21 @@ void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
 
     // this is previous node on the ack path, so next node on the forward path
     // remove txn from outgone txn list
+    Id thisTrans = make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex());
     int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
-    map<Id, double> *outgoingTransUnits = &(nodeToPaymentChannel[prevNode].outgoingTransUnits);
-    (*outgoingTransUnits).erase(make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex()));
+    PaymentChannel *prevChannel = &(nodeToPaymentChannel[prevNode]);
+    double timeInflight = (simTime() - prevChannel->txnSentTimes[thisTrans]).dbl();
+    (prevChannel->outgoingTransUnits).erase(thisTrans);
+    (prevChannel->txnSentTimes).erase(thisTrans);
    
     if (aMsg->getIsSuccess() == false){
         // increment funds on this channel unless this is the node that caused the fauilure
         // in which case funds were never decremented in the first place
         if (aMsg->getFailedHopNum() < ttmsg->getHopCount()) {
-            double updatedBalance = nodeToPaymentChannel[prevNode].balance + aMsg->getAmount();
-            nodeToPaymentChannel[prevNode].balanceEWMA = 
-                (1 -_ewmaFactor) * nodeToPaymentChannel[prevNode].balanceEWMA + (_ewmaFactor) * updatedBalance; 
-            nodeToPaymentChannel[prevNode].balance = updatedBalance;
+            double updatedBalance = prevChannel->balance + aMsg->getAmount();
+            prevChannel->balanceEWMA = 
+                (1 -_ewmaFactor) * prevChannel->balanceEWMA + (_ewmaFactor) * updatedBalance; 
+            prevChannel->balance = updatedBalance;
         }
         
         // this is nextNode on the ack path and so prev node in the forward path or rather
@@ -602,8 +608,13 @@ void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
         (*incomingTransUnits).erase(make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex()));
     }
     else { 
-        routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), prevNode, aMsg->getAmount(), aMsg->getHtlcIndex() );
-        nodeToPaymentChannel[prevNode].numUpdateMessages += 1;
+        // mark the time it spent inflight
+        prevChannel->sumTimeInFlight += timeInflight;
+        prevChannel->timeInFlightSamples += 1;
+        
+        routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), prevNode, 
+                aMsg->getAmount(), aMsg->getHtlcIndex() );
+        prevChannel->numUpdateMessages += 1;
         forwardMessage(uMsg);
     }
     forwardMessage(ttmsg);
@@ -693,6 +704,10 @@ void routerNodeBase::handleStatMessage(routerMsg* ttmsg){
             emit(p->numInflightPerChannelSignal, getTotalAmount(p->incomingTransUnits) +
                     getTotalAmount(p->outgoingTransUnits));
             emit(p->queueDelayEWMASignal, p->queueDelayEWMA);
+
+            emit(p->timeInFlightPerChannelSignal, p->sumTimeInFlight/p->timeInFlightSamples);
+            p->sumTimeInFlight = 0;
+            p->timeInFlightSamples = 0;
         }
     }
 }

@@ -789,15 +789,18 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
     
     // this is previous node on the ack path, so next node on the forward path
     // remove txn from outgone txn list
+    Id thisTrans = make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex());
     int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
-    map<Id, double> *outgoingTransUnits = &(nodeToPaymentChannel[prevNode].outgoingTransUnits);
-    (*outgoingTransUnits).erase(make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex()));
+    PaymentChannel *prevChannel = &(nodeToPaymentChannel[prevNode]);
+    double timeInflight = (simTime() - prevChannel->txnSentTimes[thisTrans]).dbl();
+    (prevChannel->outgoingTransUnits).erase(thisTrans);
+    (prevChannel->txnSentTimes).erase(thisTrans);
    
     if (aMsg->getIsSuccess() == false) {
         // increment funds on this channel unless this is the node that caused the fauilure
         // in which case funds were never decremented in the first place
         if (aMsg->getFailedHopNum() < ttmsg->getHopCount())
-            nodeToPaymentChannel[prevNode].balance += aMsg->getAmount();
+           prevChannel->balance += aMsg->getAmount();
 
         // no relevant incoming_trans_units because no node on fwd path before this
         if (ttmsg->getHopCount() < ttmsg->getRoute().size() - 1) {
@@ -809,9 +812,13 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
         }
     }
     else { 
+        // mark the time it spent inflight
+        prevChannel->sumTimeInFlight += timeInflight;
+        prevChannel->timeInFlightSamples += 1;
+
         routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), 
                 prevNode, aMsg->getAmount(), aMsg->getHtlcIndex() );
-        nodeToPaymentChannel[prevNode].numUpdateMessages += 1;
+        prevChannel->numUpdateMessages += 1;
         forwardMessage(uMsg);
     }
     
@@ -907,6 +914,9 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
             
             emit(p->amtInQueuePerChannelSignal, getTotalAmount(p->queuedTransUnits));
             emit(p->balancePerChannelSignal, p->balance);
+            emit(p->timeInFlightPerChannelSignal, p->sumTimeInFlight/p->timeInFlightSamples);
+            p->sumTimeInFlight = 0;
+            p->timeInFlightSamples = 0;
         }
     }
 
@@ -1120,10 +1130,10 @@ bool hostNodeBase::forwardTransactionMessage(routerMsg *msg, simtime_t arrivalTi
             neighbor->sumServiceWindowTxns -= frontAmt;
         }
 
-        // add amount to outgoing map
-        map<Id, double> *outgoingTransUnits = &(neighbor->outgoingTransUnits);
-        (*outgoingTransUnits)[make_tuple(transMsg->getTransactionId(), 
-                transMsg->getHtlcIndex())] = transMsg->getAmount();
+        // add amount to outgoing map, mark time sent
+        Id thisTrans = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
+        (neighbor->outgoingTransUnits)[thisTrans] = transMsg->getAmount();
+        neighbor->txnSentTimes[thisTrans] = simTime();
       
         // update balance
         int amt = transMsg->getAmount();
@@ -1131,7 +1141,7 @@ bool hostNodeBase::forwardTransactionMessage(routerMsg *msg, simtime_t arrivalTi
         neighbor->balance = newBalance;
         neighbor-> balanceEWMA = (1 -_ewmaFactor) * neighbor->balanceEWMA + 
             (_ewmaFactor) * newBalance;
-        
+
         if (_loggingEnabled) cout << "forwardTransactionMsg send: " << simTime() << endl;
         send(msg, nodeToPaymentChannel[nextDest].gate);
         return true;
@@ -1295,6 +1305,9 @@ void hostNodeBase::initialize() {
 
             signal = registerSignalPerChannel("balance", key);
             nodeToPaymentChannel[key].balancePerChannelSignal = signal;
+            
+            signal = registerSignalPerChannel("timeInFlight", key);
+            nodeToPaymentChannel[key].timeInFlightPerChannelSignal = signal;
         }
     }
 

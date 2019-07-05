@@ -28,6 +28,9 @@ parser.add_argument('--sca_file',
 parser.add_argument('--balance',
         action='store_true',
         help='Plot balance information for all routers')
+parser.add_argument('--time_inflight',
+        action='store_true',
+        help='Plot information on time spent in flight for all routers\' channels ')
 parser.add_argument('--inflight',
         action='store_true',
         help='Plot inflight funds information for all routers (need to be used with --balance to work)')
@@ -402,6 +405,9 @@ def plot_per_payment_channel_stats(args, text_to_add):
                 inflight_data_to_plot = aggregate_inflight_info(data_to_plot)
                 plot_relevant_stats(inflight_data_to_plot, pdf, "Inflight Funds")'''
 
+        if args.time_inflight:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "timeInFlight", True)
+            plot_relevant_stats(data_to_plot, pdf, "Time spent in flight per channel(s)")
             
         if args.queue_info:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numInQueue", True)

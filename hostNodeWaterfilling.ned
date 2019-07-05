@@ -112,6 +112,9 @@ simple hostNodeWaterfilling
 		@signal[balancePerChannel*](type="double"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
 		
+		@signal[timeInFlightPerChannel*](type="double"); 
+		@statisticTemplate[timeInFlightPerChannelTemplate](record=vector, stats);   
+		
 		@signal[bottleneckPerDestPerPath*](type="long"); 
 		@statisticTemplate[bottleneckPerDestPerPathTemplate](record=vector, stats);
 		

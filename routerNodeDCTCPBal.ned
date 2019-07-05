@@ -24,6 +24,9 @@ simple routerNodeDCTCPBal
 		@signal[balancePerChannel*](type="double"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
 		
+		@signal[timeInFlightPerChannel*](type="double"); 
+		@statisticTemplate[timeInFlightPerChannelTemplate](record=vector, stats);   
+		
 		//price scheme payment channel specific signals
 		@signal[nValuePerChannel*](type="double"); 
 		@statisticTemplate[nValuePerChannelTemplate](record=vector, stats);

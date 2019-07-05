@@ -36,7 +36,14 @@ public:
     
     double sumArrivalWindowTxns = 0;
     double sumServiceWindowTxns = 0;
-    list<tuple<double, simtime_t, simtime_t>> serviceArrivalTimeStamps; //each entry is amount and service and arrival time of 
+    list<tuple<double, simtime_t, simtime_t>> serviceArrivalTimeStamps; //each entry is amount and service and arrival time of
+    
+    // to keep track of how long every transaction spent in flight
+    map<Id, simtime_t> txnSentTimes;
+    double sumTimeInFlight = 0;
+    double timeInFlightSamples = 0;
+    simsignal_t timeInFlightPerChannelSignal;
+     
     // last n serviced txns
     list<tuple<double, simtime_t>> arrivalTimeStamps; 
     //each entry arrival time of last n transactions that arrived and their sizes (may have been dropped)
