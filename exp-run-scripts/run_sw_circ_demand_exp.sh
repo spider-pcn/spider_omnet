@@ -4,7 +4,6 @@ GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
 balance=100
 
-demand_scale=("1" "3" "5" "7") 
 routing_scheme=$1
 capacity_type=$2
 pathChoice=$3
@@ -18,14 +17,14 @@ obliviousRoutingEnabled=false
 kspYenEnabled=false
 
 #general parameters that do not affect config names
-simulationLength=3100
-statCollectionRate=100
+simulationLength=1010
+statCollectionRate=10
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-transStatStart=2000
-transStatEnd=3000
+transStatStart=800
+transStatEnd=1000
 mtu=1.0
 
 # scheme specific parameters
@@ -43,9 +42,9 @@ routerQueueDrainTime=5
 serviceArrivalWindow=300
 
 #DCTCP parameters
-windowBeta=0.2
-windowAlpha=0.5
-queueThreshold=40
+windowBeta=0.1
+windowAlpha=10
+queueThreshold=160
 balanceThreshold=0.1
 minDCTCPWindow=1
 rateDecreaseFrequency=3.0
@@ -84,8 +83,9 @@ fi
 
 echo $pathChoice
 
-balance_scale=("600" "1200" "2400" "4800" "9600") 
-for num in {0..4}
+#balance_scale=("600" "1200") #"50" "75" "150" "300" "600" "1200" "2400" "4800")
+balance_scale=("100" "200" "400" "800" "1600" "3200") #"1200" "2400" "4800" "9600") 
+for num in 0 1 #{0..4}
 do
     echo "doing run $num"
     for balance in "${balance_scale[@]}"
@@ -231,7 +231,7 @@ do
               --balance \
               --queue_info --timeouts --frac_completed \
               --inflight --timeouts_sender \
-              --waiting --bottlenecks
+              --waiting --bottlenecks --time_inflight 
         
 
         #routing schemes where number of path choices matter
@@ -250,7 +250,7 @@ do
                   --balance \
                   --queue_info --timeouts --frac_completed \
                   --frac_completed_window \
-                  --inflight --timeouts_sender \
+                  --inflight --timeouts_sender --time_inflight \
                   --waiting --bottlenecks --probabilities \
                   --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
                   --inflight_incoming --rate_to_send --price --mu_remote --demand \

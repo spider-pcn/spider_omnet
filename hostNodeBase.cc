@@ -1194,13 +1194,13 @@ void hostNodeBase::initialize() {
         _serviceArrivalWindow = par("serviceArrivalWindow");
 
         _hasQueueCapacity = true;
-        _queueCapacity = 10000;
+        _queueCapacity = 12000;
 
         _transStatStart = par("transStatStart");
         _transStatEnd = par("transStatEnd");
-        _waterfillingStartTime = 1000;
-        _landmarkRoutingStartTime = 1000;
-        _shortestPathStartTime = 1000;
+        _waterfillingStartTime = 200;
+        _landmarkRoutingStartTime = 0;
+        _shortestPathStartTime = 0;
         _shortestPathEndTime = 5000;
 
         _widestPathsEnabled = par("widestPathsEnabled");
