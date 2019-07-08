@@ -17,14 +17,15 @@ obliviousRoutingEnabled=false
 kspYenEnabled=false
 
 #general parameters that do not affect config names
-simulationLength=3100
-statCollectionRate=100
+simulationLength=1010
+statCollectionRate=10
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-transStatStart=2000
-transStatEnd=3000
+transStatStart=800
+transStatEnd=1000
+mtu=1.0
 
 # scheme specific parameters
 eta=0.025
@@ -40,13 +41,21 @@ xi=1
 routerQueueDrainTime=5
 serviceArrivalWindow=300
 
-for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme"
+#DCTCP parameters
+windowBeta=0.1
+windowAlpha=10
+queueThreshold=160
+balanceThreshold=0.1
+minDCTCPWindow=1
+rateDecreaseFrequency=3.0
+
+for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
 do
     cp hostNode${suffix}.ned ${PATH_NAME}
     cp routerNode${suffix}.ned ${PATH_NAME}
 done
 cp hostNodeLandmarkRouting.ned ${PATH_NAME}
-
+cp routerNodeDCTCPBal.ned ${PATH_NAME}
 
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_NAME}
@@ -74,15 +83,15 @@ fi
 
 echo $pathChoice
 
-balance_scale=("6400" "3200" "1600" "800" "400" "100") 
-for num in {0..4}
+balance_scale=("100" "200" "400" "800" "1600" "3200") #"1200" "2400" "4800" "9600") 
+for num in 0 1 #{0..4}
 do
     echo "doing run $num"
     for balance in "${balance_scale[@]}"
     do
         network="${prefix}_circ_net"
         topofile="${PATH_NAME}${prefix}_topo${balance}.txt"
-        graph_type="small_world"
+        graph_type="scale_free"
         delay="30"
         scale="3"
         
@@ -178,7 +187,14 @@ do
                     --transStatEnd $transStatEnd\
                     --path-choice $pathChoice\
                     --balance $balance\
-                    --circ-num $num
+                    --circ-num $num \
+                    --window-alpha $windowAlpha \
+                    --window-beta $windowBeta \
+                    --queue-threshold $queueThreshold \
+                    --balance-ecn-threshold $balanceThreshold \
+                    --mtu $mtu\
+                    --min-dctcp-window $minDCTCPWindow\
+                    --rate-decrease-frequency $rateDecreaseFrequency
 
             # run the omnetexecutable with the right parameters
             # in the background
@@ -214,7 +230,7 @@ do
               --balance \
               --queue_info --timeouts --frac_completed \
               --inflight --timeouts_sender \
-              --waiting --bottlenecks
+              --waiting --bottlenecks --time_inflight 
         
 
         #routing schemes where number of path choices matter
@@ -233,11 +249,11 @@ do
                   --balance \
                   --queue_info --timeouts --frac_completed \
                   --frac_completed_window \
-                  --inflight --timeouts_sender \
+                  --inflight --timeouts_sender --time_inflight \
                   --waiting --bottlenecks --probabilities \
                   --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
                   --inflight_incoming --rate_to_send --price --mu_remote --demand \
-                  --rate_sent --amt_inflight_per_path
+                  --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked
               done
           fi
 
