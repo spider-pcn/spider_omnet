@@ -70,7 +70,7 @@ workload_prefix="sf_50_routers"
 if [ -z "$capacity_type" ]; then
     random_capacity=false
     lnd_capacity=false
-    echo "uniform dist"
+    echo "constant capacity"
 elif [ $capacity_type == "random" ]; then
     random_capacity=true
     prefix="sf_50_routers_randomCap"
