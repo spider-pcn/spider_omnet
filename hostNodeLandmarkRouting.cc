@@ -172,14 +172,11 @@ void hostNodeLandmarkRouting::handleTimeOutMessage(routerMsg* ttmsg){
             }
             
             if (transPathToAckState[key].amtSent > transPathToAckState[key].amtReceived + _epsilon) {
-                /*routerMsg* lrTimeOutMsg = generateTimeOutMessageForPath(
-                    nodeToShortestPathsMap[destination][p.first].path, 
-                    transactionId, destination);*/
                 // TODO: what if a transaction on two different paths have same next hop?
-                /*int nextNode = (lrTimeOutMsg->getRoute())[lrTimeOutMsg->getHopCount()+1];
+                int nextNode = nodeToShortestPathsMap[destination][pathIndex].path[1];
                 CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
                         simTime(), -1, nextNode, destination);
-                canceledTransactions.insert(ct);*/
+                canceledTransactions.insert(ct);
                 // forwardMessage(lrTimeOutMsg);
             }
             else {

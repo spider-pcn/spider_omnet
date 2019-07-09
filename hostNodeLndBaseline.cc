@@ -263,6 +263,9 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
                 }
             }
         }
+        else {
+            statNumTimedOut[destNode] += 1;
+        }
         aMsg->decapsulate();
         delete transMsg;
         hostNodeBase::handleAckMessage(msg); 
