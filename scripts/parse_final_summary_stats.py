@@ -2,6 +2,7 @@ import sys
 import argparse
 import statistics as stat
 from config import *
+import os
 
 delay = 30
 
@@ -51,7 +52,7 @@ path_num_list = args.path_num_list
 queue_threshold_list = args.queue_threshold_list
 
 output_file = open(GGPLOT_DATA_DIR + args.save, "w+")
-output_file.write("Scheme,Credit,NumPaths,PathType,Threshold,SuccRatio,SuccRationMin,SuccRatioMax,SuccVolume,SuccVolumeMin," +\
+output_file.write("Scheme,Credit,NumPaths,PathType,Threshold,SuccRatio,SuccRatioMin,SuccRatioMax,SuccVolume,SuccVolumeMin," +\
         "SuccVolumeMax,CompTime,CompTimeMin,CompTimeMax\n")
 
 # go through all relevant files and aggregate info
@@ -63,23 +64,27 @@ for credit in credit_list:
                     succ_ratios, succ_vols,comp_times = [], [], []
                     for run_num in range(0, args.num_max  + 1):
                         file_name = topo + str(credit) + "_" + args.payment_graph_type + str(run_num) + \
-                            "_delay" + str(delay) + "_demand" + str(demand) + "_" + scheme + "_" + path_type \
-                            + "_" + str(num_paths) 
+                            "_delay" + str(delay) + "_demand" + str(demand) + "_" + scheme + "_" + path_type 
+                        if scheme != "shortestPath":
+                            file_name += "_" + str(num_paths) 
                         if queue_threshold is not None:
                             file_name += "_" + str(queue_threshold)
                         file_name += "_summary.txt"
                         
-                        with open(SUMMARY_DIR + file_name) as f:
-                            for line in f:
-                                if line.startswith("Success ratio"):
-                                    succ_ratio = float(line.split(" ")[4])
-                                elif line.startswith("Success volume"):
-                                    succ_volume = float(line.split(" ")[5])
-                                elif line.startswith("Avg completion time"):
-                                    comp_time = float(line.split(" ")[3][:-1])
-                            succ_ratios.append(succ_ratio * 100)
-                            succ_vols.append(succ_volume * 100)
-                            comp_times.append(comp_time)
+                        try: 
+                            with open(SUMMARY_DIR + file_name) as f:
+                                for line in f:
+                                    if line.startswith("Success ratio"):
+                                        succ_ratio = float(line.split(" ")[4])
+                                    elif line.startswith("Success volume"):
+                                        succ_volume = float(line.split(" ")[5])
+                                    elif line.startswith("Avg completion time"):
+                                        comp_time = float(line.split(" ")[3][:-1])
+                                succ_ratios.append(succ_ratio * 100)
+                                succ_vols.append(succ_volume * 100)
+                                comp_times.append(comp_time)
+                        except IOError:
+                            continue
 
                     output_file.write(SCHEME_CODE[scheme] + "," + str(credit) +  "," \
                             + str(num_paths) + "," \

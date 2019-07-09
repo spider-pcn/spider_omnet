@@ -85,7 +85,7 @@ echo $pathChoice
 
 #balance_scale=("600" "1200") #"50" "75" "150" "300" "600" "1200" "2400" "4800")
 balance_scale=("100" "200" "400" "800" "1600" "3200") #"1200" "2400" "4800" "9600") 
-for num in 0 1 #{0..4}
+for num in {0..4}
 do
     echo "doing run $num"
     for balance in "${balance_scale[@]}"
