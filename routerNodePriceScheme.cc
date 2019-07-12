@@ -143,8 +143,8 @@ void routerNodePriceScheme::handleStatMessage(routerMsg* ttmsg) {
             
             emit(p->nValueSignal, p->lastNValue);
             emit(p->fakeRebalanceQSignal, p->fakeRebalancingQueue);
-            emit(p->inflightOutgoingSignal, getTotalAmount(p->outgoingTransUnits));
-            emit(p->inflightIncomingSignal, getTotalAmount(p->incomingTransUnits));
+            emit(p->inflightOutgoingSignal, getTotalAmountOutgoingInflight(it->first));
+            emit(p->inflightIncomingSignal, getTotalAmountIncomingInflight(it->first));
             emit(p->serviceRateSignal, p->arrivalRate/p->serviceRate);
             //emit(p->arrivalRateSignal, p->arrivalRate);
             emit(p->lambdaSignal, p->lambda);
@@ -214,7 +214,7 @@ void routerNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
         
         neighborChannel->serviceRate = neighborChannel->sumServiceWindowTxns / serviceTimeDiff;
         neighborChannel->arrivalRate = neighborChannel->sumArrivalWindowTxns / arrivalTimeDiff;
-        neighborChannel->lastQueueSize = getTotalAmount(neighborChannel->queuedTransUnits);
+        neighborChannel->lastQueueSize = getTotalAmount(it->first);
 
         routerMsg * priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue, 
                 neighborChannel->serviceRate, neighborChannel->arrivalRate, 
@@ -245,14 +245,14 @@ void routerNodePriceScheme::handlePriceUpdateMessage(routerMsg* ttmsg){
                     make_tuple(myIndex(), sender);
 
     PaymentChannel *neighborChannel = &(nodeToPaymentChannel[sender]);
-    double inflightRemote = min(getTotalAmount(neighborChannel->incomingTransUnits) + 
+    double inflightRemote = min(getTotalAmountIncomingInflight(sender) + 
         serviceRateRemote * _avgDelay/1000, _capacities[senderReceiverTuple]); 
 
     // collect all local stats
     double xLocal = neighborChannel->xLocal;
     double updateRateLocal = neighborChannel->updateRate;
     double nLocal = neighborChannel->lastNValue;
-    double inflightLocal = min(getTotalAmount(neighborChannel->outgoingTransUnits) + 
+    double inflightLocal = min(getTotalAmountOutgoingInflight(sender) + 
         updateRateLocal* _avgDelay/1000.0, _capacities[senderReceiverTuple]);
     double qLocal = neighborChannel->lastQueueSize;
     double serviceRateLocal = neighborChannel->serviceRate;

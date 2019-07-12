@@ -702,13 +702,13 @@ void hostNodePropFairPriceScheme::handleTriggerTransactionSendMessage(routerMsg*
 
     bool sentSomething = false;
     if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {
-        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
+        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.back();
         transactionMsg *transMsg = 
            check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
         
         if (p->sumOfTransUnitsInFlight + transMsg->getAmount() <= p->window){
             //remove the transaction $tu$ at the head of the queue
-            nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
+            nodeToDestInfo[destNode].transWaitingToBeSent.pop_back();
             sentSomething = true;
             
             //Send the transaction $tu$ along the corresponding path.

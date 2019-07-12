@@ -19,10 +19,8 @@ bool routerNodeDCTCP::forwardTransactionMessage(routerMsg *msg, int dest, simtim
     vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
     q = &(neighbor->queuedTransUnits);
         
-    if (getTotalAmount(*q) > _qEcnThreshold) {
-        msg->decapsulate();
+    if (getTotalAmount(nextDest) > _qEcnThreshold) {
         transMsg->setIsMarked(true); 
-        msg->encapsulate(transMsg);
     }
     return routerNodeBase::forwardTransactionMessage(msg, dest, arrivalTime);
 }

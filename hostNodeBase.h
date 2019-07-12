@@ -96,6 +96,9 @@ class hostNodeBase : public cSimpleModule {
         //helper functions common to all algorithms
         virtual bool printNodeToPaymentChannel();
         virtual int sampleFromDistribution(vector<double> probabilities);
+        virtual double getTotalAmount(int x);
+        virtual double getTotalAmountIncomingInflight(int x);
+        virtual double getTotalAmountOutgoingInflight(int x);
 
         virtual void pushIntoSenderQueue(DestInfo* destInfo, routerMsg* msg);
         virtual void deleteTransaction(routerMsg* msg);

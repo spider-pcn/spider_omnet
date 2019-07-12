@@ -36,6 +36,9 @@ class routerNodeBase : public cSimpleModule
         virtual void checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id, simtime_t >> queuedTransUnits, int node);
         virtual void printNodeToPaymentChannel();
         virtual simsignal_t registerSignalPerChannel(string signalStart, int id);
+        virtual double getTotalAmount(int x);
+        virtual double getTotalAmountIncomingInflight(int x);
+        virtual double getTotalAmountOutgoingInflight(int x);
 
         // core simulator functions 
         virtual void initialize() override;

@@ -669,7 +669,7 @@ void hostNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
         
         neighborChannel->serviceRate = neighborChannel->sumServiceWindowTxns / serviceTimeDiff;
         neighborChannel->arrivalRate = neighborChannel->sumArrivalWindowTxns / arrivalTimeDiff;
-        neighborChannel->lastQueueSize = getTotalAmount(neighborChannel->queuedTransUnits);
+        neighborChannel->lastQueueSize = getTotalAmount(it->first);
 
         routerMsg * priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue, 
                 neighborChannel->serviceRate, neighborChannel->arrivalRate, 
@@ -719,11 +719,11 @@ void hostNodePriceScheme::handlePriceUpdateMessage(routerMsg* ttmsg){
                     make_tuple(myIndex(), sender);
     
     PaymentChannel *neighborChannel = &(nodeToPaymentChannel[sender]);
-    double inflightRemote = min(getTotalAmount(neighborChannel->incomingTransUnits) + 
+    double inflightRemote = min(getTotalAmountIncomingInflight(sender) + 
         serviceRateRemote * _avgDelay/1000, _capacities[senderReceiverTuple]); 
     double updateRateLocal = neighborChannel->updateRate;
     double nLocal = neighborChannel->lastNValue;
-    double inflightLocal = min(getTotalAmount(neighborChannel->outgoingTransUnits) + 
+    double inflightLocal = min(getTotalAmountOutgoingInflight(sender) + 
         updateRateLocal* _avgDelay/1000.0, _capacities[senderReceiverTuple]);
     double qLocal = neighborChannel->lastQueueSize; 
     double serviceRateLocal = neighborChannel->serviceRate;
@@ -987,8 +987,8 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
     if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0 && (!_windowEnabled || 
             (_windowEnabled && p->sumOfTransUnitsInFlight < p->window))){
         //remove the transaction $tu$ at the head of the queue
-        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
-        nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
+        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.back();
+        nodeToDestInfo[destNode].transWaitingToBeSent.pop_back();
         transactionMsg *transMsg = 
            check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
         

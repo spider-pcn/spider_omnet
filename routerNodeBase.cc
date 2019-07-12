@@ -48,6 +48,22 @@ void routerNodeBase:: printNodeToPaymentChannel(){
     cout<<endl;
 }
 
+/* get total amount on queue to node x */
+double routerNodeBase::getTotalAmount(int x) {
+    return nodeToPaymentChannel[x].totalAmtInQueue;
+} 
+
+/* get total amount inflight incoming node x */
+double routerNodeBase::getTotalAmountIncomingInflight(int x) {
+    return nodeToPaymentChannel[x].totalAmtIncomingInflight;
+} 
+
+/* get total amount inflight outgoing node x */
+double routerNodeBase::getTotalAmountOutgoingInflight(int x) {
+    return nodeToPaymentChannel[x].totalAmtOutgoingInflight;
+} 
+
+
 /* register a signal per channel of the particular type passed in
  * and return the signal created
  */
@@ -373,6 +389,7 @@ bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime
         Id thisTrans = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
         (neighbor->outgoingTransUnits)[thisTrans] = transMsg->getAmount();
         neighbor->txnSentTimes[thisTrans] = simTime();
+        neighbor->totalAmtOutgoingInflight += transMsg->getAmount();
       
         // update balance
         int amt = transMsg->getAmount();
@@ -380,6 +397,7 @@ bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime
         neighbor->balance = newBalance;
         neighbor-> balanceEWMA = (1 -_ewmaFactor) * neighbor->balanceEWMA + 
             (_ewmaFactor) * newBalance;
+        neighbor->totalAmtInQueue -= amt;
 
         if (_loggingEnabled) cout << "forwardTransactionMsg send: " << simTime() << endl;
         send(msg, nodeToPaymentChannel[nextDest].gate);
@@ -485,6 +503,7 @@ void routerNodeBase::handleTransactionMessage(routerMsg* ttmsg) {
     int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
     map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
     (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = transMsg->getAmount();
+    nodeToPaymentChannel[prevNode].totalAmtIncomingInflight += transMsg->getAmount();
 
     // find the outgoing channel to check capacity/ability to send on it
     int nextNode = ttmsg->getRoute()[hopcount+1];
@@ -518,7 +537,7 @@ void routerNodeBase::handleTransactionMessage(routerMsg* ttmsg) {
             routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
             handleAckMessage(failedAckMsg);
         }
-    } else if (_hasQueueCapacity && _queueCapacity<= getTotalAmount(*q)) { 
+    } else if (_hasQueueCapacity && _queueCapacity<= getTotalAmount(nextNode)) { 
         //failed transaction, queue at capacity, others are in queue so no point trying this txn
         routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
         handleAckMessage(failedAckMsg);
@@ -526,6 +545,7 @@ void routerNodeBase::handleTransactionMessage(routerMsg* ttmsg) {
         // add to queue and process in order of priority
         (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
                ttmsg, make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex()), simTime()));
+        neighbor->totalAmtInQueue += transMsg->getAmount();
         push_heap((*q).begin(), (*q).end(), sortFIFO);
         processTransUnits(nextNode, *q);
     }
@@ -590,6 +610,7 @@ void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
     double timeInflight = (simTime() - prevChannel->txnSentTimes[thisTrans]).dbl();
     (prevChannel->outgoingTransUnits).erase(thisTrans);
     (prevChannel->txnSentTimes).erase(thisTrans);
+    prevChannel->totalAmtOutgoingInflight -= aMsg->getAmount();
    
     if (aMsg->getIsSuccess() == false){
         // increment funds on this channel unless this is the node that caused the fauilure
@@ -606,6 +627,7 @@ void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
         int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
         map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[nextNode].incomingTransUnits);
         (*incomingTransUnits).erase(make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex()));
+        nodeToPaymentChannel[nextNode].totalAmtIncomingInflight -= aMsg->getAmount();
     }
     else { 
         // mark the time it spent inflight
@@ -667,6 +689,7 @@ void routerNodeBase::handleUpdateMessage(routerMsg* msg) {
     //remove transaction from incoming_trans_units
     map<Id, double> *incomingTransUnits = &(prevChannel->incomingTransUnits);
     (*incomingTransUnits).erase(make_tuple(uMsg->getTransactionId(), uMsg->getHtlcIndex()));
+    prevChannel->totalAmtIncomingInflight -= uMsg->getAmount();
 
     msg->decapsulate();
     delete uMsg;
@@ -696,13 +719,13 @@ void routerNodeBase::handleStatMessage(routerMsg* ttmsg){
         PaymentChannel *p = &(it->second);
 
         if (simTime() > _transStatStart && simTime() < _transStatEnd)
-            p->queueSizeSum += getTotalAmount(p->queuedTransUnits);
+            p->queueSizeSum += getTotalAmount(it->first);
 
         if (_signalsEnabled) {
-            emit(p->amtInQueuePerChannelSignal, getTotalAmount(p->queuedTransUnits));
+            emit(p->amtInQueuePerChannelSignal, getTotalAmount(it->first));
             emit(p->balancePerChannelSignal, p->balance);
-            emit(p->numInflightPerChannelSignal, getTotalAmount(p->incomingTransUnits) +
-                    getTotalAmount(p->outgoingTransUnits));
+            emit(p->numInflightPerChannelSignal, getTotalAmountIncomingInflight(it->first) +
+                    getTotalAmountOutgoingInflight(it->first));
             emit(p->queueDelayEWMASignal, p->queueDelayEWMA);
 
             emit(p->timeInFlightPerChannelSignal, p->sumTimeInFlight/p->timeInFlightSamples);
@@ -736,11 +759,11 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
             neighborChannel->queueDelayEWMA = 0.6*curQueueingDelay + 0.4*neighborChannel->queueDelayEWMA;
 
             if (neighborChannel->queueDelayEWMA > _queueDelayThreshold) {
-                neighborChannel->balance += getTotalAmount(neighborChannel->queuedTransUnits);
+                neighborChannel->balance += getTotalAmount(it->first);
                 tuple<int, int> senderReceiverTuple = 
                     (it->first < myIndex()) ? make_tuple(it->first, myIndex()) :
                     make_tuple(myIndex(), it->first);
-                    _capacities[senderReceiverTuple] += getTotalAmount(neighborChannel->queuedTransUnits);
+                    _capacities[senderReceiverTuple] += getTotalAmount(it->first);
             
                 neighborChannel->numRebalanceEvents += 1; 
                 processTransUnits(it->first, neighborChannel->queuedTransUnits);
@@ -769,18 +792,19 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                 
                 // delete all occurences of this transaction in the queue
                 // especially if there are splits
-                while (iterQueue != (*queuedTransUnits).end()){
+                if (iterQueue != (*queuedTransUnits).end()){
                     routerMsg * rMsg = get<2>(*iterQueue);
                     auto tMsg = rMsg->getEncapsulatedPacket();
                     rMsg->decapsulate();
                     delete tMsg;
                     delete rMsg;
                     iterQueue = (*queuedTransUnits).erase(iterQueue);
+                    nodeToPaymentChannel[nextNode].totalAmtInQueue -= get<1>(*iterQueue);
                     
-                    iterQueue = find_if((*queuedTransUnits).begin(),
+                    /*iterQueue = find_if((*queuedTransUnits).begin(),
                      (*queuedTransUnits).end(),
                      [&transactionId](const tuple<int, double, routerMsg*, Id, simtime_t>& p)
-                     { return (get<0>(get<3>(p)) == transactionId); });
+                     { return (get<0>(get<3>(p)) == transactionId); });*/
                 }
                 
                 // resort the queue based on priority
@@ -797,13 +821,14 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                   [&transactionId](const pair<tuple<int, int >, double> & p)
                   { return get<0>(p.first) == transactionId; });
                 
-                while (iterIncoming != (*incomingTransUnits).end()){
+                if (iterIncoming != (*incomingTransUnits).end()){
                     iterIncoming = (*incomingTransUnits).erase(iterIncoming);
+                    nodeToPaymentChannel[prevNode].totalAmtIncomingInflight -= iterIncoming->second;
 
-                    iterIncoming = find_if((*incomingTransUnits).begin(),
+                    /*iterIncoming = find_if((*incomingTransUnits).begin(),
                          (*incomingTransUnits).end(),
                         [&transactionId](const pair<tuple<int, int >, double> & p)
-                        { return get<0>(p.first) == transactionId; });
+                        { return get<0>(p.first) == transactionId; })*/;
                 }
             }
 
@@ -817,7 +842,7 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                   [&transactionId](const pair<tuple<int, int >, double> & p)
                   { return get<0>(p.first) == transactionId; });
                 
-                while (iterOutgoing != (*outgoingTransUnits).end()){
+                if (iterOutgoing != (*outgoingTransUnits).end()){
                     double amount = iterOutgoing -> second;
                     iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
               
@@ -826,11 +851,12 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                     nextChannel->balance = updatedBalance; 
                     nextChannel->balanceEWMA = (1 -_ewmaFactor) * nextChannel->balanceEWMA + 
                         (_ewmaFactor) * updatedBalance;
+                    nextChannel->totalAmtOutgoingInflight -= amount;
 
-                    iterOutgoing = find_if((*outgoingTransUnits).begin(),
+                    /*iterOutgoing = find_if((*outgoingTransUnits).begin(),
                         (*outgoingTransUnits).end(),
                         [&transactionId](const pair<tuple<int, int >, double> & p)
-                        { return get<0>(p.first) == transactionId; });
+                        { return get<0>(p.first) == transactionId; });*/
                 }
             }
             

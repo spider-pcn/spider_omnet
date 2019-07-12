@@ -284,8 +284,8 @@ void hostNodeWaterfilling::handleProbeMessage(routerMsg* ttmsg){
         if (destNodeToNumTransPending[destNode] > 0){
             // service first transaction on path
             if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {
-                handleTransactionMessageSpecialized(nodeToDestInfo[destNode].transWaitingToBeSent.front());
-                nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
+                handleTransactionMessageSpecialized(nodeToDestInfo[destNode].transWaitingToBeSent.back());
+                nodeToDestInfo[destNode].transWaitingToBeSent.pop_back();
             }
             
             //reset the probe message to send again

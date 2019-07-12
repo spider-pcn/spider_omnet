@@ -141,7 +141,7 @@ void hostNodeDCTCP::handleTimeOutMessage(routerMsg* ttmsg) {
            { transactionMsg *transMsg = check_and_cast<transactionMsg *>(p->getEncapsulatedPacket());
              return transMsg->getTransactionId()  == transactionId; });
 
-        if (iter!=transList->end()) {
+        if (iter != transList->end()) {
             deleteTransaction(*iter);
             transList->erase(iter);
             ttmsg->decapsulate();
@@ -416,7 +416,7 @@ void hostNodeDCTCP::sendMoreTransactionsOnPath(int destNode, int pathId) {
 
     //remove the transaction $tu$ at the head of the queue if one exists
     while (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {
-        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.front();
+        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.back();
         transMsg = check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
 
         // pick a path at random to try and send on unless a path is given
@@ -432,7 +432,7 @@ void hostNodeDCTCP::sendMoreTransactionsOnPath(int destNode, int pathId) {
         PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
         if (pathInfo->sumOfTransUnitsInFlight + transMsg->getAmount() <= pathInfo->window) {
             // remove the transaction from queue and send it on the path
-            nodeToDestInfo[destNode].transWaitingToBeSent.pop_front();
+            nodeToDestInfo[destNode].transWaitingToBeSent.pop_back();
             msgToSend->setRoute(pathInfo->path);
             msgToSend->setHopCount(0);
             transMsg->setPathIndex(pathIndex);
