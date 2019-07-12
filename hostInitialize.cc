@@ -2,7 +2,7 @@
 #define INITIALIZE_H
 #include "hostInitialize.h"
 
-bool probesRecent(map<int, PathInfo> probes){
+bool probesRecent(unordered_map<int, PathInfo> probes){
     for (auto iter : probes){
         int key = iter.first;
         if ((iter.second).lastUpdated == -1  || ((simTime() - (iter.second).lastUpdated) > _maxTravelTime) )
@@ -466,7 +466,7 @@ vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, 
 
 
 
-vector<int> breadthFirstSearchByGraph(int sender, int receiver, map<int, set<int>> graph){
+vector<int> breadthFirstSearchByGraph(int sender, int receiver, unordered_map<int, set<int>> graph){
     //TODO: fix, and add to header
     deque<vector<int>> nodesToVisit = {};
     bool visitedNodes[_numNodes];
@@ -540,7 +540,7 @@ template <class T,class S> struct pair_equal_to : binary_function <T,pair<T,S>,b
 
 /* removeRoute - function used to remove paths found to get k shortest disjoint paths
  */
-map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> channels, vector<int> route){
+unordered_map<int, vector<pair<int,int>>> removeRoute( unordered_map<int, vector<pair<int,int>>> channels, vector<int> route){
     int start, end;
     for (int i=0; i< (route.size() -1); i++){
         start = route[i];
@@ -653,7 +653,7 @@ void printSolution(int dist[], int source,
     cout << "end print solution " << endl;
 }
 
-vector<int> dijkstraInputGraph(int src,  int dest, map<int, vector<pair<int,int>>> channels){
+vector<int> dijkstraInputGraph(int src,  int dest, unordered_map<int, vector<pair<int,int>>> channels){
     // The output array. dist[i] will hold the shortest distance from src to i
     int dist[_numNodes];
 
@@ -708,7 +708,7 @@ vector<int> dijkstraInputGraph(int src,  int dest, map<int, vector<pair<int,int>
     return getPath(parent, dest);
 }
 
-void dijkstraInputGraphTemp(int src,  int dest, map<int, vector<pair<int,int>>> channels){
+void dijkstraInputGraphTemp(int src,  int dest, unordered_map<int, vector<pair<int,int>>> channels){
     // The output array. dist[i] will hold the shortest distance from src to i
     int dist[_numNodes];
 

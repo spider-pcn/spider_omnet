@@ -2,7 +2,7 @@
 
 
 //initialization functions
-bool probesRecent(map<int, PathInfo> probes);
+bool probesRecent(unordered_map<int, PathInfo> probes);
 void generateChannelsBalancesMap(string);
 void setNumNodes(string);
 void updateMaxTravelTime(vector<int> route);
@@ -17,7 +17,7 @@ void initializePathMaps(string filename);
 
 //search functions
 vector<int> breadthFirstSearch(int sender, int receiver);
-vector<int> breadthFirstSearchByGraph(int sender, int receiver, map<int, set<int>> graph);
+vector<int> breadthFirstSearchByGraph(int sender, int receiver, unordered_map<int, set<int>> graph);
 vector<int> dijkstra(int src, int dest);
 
 void generateTransUnitList(string);
@@ -28,16 +28,16 @@ bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, Id, simtime
 bool sortFIFO(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
       const tuple<int,double, routerMsg*, Id, simtime_t> &b);
 
-map<int, vector<pair<int,int>>> removeRoute( map<int, vector<pair<int,int>>> channels, vector<int> route);
-vector<int> dijkstraInputGraph(int src,  int dest, map<int, vector<pair<int,int>>> channels);
+unordered_map<int, vector<pair<int,int>>> removeRoute( unordered_map<int, vector<pair<int,int>>> channels, vector<int> route);
+vector<int> dijkstraInputGraph(int src,  int dest, unordered_map<int, vector<pair<int,int>>> channels);
 double minVectorElemDouble(vector<double> v);
 double maxDouble(double x, double y);
 
 //logging functions
 void printChannels();
 void printVector(vector<int> v);
-void printChannels(map<int, vector<int>> channels);
+void printChannels(unordered_map<int, vector<int>> channels);
 int minInt(int x, int y);
 
-double getTotalAmount(map<Id, double> v);
+double getTotalAmount(unordered_map<Id, double> v);
 double getTotalAmount(vector<tuple<int, double, routerMsg*, Id, simtime_t >> queue);

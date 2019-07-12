@@ -256,7 +256,7 @@ void hostNodeDCTCP::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     // at destination, add to incoming transUnits and trigger ack
     if (transMsg->getReceiver() == myIndex()) {
         int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
-        map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+        unordered_map<Id, double, hashId> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
         (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] =
             transMsg->getAmount();
         

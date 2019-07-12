@@ -100,7 +100,7 @@ void hostNodeWaterfilling::handleTransactionMessageSpecialized(routerMsg* ttmsg)
     if (ttmsg->getRoute()[hopCount] == destNode) {
         // add to incoming units
         int prevNode = ttmsg->getRoute()[hopCount - 1];
-        map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+        unordered_map<Id, double, hashId> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
         (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = 
             transMsg->getAmount();
 
@@ -549,7 +549,7 @@ void hostNodeWaterfilling::splitTransactionForWaterfilling(routerMsg * ttmsg, bo
     // if you want to choose at random between paths
     bool randomChoice = false; 
     
-    map<int, double> pathMap = {}; //key is pathIdx, double is amt
+    unordered_map<int, double> pathMap = {}; //key is pathIdx, double is amt
     vector<double> bottleneckList;
    
     // fill up priority queue of balances

@@ -15,7 +15,8 @@
 #include <string>
 #include <sstream>
 #include <deque>
-#include <map>
+#include <unordered_map>
+#include <unordered_set>
 #include <fstream>
 #include "global.h"
 #include "hostInitialize.h"
@@ -23,54 +24,56 @@
 using namespace std;
 using namespace omnetpp;
 
+
+
 class hostNodeBase : public cSimpleModule {
     protected:
         int index; // node identifier
-        map<int, PaymentChannel> nodeToPaymentChannel;
-        map<int, DestInfo> nodeToDestInfo; //one structure per destination;
-        set<int> destList; // list of destinations with non zero demand
+        unordered_map<int, PaymentChannel> nodeToPaymentChannel;
+        unordered_map<int, DestInfo> nodeToDestInfo; //one structure per destination;
+        unordered_set<int> destList; // list of destinations with non zero demand
              
         //TODO: incorporate the signals into nodeToDestInfo
         // statistic collection related variables
-        map<int, int> statNumFailed = {};
-        map<int, double> statAmtFailed = {};
-        map<int, int> statRateFailed = {};
-        map<int, int> statNumCompleted = {};
-        map<int, double> statAmtCompleted = {};
-        map<int, int> statNumArrived = {};
-        map<int, int> statRateCompleted = {};
-        map<int, double> statAmtArrived = {};
-        map<int, double> statAmtAttempted = {};
-        map<int, int> statRateAttempted = {};
-        map<int, int> statNumTimedOut = {};
-        map<int, int> statNumTimedOutAtSender = {};
-        map<int, int> statRateArrived = {};
-        map<int, double> statProbabilities = {};
-        map<int, double> statCompletionTimes = {};
+        unordered_map<int, int> statNumFailed = {};
+        unordered_map<int, double> statAmtFailed = {};
+        unordered_map<int, int> statRateFailed = {};
+        unordered_map<int, int> statNumCompleted = {};
+        unordered_map<int, double> statAmtCompleted = {};
+        unordered_map<int, int> statNumArrived = {};
+        unordered_map<int, int> statRateCompleted = {};
+        unordered_map<int, double> statAmtArrived = {};
+        unordered_map<int, double> statAmtAttempted = {};
+        unordered_map<int, int> statRateAttempted = {};
+        unordered_map<int, int> statNumTimedOut = {};
+        unordered_map<int, int> statNumTimedOutAtSender = {};
+        unordered_map<int, int> statRateArrived = {};
+        unordered_map<int, double> statProbabilities = {};
+        unordered_map<int, double> statCompletionTimes = {};
         int numCleared = 0;
 
         //store shortest paths 
         // TODO: remove the first one's use all together and use the second for shortest paths
-        map<int, vector<int>> destNodeToPath = {};
-        map<int, map<int, PathInfo>> nodeToShortestPathsMap = {};  
+        unordered_map<int, vector<int>> destNodeToPath = {};
+        unordered_map<int, unordered_map<int, PathInfo>> nodeToShortestPathsMap = {};  
 
         // number of transactions pending to a given destination
-        map<int, int> destNodeToNumTransPending = {};
+        unordered_map<int, int> destNodeToNumTransPending = {};
 
         // signals for recording statistics above
         simsignal_t completionTimeSignal;
         simsignal_t numClearedSignal;
 
-        map<int, simsignal_t> rateCompletedPerDestSignals = {};
-        map<int, simsignal_t> rateAttemptedPerDestSignals = {};
-        map<int, simsignal_t> rateArrivedPerDestSignals = {};
-        map<int, simsignal_t> numCompletedPerDestSignals = {};
-        map<int, simsignal_t> numArrivedPerDestSignals = {};
-        map<int, simsignal_t> numTimedOutPerDestSignals = {};
-        map<int, simsignal_t> numPendingPerDestSignals = {};       
-        map<int, simsignal_t> rateFailedPerDestSignals = {};
-        map<int, simsignal_t> numFailedPerDestSignals = {};
-        map<int, simsignal_t> fracSuccessfulPerDestSignals = {};
+        unordered_map<int, simsignal_t> rateCompletedPerDestSignals = {};
+        unordered_map<int, simsignal_t> rateAttemptedPerDestSignals = {};
+        unordered_map<int, simsignal_t> rateArrivedPerDestSignals = {};
+        unordered_map<int, simsignal_t> numCompletedPerDestSignals = {};
+        unordered_map<int, simsignal_t> numArrivedPerDestSignals = {};
+        unordered_map<int, simsignal_t> numTimedOutPerDestSignals = {};
+        unordered_map<int, simsignal_t> numPendingPerDestSignals = {};       
+        unordered_map<int, simsignal_t> rateFailedPerDestSignals = {};
+        unordered_map<int, simsignal_t> numFailedPerDestSignals = {};
+        unordered_map<int, simsignal_t> fracSuccessfulPerDestSignals = {};
 
         //set of transaction units WITH timeouts, that we already received acks for
         set<int> successfulDoNotSendTimeOut = {};   
@@ -79,11 +82,11 @@ class hostNodeBase : public cSimpleModule {
         /****** state for splitting transactions into many HTLCs ********/
         // structure that tracks how much of a transaction has been completed 
         // this tracks it for every path, key is (transactionId, routeIndex)
-        map<tuple<int,int>,AckState> transPathToAckState = {}; 
+        unordered_map<tuple<int,int>,AckState, hashId> transPathToAckState = {}; 
         // this is per transaction across all paths
-        map<int, AckState> transToAmtLeftToComplete = {};
+        unordered_map<int, AckState> transToAmtLeftToComplete = {};
         //allows us to calculate the htlcIndex number
-        map<int, int> transactionIdToNumHtlc = {};         
+        unordered_map<int, int> transactionIdToNumHtlc = {};         
     
     protected:
 

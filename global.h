@@ -19,7 +19,7 @@
 #include <string>
 #include <sstream>
 #include <deque>
-#include <map>
+#include <unordered_map>
 #include <fstream>
 #include <list>
 #include "structs/PaymentChannel.h"
@@ -43,23 +43,24 @@ struct LaterTransUnit
   }
 };
 
+
 //global parameters
-extern map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
-// extern map<int, deque<TransUnit>> _transUnitList;
-extern map<int, set<int>> _destList;
-extern map<int, map<double, SplitState>> _numSplits;
-extern map<int, map<int, vector<vector<int>>>> _pathsMap;
+extern unordered_map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
+// extern unordered_map<int, deque<TransUnit>> _transUnitList;
+extern unordered_map<int, set<int>> _destList;
+extern unordered_map<int, unordered_map<double, SplitState>> _numSplits;
+extern unordered_map<int, unordered_map<int, vector<vector<int>>>> _pathsMap;
 extern int _numNodes;
 //number of nodes in network
 extern int _numRouterNodes;
 extern int _numHostNodes;
-extern map<int, vector<pair<int,int>>> _channels; //adjacency list format of graph edges of network
-extern map<tuple<int,int>,double> _balances;
-extern map<tuple<int,int>, double> _capacities;
+extern unordered_map<int, vector<pair<int,int>>> _channels; //adjacency list format of graph edges of network
+extern unordered_map<tuple<int,int>,double, hashId> _balances;
+extern unordered_map<tuple<int,int>, double, hashId> _capacities;
 extern double _statRate;
 extern double _clearRate;
 extern double _maxTravelTime;
-//map of balances for each edge; key = <int,int> is <source, destination>
+//unordered_map of balances for each edge; key = <int,int> is <source, destination>
 //extern bool withFailures;
 extern bool _waterfillingEnabled;
 extern bool _timeoutEnabled;
@@ -74,8 +75,8 @@ extern double _restorePeriod;
 extern bool _windowEnabled;
 
 extern vector<tuple<int,int>> _landmarksWithConnectivityList;//pair: (number of edges, node number)
-extern map<double, int> _transactionCompletionBySize;
-extern map<double, int> _transactionArrivalBySize;
+extern unordered_map<double, int> _transactionCompletionBySize;
+extern unordered_map<double, int> _transactionArrivalBySize;
 
 // for silentWhispers
 extern vector<int> _landmarks;

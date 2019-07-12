@@ -5,12 +5,12 @@
 #define MAX_SENDER_PER_DEST_QUEUE 70000
 
 //global parameters
-map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
-map<double, int> _transactionCompletionBySize;
-map<double, int> _transactionArrivalBySize;
-map<int, set<int>> _destList;
-map<int, map<double, SplitState>> _numSplits;
-map<int, map<int, vector<vector<int>>>> _pathsMap;
+unordered_map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
+unordered_map<double, int> _transactionCompletionBySize;
+unordered_map<double, int> _transactionArrivalBySize;
+unordered_map<int, set<int>> _destList;
+unordered_map<int, unordered_map<double, SplitState>> _numSplits;
+unordered_map<int, unordered_map<int, vector<vector<int>>>> _pathsMap;
 int _numNodes;
 int _numRouterNodes;
 int _numHostNodes;
@@ -30,12 +30,12 @@ double _shortestPathEndTime;
 double _splitSize;
 
  //adjacency list format of graph edges of network
-map<int, vector<pair<int,int>>> _channels;
+unordered_map<int, vector<pair<int,int>>> _channels;
 
-//map of balances for each edge; key = <int,int> is <source, destination>
-map<tuple<int,int>,double> _balances;
+//unordered_map of balances for each edge; key = <int,int> is <source, destination>
+unordered_map<tuple<int,int>,double, hashId> _balances;
 
-map<tuple<int,int>,double> _capacities;
+unordered_map<tuple<int,int>,double, hashId> _capacities;
 
 // controls algorithm and what is outputted
 bool _waterfillingEnabled;
@@ -646,7 +646,7 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
     if (ttmsg->getHopCount() ==  ttmsg->getRoute().size() - 1) {
         // add to incoming trans units 
         int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
-        map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+        unordered_map<Id, double, hashId> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
         (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = 
             transMsg->getAmount();
         nodeToPaymentChannel[prevNode].totalAmtIncomingInflight += transMsg->getAmount();
@@ -823,7 +823,7 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
         // no relevant incoming_trans_units because no node on fwd path before this
         if (ttmsg->getHopCount() < ttmsg->getRoute().size() - 1) {
             int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
-            map<Id, double> *incomingTransUnits = 
+            unordered_map<Id, double, hashId> *incomingTransUnits = 
                 &(nodeToPaymentChannel[nextNode].incomingTransUnits);
             (*incomingTransUnits).erase(make_tuple(aMsg->getTransactionId(), 
                         aMsg->getHtlcIndex()));
@@ -901,7 +901,7 @@ void hostNodeBase::handleUpdateMessage(routerMsg* msg) {
     }
 
     //remove transaction from incoming_trans_units
-    map<Id, double> *incomingTransUnits = &(prevChannel->incomingTransUnits);
+    unordered_map<Id, double, hashId> *incomingTransUnits = &(prevChannel->incomingTransUnits);
     (*incomingTransUnits).erase(make_tuple(uMsg->getTransactionId(), uMsg->getHtlcIndex()));
     prevChannel->totalAmtIncomingInflight -= uMsg->getAmount();
 
@@ -1059,7 +1059,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
 
             // remove from incoming TransUnits from the previous node
             if (prevNode != -1){
-                map<tuple<int,int>, double> *incomingTransUnits = 
+                unordered_map<Id, double, hashId> *incomingTransUnits = 
                     &(nodeToPaymentChannel[prevNode].incomingTransUnits);
                 auto iterIncoming = find_if((*incomingTransUnits).begin(),
                   (*incomingTransUnits).end(),
@@ -1069,17 +1069,12 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                 if (iterIncoming != (*incomingTransUnits).end()){
                     iterIncoming = (*incomingTransUnits).erase(iterIncoming);
                     nodeToPaymentChannel[prevNode].totalAmtIncomingInflight -= iterIncoming->second;
-
-                    /*iterIncoming = find_if((*incomingTransUnits).begin(),
-                         (*incomingTransUnits).end(),
-                        [&transactionId](const pair<tuple<int, int >, double> & p)
-                        { return get<0>(p.first) == transactionId; });*/
                 }
             }
 
             // remove from outgoing transUnits to nextNode and restore balance on own end
             if (nextNode != -1){
-                map<tuple<int,int>, double> *outgoingTransUnits = 
+                unordered_map<tuple<int,int>, double, hashId> *outgoingTransUnits = 
                     &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
                 
                 auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
@@ -1097,11 +1092,6 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                     nextChannel->balanceEWMA = (1 -_ewmaFactor) * nextChannel->balanceEWMA + 
                         (_ewmaFactor) * updatedBalance;
                     nextChannel->totalAmtOutgoingInflight -= amount;
-
-                    /*iterOutgoing = find_if((*outgoingTransUnits).begin(),
-                        (*outgoingTransUnits).end(),
-                        [&transactionId](const pair<tuple<int, int >, double> & p)
-                        { return get<0>(p.first) == transactionId; })*/;
                 }
             }
             

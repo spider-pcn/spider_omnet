@@ -16,7 +16,7 @@
 #include <string>
 #include <sstream>
 #include <deque>
-#include <map>
+#include <unordered_map>
 #include <fstream>
 #include "global.h"
 #include "hostInitialize.h"
@@ -28,7 +28,7 @@ using namespace omnetpp;
 class routerNodeBase : public cSimpleModule
 {
     protected:
-        map<int, PaymentChannel> nodeToPaymentChannel = {};
+        unordered_map<int, PaymentChannel> nodeToPaymentChannel = {};
         set<CanceledTrans> canceledTransactions = {};
 
         // helper methods

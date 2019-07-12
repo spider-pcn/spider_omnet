@@ -120,7 +120,7 @@ void hostNodeLandmarkRouting::handleTransactionMessageSpecialized(routerMsg* ttm
     else if (ttmsg->getHopCount() ==  ttmsg->getRoute().size() - 1) { 
         // txn is at destination, add to incoming units
         int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
-        map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+        unordered_map<Id, double, hashId> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
         (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = 
             transMsg->getAmount();
 

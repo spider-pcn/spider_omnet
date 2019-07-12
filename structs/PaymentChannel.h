@@ -3,6 +3,12 @@ using namespace std;
 using namespace omnetpp;
 
 typedef tuple<int,int> Id;
+struct hashId {
+    size_t operator()(const tuple<int, int> &tid ) const
+    {
+        return hash<int>()(get<0>(tid)) ^ hash<int>()(get<1>(tid));
+    }
+};
 
 class PaymentChannel{
 public:
@@ -14,10 +20,10 @@ public:
     
     double queueSizeSum = 0;
     double totalAmtInQueue = 0; // total amount in the queue
-    map<Id, double> incomingTransUnits; //(key,value) := ((transactionId, htlcIndex), amount)
+    unordered_map<Id, double, hashId> incomingTransUnits; //(key,value) := ((transactionId, htlcIndex), amount)
     double totalAmtIncomingInflight;
     double totalAmtOutgoingInflight;
-    map<Id, double> outgoingTransUnits;
+    unordered_map<Id, double, hashId> outgoingTransUnits;
 
     double queueDelayEWMA;
     int numRebalanceEvents = 0;
@@ -42,7 +48,7 @@ public:
     list<tuple<double, simtime_t, simtime_t>> serviceArrivalTimeStamps; //each entry is amount and service and arrival time of
     
     // to keep track of how long every transaction spent in flight
-    map<Id, simtime_t> txnSentTimes;
+    unordered_map<Id, simtime_t, hashId> txnSentTimes;
     double sumTimeInFlight = 0;
     double timeInFlightSamples = 0;
     simsignal_t timeInFlightPerChannelSignal;

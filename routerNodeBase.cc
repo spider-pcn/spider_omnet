@@ -501,7 +501,7 @@ void routerNodeBase::handleTransactionMessage(routerMsg* ttmsg) {
 
     // add to incoming trans units
     int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
-    map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+    unordered_map<Id, double, hashId> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
     (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = transMsg->getAmount();
     nodeToPaymentChannel[prevNode].totalAmtIncomingInflight += transMsg->getAmount();
 
@@ -625,7 +625,7 @@ void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
         // this is nextNode on the ack path and so prev node in the forward path or rather
         // node sending you mayments
         int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
-        map<Id, double> *incomingTransUnits = &(nodeToPaymentChannel[nextNode].incomingTransUnits);
+        unordered_map<Id, double, hashId> *incomingTransUnits = &(nodeToPaymentChannel[nextNode].incomingTransUnits);
         (*incomingTransUnits).erase(make_tuple(aMsg->getTransactionId(), aMsg->getHtlcIndex()));
         nodeToPaymentChannel[nextNode].totalAmtIncomingInflight -= aMsg->getAmount();
     }
@@ -687,7 +687,7 @@ void routerNodeBase::handleUpdateMessage(routerMsg* msg) {
     }
 
     //remove transaction from incoming_trans_units
-    map<Id, double> *incomingTransUnits = &(prevChannel->incomingTransUnits);
+    unordered_map<Id, double, hashId> *incomingTransUnits = &(prevChannel->incomingTransUnits);
     (*incomingTransUnits).erase(make_tuple(uMsg->getTransactionId(), uMsg->getHtlcIndex()));
     prevChannel->totalAmtIncomingInflight -= uMsg->getAmount();
 
@@ -814,7 +814,7 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
 
             // remove from incoming TransUnits from the previous node
             if (prevNode != -1){
-                map<tuple<int,int>, double> *incomingTransUnits = 
+                unordered_map<Id, double, hashId> *incomingTransUnits = 
                     &(nodeToPaymentChannel[prevNode].incomingTransUnits);
                 auto iterIncoming = find_if((*incomingTransUnits).begin(),
                   (*incomingTransUnits).end(),
@@ -822,19 +822,14 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                   { return get<0>(p.first) == transactionId; });
                 
                 if (iterIncoming != (*incomingTransUnits).end()){
-                    iterIncoming = (*incomingTransUnits).erase(iterIncoming);
                     nodeToPaymentChannel[prevNode].totalAmtIncomingInflight -= iterIncoming->second;
-
-                    /*iterIncoming = find_if((*incomingTransUnits).begin(),
-                         (*incomingTransUnits).end(),
-                        [&transactionId](const pair<tuple<int, int >, double> & p)
-                        { return get<0>(p.first) == transactionId; })*/;
+                    iterIncoming = (*incomingTransUnits).erase(iterIncoming);
                 }
             }
 
             // remove from outgoing transUnits to nextNode and restore balance on own end
             if (nextNode != -1){
-                map<tuple<int,int>, double> *outgoingTransUnits = 
+                unordered_map<Id, double, hashId> *outgoingTransUnits = 
                     &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
                 
                 auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
@@ -852,11 +847,6 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                     nextChannel->balanceEWMA = (1 -_ewmaFactor) * nextChannel->balanceEWMA + 
                         (_ewmaFactor) * updatedBalance;
                     nextChannel->totalAmtOutgoingInflight -= amount;
-
-                    /*iterOutgoing = find_if((*outgoingTransUnits).begin(),
-                        (*outgoingTransUnits).end(),
-                        [&transactionId](const pair<tuple<int, int >, double> & p)
-                        { return get<0>(p.first) == transactionId; });*/
                 }
             }
             
