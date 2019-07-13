@@ -93,18 +93,24 @@ for scheme in scheme_list:
             file_name += "_" + str(num_paths)
         file_name += "-#0.sca"
         
-        with open(RESULT_DIR + file_name) as f:
-            for line in f:
-                if "size" in line:
-                    parts = shlex.split(line)
-                    num_completed = float(parts[-1])
-                    sub_parts = parts[-2].split()
-                    size = int(sub_parts[1][:-1])
-                    num_arrived = float(sub_parts[3][1:-1])
-                    bucket = buckets[np.searchsorted(buckets, size)]
-                    if num_arrived > 0:
-                        size_to_arrival[bucket] = size_to_arrival.get(size, 0) + num_arrived
-                        size_to_completion[bucket] = size_to_completion.get(size, 0) + num_completed
+        try:
+            with open(RESULT_DIR + file_name) as f:
+                for line in f:
+                    if "size" in line:
+                        parts = shlex.split(line)
+                        num_completed = float(parts[-1])
+                        sub_parts = parts[-2].split()
+                        size = int(sub_parts[1][:-1])
+                        num_arrived = float(sub_parts[3][1:-1])
+                        bucket = buckets[np.searchsorted(buckets, size)]
+                        if num_arrived > 0:
+                            if num_arrived < num_completed:
+                                print "problem with ", scheme, " on run ", run_num
+                                num_arrived = num_completed
+                            size_to_arrival[bucket] = size_to_arrival.get(bucket, 0) + num_arrived
+                            size_to_completion[bucket] = size_to_completion.get(bucket, 0) + num_completed
+        except IOError:
+            continue
 
     for size in sorted(size_to_completion.keys()):
         output_file.write(str(SCHEME_CODE[scheme]) +  "," + str(credit) +  "," + \

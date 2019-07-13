@@ -86,7 +86,12 @@ for credit in credit_list:
                         except IOError:
                             continue
 
-                    output_file.write(SCHEME_CODE[scheme] + "," + str(credit) +  "," \
+                    if "lndtopo" in args.save and "lnd_credit" in args.save:
+                        capacity = int(credit) * 650
+                    else:
+                        capacity = int(credit)
+                    
+                    output_file.write(SCHEME_CODE[scheme] + "," + str(capacity) +  "," \
                             + str(num_paths) + "," \
                             + str(path_type) + "," \
                             + str(queue_threshold) + "," \
