@@ -364,13 +364,12 @@ bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime
         // return true directly if txn has been cancelled
         // so that you waste not resources on this and move on to a new txn
         // if you return false processTransUnits won't look for more txns
-        for (auto iter=canceledTransactions.begin(); iter!=canceledTransactions.end(); ++iter) {
-            if (get<0>(*iter) == transactionId) {
-                msg->decapsulate();
-                delete transMsg;
-                delete msg;
-                return true;
-            }
+        auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+        if (iter != canceledTransactions.end()) {
+            msg->decapsulate();
+            delete transMsg;
+            delete msg;
+            return true;
         }
 
         // update state to send transaction out
@@ -520,16 +519,14 @@ void routerNodeBase::handleTransactionMessage(routerMsg* ttmsg) {
     }
 
     // ignore if txn is already cancelled
-    for (auto iter=canceledTransactions.begin(); iter!=canceledTransactions.end(); ++iter) {
-        if (get<0>(*iter) == transactionId) { 
-            // message won't be encountered again
-            ttmsg->decapsulate();
-            delete transMsg;
-            delete ttmsg;
-            return;
-        }
+    auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+    if ( iter!=canceledTransactions.end() ){
+        //delete yourself, message won't be encountered again
+        ttmsg->decapsulate();
+        delete transMsg;
+        delete ttmsg;
+        return;
     }
-
 
     // if balance is insufficient at the first node, return failure ack
     if (_hasQueueCapacity && _queueCapacity == 0) {
@@ -561,17 +558,17 @@ bool routerNodeBase::handleTransactionMessageTimeOut(routerMsg* ttmsg) {
     int transactionId = transMsg->getTransactionId();
 
     // look for transaction in cancelled txn set and delete if present
-    for (auto iter=canceledTransactions.begin(); iter!=canceledTransactions.end(); ++iter) {
-        if (get<0>(*iter) == transactionId) {
-            //delete yourself
-            ttmsg->decapsulate();
-            delete transMsg;
-            delete ttmsg;
-            return true;
-        }
+    auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+    if ( iter!=canceledTransactions.end() ){
+        //delete yourself
+        ttmsg->decapsulate();
+        delete transMsg;
+        delete ttmsg;
+        return true;
     }
-    
-    return false;
+    else{
+        return false;
+    }
 }
 
 
@@ -650,11 +647,9 @@ void routerNodeBase::handleAckMessageTimeOut(routerMsg* ttmsg){
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
     int transactionId = aMsg->getTransactionId();
     
-    for (auto iter=canceledTransactions.begin(); iter!=canceledTransactions.end(); ++iter) {
-        if (get<0>(*iter) == transactionId) {
-            canceledTransactions.erase(iter);
-            return;
-        }
+    auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+    if (iter != canceledTransactions.end()) {
+        canceledTransactions.erase(iter);
     }
 }
 

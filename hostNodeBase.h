@@ -77,7 +77,7 @@ class hostNodeBase : public cSimpleModule {
 
         //set of transaction units WITH timeouts, that we already received acks for
         set<int> successfulDoNotSendTimeOut = {};   
-        set<CanceledTrans, CanceledTransComp> canceledTransactions = {};
+        unordered_set<CanceledTrans, hashCanceledTrans, equalCanceledTrans> canceledTransactions = {};
 
         /****** state for splitting transactions into many HTLCs ********/
         // structure that tracks how much of a transaction has been completed 

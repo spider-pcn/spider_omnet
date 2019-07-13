@@ -37,5 +37,21 @@ struct CanceledTransComp {
     };
 };
 
+struct hashCanceledTrans {
+    public:
+    size_t operator()(const CanceledTrans &ct) const
+    {
+        return hash<int>()(get<0>(ct));
+    }
+};
+
+struct equalCanceledTrans {
+    public:
+    size_t operator()(const CanceledTrans &ct1, const CanceledTrans &ct2) const
+    {
+        return (get<0>(ct1) == get<0>(ct2)) ;
+    }
+};
+
 
 

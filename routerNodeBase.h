@@ -17,6 +17,7 @@
 #include <sstream>
 #include <deque>
 #include <unordered_map>
+#include <unordered_set>
 #include <fstream>
 #include "global.h"
 #include "hostInitialize.h"
@@ -29,7 +30,7 @@ class routerNodeBase : public cSimpleModule
 {
     protected:
         unordered_map<int, PaymentChannel> nodeToPaymentChannel = {};
-        set<CanceledTrans> canceledTransactions = {};
+        unordered_set<CanceledTrans, hashCanceledTrans, equalCanceledTrans> canceledTransactions = {};
 
         // helper methods
         virtual int myIndex();
