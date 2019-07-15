@@ -32,7 +32,7 @@ def read_file(filename):
 
     return lnd_graph
 
-lnd_file_list = ["lnd_dec4_2018", "lnd_dec28_2018"]
+lnd_file_list = ["lnd_dec4_2018", "lnd_dec28_2018", "lnd_july15_2019"]
 for filename in lnd_file_list: 
     graph = read_file(LND_FILE_PATH + filename + ".json")
     nx.write_edgelist(graph, LND_FILE_PATH + filename + ".edgelist")

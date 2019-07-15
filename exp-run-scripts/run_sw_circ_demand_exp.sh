@@ -231,7 +231,7 @@ do
               --balance \
               --queue_info --timeouts --frac_completed \
               --inflight --timeouts_sender \
-              --waiting --bottlenecks --time_inflight 
+              --waiting --bottlenecks --time_inflight --queue_delay
         
 
         #routing schemes where number of path choices matter
@@ -254,7 +254,7 @@ do
                   --waiting --bottlenecks --probabilities \
                   --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
                   --inflight_incoming --rate_to_send --price --mu_remote --demand \
-                  --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked
+                  --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked --queue_delay
               done
           fi
 
