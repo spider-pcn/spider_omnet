@@ -220,7 +220,8 @@ void hostNodeWaterfilling::handleTimeOutMessage(routerMsg* ttmsg){
                     << "; pathIndex: " << pathIndex << endl;
             }
             
-            if (transPathToAckState.count(key) > 0 && transPathToAckState[key].amtSent != transPathToAckState[key].amtReceived) {
+            if (transPathToAckState.count(key) > 0 && 
+                    transPathToAckState[key].amtSent != transPathToAckState[key].amtReceived) {
                 routerMsg* waterTimeOutMsg = generateTimeOutMessageForPath(
                     nodeToShortestPathsMap[destination][p.first].path, 
                     transactionId, destination);

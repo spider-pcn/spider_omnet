@@ -1041,8 +1041,8 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                     routerMsg * rMsg = get<2>(*iterQueue);
                     auto tMsg = rMsg->getEncapsulatedPacket();
                     rMsg->decapsulate();
-                    iterQueue = (*queuedTransUnits).erase(iterQueue);
                     nodeToPaymentChannel[nextNode].totalAmtInQueue -= get<1>(*iterQueue);
+                    iterQueue = (*queuedTransUnits).erase(iterQueue);
                     delete tMsg;
                     delete rMsg;
                     
@@ -1067,8 +1067,8 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                   { return get<0>(p.first) == transactionId; });
                 
                 if (iterIncoming != (*incomingTransUnits).end()){
-                    iterIncoming = (*incomingTransUnits).erase(iterIncoming);
                     nodeToPaymentChannel[prevNode].totalAmtIncomingInflight -= iterIncoming->second;
+                    iterIncoming = (*incomingTransUnits).erase(iterIncoming);
                 }
             }
 

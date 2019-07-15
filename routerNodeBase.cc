@@ -356,6 +356,7 @@ bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime
     int nextDest = msg->getRoute()[msg->getHopCount()+1];
     int transactionId = transMsg->getTransactionId();
     PaymentChannel *neighbor = &(nodeToPaymentChannel[nextDest]);
+    int amt = transMsg->getAmount();
 
     if (neighbor->balance <= 0 || transMsg->getAmount() > neighbor->balance){
         return false;
@@ -369,6 +370,7 @@ bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime
             msg->decapsulate();
             delete transMsg;
             delete msg;
+            neighbor->totalAmtInQueue -= amt;
             return true;
         }
 
@@ -391,7 +393,6 @@ bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime
         neighbor->totalAmtOutgoingInflight += transMsg->getAmount();
       
         // update balance
-        int amt = transMsg->getAmount();
         double newBalance = neighbor->balance - amt;
         neighbor->balance = newBalance;
         neighbor-> balanceEWMA = (1 -_ewmaFactor) * neighbor->balanceEWMA + 
@@ -793,8 +794,8 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                     rMsg->decapsulate();
                     delete tMsg;
                     delete rMsg;
-                    iterQueue = (*queuedTransUnits).erase(iterQueue);
                     nodeToPaymentChannel[nextNode].totalAmtInQueue -= get<1>(*iterQueue);
+                    iterQueue = (*queuedTransUnits).erase(iterQueue);
                     
                     /*iterQueue = find_if((*queuedTransUnits).begin(),
                      (*queuedTransUnits).end(),
