@@ -68,6 +68,8 @@ parser.add_argument('--window-alpha', type=float, help='size for window inc', de
 parser.add_argument('--window-beta', type=float, help='size for window dec', dest='windowBeta', default=0.01)
 parser.add_argument('--queue-threshold', type=float, help='ecn queue threshold', dest='queueThreshold', \
         default=30)
+parser.add_argument('--queue-delay-threshold', type=float, help='ecn queue delay threshold (in ms)', \
+        dest='queueDelayThreshold', default=500)
 parser.add_argument('--balance-ecn-threshold', type=float, help='ecn balance threshold', dest='balEcnThreshold', \
         default=0.1)
 parser.add_argument('--min-dctcp-window', type=float, help='min window size for dctcp', dest='minDCTCPWindow', default=5)
@@ -200,6 +202,7 @@ if 'DCTCP' in args.routingScheme:
     f.write("**.windowAlpha = " + str(args.windowAlpha) + "\n")
     f.write("**.windowBeta = " + str(args.windowBeta) + "\n")
     f.write("**.queueThreshold = " + str(args.queueThreshold) + "\n")
+    f.write("**.queueDelayEcnThreshold = " + str(args.queueDelayThreshold/1000.0) + "\n")
     f.write("**.balanceThreshold = " + str(args.balEcnThreshold) + "\n")
     f.write("**.minDCTCPWindow = " + str(args.minDCTCPWindow) + "\n")
     f.write("**.rateDecreaseFrequency = " + str(args.rateDecreaseFrequency) + "\n")
@@ -219,7 +222,7 @@ if args.rebalancingEnabled:
         f.write("**.gamma = " + str(args.gamma) + "\n")
         f.write("**.gammaImbalanceQueueSize = " + str(args.gammaImbalanceQueueSize) + "\n")
     else:
-        f.write("**.queueDelayThreshold = " + str(args.rebalancingQueueDelayThreshold) + "\n")
+        f.write("**.rebalancingQueueDelayThreshold = " + str(args.rebalancingQueueDelayThreshold) + "\n")
 
 f.close()
 

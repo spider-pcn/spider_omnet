@@ -5,6 +5,7 @@ Define_Module(hostNodeDCTCP);
 double _windowAlpha;
 double _windowBeta;
 double _qEcnThreshold;
+double _qDelayEcnThreshold;
 double _minDCTCPWindow;
 double _balEcnThreshold;
 
@@ -17,6 +18,7 @@ void hostNodeDCTCP::initialize(){
         _windowAlpha = par("windowAlpha");
         _windowBeta = par("windowBeta");
         _qEcnThreshold = par("queueThreshold");
+        _qDelayEcnThreshold = par("queueDelayEcnThreshold");
         _balEcnThreshold = par("balanceThreshold");
         _minDCTCPWindow = par("minDCTCPWindow");
     }

@@ -41,6 +41,7 @@ simple hostNodeDCTCP
                 double windowAlpha = default(0.2);
                 double windowBeta = default(0.2);
                 double queueThreshold = default(30);
+                double queueDelayEcnThreshold = default(0.5);
                 double balanceThreshold = default(0.01);
                 double minDCTCPWindow = default(5.0);
                 
