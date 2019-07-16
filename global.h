@@ -148,6 +148,7 @@ extern double _windowAlpha;
 extern double _windowBeta;
 extern double _qEcnThreshold;
 extern double _qDelayEcnThreshold;
+extern bool _qDelayVersion;
 extern double _balEcnThreshold;
 extern bool _dctcpEnabled;
 extern double _cannonicalRTT; // for prop fair price scheme version - specific to a topology

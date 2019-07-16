@@ -168,4 +168,5 @@ SCHEME_CODE = { "priceSchemeWindow": "PS",\
         "waterfilling": "WF",\
         "DCTCP": "DCTCP",\
         "DCTCPRate": "DCTCPRate", \
+        "DCTCPQ": "DCTCP_qdelay", \
         "DCTCPBal": "DCTCPBal"}

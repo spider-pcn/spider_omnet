@@ -8,6 +8,7 @@ double _qEcnThreshold;
 double _qDelayEcnThreshold;
 double _minDCTCPWindow;
 double _balEcnThreshold;
+bool _qDelayVersion;
 
 /* initialization function to initialize parameters */
 void hostNodeDCTCP::initialize(){
@@ -19,6 +20,7 @@ void hostNodeDCTCP::initialize(){
         _windowBeta = par("windowBeta");
         _qEcnThreshold = par("queueThreshold");
         _qDelayEcnThreshold = par("queueDelayEcnThreshold");
+        _qDelayVersion = par("DCTCPQEnabled");
         _balEcnThreshold = par("balanceThreshold");
         _minDCTCPWindow = par("minDCTCPWindow");
     }

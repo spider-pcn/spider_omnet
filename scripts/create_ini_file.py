@@ -17,7 +17,7 @@ parser.add_argument('--timeout-clear-rate', type=str, help='rate of clearing dat
 parser.add_argument('--timeout-enabled', type=str, help='are timeouts enabled?', dest='timeoutEnabled', default='true')
 parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, LP,' +
         'silentWhispers, smoothWaterfilling, priceScheme, landmarkRouting, lndBaseline, DCTCP, DCTCPBal,\
-                DCTCPRate],' +  
+                DCTCPRate, DCTCPQ],' +  
         'else will default to waterfilling', 
         dest='routingScheme', default='default')
 parser.add_argument('--num-path-choices', type=str, help='number of path choices', dest='numPathChoices', default='default')
@@ -104,7 +104,7 @@ if args.capacity is not None:
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
         'smoothWaterfilling', 'priceSchemeWindow', 'priceSchemeWindowNoQueue', 'priceSchemeWindowNoSplit',\
         'landmarkRouting', 'lndBaseline', 'priceSchemeNoQueue', 'lndBaselineSplit', 'DCTCP', 'DCTCPBal', \
-        'DCTCPRate']:
+        'DCTCPRate', 'DCTCPQ']:
     if args.routingScheme != 'default':
         print "******************"
         print "WARNING: ill-specified routing scheme, defaulting to waterfilling,",\
@@ -207,6 +207,10 @@ if 'DCTCP' in args.routingScheme:
     f.write("**.minDCTCPWindow = " + str(args.minDCTCPWindow) + "\n")
     f.write("**.rateDecreaseFrequency = " + str(args.rateDecreaseFrequency) + "\n")
     f.write("**.minRate = " + str(args.minRate) + "\n")
+
+    if 'DCTCPQ' in args.routingScheme:
+        f.write("**.DCTCPQEnabled = true\n")
+
 
 if args.pathChoice == "oblivious":
     f.write("**.obliviousRoutingEnabled = true\n")

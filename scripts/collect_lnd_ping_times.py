@@ -80,11 +80,17 @@ def parse_rtts_from_file():
 # visualize the data
 def visualize_rtts(rtts):
     f = plt.figure()
-    print rtts
-    plt.hist(rtts, 10)
+    plt.hist(rtts, 100, density=True, histtype='step', cumulative=True)
     f.savefig("lnd_ping_rtt_spread.pdf")
+    print "Mean", stat.mean(rtts)
+    print "Median", stat.median(rtts)
+    print "Variance", stat.variance(rtts)
+    print "Max", max(rtts)
+    print "Min", min(rtts)
+
 
 
 address_list = parse_json_data()
+print len(address_list)
 all_rtts = ping_nodes(address_list) if args.rerun_ping else parse_rtts_from_file()
 visualize_rtts(all_rtts)

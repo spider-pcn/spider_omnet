@@ -19,9 +19,17 @@ bool routerNodeDCTCP::forwardTransactionMessage(routerMsg *msg, int dest, simtim
     vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
     q = &(neighbor->queuedTransUnits);
      
-    simtime_t curQueueingDelay = simTime()  - arrivalTime;
-    if (curQueueingDelay.dbl() > _qDelayEcnThreshold) {
-        transMsg->setIsMarked(true); 
+    if (_qDelayVersion) {
+        simtime_t curQueueingDelay = simTime()  - arrivalTime;
+        if (curQueueingDelay.dbl() > _qDelayEcnThreshold) {
+            transMsg->setIsMarked(true); 
+        }
+    } 
+    else {
+        if (getTotalAmount(nextDest) > _qEcnThreshold) {
+            transMsg->setIsMarked(true); 
+        }
+
     }
     return routerNodeBase::forwardTransactionMessage(msg, dest, arrivalTime);
 }
