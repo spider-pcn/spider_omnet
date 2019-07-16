@@ -45,6 +45,7 @@ serviceArrivalWindow=300
 windowBeta=0.1
 windowAlpha=10
 queueThreshold=160
+queueDelayThreshold=300
 balanceThreshold=0.1
 minDCTCPWindow=1
 rateDecreaseFrequency=3.0
@@ -192,6 +193,7 @@ do
                     --window-alpha $windowAlpha \
                     --window-beta $windowBeta \
                     --queue-threshold $queueThreshold \
+                    --queue-delay-threshold $queueDelayThreshold \
                     --balance-ecn-threshold $balanceThreshold \
                     --mtu $mtu\
                     --min-dctcp-window $minDCTCPWindow\
