@@ -13,8 +13,8 @@ class hostNodeDCTCP : public hostNodeBase {
     private:
         // DCTCP signals
         //
-        map<int, simsignal_t> numWaitingPerDestSignals = {};
-        map<int, simsignal_t> demandEstimatePerDestSignals = {};
+        unordered_map<int, simsignal_t> numWaitingPerDestSignals = {};
+        unordered_map<int, simsignal_t> demandEstimatePerDestSignals = {};
 
     protected:
         virtual void initialize() override;
