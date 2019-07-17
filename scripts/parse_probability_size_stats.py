@@ -106,6 +106,7 @@ for scheme in scheme_list:
                         if num_arrived > 0:
                             if num_arrived < num_completed:
                                 print "problem with ", scheme, " on run ", run_num
+                                print "Num arrived", num_arrived, "num completed", num_completed, "for size", size
                                 num_arrived = num_completed
                             size_to_arrival[bucket] = size_to_arrival.get(bucket, 0) + num_arrived
                             size_to_completion[bucket] = size_to_completion.get(bucket, 0) + num_completed

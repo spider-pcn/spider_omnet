@@ -84,6 +84,7 @@ for credit in credit_list:
                                 succ_vols.append(succ_volume * 100)
                                 comp_times.append(comp_time)
                         except IOError:
+                            print "error with " , file_name
                             continue
 
                     if "lndtopo" in args.save and "lnd_credit" in args.save:

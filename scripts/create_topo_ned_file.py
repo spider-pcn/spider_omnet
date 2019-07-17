@@ -207,10 +207,19 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
     lnd_capacities = nx.get_edge_attributes(lnd_capacities_graph, 'capacity').values() 
 
     # write rest of topology
+    real_rtts = np.loadtxt(LND_FILE_PATH + "ping_times_data")
     for e in G.edges():
 
         f1.write(str(e[0]) + "r " + str(e[1]) +  "r ")
-        f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
+        
+        if not random_channel_capacity and is_lnd and "uniform" not in output_filename:
+            delay_per_channel = round(np.random.choice(real_rtts) / 2.0)
+            while delay_per_channel < 1:
+                delay_per_channel = round(np.random.choice(real_rtts) / 2.0)
+            f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
+        else:
+            f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
+        
         if random_channel_capacity:
             balance_for_this_channel = -1
             while balance_for_this_channel < 2:
