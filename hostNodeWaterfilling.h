@@ -12,10 +12,10 @@ class hostNodeWaterfilling : public hostNodeBase {
     private:
         // time since the last measurement for balances was made 
         // used to update path probabilities in smooth waterfilling
-        map<int, double> destNodeToLastMeasurementTime = {};
+        unordered_map<int, double> destNodeToLastMeasurementTime = {};
 
         // waterfilling specific signals
-        map<int, simsignal_t> probabilityPerDestSignals = {};
+        unordered_map<int, simsignal_t> probabilityPerDestSignals = {};
 
     protected:
         virtual void initialize() override;
