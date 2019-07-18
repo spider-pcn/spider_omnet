@@ -213,9 +213,7 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         f1.write(str(e[0]) + "r " + str(e[1]) +  "r ")
         
         if not random_channel_capacity and is_lnd and "uniform" not in output_filename:
-            delay_per_channel = round(np.random.choice(real_rtts) / 2.0)
-            while delay_per_channel < 1:
-                delay_per_channel = round(np.random.choice(real_rtts) / 2.0)
+            delay_per_channel = np.random.choice(real_rtts) / 2.0
             f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
         else:
             f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")

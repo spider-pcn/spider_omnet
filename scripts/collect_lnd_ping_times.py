@@ -56,7 +56,8 @@ def ping_nodes(addr_list):
 
         if rtt_avg is not None:
             overall_rtts.append(rtt_avg)
-            print rtt_avg
+            if (rtt_avg) < 10:
+                print ip_address, rtt_avg
             f.write(str(rtt_avg) + "\n")
     f.close()
 
