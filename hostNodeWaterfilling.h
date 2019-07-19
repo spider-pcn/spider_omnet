@@ -47,6 +47,9 @@ class hostNodeWaterfilling : public hostNodeBase {
         // splits transactions and decides which paths they should use
         virtual void splitTransactionForWaterfilling(routerMsg * ttMsg, bool firstAttempt);
 
+        // sends entirety of transaciton on path with highest bottleneck balance        
+        virtual void attemptTransactionOnBestPath(routerMsg * ttMsg, bool firstAttempt);
+
         // helper functions
         virtual int updatePathProbabilities(vector<double> bottleneckBalances, int destNode);
 

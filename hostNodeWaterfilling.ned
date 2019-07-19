@@ -61,7 +61,7 @@ simple hostNodeWaterfilling
 		
 		@display("i=block/routing"); 
 
-		@signal[numInQueuePerChannel*](type="unsigned long"); 
+		@signal[numInQueuePerChannel*](type="double"); 
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
 
 		@signal[numProcessedPerChannel*](type="long");  
@@ -85,7 +85,7 @@ simple hostNodeWaterfilling
  		@signal[numWaitingPerDest*](type="long");  
 		@statisticTemplate[numWaitingPerDestTemplate](record=vector, stats);  
 	
-		@signal[fracSuccessfulPerDest*](type="long");  
+		@signal[fracSuccessfulPerDest*](type="double");  
 		@statisticTemplate[fracSuccessfulPerDestTemplate](record=vector, stats);   
 		
 		@signal[pathPerTransPerDest*](type="long");  

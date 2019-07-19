@@ -13,4 +13,9 @@ public:
 
     // number of transactions since the last interval
     double transSinceLastInterval = 0;
+
+    // path and balance of the path with highest current
+    // bottleneck balance - amt Inflight
+    int highestBottleneckPathIndex;
+    double highestBottleneckBalance;
 };

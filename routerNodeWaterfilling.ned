@@ -12,7 +12,7 @@ simple routerNodeWaterfilling
 
 		@display("i=block/routing"); 
 
-		@signal[numInQueuePerChannel*](type="unsigned long"); 
+		@signal[numInQueuePerChannel*](type="double"); 
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
 
 		@signal[numProcessedPerChannel*](type="long");  
@@ -61,7 +61,7 @@ simple routerNodeWaterfilling
 		@signal[muRemotePerChannel*](type="double"); 
 		@statisticTemplate[muRemotePerChannelTemplate](record=vector, stats);
     		
-                @signal[numInflightPerChannel*](type="unsigned long"); 
+                @signal[numInflightPerChannel*](type="double"); 
 		@statisticTemplate[numInflightPerChannelTemplate](record=vector, stats);
 
 
