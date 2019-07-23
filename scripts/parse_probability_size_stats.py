@@ -4,6 +4,7 @@ import statistics as stat
 from config import *
 import shlex
 import numpy as np
+import math
 
 # figure out what the size buckets should be for a given number of buckets
 # say you want 20 buckets, you want to make them equally sized in the number
@@ -77,7 +78,7 @@ scheme_list = args.scheme_list
 
 
 output_file = open(GGPLOT_DATA_DIR + args.save, "w+")
-output_file.write("Scheme,Credit,Size,Prob,Demand\n")
+output_file.write("Scheme,Credit,SizeStart,SizeEnd,Point,Prob,Demand\n")
 
 buckets = compute_buckets(args.num_buckets, KAGGLE_AMT_DIST_FILENAME)
 
@@ -113,7 +114,12 @@ for scheme in scheme_list:
         except IOError:
             continue
 
-    for size in sorted(size_to_completion.keys()):
+    sorted_sizes = [5]
+    sorted_sizes.extend(sorted(size_to_completion.keys()))
+    print sorted_sizes
+    for i, size in enumerate(sorted_sizes[1:]):
         output_file.write(str(SCHEME_CODE[scheme]) +  "," + str(credit) +  "," + \
-            "%f,%f,%f\n" % (size, size_to_completion[size]/size_to_arrival[size], demand))
+            "%f,%f,%f,%f,%f\n" % (sorted_sizes[i], size, \
+                    math.sqrt(size * sorted_sizes[i]), \
+                    size_to_completion[size]/size_to_arrival[size], demand))
 output_file.close()
