@@ -74,7 +74,7 @@ if [ -z "$capacity_type" ]; then
     echo "uniform dist"
 elif [ $capacity_type == "random" ]; then
     random_capacity=true
-    prefix="lnd_gaussian"
+    prefix="lnd_dec4_2018_randomCap"
     echo "normal dist"
 elif [ $capacity_type == "uniform" ]; then
     lnd_capacity=false

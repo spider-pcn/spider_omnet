@@ -266,7 +266,7 @@ parser.add_argument('--delay-per-channel', type=int, dest='delay_per_channel', \
         help='delay between nodes (ms)', default=30)
 parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'hotnets_topo', 'simple_line', 'toy_dctcp', \
         'simple_deadlock', 'simple_topologies', 'lnd_dec4_2018','lnd_dec4_2018lessScale', \
-        'lnd_gaussian', 'lnd_uniform', 'tree', 'random'], \
+        'lnd_dec4_2018_randomCap', 'lnd_uniform', 'tree', 'random'], \
         help='type of graph (Small world or scale free or custom topology list)', default='small_world')
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 parser.add_argument('--topo-filename', dest='topo_filename', type=str, \
