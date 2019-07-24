@@ -671,7 +671,9 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
         PaymentChannel *neighbor = &(nodeToPaymentChannel[nextNode]);
         q = &(nodeToPaymentChannel[nextNode].queuedTransUnits);
         tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
-        transMsg->setTimeAttempted(simTime().dbl());
+        
+        if (!revisit) 
+            transMsg->setTimeAttempted(simTime().dbl());
 
         // mark the arrival
         neighbor->arrivalTimeStamps.push_back(make_tuple(transMsg->getAmount(), simTime()));

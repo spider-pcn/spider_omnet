@@ -184,7 +184,7 @@ void hostNodeLndBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
         //note: number of paths attempted is calculated as pathIndex + 1, so if fails
         //without attempting any paths, want 0 = -1+1
         transMsg->setPathIndex(-1);
-        if (newRoute.size()>0)
+        if (newRoute.size() > 0)
         {
             transMsg->setPathIndex(0);
             ttmsg->setRoute(newRoute);

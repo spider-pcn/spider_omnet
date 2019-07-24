@@ -92,6 +92,7 @@ void hostNodeLandmarkRouting::handleTransactionMessageSpecialized(routerMsg* ttm
     int destNode = transMsg->getReceiver();
     int destination = destNode;
     int transactionId = transMsg->getTransactionId();
+    SplitState* splitInfo = &(_numSplits[myIndex()][transMsg->getLargerTxnId()]);
 
     // if its at the sender, initiate probes, when they come back,
     // call normal handleTransactionMessage
@@ -101,6 +102,7 @@ void hostNodeLandmarkRouting::handleTransactionMessageSpecialized(routerMsg* ttm
             statNumArrived[destination] += 1; 
             statRateArrived[destination] += 1;
             statAmtArrived[destination] += transMsg->getAmount();
+            splitInfo->firstAttemptTime = simTime().dbl();
         }
 
         AckState * s = new AckState();
@@ -257,7 +259,8 @@ void hostNodeLandmarkRouting::handleAckMessageSpecialized(routerMsg* ttmsg) {
                     statRateCompleted[receiver] += 1;
                     _transactionCompletionBySize[amtSent] += 1;
 
-                    double timeTaken = simTime().dbl() - aMsg->getTimeSent();
+                    SplitState* splitInfo = &(_numSplits[myIndex()][aMsg->getLargerTxnId()]);
+                    double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                     statCompletionTimes[receiver] += timeTaken * 1000;
                 }
 
