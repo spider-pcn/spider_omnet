@@ -50,6 +50,8 @@ void routerNodeBase:: printNodeToPaymentChannel(){
 
 /* get total amount on queue to node x */
 double routerNodeBase::getTotalAmount(int x) {
+    if (_hasQueueCapacity && _queueCapacity == 0)
+        return 0;
     return nodeToPaymentChannel[x].totalAmtInQueue;
 } 
 
