@@ -58,6 +58,7 @@ parser.add_argument('--rebalancing-enabled', action='store_true', dest="rebalanc
 parser.add_argument('--gamma', type=float, help='factor to weigh rebalancing', dest='gamma', default=1)
 parser.add_argument('--balance', type=int, help='average per channel balance', dest='balance')
 parser.add_argument('--circ-num', type=int, help='run number', dest='circNum')
+parser.add_argument('--dag-num', type=int, help='run number', dest='dagNum')
 parser.add_argument('--rebalancing-queue-delay-threshold', type=int, help='threshold for rebalancing',\
         dest='rebalancingQueueDelayThreshold', default=3)
 parser.add_argument('--gamma-imbalance-queue-size', type=float, help='threshold queue size for rebalancing', 
@@ -89,6 +90,8 @@ if args.routingScheme != 'default':
     configname = configname + "_" + args.routingScheme
 if args.circNum != None:
     configname += "_circ" + str(args.circNum)
+if args.dagNum != None:
+    configname += "_dag" + str(args.dagNum)
 if args.demandScale != None:
     configname += "_demand" + str(args.demandScale)
 if 'newseed' in args.workload_filename:

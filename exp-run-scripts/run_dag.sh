@@ -2,23 +2,6 @@
 PATH_PREFIX="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/"
 GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
-num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" \
-    "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
-
-balance=100
-
-prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
-    "hotnets" "five_line" "lnd_dec4_2018" "lnd_dec4_2018lessScale" \
-    "sw_10_routers" "sw_20_routers" "sw_50_routers" "sw_60_routers" "sw_80_routers"  \
-    "sw_100_routers" "sw_200_routers" "sw_400_routers" "sw_600_routers" \
-    "sw_800_routers" "sw_1000_routers"\
-    "sf_10_routers" "sf_20_routers" \
-    "sf_50_routers" "sf_60_routers" "sf_80_routers"  \
-    "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
-    "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
-    "random_30_routers" "sw_sparse_40_routers")
-
-scale=3 # "60" "90")
 routing_scheme=$1
 echo $routing_scheme
 random_init_bal=false
@@ -27,14 +10,15 @@ pathChoice="shortest"
 
 
 #general parameters that do not affect config names
-simulationLength=3100
-statCollectionRate=100
+simulationLength=1010
+statCollectionRate=10
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-transStatStart=2000
-transStatEnd=3000
+transStatStart=800
+transStatEnd=1000
+mtu=1.0
 echo $transStatStart
 echo $transStatEnd
 echo $signalsEnabled
@@ -53,20 +37,30 @@ xi=1
 routerQueueDrainTime=5
 serviceArrivalWindow=300
 
+#DCTCP parameters
+windowBeta=0.1
+windowAlpha=10
+queueThreshold=160
+queueDelayThreshold=300
+balanceThreshold=0.1
+minDCTCPWindow=1
+rateDecreaseFrequency=3.0
 
 
-arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_PREFIX}
 
 dag_percent=("20" "45" "65")
+balance=160
+scale=3 # "60" "90")
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=(8) #10 11 13 22 24)
-for i in "${array[@]}" 
-do    
+prefix="lnd_dec4_2018"
+for num in 4
+do
+    echo "doing run $num"
     # create workload files and run different demand levels
     for dag_amt in "${dag_percent[@]}"
     do
@@ -81,91 +75,27 @@ do
         done
         cp hostNodeLandmarkRouting.ned ${PATH_NAME}
         
-        network="${prefix[i]}_dag${dag_amt}_net"
-        topofile="${PATH_NAME}${prefix[i]}_topo.txt"
+        network="${prefix}_dag${dag_amt}_net"
+        topofile="${PATH_NAME}${prefix}_topo${balance}.txt"
+        graph_type="lnd"
+        delay="30"
+        scale="3"
 
-        # identify graph type for topology
-        if [ ${prefix[i]:0:2} == "sw" ]; then
-            graph_type="small_world"
-        elif [ ${prefix[i]:0:2} == "sf" ]; then
-            graph_type="scale_free"
-        elif [ ${prefix[i]:0:4} == "tree" ]; then
-            graph_type="tree"
-        elif [ ${prefix[i]:0:3} == "lnd" ]; then
-            graph_type=${prefix[i]}
-        elif [ ${prefix[i]} == "hotnets" ]; then
-            graph_type="hotnets_topo"
-        elif [ ${prefix[i]:0:6} == "random" ]; then
-            graph_type="random"
-        else
-            graph_type="simple_topologies"
-        fi
-        
-        # set delay amount
-        if [ ${prefix[i]:0:3} == "two" ]; then
-            delay="120"
-        else
-            delay="30"
-        fi
-        
-        # STEP 1: create topology
-#        $PYTHON scripts/create_topo_ned_file.py $graph_type\
-#                --network-name ${PATH_NAME}$network\
-#                --topo-filename $topofile\
-#                --num-nodes ${num_nodes[i]}\
-#                --balance-per-channel $balance\
-#                --separate-end-hosts \
-#                --delay-per-channel $delay\
-#                --randomize-start-bal $random_init_bal\
-#                --random-channel-capacity $random_capacity  
-
-        # CREATE WORKLOAD
-        workloadname="${prefix[i]}_demand${scale}_dag${dag_amt}"
+        workloadname="${prefix}_demand${scale}_dag${dag_amt}_num${num}"
         workload="${PATH_NAME}$workloadname"
         inifile="${PATH_NAME}${workloadname}_default.ini"
         payment_graph_topo="custom"
         
-        # figure out payment graph/workload topology
-        if [ ${prefix[i]:0:9} == "five_line" ]; then
-            payment_graph_topo="simple_line"
-        elif [ ${prefix[i]:0:4} == "five" ]; then
-            payment_graph_topo="hardcoded_circ"
-        elif [ ${prefix[i]:0:7} == "hotnets" ]; then
-            payment_graph_topo="hotnets_topo"
-        fi
-
         echo $network
         echo $topofile
         echo $inifile
         echo $graph_type
-
-        # STEP 2: create transactions corresponding to this experiment run
-        echo $PYTHON scripts/create_workload.py $workload poisson \
-                --graph-topo $payment_graph_topo \
-                --payment-graph-dag-percentage ${dag_amt}\
-                --topo-filename $topofile\
-                --experiment-time $simulationLength \
-                --balance-per-channel $balance\
-                --generate-json-also \
-                --timeout-value 5 \
-                --scale-amount $scale 
-        
-#        $PYTHON scripts/create_workload.py $workload poisson \
-#                --graph-topo $payment_graph_topo \
-#                --payment-graph-dag-percentage ${dag_amt}\
-#                --topo-filename $topofile\
-#                --experiment-time $simulationLength \
-#                --balance-per-channel $balance\
-#                --generate-json-also \
-#                --timeout-value 5 \
-#                --scale-amount $scale 
-#
        
         # STEP 3: run the experiment
         # routing schemes where number of path choices doesn't matter
         if [ ${routing_scheme} ==  "shortestPath" ]; then 
-          output_file=outputs/${prefix[i]}_dag${dag_amt}_${routing_scheme}_demand${scale}0_${pathChoice}
-          inifile=${PATH_NAME}${prefix[i]}_dag${dag_amt}_${routing_scheme}_demand${scale}_${pathChoice}.ini
+          output_file=outputs/${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}0_${pathChoice}
+          inifile=${PATH_NAME}${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}_${pathChoice}.ini
 
           # create the ini file with specified parameters
           python scripts/create_ini_file.py \
@@ -183,11 +113,14 @@ do
                   --demand-scale ${scale}\
                   --transStatStart $transStatStart\
                   --transStatEnd $transStatEnd\
-                  --path-choice $pathChoice
+                  --path-choice $pathChoice \
+                  --balance $balance\
+                  --dag-num $num \
 
 
           # run the omnetexecutable with the right parameters
-          ./spiderNet -u Cmdenv -f $inifile -c ${network}_${routing_scheme}_demand${scale}_${pathChoice} -n ${PATH_NAME}\
+          ./spiderNet -u Cmdenv -f $inifile -c 
+          ${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice} -n ${PATH_NAME}\
                 > ${output_file}.txt & 
         
 
@@ -197,8 +130,8 @@ do
           # if you add more choices for the number of paths you might run out of cores/memory
           for numPathChoices in 4
           do
-            output_file=outputs/${prefix[i]}_dag${dag_amt}_${routing_scheme}_demand${scale}0_${pathChoice}
-            inifile=${PATH_NAME}${prefix[i]}_dag${dag_amt}_${routing_scheme}_demand${scale}_${pathChoice}.ini
+            output_file=outputs/${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}0_${pathChoice}
+            inifile=${PATH_NAME}${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}_${pathChoice}.ini
 
             if [[ $routing_scheme =~ .*Window.* ]]; then
                 windowEnabled=true
@@ -238,13 +171,24 @@ do
                     --service-arrival-window $serviceArrivalWindow\
                     --transStatStart $transStatStart\
                     --transStatEnd $transStatEnd\
-                    --path-choice $pathChoice
+                    --path-choice $pathChoice \
+                    --balance $balance\
+                    --dag-num $num \
+                    --window-alpha $windowAlpha \
+                    --window-beta $windowBeta \
+                    --queue-threshold $queueThreshold \
+                    --queue-delay-threshold $queueDelayThreshold \
+                    --balance-ecn-threshold $balanceThreshold \
+                    --mtu $mtu\
+                    --min-dctcp-window $minDCTCPWindow\
+                    --rate-decrease-frequency $rateDecreaseFrequency
+
 
 
             # run the omnetexecutable with the right parameters
             # in the background
             ./spiderNet -u Cmdenv -f ${inifile}\
-                -c ${network}_${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices} -n ${PATH_NAME}\
+                -c ${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices} -n ${PATH_NAME}\
                 > ${output_file}.txt &
             pids+=($!)
          done
@@ -259,13 +203,13 @@ do
         if [ "$random_init_bal" = true ] ; then suffix="randomInitBal_"; else suffix=""; fi
         if [ "$random_capacity" = true ]; then suffix="${suffix}randomCapacity_"; fi
         echo $suffix
-        graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix[i]}_${payment_graph_type}_delay${delay}_demand${scale}0_${suffix}
-        vec_file_prefix=${PATH_NAME}results/${prefix[i]}_${payment_graph_type}_net_
+        graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix}${balance}_dag${num}_delay${delay}_demand${scale}0_${suffix}
+        vec_file_prefix=${PATH_NAME}results/${prefix}_dag${dag_amt}_net_${balance}_
         
         #routing schemes where number of path choices doesn't matter
         if [ ${routing_scheme} ==  "shortestPath" ]; then 
-            vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}-#0.vec
-            sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}-#0.sca
+            vec_file_path=${vec_file_prefix}${routing_scheme}_dag${num}demand${scale}_${pathChoice}-#0.vec
+            sca_file_path=${vec_file_prefix}${routing_scheme}_dag${num}_demand${scale}_${pathChoice}-#0.sca
 
 
             python scripts/generate_analysis_plots_for_single_run.py \
@@ -282,8 +226,8 @@ do
         else
           for numPathChoices in 4
             do
-                vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}-#0.vec
-                sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}-#0.sca
+                vec_file_path=${vec_file_prefix}${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}-#0.vec
+                sca_file_path=${vec_file_prefix}${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}-#0.sca
 
 
                 python scripts/generate_analysis_plots_for_single_run.py \

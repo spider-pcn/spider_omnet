@@ -5,7 +5,6 @@ GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" \
     "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40")
 
-balance=100
 
 prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
     "hotnets" "five_line" "lnd_dec4_2018" "lnd_dec4_2018lessScale" \
@@ -24,7 +23,7 @@ random_capacity=false
 
 
 #general parameters that do not affect config names
-simulationLength=3100
+simulationLength=1010
 statCollectionRate=100
 timeoutClearRate=1
 timeoutEnabled=true
@@ -52,11 +51,12 @@ PYTHON="/usr/bin/python"
 mkdir -p ${PATH_PREFIX}
 
 dag_percent=("20" "45" "65")
+balance=160
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=(8) #10 11 13 22 24)
+array=(7) #10 11 13 22 24)
 for i in "${array[@]}" 
 do    
     # create workload files and run different demand levels
@@ -65,16 +65,17 @@ do
         # generate the graph first to ned file
         PATH_NAME="${PATH_PREFIX}dag${dag_amt}/"
         mkdir -p ${PATH_NAME}
-        
-        cp hostNodeBase.ned ${PATH_NAME}
-        cp hostNodeWaterfilling.ned ${PATH_NAME}
+        for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
+        do
+            cp hostNode${suffix}.ned ${PATH_NAME}
+            cp routerNode${suffix}.ned ${PATH_NAME}
+        done
         cp hostNodeLandmarkRouting.ned ${PATH_NAME}
-        cp hostNodePriceScheme.ned ${PATH_NAME}
-        cp hostNodeLndBaseline.ned ${PATH_NAME}
-        cp routerNode.ned ${PATH_NAME}
-    
+        cp hostNodePropFairPriceScheme.ned ${PATH_NAME}
+        cp routerNodeDCTCPBal.ned ${PATH_NAME}
+            
         network="${prefix[i]}_dag${dag_amt}_net"
-        topofile="${PATH_NAME}${prefix[i]}_topo.txt"
+        topofile="${PATH_NAME}${prefix[i]}_topo${balance}.txt"
 
         # identify graph type for topology
         if [ ${prefix[i]:0:2} == "sw" ]; then
@@ -111,11 +112,7 @@ do
                 --randomize-start-bal $random_init_bal\
                 --random-channel-capacity $random_capacity  
 
-        # CREATE WORKLOAD
-        workloadname="${prefix[i]}_demand${scale}_dag${dag_amt}"
-        workload="${PATH_NAME}$workloadname"
-        inifile="${PATH_NAME}${workloadname}_default.ini"
-        payment_graph_topo="custom"
+
         
         # figure out payment graph/workload topology
         if [ ${prefix[i]:0:9} == "five_line" ]; then
@@ -130,28 +127,29 @@ do
         echo $topofile
         echo $inifile
         echo $graph_type
+    
+        # create 5 workload files for 5 runs
+        for num in {0..4}
+        do
+            echo "generating dag ${num} for ${dag_amt}"
+            workloadname="${prefix[i]}_demand${scale}_dag${dag_amt}_num${num}"
+            workload="${PATH_NAME}$workloadname"
+            inifile="${PATH_NAME}${workloadname}_default.ini"
+            payment_graph_topo="custom"
 
-        # STEP 2: create transactions corresponding to this experiment run
-        echo $PYTHON scripts/create_workload.py $workload poisson \
-                --graph-topo $payment_graph_topo \
-                --payment-graph-dag-percentage ${dag_amt}\
-                --topo-filename $topofile\
-                --experiment-time $simulationLength \
-                --balance-per-channel $balance\
-                --generate-json-also \
-                --timeout-value 5 \
-                --scale-amount $scale 
-        
-        $PYTHON scripts/create_workload.py $workload poisson \
-                --graph-topo $payment_graph_topo \
-                --payment-graph-dag-percentage ${dag_amt}\
-                --topo-filename $topofile\
-                --experiment-time $simulationLength \
-                --balance-per-channel $balance\
-                --generate-json-also \
-                --timeout-value 5 \
-                --kaggle-size \
-                --scale-amount $scale 
+            # STEP 2: create transactions corresponding to this experiment run
+            $PYTHON scripts/create_workload.py $workload poisson \
+                    --graph-topo $payment_graph_topo \
+                    --payment-graph-dag-percentage ${dag_amt}\
+                    --topo-filename $topofile\
+                    --experiment-time $simulationLength \
+                    --balance-per-channel $balance\
+                    --generate-json-also \
+                    --timeout-value 5 \
+                    --kaggle-size \
+                    --scale-amount $scale \
+                    --run-num ${num}
+        done
     done
     #rm $topofile
 done

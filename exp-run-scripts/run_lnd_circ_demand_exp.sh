@@ -2,8 +2,6 @@
 PATH_NAME="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulations/"
 GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
-balance=100
-
 routing_scheme=$1
 capacity_type=$2
 pathChoice=$3

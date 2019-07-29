@@ -47,6 +47,7 @@ routerQueueDrainTime=5
 serviceArrivalWindow=300
 
 
+mkdir -p ${PATH_NAME}
 for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
 do
     cp hostNode${suffix}.ned ${PATH_NAME}
