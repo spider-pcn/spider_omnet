@@ -391,6 +391,9 @@ void initializePathMaps(string filename) {
                     printVector(newPath);
             }
         }
+        
+        // push the last path in
+        _pathsMap[sender][receiver] = pathList;
     }
     else {
         cout << "unable to open paths file " << endl;

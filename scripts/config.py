@@ -170,3 +170,9 @@ SCHEME_CODE = { "priceSchemeWindow": "PS",\
         "DCTCPRate": "DCTCPRate", \
         "DCTCPQ": "DCTCP_qdelay", \
         "DCTCPBal": "DCTCPBal"}
+
+# define actual dag percent mapping for ggplot
+PERCENT_MAPPING = { 0 : 0,\
+        20: 5, \
+        45 : 20, \
+        65 : 40 }

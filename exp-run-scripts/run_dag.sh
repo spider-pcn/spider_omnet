@@ -119,7 +119,7 @@ do
 
 
           # run the omnetexecutable with the right parameters
-          ./spiderNet -u Cmdenv -f $inifile -c 
+          ./spiderNet -u Cmdenv -f $inifile -c\
           ${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice} -n ${PATH_NAME}\
                 > ${output_file}.txt & 
         
@@ -203,7 +203,7 @@ do
         if [ "$random_init_bal" = true ] ; then suffix="randomInitBal_"; else suffix=""; fi
         if [ "$random_capacity" = true ]; then suffix="${suffix}randomCapacity_"; fi
         echo $suffix
-        graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix}${balance}_dag${num}_delay${delay}_demand${scale}0_${suffix}
+        graph_op_prefix=${GRAPH_PATH}${timeout}/${prefix}_dag${dag_amt}_${balance}_num${num}_delay${delay}_demand${scale}0_${suffix}
         vec_file_prefix=${PATH_NAME}results/${prefix}_dag${dag_amt}_net_${balance}_
         
         #routing schemes where number of path choices doesn't matter
@@ -220,7 +220,7 @@ do
               --balance \
               --queue_info --timeouts --frac_completed \
               --inflight --timeouts_sender \
-              --waiting --bottlenecks
+              --waiting --bottlenecks --time_inflight --queue_delay
 
         #routing schemes where number of path choices matter
         else
@@ -238,13 +238,12 @@ do
                   --balance \
                   --queue_info --timeouts --frac_completed \
                   --frac_completed_window \
-                  --inflight --timeouts_sender \
+                  --inflight --timeouts_sender --time_inflight \
                   --waiting --bottlenecks --probabilities \
                   --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
                   --inflight_incoming --rate_to_send --price --mu_remote --demand \
-                  --rate_sent --amt_inflight_per_path \
-                  --numCompleted
-              done
+                  --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked --queue_delay
+            done
         fi
 
         # STEP 5: cleanup        
