@@ -3,6 +3,7 @@ import argparse
 import statistics as stat
 from config import *
 import shlex
+import math
 
 delay = 30
 
@@ -56,6 +57,7 @@ scheme_list = args.scheme_list
 
 output_file = open(GGPLOT_DATA_DIR + args.save, "w+")
 output_file.write("Scheme,Credit,SuccVol,Demand\n")
+print "scheme objective numberOfZeroes"
 
 
 # go through all relevant files and aggregate probability by size
@@ -85,9 +87,15 @@ for i, scheme in enumerate(scheme_list):
                         #flow_succ_list.append(num_completed * 100 /num_arrived)
                         flow_succ_list.append(num_completed/ args.measurement_interval)
 
+    sum_fairness, count_zero = 0, 0
     for entry in sorted(flow_succ_list):
+        if entry == 0:
+            count_zero += 1
+        else:
+            sum_fairness += math.log(entry, 2)
         output_file.write(str(SCHEME_CODE[scheme]) +  "," + str(credit) +  "," + \
             "%f,%f\n" % (entry, demand))
+    print scheme, sum_fairness, count_zero
 
     if i == 0:
         for entry in sorted(flow_arrival_list):
