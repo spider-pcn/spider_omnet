@@ -208,9 +208,9 @@ void routerNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
 
         // correction for really large service/arrival rate initially
         if (neighborChannel->serviceArrivalTimeStamps.size() < 0.3 * _serviceArrivalWindow)
-            serviceTimeDiff = 0.01;
+            serviceTimeDiff = 1;
         if (neighborChannel->arrivalTimeStamps.size() < 0.3 * _serviceArrivalWindow)
-            arrivalTimeDiff = 0.01;
+            arrivalTimeDiff = 1;
         
         neighborChannel->serviceRate = neighborChannel->sumServiceWindowTxns / serviceTimeDiff;
         neighborChannel->arrivalRate = neighborChannel->sumArrivalWindowTxns / arrivalTimeDiff;

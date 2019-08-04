@@ -174,7 +174,7 @@ do
                     --generate-json-also \
                     --timeout-value 5 \
                     --scale-amount $scale \
-                    --run-num 0 \
+                    --run-num 0 
 
             # STEP 3: run the experiment
             # routing schemes where number of path choices doesn't matter

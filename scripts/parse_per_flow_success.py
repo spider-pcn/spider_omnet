@@ -36,6 +36,10 @@ parser.add_argument('--save',
 parser.add_argument('--num-max',
         type=int,
         help='Single number denoting the maximum number of runs to aggregate data over', default="5")
+parser.add_argument('--measurement-interval',
+        type=int,
+        help='Number of seconds over which success was measured', default="200")
+
 
 # collect all arguments
 args = parser.parse_args()
@@ -55,8 +59,8 @@ output_file.write("Scheme,Credit,SuccVol,Demand\n")
 
 
 # go through all relevant files and aggregate probability by size
-for scheme in scheme_list:
-    flow_succ_list = []
+for i, scheme in enumerate(scheme_list):
+    flow_succ_list, flow_arrival_list = [], []
     for run_num in range(0, args.num_max + 1):
         file_name = topo + "_" + args.payment_graph_type + "_net_" + str(credit) + "_" + scheme + "_" + \
                 args.payment_graph_type + str(run_num) + \
@@ -77,10 +81,17 @@ for scheme in scheme_list:
                     if "amtArrived" in line:
                         parts = shlex.split(line)
                         num_arrived = float(parts[-1])
+                        flow_arrival_list.append(num_arrived / args.measurement_interval)
                         #flow_succ_list.append(num_completed * 100 /num_arrived)
-                        flow_succ_list.append(num_completed/1000)
+                        flow_succ_list.append(num_completed/ args.measurement_interval)
 
     for entry in sorted(flow_succ_list):
         output_file.write(str(SCHEME_CODE[scheme]) +  "," + str(credit) +  "," + \
             "%f,%f\n" % (entry, demand))
+
+    if i == 0:
+        for entry in sorted(flow_arrival_list):
+            output_file.write("arrival," + str(credit) +  "," + \
+                "%f,%f\n" % (entry, demand))
+
 output_file.close()
