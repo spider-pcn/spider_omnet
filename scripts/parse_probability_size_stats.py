@@ -102,7 +102,7 @@ for scheme in scheme_list:
                         num_completed = float(parts[-1])
                         sub_parts = parts[-2].split()
                         size = int(sub_parts[1][:-1])
-                        num_arrived = float(sub_parts[3][1:-1])
+                        num_arrived = float(sub_parts[3][1:-1]) + 1
                         bucket = buckets[np.searchsorted(buckets, size)]
                         if num_arrived > 0:
                             if num_arrived < num_completed:
@@ -112,6 +112,7 @@ for scheme in scheme_list:
                             size_to_arrival[bucket] = size_to_arrival.get(bucket, 0) + num_arrived
                             size_to_completion[bucket] = size_to_completion.get(bucket, 0) + num_completed
         except IOError:
+            print "error with", file_name
             continue
 
     sorted_sizes = [5]
