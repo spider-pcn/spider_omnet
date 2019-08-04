@@ -27,6 +27,9 @@ parser.add_argument('--path-type-list',
 parser.add_argument('--queue-threshold-list',
         nargs="*",
         help='queue thresholds to collect info for', default=[None])
+parser.add_argument('--dag-percent-list',
+        nargs="*",
+        help='dag percents to collect info for', default=[None])
 parser.add_argument('--path-num-list',
         nargs="*",
         help='number of paths to collect data for', default=[4])
@@ -50,6 +53,7 @@ path_type_list = args.path_type_list
 scheme_list = args.scheme_list
 path_num_list = args.path_num_list
 queue_threshold_list = args.queue_threshold_list
+dag_percent_list = args.dag_percent_list
 
 output_file = open(GGPLOT_DATA_DIR + args.save, "w+")
 if args.payment_graph_type == "circ":
@@ -57,7 +61,8 @@ if args.payment_graph_type == "circ":
 else:
     output_file.write("Scheme,Credit,DAGAmt,")
 
-output_file.write("NumPathsPathType,Threshold,SuccRatio,SuccRatioMin,SuccRatioMax,SuccVolume,SuccVolumeMin," +\
+output_file.write("NumPaths,PathType,Threshold,SuccRatio,SuccRatioMin,SuccRatioMax,SuccVolume," + \
+        "SuccVolumeMin," +\
         "SuccVolumeMax,CompTime,CompTimeMin,CompTimeMax\n")
 
 # go through all relevant files and aggregate info
@@ -67,14 +72,17 @@ for credit in credit_list:
             for queue_threshold in queue_threshold_list:
                 for num_paths in path_num_list:
                     succ_ratios, succ_vols,comp_times = [], [], []
-                    for run_num in range(0, args.num_max  + 1):
-                        for percent in dag_percent_list:
+                    for percent in dag_percent_list:
+                        for run_num in range(0, args.num_max  + 1):
                             if args.payment_graph_type == "circ" or percent == 0:
-                                file_name = topo + str(credit) + "_circ" + str(run_num) + \
+                                file_name = topo + str(credit) + "_circ" + str(run_num)
                             else:
-                                file_name = topo + "_dag" + str(percent) + "_" + str(credit) + "_num" + str(run_num) 
+                                file_name = topo + "_dag" + str(percent) + "_" + str(credit) + "_num" + \
+                                        str(run_num) 
                             
-                            file_name += "_delay" + str(delay) + "_demand" + str(demand) + "_" + scheme + "_" + path_type 
+                            file_name += "_delay" + str(delay) + "_demand" + str(demand) + "_" + scheme + \
+                                    "_" + path_type 
+
                             if scheme != "shortestPath":
                                 file_name += "_" + str(num_paths) 
                             if queue_threshold is not None:
@@ -105,9 +113,9 @@ for credit in credit_list:
                         if len(succ_ratios) > 0:
                             if args.payment_graph_type == "circ":
                                 output_file.write(SCHEME_CODE[scheme] + "," + str(capacity) +  ",")
-                           else:
+                            else:
                                 output_file.write(SCHEME_CODE[scheme] + "," + str(capacity) +  "," + \
-                                        str(PERCENT_MAPPING[percent] + ",")
+                                        str(PERCENT_MAPPING[percent] + ","))
 
                             output_file.write(str(num_paths) + "," \
                                 + str(path_type) + "," \

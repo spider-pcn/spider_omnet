@@ -10,14 +10,14 @@ pathChoice="shortest"
 
 
 #general parameters that do not affect config names
-simulationLength=1010
+simulationLength=2010
 statCollectionRate=10
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-transStatStart=800
-transStatEnd=1000
+transStatStart=1800
+transStatEnd=2000
 mtu=1.0
 echo $transStatStart
 echo $transStatEnd
@@ -228,7 +228,6 @@ do
             do
                 vec_file_path=${vec_file_prefix}${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}-#0.vec
                 sca_file_path=${vec_file_prefix}${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}-#0.sca
-
 
                 python scripts/generate_analysis_plots_for_single_run.py \
                   --detail $signalsEnabled \
