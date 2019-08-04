@@ -172,7 +172,7 @@ SCHEME_CODE = { "priceSchemeWindow": "PS",\
         "DCTCPBal": "DCTCPBal"}
 
 # define actual dag percent mapping for ggplot
-PERCENT_MAPPING = { 0 : 0,\
-        20: 5, \
-        45 : 20, \
-        65 : 40 }
+PERCENT_MAPPING = { '0' : 0,\
+        '20': 5, \
+        '45' : 20, \
+        '65' : 40 }

@@ -71,10 +71,10 @@ for credit in credit_list:
         for path_type in path_type_list:
             for queue_threshold in queue_threshold_list:
                 for num_paths in path_num_list:
-                    succ_ratios, succ_vols,comp_times = [], [], []
                     for percent in dag_percent_list:
+                        succ_ratios, succ_vols,comp_times = [], [], []
                         for run_num in range(0, args.num_max  + 1):
-                            if args.payment_graph_type == "circ" or percent == 0:
+                            if args.payment_graph_type == "circ" or percent == '0':
                                 file_name = topo + str(credit) + "_circ" + str(run_num)
                             else:
                                 file_name = topo + "_dag" + str(percent) + "_" + str(credit) + "_num" + \
@@ -115,7 +115,7 @@ for credit in credit_list:
                                 output_file.write(SCHEME_CODE[scheme] + "," + str(capacity) +  ",")
                             else:
                                 output_file.write(SCHEME_CODE[scheme] + "," + str(capacity) +  "," + \
-                                        str(PERCENT_MAPPING[percent] + ","))
+                                        str(PERCENT_MAPPING[percent]) + ",")
 
                             output_file.write(str(num_paths) + "," \
                                 + str(path_type) + "," \
@@ -123,4 +123,19 @@ for credit in credit_list:
                                 + ("%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (stat.mean(succ_ratios), min(succ_ratios), \
                                 max(succ_ratios), stat.mean(succ_vols), min(succ_vols),  max(succ_vols), \
                                 stat.mean(comp_times), min(comp_times), max(comp_times))))
+    
+    if args.payment_graph_type == 'dag':
+        for percent in dag_percent_list:
+            if "lndtopo" in args.save and "lnd_credit" in args.save:
+                capacity = int(credit) * 650
+            else:
+                capacity = int(credit)
+
+            output_file.write("Circ," + str(capacity) +  "," + \
+                                        str(PERCENT_MAPPING[percent]) + ",")   
+            ideal = 100 - PERCENT_MAPPING[percent]
+            output_file.write("4,ideal,0," \
+                                + ("%f,%f,%f,%f,%f,%f,0,0,0\n" % (ideal, ideal, ideal, ideal, ideal, ideal)))
+
+
 output_file.close()
