@@ -146,8 +146,8 @@ do
           # if you add more choices for the number of paths you might run out of cores/memory
           for numPathChoices in 4
           do
-            output_file=outputs/${prefix}_${balance}_circ${num}_${routing_scheme}_demand${scale}0_${pathChoice}
-            inifile=${PATH_NAME}${prefix}_${balance}_circ${num}_${routing_scheme}_demand${scale}_${pathChoice}.ini
+            output_file=outputs/${prefix}_${balance}_circ${num}_${routing_scheme}_demand${scale}0_${pathChoice}_${numPathChoices}
+            inifile=${PATH_NAME}${prefix}_${balance}_circ${num}_${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}.ini
 
             if [[ $routing_scheme =~ .*Window.* ]]; then
                 windowEnabled=true
