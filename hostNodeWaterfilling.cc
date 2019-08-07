@@ -300,8 +300,9 @@ void hostNodeWaterfilling::handleProbeMessage(routerMsg* ttmsg){
         if (destNodeToNumTransPending[destNode] > 0){
             // service first transaction on path
             if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {
-                handleTransactionMessageSpecialized(nodeToDestInfo[destNode].transWaitingToBeSent.back());
+                routerMsg *nextTrans = nodeToDestInfo[destNode].transWaitingToBeSent.back();
                 nodeToDestInfo[destNode].transWaitingToBeSent.pop_back();
+                handleTransactionMessageSpecialized(nextTrans);
             }
             
             //reset the probe message to send again
@@ -381,14 +382,17 @@ void hostNodeWaterfilling::handleAckMessageTimeOut(routerMsg* ttmsg){
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
     int transactionId = aMsg->getTransactionId();
 
-    double totalAmtReceived = (transToAmtLeftToComplete[transactionId]).amtReceived +
-        aMsg->getAmount();
-    if (totalAmtReceived != transToAmtLeftToComplete[transactionId].amtSent) 
-        return;
-    
-    auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
-    if (iter!=canceledTransactions.end()) {
-        canceledTransactions.erase(iter);
+    if (aMsg->getIsSuccess()) {
+        double totalAmtReceived = (transToAmtLeftToComplete[transactionId]).amtReceived +
+            aMsg->getAmount();
+        if (totalAmtReceived != transToAmtLeftToComplete[transactionId].amtSent) 
+            return;
+        
+        auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+        if (iter!=canceledTransactions.end()) {
+            canceledTransactions.erase(iter);
+        }
+        successfulDoNotSendTimeOut.insert(aMsg->getTransactionId());
     }
 }
 
@@ -411,51 +415,66 @@ void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
           << " wasn't written to transToAmtLeftToComplete" << endl;
     }
     else {
-        (transToAmtLeftToComplete[transactionId]).amtReceived += aMsg->getAmount();
-        pathInfo->statRateCompleted += 1;
-        if (aMsg->getTimeSent() >= _transStatStart 
-                && aMsg->getTimeSent() <= _transStatEnd) { 
-            statAmtCompleted[receiver] += aMsg->getAmount();
-        }
-
-        if (transToAmtLeftToComplete[transactionId].amtReceived > 
-                transToAmtLeftToComplete[transactionId].amtSent - _epsilon) {
-            SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
-            splitInfo->numReceived += 1;
-
-            if (aMsg->getTimeSent() >= _transStatStart && 
-                    aMsg->getTimeSent() <= _transStatEnd) {
-
-                if (splitInfo->numTotal == splitInfo->numReceived) {
-                    statNumCompleted[receiver] += 1;
-                    statRateCompleted[receiver] += 1;
-                    _transactionCompletionBySize[splitInfo->totalAmount] += 1;
-                    double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
-                    statCompletionTimes[receiver] += timeTaken * 1000;
-                }
+        // update stats if successful
+        if (aMsg->getIsSuccess()) { 
+            pathInfo->statRateCompleted += 1;
+            (transToAmtLeftToComplete[transactionId]).amtReceived += aMsg->getAmount();
+            if (aMsg->getTimeSent() >= _transStatStart 
+                    && aMsg->getTimeSent() <= _transStatEnd) { 
+                statAmtCompleted[receiver] += aMsg->getAmount();
             }
 
-            
-            // erase transaction from map 
-            // NOTE: still keeping it in the per path map (transPathToAckState)
-            // to identify that timeout needn't be sent
-            transToAmtLeftToComplete.erase(aMsg->getTransactionId());
+            if (transToAmtLeftToComplete[transactionId].amtReceived > 
+                    transToAmtLeftToComplete[transactionId].amtSent - _epsilon) {
+                SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
+                splitInfo->numReceived += 1;
+
+                if (aMsg->getTimeSent() >= _transStatStart && 
+                        aMsg->getTimeSent() <= _transStatEnd) {
+                    if (splitInfo->numTotal == splitInfo->numReceived) {
+                        statNumCompleted[receiver] += 1;
+                        statRateCompleted[receiver] += 1;
+                        _transactionCompletionBySize[splitInfo->totalAmount] += 1;
+                        double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
+                        statCompletionTimes[receiver] += timeTaken * 1000;
+                    }
+                }
+                
+                // erase transaction from map 
+                // NOTE: still keeping it in the per path map (transPathToAckState)
+                // to identify that timeout needn't be sent
+                transToAmtLeftToComplete.erase(aMsg->getTransactionId());
+                destNodeToNumTransPending[receiver] -= 1;
+            }
+        } 
+        else {
+            // make sure transaction isn't cancelled yet
+            auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+        
+            if (iter != canceledTransactions.end()) {
+                if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd)
+                    statAmtFailed[receiver] += aMsg->getAmount();
+            } 
+            else {
+                // requeue transaction
+                routerMsg *duplicateTrans = generateDuplicateTransactionMessage(aMsg);
+                pushIntoSenderQueue(&(nodeToDestInfo[receiver]), duplicateTrans);
+            }
         }
        
-        //increment transaction amount ack on a path. 
+        //increment transaction amount acked on a path, so that we know not to send timeouts 
+        // if nothing is in excess on the path
         tuple<int,int> key = make_tuple(transactionId, pathIndex);
         transPathToAckState[key].amtReceived += aMsg->getAmount();
         
         // decrement amt inflight on a path
         pathInfo->sumOfTransUnitsInFlight -= aMsg->getAmount();
-        destNodeToNumTransPending[receiver] -= 1;
 
         // update highest bottleneck balance path
         double thisPathAvailBal = pathInfo->bottleneck - pathInfo->sumOfTransUnitsInFlight;
         if (thisPathAvailBal > nodeToDestInfo[receiver].highestBottleneckBalance) {
             nodeToDestInfo[receiver].highestBottleneckBalance = thisPathAvailBal;
             nodeToDestInfo[receiver].highestBottleneckPathIndex = pathIndex;
-
         }
     }
     hostNodeBase::handleAckMessage(ttmsg);
