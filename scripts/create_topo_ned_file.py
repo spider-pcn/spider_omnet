@@ -232,9 +232,9 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         
         elif is_lnd and "uniform" not in output_filename:
             if "lessScale" in output_filename:
-                balance_for_this_channel = int(round(G[e[0]][e[1]]['capacity'] *10 * balance_per_channel / SAT_TO_EUR))
+                balance_for_this_channel = int(round(G[e[0]][e[1]]['capacity'] *10 * balance_per_channel))
             else:
-                balance_for_this_channel = int(round(G[e[0]][e[1]]['capacity'] * balance_per_channel / SAT_TO_EUR))
+                balance_for_this_channel = int(round(G[e[0]][e[1]]['capacity'] * balance_per_channel))
         
         else:
             balance_for_this_channel = balance_per_channel

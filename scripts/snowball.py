@@ -83,16 +83,29 @@ def prune_deg_one_nodes(sampled_graph):
 
 
 
-lnd_file_list = ["lnd_dec4_2018", "lnd_dec28_2018", "lnd_july15_2019"]
+def write_capacities_to_file(filename, capacities):
+    with open(filename, "w+") as f:
+        f.write("values\n")
+        for c in capacities:
+            f.write(str(c) + "\n")
+
+
+#lnd_file_list = ["lnd_dec4_2018", "lnd_dec28_2018"]
+lnd_file_list = ["lnd_july15_2019"]
 for filename in lnd_file_list: 
 	graph = nx.read_edgelist(LND_FILE_PATH + filename + ".edgelist")
 
 	rename_dict = {v: int(str(v)) for v in graph.nodes()}
 	graph = nx.relabel_nodes(graph, rename_dict)
-	for e in graph.edges():
-		graph.edges[e]['capacity'] = int(str(graph.edges[e]['capacity']))
 
-	init_seed = {784, 549}
+        # convert all capacities to EUROS
+	for e in graph.edges():
+                edge_cap = int(str(graph.edges[e]['capacity'])) / SAT_TO_EUR
+                if edge_cap < 25:
+                    edge_cap = 25
+		graph.edges[e]['capacity'] = edge_cap
+	
+        init_seed = {784, 549}
 
 	""" max_sample_size is the maximum size of sampled graph. Returned graph 
 	might be smaller than that. k is how many neighbors to sample (by each node)
@@ -113,10 +126,8 @@ for filename in lnd_file_list:
 	nx.write_edgelist(numbered_graph, LND_FILE_PATH + filename + "_reducedsize" + ".edgelist")
 
         """capacities = nx.get_edge_attributes(sampled_graph, 'capacity')
-        capacities = [c / 10000 for c in capacities.values()]
-        print capacities
+        capacities = [float(c * 10) for c in capacities.values()]
+        write_capacities_to_file("lnd_july15_data", capacities)
         plt.hist(capacities, bins=100, normed=True, cumulative=True)
-        print np.mean(np.array(capacities)), "stddev" , np.std(np.array(capacities))
+        print np.mean(np.array(capacities)), "stddev" , np.std(np.array(capacities),), min(capacities)
         plt.show()"""
-
-
