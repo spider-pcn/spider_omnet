@@ -23,7 +23,7 @@ random_capacity=false
 
 
 #general parameters that do not affect config names
-simulationLength=1010
+simulationLength=2010
 statCollectionRate=100
 timeoutClearRate=1
 timeoutEnabled=true

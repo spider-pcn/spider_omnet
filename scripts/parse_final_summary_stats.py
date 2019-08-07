@@ -86,7 +86,7 @@ for credit in credit_list:
                             if scheme != "shortestPath":
                                 file_name += "_" + str(num_paths) 
                             if queue_threshold is not None:
-                                file_name += "_" + str(queue_threshold)
+                                file_name += "_qd" + str(queue_threshold)
                             file_name += "_summary.txt"
                             
                             try: 

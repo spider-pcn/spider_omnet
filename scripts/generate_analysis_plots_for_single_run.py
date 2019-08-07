@@ -578,16 +578,17 @@ def main():
     plt.rc('xtick', labelsize=32)    # fontsize of the tick labels
     plt.rc('ytick', labelsize=32)    # fontsize of the tick labels
     plt.rc('legend', fontsize=34)    # legend fontsize'''
+    summary_stats = parse_sca_files_overall(args.sca_file) 
+    f = open(args.save + "_summary.txt", "w+")
+    f.write(summary_stats)
+    f.close()
+
     if args.detail == 'true':
         text_to_add = parse_sca_files(args.sca_file)
         plot_per_payment_channel_stats(args, text_to_add)
         plot_per_src_dest_stats(args, text_to_add)
         path_dist = collections.Counter(num_paths)
         print path_dist
-    
-    summary_stats = parse_sca_files_overall(args.sca_file) 
-    f = open(args.save + "_summary.txt", "w+")
-    f.write(summary_stats)
-    f.close()
+
 
 main()

@@ -163,6 +163,7 @@ def generate_graph(size, graph_type):
 def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts,\
         randomize_init_bal=False, random_channel_capacity=False, lnd_capacity=False, is_lnd=False):
     f1 = open(output_filename, "w+")
+    end_host_delay = delay_per_channel
 
     offset = G.number_of_nodes()
     if (separate_end_hosts == False):
@@ -203,7 +204,7 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
     capacity_dict = dict()
 
     # get lnd capacity data
-    lnd_capacities_graph = nx.read_edgelist(LND_FILE_PATH + 'lnd_dec4_2018_reducedsize' + '.edgelist')
+    lnd_capacities_graph = nx.read_edgelist(LND_FILE_PATH + 'lnd_july15_2019_reducedsize' + '.edgelist')
     lnd_capacities = nx.get_edge_attributes(lnd_capacities_graph, 'capacity').values() 
 
     # write rest of topology
@@ -226,7 +227,7 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         
         elif lnd_capacity:
             balance_for_this_channel = -1
-            while balance_for_this_channel < 2:
+            while balance_for_this_channel < 250:
                 balance_for_this_channel = round(np.random.choice(lnd_capacities) * \
                     (balance_per_channel / np.mean(lnd_capacities)))
         
@@ -253,7 +254,7 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
     if separate_end_hosts: 
         for n in G.nodes():
             f1.write(str(n) + "e " + str(n) + "r ")
-            f1.write(str(delay_per_channel) + " " + str(delay_per_channel) + " ")
+            f1.write(str(end_host_delay) + " " + str(end_host_delay) + " ")
             f1.write(str(LARGE_BALANCE/2) + " " + str(LARGE_BALANCE/2) + "\n")
     f1.close()
 
@@ -266,7 +267,8 @@ parser.add_argument('--delay-per-channel', type=int, dest='delay_per_channel', \
         help='delay between nodes (ms)', default=30)
 parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'hotnets_topo', 'simple_line', 'toy_dctcp', \
         'simple_deadlock', 'simple_topologies', 'lnd_dec4_2018','lnd_dec4_2018lessScale', \
-        'lnd_dec4_2018_randomCap', 'lnd_uniform', 'tree', 'random'], \
+        'lnd_dec4_2018_randomCap', 'lnd_dec4_2018_modified', 'lnd_uniform', 'tree', 'random', \
+        'lnd_july15_2019'], \
         help='type of graph (Small world or scale free or custom topology list)', default='small_world')
 parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
 parser.add_argument('--topo-filename', dest='topo_filename', type=str, \
@@ -313,7 +315,7 @@ elif args.graph_type == 'simple_deadlock':
     G = simple_deadlock_graph
     args.separate_end_hosts = False
 elif args.graph_type.startswith('lnd_'):
-    G = nx.read_edgelist(LND_FILE_PATH + 'lnd_dec4_2018_reducedsize' + '.edgelist')
+    G = nx.read_edgelist(LND_FILE_PATH + 'lnd_july15_2019_reducedsize' + '.edgelist')
 else:
     G = simple_line_graph
     args.separate_end_hosts = False

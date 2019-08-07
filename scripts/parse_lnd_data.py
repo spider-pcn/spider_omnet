@@ -19,6 +19,7 @@ def read_file(filename):
             n1 = edge["node1_pub"]
             n2 = edge["node2_pub"]
             cap = edge["capacity"]
+            capacity_list.append(capacity)
 
             try: 
                 n1_id = node_list[n1]

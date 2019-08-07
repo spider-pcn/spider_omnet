@@ -69,7 +69,7 @@ parser.add_argument('--window-alpha', type=float, help='size for window inc', de
 parser.add_argument('--window-beta', type=float, help='size for window dec', dest='windowBeta', default=0.01)
 parser.add_argument('--queue-threshold', type=float, help='ecn queue threshold', dest='queueThreshold', \
         default=30)
-parser.add_argument('--queue-delay-threshold', type=float, help='ecn queue delay threshold (in ms)', \
+parser.add_argument('--queue-delay-threshold', type=int, help='ecn queue delay threshold (in ms)', \
         dest='queueDelayThreshold', default=500)
 parser.add_argument('--balance-ecn-threshold', type=float, help='ecn balance threshold', dest='balEcnThreshold', \
         default=0.1)
@@ -133,6 +133,9 @@ if args.numPathChoices != 'default':
     configname = configname + "_" + args.numPathChoices
 else:   
     args.numPathChoices = '4'
+
+if args.routingScheme == "DCTCPQ" and args.queueDelayThreshold != 300:
+    configname += "_qd" + str(int(args.queueDelayThreshold))
 
 if args.rebalancingEnabled:
     configname += "_rebalancing_"

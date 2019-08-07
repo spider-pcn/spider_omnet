@@ -3,7 +3,7 @@ PATH_NAME="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulatio
 GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
 num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" \
-    "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40" "0")
+    "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40" "0" "0" "0")
 
 
 prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
@@ -15,7 +15,7 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sf_50_routers" "sf_60_routers" "sf_80_routers"  \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
-    "random_30_routers" "sw_sparse_40_routers" "lnd_gaussian", "lnd_uniform")
+    "random_30_routers" "sw_sparse_40_routers" "lnd_gaussian", "lnd_uniform", "lnd_july15_2019")
 
 
 demand_scale=() # "60" "90")
