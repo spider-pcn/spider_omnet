@@ -94,7 +94,7 @@ PORT_NUMBER=8000
 # json parameters for lnd testbed
 ENDHOST_LND_ONE_WAY_CAPACITY = 1000000000
 ROUTER_CAPACITY = 100
-LND_FILE_PATH = "../lnd_data/"
+LND_FILE_PATH = "/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/lnd_data/"
 LOG_NORMAL_MEAN=-0.6152
 LOG_NORMAL_SCALE=0.7310
 
