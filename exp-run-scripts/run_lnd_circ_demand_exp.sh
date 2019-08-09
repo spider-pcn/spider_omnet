@@ -64,8 +64,8 @@ if [ -z "$pathChoice" ]; then
 fi
 
 
-prefix="lnd_dec4_2018"
-workload_prefix="lnd_dec4_2018"
+prefix="lnd_july15_2019"
+workload_prefix="lnd_july15_2019"
 if [ -z "$capacity_type" ]; then
     random_capacity=false
     lnd_capacity=false
