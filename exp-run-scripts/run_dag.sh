@@ -6,8 +6,11 @@ routing_scheme=$1
 echo $routing_scheme
 random_init_bal=false
 random_capacity=false
-pathChoice="shortest"
+pathChoice=$2
 
+if [ -z "$pathChoice" ]; then
+    pathChoice="shortest"
+fi
 
 #general parameters that do not affect config names
 simulationLength=2010
@@ -57,8 +60,8 @@ scale=3 # "60" "90")
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-prefix="lnd_dec4_2018"
-for num in 4
+prefix="lnd_july15_2019"
+for num in {0..4}
 do
     echo "doing run $num"
     # create workload files and run different demand levels

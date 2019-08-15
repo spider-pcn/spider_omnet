@@ -2,7 +2,7 @@
 #include <queue>
 
 #define MSGSIZE 100
-#define MAX_SENDER_PER_DEST_QUEUE 70000
+#define MAX_SENDER_PER_DEST_QUEUE 15000
 
 //global parameters
 unordered_map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;

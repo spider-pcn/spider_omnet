@@ -610,7 +610,6 @@ void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
     double timeInflight = (simTime() - prevChannel->txnSentTimes[thisTrans]).dbl();
     (prevChannel->outgoingTransUnits).erase(thisTrans);
     (prevChannel->txnSentTimes).erase(thisTrans);
-    prevChannel->totalAmtOutgoingInflight -= aMsg->getAmount();
    
     if (aMsg->getIsSuccess() == false){
         // increment funds on this channel unless this is the node that caused the fauilure
@@ -620,6 +619,7 @@ void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
             prevChannel->balanceEWMA = 
                 (1 -_ewmaFactor) * prevChannel->balanceEWMA + (_ewmaFactor) * updatedBalance; 
             prevChannel->balance = updatedBalance;
+            prevChannel->totalAmtOutgoingInflight -= aMsg->getAmount();
         }
         
         // this is nextNode on the ack path and so prev node in the forward path or rather

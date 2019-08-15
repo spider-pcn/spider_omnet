@@ -299,7 +299,7 @@ void hostNodeWaterfilling::handleProbeMessage(routerMsg* ttmsg){
         
         if (destNodeToNumTransPending[destNode] > 0){
             // service first transaction on path
-            if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {
+            if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0 && availBal > 0) {
                 routerMsg *nextTrans = nodeToDestInfo[destNode].transWaitingToBeSent.back();
                 nodeToDestInfo[destNode].transWaitingToBeSent.pop_back();
                 handleTransactionMessageSpecialized(nextTrans);

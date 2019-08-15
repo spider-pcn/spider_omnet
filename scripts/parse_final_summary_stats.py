@@ -107,6 +107,8 @@ for credit in credit_list:
 
                         if "lndtopo" in args.save and "lnd_credit" in args.save:
                             capacity = int(credit) * 650
+                        elif "lndnewtopo" in args.save and "lnd_credit" in args.save:
+                            capacity = int(credit) * 550
                         else:
                             capacity = int(credit)
                         
