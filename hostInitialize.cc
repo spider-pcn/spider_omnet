@@ -402,7 +402,7 @@ void initializePathMaps(string filename) {
 
 
 vector<vector<int>> getKPaths(int sender, int receiver, int k) {
-    if (!_widestPathsEnabled && !_kspYenEnabled && !_obliviousRoutingEnabled) 
+    if (!_widestPathsEnabled && !_kspYenEnabled && !_obliviousRoutingEnabled || !_heuristicPathsEnabled) 
         return getKShortestRoutes(sender, receiver, k);
 
     if (_pathsMap.empty()) {

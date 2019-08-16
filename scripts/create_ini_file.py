@@ -25,7 +25,7 @@ parser.add_argument('--demand-scale', type=int, help='how much has demand been s
 parser.add_argument('--transStatStart', type=int, help='when to start collecting stats from', default=3000)
 parser.add_argument('--transStatEnd', type=int,help='when to end stats collection', default=5000)
 parser.add_argument('--path-choice', type=str, help='type of path choices', dest='pathChoice', default='shortest',
-        choices=['widest', 'oblivious', 'kspYen', 'shortest'])
+        choices=['widest', 'oblivious', 'kspYen', 'shortest', 'heuristic'])
 parser.add_argument('--capacity', type=int,help='mean cap for topology')
 parser.add_argument('--mtu', type=float,help='smallest indivisible unit', default=5.0)
 
@@ -222,6 +222,8 @@ if args.pathChoice == "oblivious":
     f.write("**.obliviousRoutingEnabled = true\n")
 elif args.pathChoice == "widest":
     f.write("**.widestPathsEnabled = true\n")
+elif args.pathChoice == "heuristic":
+    f.write("**.heuristicPathsEnabled = true\n")
 elif args.pathChoice == "kspYen":
     f.write("**.kspYenEnabled = true\n")
 

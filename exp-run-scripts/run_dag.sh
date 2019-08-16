@@ -82,7 +82,6 @@ do
         topofile="${PATH_NAME}${prefix}_topo${balance}.txt"
         graph_type="lnd"
         delay="30"
-        scale="3"
 
         workloadname="${prefix}_demand${scale}_dag${dag_amt}_num${num}"
         workload="${PATH_NAME}$workloadname"

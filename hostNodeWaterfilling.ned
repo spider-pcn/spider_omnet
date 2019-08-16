@@ -32,6 +32,7 @@ simple hostNodeWaterfilling
                 double transStatEnd = default(5000);
                
                 bool widestPathsEnabled = default(false);
+                bool heuristicPathsEnabled = default(false);
                 bool obliviousRoutingEnabled = default(false);
                 bool kspYenEnabled = default(false);
                 

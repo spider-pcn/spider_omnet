@@ -51,6 +51,7 @@ bool _splittingEnabled;
 
 
 bool _widestPathsEnabled;
+bool _heuristicPathsEnabled;
 bool _obliviousRoutingEnabled;
 bool _kspYenEnabled;
 
@@ -1225,6 +1226,7 @@ void hostNodeBase::initialize() {
         _shortestPathEndTime = 5000;
 
         _widestPathsEnabled = par("widestPathsEnabled");
+        _heuristicPathsEnabled = par("heuristicPathsEnabled");
         _kspYenEnabled = par("kspYenEnabled");
         _obliviousRoutingEnabled = par("obliviousRoutingEnabled");
 
@@ -1250,10 +1252,12 @@ void hostNodeBase::initialize() {
             pathFileName = topologyFile_ + "_widestPaths";
         else if (_obliviousRoutingEnabled)
             pathFileName = topologyFile_ + "_obliviousPaths";
+        else if (_heuristicPathsEnabled)
+            pathFileName = topologyFile_ + "_heuristicPaths";
         else if (_kspYenEnabled)
             pathFileName = topologyFile_ + "_kspYenPaths";
 
-        if (_widestPathsEnabled || _kspYenEnabled || _obliviousRoutingEnabled)
+        if (_widestPathsEnabled || _kspYenEnabled || _obliviousRoutingEnabled || _heuristicPathsEnabled)
             initializePathMaps(pathFileName);
 
         _epsilon = pow(10, -6);

@@ -115,6 +115,7 @@ extern double _ewmaFactor;
 
 // path choices knob
 extern bool _widestPathsEnabled;
+extern bool _heuristicPathsEnabled;
 extern bool _kspYenEnabled;
 extern bool _obliviousRoutingEnabled;
 
