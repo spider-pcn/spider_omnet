@@ -633,6 +633,7 @@ void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
         // mark the time it spent inflight
         prevChannel->sumTimeInFlight += timeInflight;
         prevChannel->timeInFlightSamples += 1;
+        prevChannel->totalAmtOutgoingInflight -= aMsg->getAmount();
         
         routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), prevNode, 
                 aMsg->getAmount(), aMsg->getHtlcIndex() );

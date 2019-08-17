@@ -132,8 +132,9 @@ do
           # if you add more choices for the number of paths you might run out of cores/memory
           for numPathChoices in 4
           do
-            output_file=outputs/${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}0_${pathChoice}
-            inifile=${PATH_NAME}${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}_${pathChoice}.ini
+            output_file=outputs/${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}0_${pathChoice}            
+            inifile=${PATH_NAME}${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}_${pathChoice}
+            configname=${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}
 
             if [[ $routing_scheme =~ .*Window.* ]]; then
                 windowEnabled=true
@@ -141,6 +142,11 @@ do
                 windowEnabled=false
             fi
 
+            if [ ${routing_scheme} ==  "DCTCPQ" ]; then 
+                output_file=${output_file}_qd${queueDelayThreshold}
+                inifile=${inifile}_qd${queueDelayThreshold}
+                configname=${configname}_qd${queueDelayThreshold} 
+            fi
 
             echo "Creating ini file"
             # create the ini file with specified parameters
@@ -148,7 +154,7 @@ do
                     --network-name ${network}\
                     --topo-filename ${topofile}\
                     --workload-filename ${workload}_workload.txt\
-                    --ini-filename ${inifile}\
+                    --ini-filename ${inifile}.ini\
                     --signals-enabled $signalsEnabled\
                     --logging-enabled $loggingEnabled\
                     --simulation-length $simulationLength\
@@ -189,8 +195,7 @@ do
 
             # run the omnetexecutable with the right parameters
             # in the background
-            ./spiderNet -u Cmdenv -f ${inifile}\
-                -c ${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices} -n ${PATH_NAME}\
+            ./spiderNet -u Cmdenv -f ${inifile}.ini -c ${configname} -n ${PATH_NAME}\
                 > ${output_file}.txt &
             pids+=($!)
          done
@@ -228,14 +233,19 @@ do
         else
           for numPathChoices in 4
             do
-                vec_file_path=${vec_file_prefix}${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}-#0.vec
-                sca_file_path=${vec_file_prefix}${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}-#0.sca
+                vec_file_path=${PATH_NAME}results/${configname}-#0.vec
+                sca_file_path=${PATH_NAME}results/${configname}-#0.sca
+                graph_name=${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices}
+
+                if [ ${routing_scheme} ==  "DCTCPQ" ]; then 
+                    graph_name=${graph_name}_qd${queueDelayThreshold}
+                fi
 
                 python scripts/generate_analysis_plots_for_single_run.py \
                   --detail $signalsEnabled \
                   --vec_file ${vec_file_path} \
                   --sca_file ${sca_file_path} \
-                  --save ${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices} \
+                  --save ${graph_name}\
                   --balance \
                   --queue_info --timeouts --frac_completed \
                   --frac_completed_window \
