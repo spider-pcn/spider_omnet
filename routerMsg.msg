@@ -31,6 +31,8 @@ cplusplus {{
 #define COMPUTE_DEMAND_MSG 12
 #define TRIGGER_RATE_DECREASE_MSG 13
 
+#define MONITOR_PATHS_MSG 14
+
 
 typedef std::vector<int> IntVector;
 }};

@@ -70,6 +70,8 @@ double _queueDelayThreshold;
 double _gamma;
 double _maxGammaImbalanceQueueSize;
 
+
+
 Define_Module(hostNodeBase);
 
 void hostNodeBase::setIndex(int index) {
@@ -1185,8 +1187,6 @@ void hostNodeBase::forwardMessage(routerMsg* msg){
    send(msg, nodeToPaymentChannel[nextDest].gate);
 }
 
-
-
 /* initialize() all of the global parameters and basic
  * per channel information as well as default signals for all
  * payment channels and destinations
@@ -1246,6 +1246,7 @@ void hostNodeBase::initialize() {
         _queueDelayThreshold = par("queueDelayThreshold");
         _gamma = par("gamma");
         _maxGammaImbalanceQueueSize = par("gammaImbalanceQueueSize");
+
 
         string pathFileName;
         if (_widestPathsEnabled)

@@ -154,3 +154,8 @@ extern double _balEcnThreshold;
 extern bool _dctcpEnabled;
 extern double _cannonicalRTT; // for prop fair price scheme version - specific to a topology
 extern double _totalPaths; // total number of paths over which cannonical RTT was computed
+
+// knobs to enable the changing of paths
+extern bool _changingPathsEnabled;
+extern int _maxPathsToConsider;
+extern double _windowThresholdForChange; 

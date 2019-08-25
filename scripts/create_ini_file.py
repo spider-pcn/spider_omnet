@@ -77,6 +77,16 @@ parser.add_argument('--min-dctcp-window', type=float, help='min window size for 
 parser.add_argument('--rate-decrease-frequency', type=float, help='frequency with which to perform' \
         + 'decreases', dest='rateDecreaseFrequency', default=5)
 
+# path changing arguments
+parser.add_argument('--changing-paths-enabled', type=str, help='are dynamic path changes enabled?', \
+        dest='changingPathsEnabled', default='false')
+parser.add_argument('--window-threshold-for-path-change', type=float, help='window size at which we switch paths', \
+        dest='windowThresholdForPathChange', default=1)
+parser.add_argument('--path-montitor-rate', type=float, help='frequency with which to monitor paths', \
+        dest='pathMonitorRate', default=5)
+parser.add_argument('--max-paths-to-consider', type=int, help='max number of paths to consider for changing out', \
+        dest='maxPathsToConsider', default=100)
+
 
 args = parser.parse_args()
 
@@ -134,7 +144,7 @@ if args.numPathChoices != 'default':
 else:   
     args.numPathChoices = '4'
 
-if args.routingScheme == "DCTCPQ" and args.queueDelayThreshold != 300:
+if args.routingScheme == "DCTCPQ" and args.queueDelayThreshold != 300 and args.queueDelayThreshold != 500:
     configname += "_qd" + str(int(args.queueDelayThreshold))
 
 if args.rebalancingEnabled:
@@ -226,6 +236,13 @@ elif args.pathChoice == "heuristic":
     f.write("**.heuristicPathsEnabled = true\n")
 elif args.pathChoice == "kspYen":
     f.write("**.kspYenEnabled = true\n")
+
+if args.changingPathsEnabled:
+    f.write("**.changingPathsEnabled = true\n")
+    f.write("**.pathMonitorRate = " + str(args.pathMonitorRate) + "\n") 
+    f.write("**.windowThresholdForChange = " + str(args.windowThresholdForPathChange) + "\n") 
+    f.write("**.maxPathsToConsider = " + str(args.maxPathsToConsider) + "\n") 
+
 
 
 if args.rebalancingEnabled:

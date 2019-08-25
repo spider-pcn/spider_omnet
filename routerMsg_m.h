@@ -37,12 +37,14 @@
 #define COMPUTE_DEMAND_MSG 12
 #define TRIGGER_RATE_DECREASE_MSG 13
 
+#define MONITOR_PATHS_MSG 14
+
 
 typedef std::vector<int> IntVector;
 // }}
 
 /**
- * Class generated from <tt>routerMsg.msg:42</tt> by nedtool.
+ * Class generated from <tt>routerMsg.msg:44</tt> by nedtool.
  * <pre>
  * packet routerMsg
  * {

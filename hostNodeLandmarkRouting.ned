@@ -36,6 +36,11 @@ simple hostNodeLandmarkRouting
                 bool heuristicPathsEnabled = default(false);
                 bool obliviousRoutingEnabled = default(false);
                 bool kspYenEnabled = default(false);
+                
+                bool changingPathsEnabled = default(false);
+                int maxPathsToConsider = default(100);
+                double windowThresholdForChange = default(1);
+                double pathMonitorRate = default(5);
 
                 double alpha = default(0.01);
                 double kappa = default(0.01);

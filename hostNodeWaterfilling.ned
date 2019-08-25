@@ -36,6 +36,11 @@ simple hostNodeWaterfilling
                 bool obliviousRoutingEnabled = default(false);
                 bool kspYenEnabled = default(false);
                 
+                bool changingPathsEnabled = default(false);
+                int maxPathsToConsider = default(100);
+                double windowThresholdForChange = default(1);
+                double pathMonitorRate = default(5);
+                
                 bool windowEnabled = default(false);
 		int numPathChoices = default(4);
 

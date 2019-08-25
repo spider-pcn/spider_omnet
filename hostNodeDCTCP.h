@@ -18,14 +18,18 @@ class hostNodeDCTCP : public hostNodeBase {
 
     protected:
         virtual void initialize() override;
+        virtual void handleMessage(cMessage *msg) override;
         virtual void handleAckMessageSpecialized(routerMsg *msg) override;
         virtual void handleTimeOutMessage(routerMsg *msg) override;
         virtual void handleTransactionMessageSpecialized(routerMsg *msg) override;
         virtual void handleStatMessage(routerMsg *msg) override;
+        virtual void handleMonitorPathsMessage(routerMsg *msg);
         virtual void handleClearStateMessage(routerMsg *msg) override;
 
         // helper method
         virtual void initializePathInfo(vector<vector<int>> kShortestPaths, int destNode);
+        virtual void initializeThisPath(vector<int> thisPath, int pathIdx, int destNode);
         virtual void sendMoreTransactionsOnPath(int destNode, int pathIndex);
+        virtual routerMsg *generateMonitorPathsMessage();
 };
 #endif

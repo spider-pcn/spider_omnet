@@ -28,6 +28,11 @@ simple hostNodeLndBaseline
                 bool heuristicPathsEnabled = default(false);
                 bool obliviousRoutingEnabled = default(false);
                 bool kspYenEnabled = default(false);
+                
+                bool changingPathsEnabled = default(false);
+                int maxPathsToConsider = default(100);
+                double windowThresholdForChange = default(1);
+                double pathMonitorRate = default(5);
 
                 bool rebalancingEnabled = default(false);
                 double queueDelayThreshold = default(3.0);

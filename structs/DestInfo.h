@@ -18,4 +18,11 @@ public:
     // bottleneck balance - amt Inflight
     int highestBottleneckPathIndex;
     double highestBottleneckBalance;
+
+    // number of transactions waiting at the sender over the last x seconds
+    // of a monitor paths message
+    double sumTxnsWaiting;
+
+    // maximum path Id in use right now
+    int maxPathId;
 };

@@ -402,7 +402,7 @@ void initializePathMaps(string filename) {
 
 
 vector<vector<int>> getKPaths(int sender, int receiver, int k) {
-    if (!_widestPathsEnabled && !_kspYenEnabled && !_obliviousRoutingEnabled || !_heuristicPathsEnabled) 
+    if (!_widestPathsEnabled && !_kspYenEnabled && !_obliviousRoutingEnabled && !_heuristicPathsEnabled) 
         return getKShortestRoutes(sender, receiver, k);
 
     if (_pathsMap.empty()) {
@@ -434,6 +434,34 @@ vector<vector<int>> getKPaths(int sender, int receiver, int k) {
     return finalPaths;
 }
 
+// get the next path after the kth one when changing paths
+tuple<int, vector<int>> getNextPath(int sender, int receiver, int k) {
+    if (!_widestPathsEnabled && !_kspYenEnabled && !_obliviousRoutingEnabled && !_heuristicPathsEnabled) {
+        cout << "no path Map" << endl;
+        throw std::exception();
+    }
+
+    if (_pathsMap.empty()) {
+        cout << "path Map uninitialized" << endl;
+        throw std::exception();
+    }
+
+    if (_pathsMap.count(sender) == 0) {
+        cout << " sender " << sender << " has no paths at all " << endl;
+        throw std::exception();
+    }
+
+    if (_pathsMap[sender].count(receiver) == 0) {
+        cout << " sender " << sender << " has no paths to receiver " << receiver << endl;
+        throw std::exception();
+    }
+        
+    if (_pathsMap[sender][receiver].size() >= k + 2) 
+        return make_tuple(k + 1, _pathsMap[sender][receiver][k + 1]);
+    else 
+        return make_tuple(0, _pathsMap[sender][receiver][0]);
+}
+
 bool vectorContains(vector<int> smallVector, vector<vector<int>> bigVector) {
     for (auto v : bigVector) {
         if (v == smallVector)
@@ -453,8 +481,8 @@ vector<vector<int>> getKShortestRoutesLandmarkRouting(int sender, int receiver, 
         pathSenderToLandmark = breadthFirstSearch(sender, landmark); //use breadth first search
         pathLandmarkToReceiver = breadthFirstSearch(landmark, receiver); //use breadth first search
 			
-			  pathSenderToLandmark.insert(pathSenderToLandmark.end(), 
-                    pathLandmarkToReceiver.begin() + 1, pathLandmarkToReceiver.end());
+	pathSenderToLandmark.insert(pathSenderToLandmark.end(), 
+                pathLandmarkToReceiver.begin() + 1, pathLandmarkToReceiver.end());
         if ((pathSenderToLandmark.size() < 2 ||  pathLandmarkToReceiver.size() < 2 || 
                     vectorContains(pathSenderToLandmark, kRoutes))) { 
             if (numPaths < _landmarksWithConnectivityList.size()) {

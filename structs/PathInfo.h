@@ -66,5 +66,9 @@ struct PathInfo{
         simsignal_t priceLastSeenSignal;
         simsignal_t isSendTimerSetSignal;
 
+        // useful for changing paths that determines if this path is in use
+        bool inUse;
+        bool candidate;
+        double windowSum;
 
 };

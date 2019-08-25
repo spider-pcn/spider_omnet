@@ -10,6 +10,24 @@ double _minDCTCPWindow;
 double _balEcnThreshold;
 bool _qDelayVersion;
 
+// knobs for enabling changing of paths
+bool _changingPathsEnabled;
+double _windowThresholdForChange;
+int _maxPathsToConsider;
+double _monitorRate;
+
+/* generate path change trigger message every x seconds
+ * that goes through all the paths and replaces the ones
+ * with tiny windows
+ */
+routerMsg *hostNodeDCTCP::generateMonitorPathsMessage(){
+    char msgname[MSGSIZE];
+    sprintf(msgname, "node-%d monitorPathsMsg", myIndex());
+    routerMsg *rMsg = new routerMsg(msgname);
+    rMsg->setMessageType(MONITOR_PATHS_MSG);
+    return rMsg;
+}
+
 /* initialization function to initialize parameters */
 void hostNodeDCTCP::initialize(){
     hostNodeBase::initialize();
@@ -23,6 +41,13 @@ void hostNodeDCTCP::initialize(){
         _qDelayVersion = par("DCTCPQEnabled");
         _balEcnThreshold = par("balanceThreshold");
         _minDCTCPWindow = par("minDCTCPWindow");
+
+
+        // changing paths related
+        _changingPathsEnabled = par("changingPathsEnabled");
+        _maxPathsToConsider = par("maxPathsToConsider");
+        _windowThresholdForChange = par("windowThresholdForChange");
+        _monitorRate = par("pathMonitorRate");
     }
 
      //initialize signals with all other nodes in graph
@@ -38,7 +63,42 @@ void hostNodeDCTCP::initialize(){
         }
     }
 
+    //generate monitor paths messag to start a little later in the experiment
+    if (_changingPathsEnabled) {
+        routerMsg *monitorMsg = generateMonitorPathsMessage();
+        scheduleAt(simTime() + 50, monitorMsg);
+    }
 }
+
+/* overall controller for handling messages that dispatches the right function
+ * based on message type in price Scheme
+ */
+void hostNodeDCTCP::handleMessage(cMessage *msg) {
+    routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
+ 
+    //Radhika TODO: figure out what's happening here
+    if (simTime() > _simulationLength){
+        auto encapMsg = (ttmsg->getEncapsulatedPacket());
+        ttmsg->decapsulate();
+        delete ttmsg;
+        delete encapMsg;
+        return;
+    } 
+
+    switch(ttmsg->getMessageType()) {
+        case MONITOR_PATHS_MSG:
+             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
+                 <<": RECEIVED MONITOR_PATHS_MSG] "<< ttmsg->getName() << endl;
+             handleMonitorPathsMessage(ttmsg);
+             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+             break;
+
+        default:
+             hostNodeBase::handleMessage(msg);
+
+    }
+}
+
 
 /* specialized ack handler that does the routine if this is DCTCP
  * algorithm. In particular, collects/updates stats for this path alone
@@ -190,35 +250,100 @@ void hostNodeDCTCP::handleTimeOutMessage(routerMsg* ttmsg) {
     }
 }
 
+/* initialize data for a particular path with path index to the dest supplied in the arguments
+ * and also fix the paths for susbequent transactions to this destination
+ * and register signals that are path specific
+ */
+void hostNodeDCTCP::initializeThisPath(vector<int> thisPath, int pathIdx, int destNode) {
+    // initialize pathInfo
+    PathInfo temp = {};
+    temp.path = thisPath;
+    temp.window = _minDCTCPWindow;
+    temp.inUse = true;
+    // TODO: change this to something sensible
+    temp.rttMin = (thisPath.size() - 1) * 2 * _avgDelay/1000.0;
+    nodeToShortestPathsMap[destNode][pathIdx] = temp;
+
+    // update the index of the highest path found, if you've circled back to 0, then refresh
+    // the max index back to 0
+    if (pathIdx > nodeToDestInfo[destNode].maxPathId || pathIdx == 0)
+        nodeToDestInfo[destNode].maxPathId = pathIdx;
+
+    //initialize signals
+    simsignal_t signal;
+    signal = registerSignalPerDestPath("sumOfTransUnitsInFlight", pathIdx, destNode);
+    nodeToShortestPathsMap[destNode][pathIdx].sumOfTransUnitsInFlightSignal = signal;
+
+    signal = registerSignalPerDestPath("window", pathIdx, destNode);
+    nodeToShortestPathsMap[destNode][pathIdx].windowSignal = signal;
+
+    signal = registerSignalPerDestPath("rateOfAcks", pathIdx, destNode);
+    nodeToShortestPathsMap[destNode][pathIdx].rateOfAcksSignal = signal;
+    
+    signal = registerSignalPerDestPath("fractionMarked", pathIdx, destNode);
+    nodeToShortestPathsMap[destNode][pathIdx].fractionMarkedSignal = signal;
+}
+
+
 /* initialize data for for the paths supplied to the destination node
  * and also fix the paths for susbequent transactions to this destination
  * and register signals that are path specific
  */
 void hostNodeDCTCP::initializePathInfo(vector<vector<int>> kShortestPaths, int destNode){
     for (int pathIdx = 0; pathIdx < kShortestPaths.size(); pathIdx++){
-        // initialize pathInfo
-        PathInfo temp = {};
-        temp.path = kShortestPaths[pathIdx];
-        temp.window = _minDCTCPWindow;
-        // TODO: change this to something sensible
-        temp.rttMin = (kShortestPaths[pathIdx].size() - 1) * 2 * _avgDelay/1000.0;
-        nodeToShortestPathsMap[destNode][pathIdx] = temp;
-
-        //initialize signals
-        simsignal_t signal;
-        signal = registerSignalPerDestPath("sumOfTransUnitsInFlight", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].sumOfTransUnitsInFlightSignal = signal;
-
-        signal = registerSignalPerDestPath("window", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].windowSignal = signal;
-
-        signal = registerSignalPerDestPath("rateOfAcks", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].rateOfAcksSignal = signal;
-        
-        signal = registerSignalPerDestPath("fractionMarked", pathIdx, destNode);
-        nodeToShortestPathsMap[destNode][pathIdx].fractionMarkedSignal = signal;
-   }
+        initializeThisPath(kShortestPaths[pathIdx], pathIdx, destNode);
+    }
 }
+
+/* routine to monitor paths periodically and change them out if need be
+ * in particular, marks the path as "candidate" for changing if its window is small
+ * next time, it actually changes the path out if its window is still small
+ * next interval it tears down the old path altogether
+ */
+void hostNodeDCTCP::handleMonitorPathsMessage(routerMsg* ttmsg) {
+    // reschedule this message to be sent again
+    if (simTime() > _simulationLength || !_changingPathsEnabled){
+        delete ttmsg;
+    }
+    else {
+        scheduleAt(simTime() + _monitorRate, ttmsg);
+    }
+
+    for (auto it = 0; it < _numHostNodes; it++){ 
+        if (it != getIndex() && _destList[myIndex()].count(it) > 0) {
+            if (nodeToShortestPathsMap.count(it) > 0) {
+                for (auto& p: nodeToShortestPathsMap[it]){
+                    int pathIndex = p.first;
+                    PathInfo *pInfo = &(p.second);
+
+                    //signals for price scheme per path
+                    if (pInfo->inUse) {
+                        if (pInfo->windowSum/_monitorRate <= _windowThresholdForChange && 
+                                nodeToDestInfo[it].sumTxnsWaiting/_monitorRate > 0) {
+                            int maxK = nodeToDestInfo[it].maxPathId;
+                            if (pInfo->candidate) {
+                                pInfo->inUse = false;
+                                tuple<int, vector<int>> nextPath =  getNextPath(getIndex(), it, maxK);
+                                initializeThisPath(get<1>(nextPath), get<0>(nextPath), it);
+                            }
+                            pInfo->candidate = true;
+                        } else {
+                            pInfo->candidate = false;
+                        }
+                    } else {
+                        // do not want to update maxK because you want to circle through all paths before 
+                        // returning
+                        nodeToShortestPathsMap.erase(pathIndex);
+                    }
+                    pInfo->windowSum = 0;
+                } 
+            }
+            nodeToDestInfo[it].sumTxnsWaiting = 0;
+        }
+    } 
+}
+
+
 
 /* main routine for handling a new transaction under DCTCP
  * In particular, only sends out transactions if the window permits it */
@@ -293,7 +418,8 @@ void hostNodeDCTCP::handleTransactionMessageSpecialized(routerMsg* ttmsg){
                 int pathIndex = p;
                 PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
                 
-                if (pathInfo->sumOfTransUnitsInFlight + transMsg->getAmount() <= pathInfo->window) {
+                if (pathInfo->sumOfTransUnitsInFlight + transMsg->getAmount() <= pathInfo->window &&
+                        pathInfo->inUse) {
                     ttmsg->setRoute(pathInfo->path);
                     ttmsg->setHopCount(0);
                     transMsg->setPathIndex(pathIndex);
@@ -374,6 +500,23 @@ void hostNodeDCTCP::handleStatMessage(routerMsg* ttmsg){
  */
 // TODO: actually maintain state as to how much has been sent and how much received
 void hostNodeDCTCP::handleClearStateMessage(routerMsg *ttmsg) {
+    // average windows over the last second
+    for (auto it = 0; it < _numHostNodes; it++){ 
+        if (it != getIndex() && _destList[myIndex()].count(it) > 0) {
+            nodeToDestInfo[it].sumTxnsWaiting += nodeToDestInfo[it].transWaitingToBeSent.size();
+            if (nodeToShortestPathsMap.count(it) > 0) {
+                for (auto& p: nodeToShortestPathsMap[it]){
+                    int pathIndex = p.first;
+                    PathInfo *pInfo = &(p.second);
+                    pInfo->windowSum += pInfo->window;
+                }
+            }
+        }
+    }
+
+
+
+    // handle cancellations
     for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); it++){
         int transactionId = get<0>(*it);
         simtime_t msgArrivalTime = get<1>(*it);
@@ -434,7 +577,7 @@ void hostNodeDCTCP::sendMoreTransactionsOnPath(int destNode, int pathId) {
 
 
         PathInfo *pathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
-        if (pathInfo->sumOfTransUnitsInFlight + transMsg->getAmount() <= pathInfo->window) {
+        if (pathInfo->sumOfTransUnitsInFlight + transMsg->getAmount() <= pathInfo->window && pathInfo->inUse) {
             // remove the transaction from queue and send it on the path
             nodeToDestInfo[destNode].transWaitingToBeSent.pop_back();
             msgToSend->setRoute(pathInfo->path);
