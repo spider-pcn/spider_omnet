@@ -227,7 +227,7 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
         
         elif lnd_capacity:
             balance_for_this_channel = -1
-            while balance_for_this_channel < 150:
+            while balance_for_this_channel < 40:
                 balance_for_this_channel = round(np.random.choice(lnd_capacities) * \
                     (balance_per_channel / np.mean(lnd_capacities)))
         
