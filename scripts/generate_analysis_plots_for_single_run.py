@@ -130,6 +130,8 @@ parser.add_argument('--save',
 
 args = parser.parse_args()
 num_paths = []
+ggplot = open(args.save + "_ggplot.txt", "w+")
+tag = "balance" if "imbalance" in args.save else "capacity"
 #fmts = ['r--', 'b-', 'g-.']
 
 # returns a dictionary of the necessary stats where key is a router node
@@ -292,6 +294,13 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                     start = int(len(values)/4)
                     plt.plot(time, values, \
                             label=label_name + "(" + str(np.average(values[start:])) + ")", color=c)
+                    
+                    if (signal_type == "Rate acknowledged"):
+                        for t, v in zip(time, values):
+                            router_not = "router v" if router == 0 else "router u"
+                            ggplot.write(tag + "," + str(router_not) + ",rate," + str(t) + "," + str(v) + "\n")
+
+
                     sum_values += np.average(values[start:])
                     num_values += 1
                 plt.title(signal_type + " " + str(router) + "->" + str(channel) + "(" + str(sum_values/num_values) + ")")
@@ -318,6 +327,12 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                 start = int(len(values)/4)
                 plt.plot(time, values, label=label_name + \
                         "(" + str(np.average(values[start:])) + ")")
+
+                if (signal_type == "Queue Size"):
+                        for t, v in zip(time, values):
+                            router_not = "router v" if router == 0 else "router u"
+                            ggplot.write(tag + "," + str(router_not) + ",queue," + str(t) + "," + str(v) + "\n")
+
                 
                 i += 1
 
@@ -589,6 +604,7 @@ def main():
         plot_per_src_dest_stats(args, text_to_add)
         path_dist = collections.Counter(num_paths)
         print path_dist
+    ggplot.close()
 
 
 main()

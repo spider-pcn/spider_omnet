@@ -66,7 +66,7 @@ void hostNodeDCTCP::initialize(){
     //generate monitor paths messag to start a little later in the experiment
     if (_changingPathsEnabled) {
         routerMsg *monitorMsg = generateMonitorPathsMessage();
-        scheduleAt(simTime() + 50, monitorMsg);
+        scheduleAt(simTime() + 150, monitorMsg);
     }
 }
 
@@ -312,9 +312,9 @@ void hostNodeDCTCP::handleMonitorPathsMessage(routerMsg* ttmsg) {
     for (auto it = 0; it < _numHostNodes; it++){ 
         if (it != getIndex() && _destList[myIndex()].count(it) > 0) {
             if (nodeToShortestPathsMap.count(it) > 0) {
-                for (auto& p: nodeToShortestPathsMap[it]){
-                    int pathIndex = p.first;
-                    PathInfo *pInfo = &(p.second);
+                for (auto p = nodeToShortestPathsMap[it].begin(); p != nodeToShortestPathsMap[it].end();){
+                    int pathIndex = p->first;
+                    PathInfo *pInfo = &(p->second);
 
                     //signals for price scheme per path
                     if (pInfo->inUse) {
@@ -325,17 +325,20 @@ void hostNodeDCTCP::handleMonitorPathsMessage(routerMsg* ttmsg) {
                                 pInfo->inUse = false;
                                 tuple<int, vector<int>> nextPath =  getNextPath(getIndex(), it, maxK);
                                 initializeThisPath(get<1>(nextPath), get<0>(nextPath), it);
+                                cout << "switching paths at time " << simTime() << " from " << getIndex() << " to " << 
+                                    it << " path " << pathIndex << " is being replaced by " << get<0>(nextPath) << endl;
                             }
                             pInfo->candidate = true;
                         } else {
                             pInfo->candidate = false;
                         }
+                        pInfo->windowSum = 0;
+                        p++;
                     } else {
                         // do not want to update maxK because you want to circle through all paths before 
                         // returning
-                        nodeToShortestPathsMap.erase(pathIndex);
+                        p = nodeToShortestPathsMap[it].erase(p);
                     }
-                    pInfo->windowSum = 0;
                 } 
             }
             nodeToDestInfo[it].sumTxnsWaiting = 0;
@@ -405,7 +408,7 @@ void hostNodeDCTCP::handleTransactionMessageSpecialized(routerMsg* ttmsg){
             
         // use a random ordering on the path indices
         vector<int> pathIndices;
-        for (int i = 0; i < nodeToShortestPathsMap[destNode].size(); ++i) pathIndices.push_back(i);
+        for (auto p: nodeToShortestPathsMap[destNode]) pathIndices.push_back(p.first);
         random_shuffle(pathIndices.begin(), pathIndices.end());
        
         //send on a path if no txns queued up and timer was in the path
@@ -559,7 +562,7 @@ void hostNodeDCTCP::sendMoreTransactionsOnPath(int destNode, int pathId) {
 
     // construct a vector with the path indices
     vector<int> pathIndices;
-    for (int i = 0; i < nodeToShortestPathsMap[destNode].size(); ++i) pathIndices.push_back(i);
+    for (auto p: nodeToShortestPathsMap[destNode]) pathIndices.push_back(p.first);
 
     //remove the transaction $tu$ at the head of the queue if one exists
     while (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {

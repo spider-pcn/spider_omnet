@@ -67,9 +67,19 @@ do
         cp hostNodeLandmarkRouting.ned ${PATH_NAME}
         cp hostNodePropFairPriceScheme.ned ${PATH_NAME}
         cp routerNodeDCTCPBal.ned ${PATH_NAME}
-            
-        network="${prefix[i]}_dag${dag_amt}_net"
-        topofile="${PATH_NAME}${prefix[i]}_topo${balance}.txt"
+        
+        if [ $random_capacity == "true" ]; then
+            prefix_to_use="${prefix[i]}_randomCap"
+            echo "random"
+        elif [ $lnd_capacity == "true" ]; then
+            prefix_to_use="${prefix[i]}_lndCap"
+            echo "lnd"
+        else
+            prefix_to_use="${prefix[i]}"
+        fi
+        
+        network="${prefix_to_use}_dag${dag_amt}_net"
+        topofile="${PATH_NAME}${prefix_to_use}_topo${balance}.txt"
 
         # identify graph type for topology
         if [ ${prefix[i]:0:2} == "sw" ]; then
@@ -116,6 +126,13 @@ do
         elif [ ${prefix[i]:0:7} == "hotnets" ]; then
             payment_graph_topo="hotnets_topo"
         fi
+        
+        # set delay amount
+        if [ ${prefix_to_use:0:3} == "two" ]; then
+            delay="120"
+        else
+            delay="30"
+        fi       
 
         echo $network
         echo $topofile

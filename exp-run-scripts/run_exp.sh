@@ -258,6 +258,7 @@ do
                         --window-alpha $windowAlpha \
                         --window-beta $windowBeta \
                         --queue-threshold $queueThreshold \
+                        --queue-delay-threshold $queueDelayThreshold \
                         --balance-ecn-threshold $balanceThreshold \
                         --mtu $mtu\
                         --min-dctcp-window $minDCTCPWindow \
@@ -322,7 +323,7 @@ do
                       --waiting --bottlenecks --probabilities \
                       --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
                       --inflight_incoming --rate_to_send --price --mu_remote --demand \
-                      --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked --measured_rtt
+                      --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked --queue_delay
                   done
               fi
 

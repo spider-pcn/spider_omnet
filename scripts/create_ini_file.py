@@ -82,7 +82,7 @@ parser.add_argument('--changing-paths-enabled', type=str, help='are dynamic path
         dest='changingPathsEnabled', default='false')
 parser.add_argument('--window-threshold-for-path-change', type=float, help='window size at which we switch paths', \
         dest='windowThresholdForPathChange', default=1)
-parser.add_argument('--path-montitor-rate', type=float, help='frequency with which to monitor paths', \
+parser.add_argument('--path-monitor-rate', type=float, help='frequency with which to monitor paths', \
         dest='pathMonitorRate', default=5)
 parser.add_argument('--max-paths-to-consider', type=int, help='max number of paths to consider for changing out', \
         dest='maxPathsToConsider', default=100)
@@ -237,7 +237,7 @@ elif args.pathChoice == "heuristic":
 elif args.pathChoice == "kspYen":
     f.write("**.kspYenEnabled = true\n")
 
-if args.changingPathsEnabled:
+if args.changingPathsEnabled == "true":
     f.write("**.changingPathsEnabled = true\n")
     f.write("**.pathMonitorRate = " + str(args.pathMonitorRate) + "\n") 
     f.write("**.windowThresholdForChange = " + str(args.windowThresholdForPathChange) + "\n") 
