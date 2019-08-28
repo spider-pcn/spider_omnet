@@ -96,8 +96,8 @@ do
         # STEP 3: run the experiment
         # routing schemes where number of path choices doesn't matter
         if [ ${routing_scheme} ==  "shortestPath" ]; then 
-          output_file=outputs/${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}0_${pathChoice}
-          inifile=${PATH_NAME}${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}_${pathChoice}.ini
+          output_file=outputs/${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}0_${pathChoice}_${numPathChoices}
+          inifile=${PATH_NAME}${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}.ini
 
           # create the ini file with specified parameters
           python scripts/create_ini_file.py \
@@ -122,7 +122,7 @@ do
 
           # run the omnetexecutable with the right parameters
           ./spiderNet -u Cmdenv -f $inifile -c\
-          ${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice} -n ${PATH_NAME}\
+          ${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices} -n ${PATH_NAME}\
                 > ${output_file}.txt & 
         
 
@@ -215,8 +215,8 @@ do
         
         #routing schemes where number of path choices doesn't matter
         if [ ${routing_scheme} ==  "shortestPath" ]; then 
-            vec_file_path=${vec_file_prefix}${routing_scheme}_dag${num}demand${scale}_${pathChoice}-#0.vec
-            sca_file_path=${vec_file_prefix}${routing_scheme}_dag${num}_demand${scale}_${pathChoice}-#0.sca
+            vec_file_path=${vec_file_prefix}${routing_scheme}_dag${num}demand${scale}_${pathChoice}_${numPathChoices}-#0.vec
+            sca_file_path=${vec_file_prefix}${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}-#0.sca
 
 
             python scripts/generate_analysis_plots_for_single_run.py \

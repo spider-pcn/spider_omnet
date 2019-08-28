@@ -947,7 +947,40 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
         }
     }
 
-    for (auto it = 0; it < _numHostNodes; it++){ 
+    recordScalar("time", simTime());
+    for (auto it = 0; it < _numHostNodes; it++){
+       if (simTime().dbl() >  2999 && simTime().dbl() < 3001 && _transStatEnd == 4001) {
+           if (_transStatStart < 3000)
+               _transStatStart = 3800;
+            if (_destList[myIndex()].count(it) > 0) {
+                char buffer[30];
+                sprintf(buffer, "rateCompleted %d -> %d", myIndex(), it);
+                recordScalar(buffer, statRateCompleted[it]);
+                sprintf(buffer, "amtCompleted %d -> %d", myIndex(), it);
+                recordScalar(buffer, statAmtCompleted[it]);
+
+                sprintf(buffer, "rateAttempted %d -> %d", myIndex(), it);
+                recordScalar(buffer, statRateAttempted[it]);
+                sprintf(buffer, "amtAttempted  %d -> %d", myIndex(), it);
+                recordScalar(buffer, statAmtAttempted[it]);
+
+                sprintf(buffer, "rateArrived %d -> %d", myIndex(), it);
+                recordScalar(buffer, statRateArrived[it]);
+                sprintf(buffer, "amtArrived  %d -> %d", myIndex(), it);
+                recordScalar(buffer, statAmtArrived[it]);
+
+                sprintf(buffer, "completionTime %d -> %d ", myIndex(), it);
+                recordScalar(buffer, statCompletionTimes[it]);
+
+                statRateAttempted[it] = 0;
+                statAmtAttempted[it] = 0;
+                statRateArrived[it] = 0;
+                statAmtArrived[it] = 0;
+                statAmtCompleted[it] = 0;
+                statRateCompleted[it] = 0;
+            }
+        }
+
        // per destination stats
        if (it != getIndex() && _destList[myIndex()].count(it) > 0) {
            if (nodeToShortestPathsMap.count(it) > 0) {

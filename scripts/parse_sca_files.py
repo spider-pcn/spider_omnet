@@ -39,7 +39,7 @@ def parse_sca_files(filename):
         while line:
             if line.startswith("scalar"):
                 if not("queueSize" in line or "completionTime" in line or "amt" in line or "rate" in line or \
-                        "Rebalancing" in line or "Amt" in line or "size" in line):
+                        "Rebalancing" in line or "Amt" in line or "size" in line or "time 3000" in line):
                     parameters += parse_sca_parameter_line(line)
 
             elif line.startswith("statistic"):
@@ -89,14 +89,28 @@ def parse_overall_stat_line(line):
 def parse_sca_files_overall(filename):
     parameters = ""
     stats = dict()
+    stats_3000 = dict()
     with open(filename) as f:
         line = f.readline()
+        flag = False
         while line:
             if line.startswith("scalar") and "->" in line:
+                #print line, flag
                 sender, receiver, stat_name, value = parse_overall_stat_line(line)
-                temp = stats.get((sender, receiver), [])
-                temp.append((stat_name, value))
-                stats[sender, receiver] = temp
+                if flag:
+                    temp = stats_3000.get((sender, receiver), [])
+                    temp.append((stat_name, value))
+                    stats_3000[sender, receiver] = temp
+                else:
+                    temp = stats.get((sender, receiver), [])
+                    temp.append((stat_name, value))
+                    stats[sender, receiver] = temp
+                if "completionTime" in line:
+                    flag = False
+            elif "time 3000" in line:
+                flag = True
+            else:
+                flag = False
             line = f.readline()
 
     # compute completion as a fraction of arrival and attempte
@@ -106,7 +120,7 @@ def parse_sca_files_overall(filename):
     completion_time = 0.0
 
 
-    for src_dst_pair, stat in stats.items():
+    for src_dst_pair, stat in stats_3000.items():
         for s in stat:
             stat_type = s[0]
             value = float(s[1])
@@ -127,7 +141,42 @@ def parse_sca_files_overall(filename):
                 completion_time += value
 
     
-    print "Stats for ", filename
+    if num_arrived > 0 and vol_arrived > 0:
+        print "Stats for first 3000 seconds of  ", filename
+        print " Success ratio over arrived: ", num_completed/num_arrived, " over attempted", \
+                num_completed/num_attempted
+        print " Success volume  over arrived: ", vol_completed/vol_arrived, \
+                " over attempted", vol_completed/vol_attempted
+        print " Avg completion time ", completion_time/num_completed
+        print "Success Rate " + str(num_completed/1000.0)
+
+
+    vol_attempted, num_attempted = 0.0, 0.0
+    vol_arrived, num_arrived = 0.0, 0.0
+    vol_completed, num_completed = 0.0, 0.0
+    completion_time = 0.0
+    
+    for src_dst_pair, stat in stats.items():
+        for s in stat:
+            stat_type = s[0]
+            value = float(s[1])
+
+            if stat_type == "rateAttempted":
+                num_attempted += value
+            elif stat_type == "amtAttempted":
+                vol_attempted += value
+            elif stat_type == "rateCompleted":
+                num_completed += value
+            elif stat_type == "amtArrived":
+                vol_arrived += value
+            elif stat_type == "amtCompleted":
+                vol_completed += value
+            elif stat_type == "rateArrived":
+                num_arrived += value
+            else:
+                completion_time += value
+
+    print "Stats for last part of", filename
     print " Success ratio over arrived: ", num_completed/num_arrived, " over attempted", num_completed/num_attempted
     print " Success volume  over arrived: ", vol_completed/vol_arrived, \
             " over attempted", vol_completed/vol_attempted

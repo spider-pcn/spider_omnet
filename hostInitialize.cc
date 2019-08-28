@@ -426,6 +426,7 @@ vector<vector<int>> getKPaths(int sender, int receiver, int k) {
     for (vector<int> path : _pathsMap[sender][receiver]) {
         if (numPaths >= k)
             break;
+        numPaths++;
         finalPaths.push_back(path);
         updateMaxTravelTime(path);
         updateCannonicalRTT(path);
