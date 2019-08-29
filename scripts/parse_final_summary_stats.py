@@ -61,14 +61,34 @@ if args.payment_graph_type == "circ":
 else:
     output_file.write("Scheme,Credit,DAGAmt,")
 
-output_file.write("NumPaths,PathType,Threshold,SuccRatio,SuccRatioMin,SuccRatioMax,SuccVolume," + \
+output_file.write("Topo,CreditType,NumPaths,PathType,Threshold,SuccRatio,SuccRatioMin,SuccRatioMax,SuccVolume," + \
         "SuccVolumeMin," +\
         "SuccVolumeMax,CompTime,CompTimeMin,CompTimeMax\n")
+
+# determine topology and credit type
+if "sw" in args.topo or "sf" in args.topo:
+    topo_type = args.save[:2]
+else:
+    topo_type = args.save[:3]
+
+if "lnd_uniform" in args.topo: 
+    credit_type = "uniform"
+elif "lnd_july15" in args.topo or "lndCap" in args.topo:
+    credit_type = "lnd"
+else:
+    credit_type = "uniform"
+
 
 # go through all relevant files and aggregate info
 for credit in credit_list:
     for scheme in scheme_list:
         for path_type in path_type_list:
+            if path_type == "widest" and scheme not in ["waterfilling", "DCTCPQ"]:
+                continue
+            if path_type == "shortest" and len(scheme_list) > 1 and scheme in ["waterfilling", "DCTCPQ"] and \
+                    credit_type == "lnd":
+                continue
+
             for queue_threshold in queue_threshold_list:
                 for num_paths in path_num_list:
                     for percent in dag_percent_list:
@@ -108,9 +128,12 @@ for credit in credit_list:
                         if "lndtopo" in args.save and "lnd_credit" in args.save:
                             capacity = int(credit) * 650
                         elif "lndnewtopo" in args.save and "lnd_credit" in args.save:
-                            capacity = int(credit) * 550
+                            capacity = int(credit) * 422
                         else:
                             capacity = int(credit)
+
+
+
                         
                         if len(succ_ratios) > 0:
                             if args.payment_graph_type == "circ":
@@ -119,7 +142,8 @@ for credit in credit_list:
                                 output_file.write(SCHEME_CODE[scheme] + "," + str(capacity) +  "," + \
                                         str(PERCENT_MAPPING[percent]) + ",")
 
-                            output_file.write(str(num_paths) + "," \
+                            output_file.write(topo_type + "," + credit_type + "," \
+                                    + str(num_paths) + "," \
                                 + str(path_type) + "," \
                                 + str(queue_threshold) + "," \
                                 + ("%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (stat.mean(succ_ratios), min(succ_ratios), \
@@ -136,7 +160,7 @@ for credit in credit_list:
             output_file.write("Circ," + str(capacity) +  "," + \
                                         str(PERCENT_MAPPING[percent]) + ",")   
             ideal = 100 - PERCENT_MAPPING[percent]
-            output_file.write("4,ideal,0," \
+            output_file.write(topo_type + "," + credit_type + ",4,ideal,0," \
                                 + ("%f,%f,%f,%f,%f,%f,0,0,0\n" % (ideal, ideal, ideal, ideal, ideal, ideal)))
 
 

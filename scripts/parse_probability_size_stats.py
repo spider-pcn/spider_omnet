@@ -78,15 +78,33 @@ scheme_list = args.scheme_list
 
 
 output_file = open(GGPLOT_DATA_DIR + args.save, "w+")
-output_file.write("Scheme,Credit,SizeStart,SizeEnd,Point,Prob,Demand\n")
+output_file.write("Topo,CreditType,Scheme,Credit,SizeStart,SizeEnd,Point,Prob,Demand\n")
 
 buckets = compute_buckets(args.num_buckets, KAGGLE_AMT_DIST_FILENAME)
+
+if "sw" in args.topo or "sf" in args.topo:
+    topo_type = args.save[:2]
+else:
+    topo_type = args.save[:3]
+
+if "lnd_uniform" in args.topo: 
+    credit_type = "uniform"
+elif "lnd_july15" in args.topo or "lndCap" in args.topo:
+    credit_type = "lnd"
+else:
+    credit_type = "uniform"
+
 
 # go through all relevant files and aggregate probability by size
 for scheme in scheme_list:
     size_to_arrival = {} 
     size_to_completion = {}
     for run_num in range(0, args.num_max + 1):
+        if credit_type != "uniform" and (scheme == "waterfilling" or scheme == "DCTCPQ"):
+            path_type = "widest"
+        else:
+            path_type = "shortest"
+
         file_name = topo + "_" + args.payment_graph_type + "_net_" + str(credit) + "_" + scheme + "_" + \
                 args.payment_graph_type + str(run_num) + \
             "_demand" + str(demand/10) + "_" + path_type
@@ -114,12 +132,14 @@ for scheme in scheme_list:
         except IOError:
             print "error with", file_name
             continue
+     
 
     sorted_sizes = [5]
     sorted_sizes.extend(sorted(size_to_completion.keys()))
     print sorted_sizes
     for i, size in enumerate(sorted_sizes[1:]):
-        output_file.write(str(SCHEME_CODE[scheme]) +  "," + str(credit) +  "," + \
+        output_file.write(topo_type + "," + credit_type + "," + \
+                str(SCHEME_CODE[scheme]) +  "," + str(credit) +  "," + \
             "%f,%f,%f,%f,%f\n" % (sorted_sizes[i], size, \
                     math.sqrt(size * sorted_sizes[i]), \
                     size_to_completion[size]/size_to_arrival[size], demand))
