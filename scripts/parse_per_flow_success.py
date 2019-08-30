@@ -52,11 +52,24 @@ num_paths = args.path_num
 scheme_list = args.scheme_list
 
 
+# determine topology and credit type
+if "sw" in args.topo or "sf" in args.topo:
+    topo_type = args.save[:2]
+else:
+    topo_type = args.save[:3]
+
+if "lnd_uniform" in args.topo: 
+    credit_type = "uniform"
+elif "lnd_july15" in args.topo or "lndCap" in args.topo:
+    credit_type = "lnd"
+else:
+    credit_type = "uniform"
+
 
 
 
 output_file = open(GGPLOT_DATA_DIR + args.save, "w+")
-output_file.write("Scheme,Credit,SuccVol,Demand\n")
+output_file.write("Topo,CreditType,Scheme,Credit,SuccVol,Demand\n")
 print "scheme objective numberOfZeroes"
 
 
@@ -64,6 +77,11 @@ print "scheme objective numberOfZeroes"
 for i, scheme in enumerate(scheme_list):
     flow_succ_list, flow_arrival_list = [], []
     for run_num in range(0, args.num_max + 1):
+        if credit_type != "uniform" and (scheme == "waterfilling" or scheme == "DCTCPQ" or scheme == "priceSchemeWindow"):
+            path_type = "widest"
+        else:
+            path_type = "shortest"
+
         file_name = topo + "_" + args.payment_graph_type + "_net_" + str(credit) + "_" + scheme + "_" + \
                 args.payment_graph_type + str(run_num) + \
             "_demand" + str(demand/10) + "_" + path_type
@@ -93,13 +111,15 @@ for i, scheme in enumerate(scheme_list):
             count_zero += 1
         else:
             sum_fairness += math.log(entry, 2)
-        output_file.write(str(SCHEME_CODE[scheme]) +  "," + str(credit) +  "," + \
+        output_file.write(topo_type + "," + credit_type + "," + \
+                str(SCHEME_CODE[scheme]) +  "," + str(credit) +  "," + \
             "%f,%f\n" % (entry, demand))
     print scheme, sum_fairness/(args.num_max + 1), count_zero
 
     if i == 0:
         for entry in sorted(flow_arrival_list):
-            output_file.write("arrival," + str(credit) +  "," + \
+            output_file.write(topo_type + "," + credit_type + \
+                    ",arrival," + str(credit) +  "," + \
                 "%f,%f\n" % (entry, demand))
 
 output_file.close()
