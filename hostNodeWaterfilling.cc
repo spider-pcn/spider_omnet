@@ -127,12 +127,14 @@ void hostNodeWaterfilling::handleTransactionMessageSpecialized(routerMsg* ttmsg)
                 if (transMsg->getIsAttempted() == false)
                     statAmtArrived[destNode] += transMsg->getAmount();
                 if (splitInfo->numArrived == 1) {
-                    statNumArrived[destNode] += 1; 
                     statRateArrived[destNode] += 1;
                 }
             }
             destNodeToNumTransPending[destNode] += 1; 
             
+            if (splitInfo->numArrived == 1) 
+                statNumArrived[destNode] += 1; 
+
             AckState * s = new AckState();
             s->amtReceived = 0;
             s->amtSent = transMsg->getAmount();
@@ -432,13 +434,15 @@ void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
                 if (aMsg->getTimeSent() >= _transStatStart && 
                         aMsg->getTimeSent() <= _transStatEnd) {
                     if (splitInfo->numTotal == splitInfo->numReceived) {
-                        statNumCompleted[receiver] += 1;
                         statRateCompleted[receiver] += 1;
                         _transactionCompletionBySize[splitInfo->totalAmount] += 1;
                         double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                         statCompletionTimes[receiver] += timeTaken * 1000;
                     }
                 }
+                
+                if (splitInfo->numTotal == splitInfo->numReceived) 
+                    statNumCompleted[receiver] += 1;
                 
                 // erase transaction from map 
                 // NOTE: still keeping it in the per path map (transPathToAckState)

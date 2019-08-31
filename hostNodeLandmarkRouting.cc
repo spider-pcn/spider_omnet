@@ -99,11 +99,11 @@ void hostNodeLandmarkRouting::handleTransactionMessageSpecialized(routerMsg* ttm
     if (ttmsg->isSelfMessage()) {
         if (transMsg->getTimeSent() >= _transStatStart && 
             transMsg->getTimeSent() <= _transStatEnd) {
-            statNumArrived[destination] += 1; 
             statRateArrived[destination] += 1;
             statAmtArrived[destination] += transMsg->getAmount();
             splitInfo->firstAttemptTime = simTime().dbl();
         }
+        statNumArrived[destination] += 1; 
 
         AckState * s = new AckState();
         s->amtReceived = 0;
@@ -255,7 +255,6 @@ void hostNodeLandmarkRouting::handleAckMessageSpecialized(routerMsg* ttmsg) {
                 nodeToShortestPathsMap[receiver][pathIndex].statRateCompleted += 1;
 
                 if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) {
-                    statNumCompleted[receiver] += 1; 
                     statRateCompleted[receiver] += 1;
                     _transactionCompletionBySize[amtSent] += 1;
 
@@ -263,7 +262,7 @@ void hostNodeLandmarkRouting::handleAckMessageSpecialized(routerMsg* ttmsg) {
                     double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                     statCompletionTimes[receiver] += timeTaken * 1000;
                 }
-
+                statNumCompleted[receiver] += 1; 
                 transToAmtLeftToComplete.erase(aMsg->getTransactionId());
             }
            

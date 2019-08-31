@@ -114,17 +114,24 @@ do
                 --separate-end-hosts \
                 --delay-per-channel $delay\
                 --randomize-start-bal $random_init_bal\
-                --random-channel-capacity $random_capacity  
+                --random-channel-capacity $random_capacity \
+                --lnd-channel-capacity $lnd_capacity
 
-
-        
-        # figure out payment graph/workload topology
-        if [ ${prefix[i]:0:9} == "five_line" ]; then
-            payment_graph_topo="simple_line"
-        elif [ ${prefix[i]:0:4} == "five" ]; then
-            payment_graph_topo="hardcoded_circ"
-        elif [ ${prefix[i]:0:7} == "hotnets" ]; then
-            payment_graph_topo="hotnets_topo"
+        # identify graph type for topology
+        if [ ${prefix_to_use:0:2} == "sw" ]; then
+            graph_type="small_world"
+        elif [ ${prefix_to_use:0:2} == "sf" ]; then
+            graph_type="scale_free"
+        elif [ ${prefix_to_use:0:4} == "tree" ]; then
+            graph_type="tree"
+        elif [ ${prefix_to_use:0:3} == "lnd" ]; then
+            graph_type=${prefix_to_use}
+        elif [ ${prefix_to_use} == "hotnets" ]; then
+            graph_type="hotnets_topo"
+        elif [ ${prefix_to_use:0:6} == "random" ]; then
+            graph_type="random"
+        else
+            graph_type="simple_topologies"
         fi
         
         # set delay amount

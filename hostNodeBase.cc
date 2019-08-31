@@ -646,6 +646,10 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
         statRateAttempted[destination] += 1;
         statAmtAttempted[destination] += transMsg->getAmount();
     }
+    else if (!revisit && transMsg->isSelfMessage()) 
+        statNumArrived[destination] += 1;
+
+
     
     // if it is at the destination
     if (ttmsg->getHopCount() ==  ttmsg->getRoute().size() - 1) {
@@ -798,6 +802,9 @@ void hostNodeBase::handleAckMessageSpecialized(routerMsg* ttmsg) {
         double timeTaken = simTime().dbl() - aMsg->getTimeSent();
         statCompletionTimes[destNode] += timeTaken * 1000;
     }
+    else 
+        statNumCompleted[destNode] += 1;
+
     hostNodeBase::handleAckMessage(ttmsg);
 }
 
@@ -1011,7 +1018,9 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
                
                emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
                emit(numPendingPerDestSignals[it], destNodeToNumTransPending[it]);
-               double frac = ((100*statNumCompleted[it])/(max(statNumArrived[it],1)));
+               double frac = ((float(statNumCompleted[it]))/(max(statNumArrived[it],1)));
+               statNumCompleted[it] = 0;
+               statNumArrived[it] = 0;
                emit(fracSuccessfulPerDestSignals[it],frac);
            }
        }

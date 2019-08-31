@@ -174,11 +174,12 @@ void hostNodeLndBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
             statAmtAttempted[destNode] += transMsg->getAmount();
             
             if (splitInfo->numArrived == 1) {       
-                statNumArrived[destNode] += 1;
                 statRateArrived[destNode] += 1; 
                 statRateAttempted[destNode] += 1; 
             }
         }
+        if (splitInfo->numArrived == 1)     
+            statNumArrived[destNode] += 1;
 
         vector<int> newRoute = generateNextPath(destNode);
         //note: number of paths attempted is calculated as pathIndex + 1, so if fails
@@ -255,13 +256,14 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
                 statAmtCompleted[destNode] += aMsg->getAmount();
 
                 if (splitInfo->numTotal == splitInfo->numReceived) {
-                    statNumCompleted[destNode] += 1; 
                     statRateCompleted[destNode] += 1;
                     _transactionCompletionBySize[splitInfo->totalAmount] += 1;
                     double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                     statCompletionTimes[destNode] += timeTaken * 1000;
                 }
             }
+            if (splitInfo->numTotal == splitInfo->numReceived) 
+                statNumCompleted[destNode] += 1; 
         }
         else {
             statNumTimedOut[destNode] += 1;

@@ -155,13 +155,14 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
             statAmtCompleted[destNode] += aMsg->getAmount();
 
             if (splitInfo->numTotal == splitInfo->numReceived) {
-                statNumCompleted[destNode] += 1; 
                 statRateCompleted[destNode] += 1;
                 _transactionCompletionBySize[splitInfo->totalAmount] += 1;
                 double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                 statCompletionTimes[destNode] += timeTaken * 1000;
             }
         }
+        if (splitInfo->numTotal == splitInfo->numReceived) 
+            statNumCompleted[destNode] += 1; 
         nodeToShortestPathsMap[destNode][pathIndex].statRateCompleted += 1;
         nodeToShortestPathsMap[destNode][pathIndex].amtAcked += aMsg->getAmount();
     }
@@ -372,10 +373,11 @@ void hostNodeDCTCP::handleTransactionMessageSpecialized(routerMsg* ttmsg){
             statAmtArrived[destNode] += transMsg->getAmount();
             
             if (splitInfo->numArrived == 1) {       
-                statNumArrived[destNode] += 1;
                 statRateArrived[destNode] += 1; 
             }
         }
+        if (splitInfo->numArrived == 1) 
+            statNumArrived[destNode] += 1;
     }
 
     // initiate paths and windows if it is a new destination
