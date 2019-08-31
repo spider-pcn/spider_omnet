@@ -305,8 +305,14 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     circ_total = reduce(lambda x, value: x + value, demand_dict_circ.itervalues(), 0)
     dag_total = reduce(lambda x, value: x + value, demand_dict_dag.itervalues(), 0)
 
-    demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
+    if "weird" not in filename:
+        demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
             for key in set(demand_dict_circ) | set(demand_dict_dag) } 
+    else:
+        # just add dag and don't weigh
+        demand_dict = { key: demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
+            for key in set(demand_dict_circ) | set(demand_dict_dag) } 
+
     total = reduce(lambda x, value: x + value, demand_dict.itervalues(), 0)
     
     print "Circulation", circ_total
@@ -355,8 +361,31 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     if generate_json_also:
         generate_json_files(filename + '.json', whole_graph, inside_graph, start_nodes, end_nodes, amt_absolute)
 
-    write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
+
+    if "weird" not in filename:
+        write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
             workload_type, total_time, log_normal, kaggle_size, txn_size_mean, timeout_value)
+
+    else:
+        kaggle_size = False
+        start_nodes_circ, end_nodes_circ, amt_relative_circ = [], [], []
+        for i, j in demand_dict_circ.keys():
+            start_nodes_circ.append(end_host_map[i])
+            end_nodes_circ.append(end_host_map[j])
+            amt_relative_circ.append(demand_dict[i, j])
+        amt_absolute_circ = [SCALE_AMOUNT * x for x in amt_relative_circ]
+        
+        # circ for 1000s
+        write_txns_to_file(filename + '_workload.txt', start_nodes_circ, end_nodes_circ, amt_absolute_circ,\
+            workload_type, 1000, log_normal, kaggle_size, txn_size_mean, timeout_value)
+
+        # dag plus circ for 1000s
+        write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
+            workload_type, 1000, log_normal, kaggle_size, txn_size_mean, timeout_value, "a", 1000)
+
+        # circ again for 1000s
+        write_txns_to_file(filename + '_workload.txt', start_nodes_circ, end_nodes_circ, amt_absolute_circ,\
+            workload_type, 1000, log_normal, kaggle_size, txn_size_mean, timeout_value, "a", 2000)
 
 
 # parse a given line of edge relationships from the topology file

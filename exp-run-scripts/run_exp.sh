@@ -32,12 +32,12 @@ kspYenEnabled=false
 
 #general parameters that do not affect config names
 simulationLength=1000
-statCollectionRate=1
+statCollectionRate=5
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-transStatStart=0
+transStatStart=500
 transStatEnd=2000
 mtu=1.0
 
@@ -57,8 +57,9 @@ serviceArrivalWindow=300
 
 #DCTCP parameters
 windowBeta=0.1
-windowAlpha=10
+windowAlpha=0.5
 queueThreshold=20
+queueDelayThreshold=250
 balanceThreshold=0.01
 minDCTCPWindow=1
 rateDecreaseFrequency=3.0
