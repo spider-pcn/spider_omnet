@@ -1018,6 +1018,8 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
                
                emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
                emit(numPendingPerDestSignals[it], destNodeToNumTransPending[it]);
+               emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
+               emit(numArrivedPerDestSignals[it], statNumArrived[it]);
                double frac = ((float(statNumCompleted[it]))/(max(statNumArrived[it],1)));
                statNumCompleted[it] = 0;
                statNumArrived[it] = 0;
@@ -1395,6 +1397,12 @@ void hostNodeBase::initialize() {
 
                 signal = registerSignalPerDest("numPending", i, "_Total");
                 numPendingPerDestSignals[i] = signal;
+
+                signal = registerSignalPerDest("numArrived", i, "_Total");
+                numArrivedPerDestSignals[i] = signal;
+
+                signal = registerSignalPerDest("numCompleted", i, "_Total");
+                numCompletedPerDestSignals[i] = signal;
                 
                 signal = registerSignalPerDest("fracSuccessful", i, "_Total");
                 fracSuccessfulPerDestSignals[i] = signal;

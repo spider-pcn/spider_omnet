@@ -7,6 +7,8 @@ echo $routing_scheme
 random_init_bal=false
 random_capacity=false
 pathChoice=$2
+prefix=$3 
+workload_prefix=$4 
 
 if [ -z "$pathChoice" ]; then
     pathChoice="shortest"
@@ -49,6 +51,10 @@ balanceThreshold=0.1
 minDCTCPWindow=1
 rateDecreaseFrequency=3.0
 
+# dynamic paths
+changingPathsEnabled=true
+pathMonitorRate=10
+
 
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_PREFIX}
@@ -83,7 +89,7 @@ do
         graph_type="lnd"
         delay="30"
 
-        workloadname="${prefix}_demand${scale}_dag${dag_amt}_num${num}"
+        workloadname="${workload_prefix}_demand${scale}_dag${dag_amt}_num${num}"
         workload="${PATH_NAME}$workloadname"
         inifile="${PATH_NAME}${workloadname}_default.ini"
         payment_graph_topo="custom"
@@ -189,15 +195,15 @@ do
                     --balance-ecn-threshold $balanceThreshold \
                     --mtu $mtu\
                     --min-dctcp-window $minDCTCPWindow\
-                    --rate-decrease-frequency $rateDecreaseFrequency
+                    --rate-decrease-frequency $rateDecreaseFrequency 
 
 
 
             # run the omnetexecutable with the right parameters
             # in the background
             ./spiderNet -u Cmdenv -f ${inifile}.ini -c ${configname} -n ${PATH_NAME}\
-                > ${output_file}.txt &
-            pids+=($!)
+               > ${output_file}.txt &
+           pids+=($!)
          done
         fi 
         wait # for all algorithms to complete for this demand
