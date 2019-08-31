@@ -9,11 +9,12 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "hotnets" "five_line" "lnd_dec4_2018" "lnd_dec4_2018lessScale" \
     "sw_10_routers" "sw_20_routers" "sw_50_routers" \
    "sf_50_routers" "sf_60_routers" "sf_80_routers"  \
-    "random_30_routers" "sw_sparse_40_routers" "lnd_july15_2019")
+    "random_30_routers" "sw_sparse_40_routers" "lnd_july15_2019" "lnd_uniform")
 
 scale=3 # "60" "90")
 random_init_bal=false
 random_capacity=false
+lnd_capacity=true
 
 
 #general parameters that do not affect config names

@@ -215,8 +215,8 @@ do
         
         #routing schemes where number of path choices doesn't matter
         if [ ${routing_scheme} ==  "shortestPath" ]; then 
-            vec_file_path=${vec_file_prefix}${routing_scheme}_dag${num}demand${scale}_${pathChoice}_${numPathChoices}-#0.vec
-            sca_file_path=${vec_file_prefix}${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}-#0.sca
+            vec_file_path=${vec_file_prefix}${routing_scheme}_dag${num}demand${scale}_${pathChoice}-#0.vec
+            sca_file_path=${vec_file_prefix}${routing_scheme}_dag${num}_demand${scale}_${pathChoice}-#0.sca
 
 
             python scripts/generate_analysis_plots_for_single_run.py \
