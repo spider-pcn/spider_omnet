@@ -90,6 +90,8 @@ do
             graph_type="scale_free"
         elif [ ${prefix[i]:0:4} == "tree" ]; then
             graph_type="tree"
+        elif [ ${prefix[i]:0:11} == "lnd_uniform" ]; then
+            graph_type="lnd_uniform"
         elif [ ${prefix[i]:0:3} == "lnd" ]; then
             graph_type=${prefix[i]}
         elif [ ${prefix[i]} == "hotnets" ]; then

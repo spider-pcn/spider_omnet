@@ -252,6 +252,34 @@ def aggregate_frac_successful_info(success, attempted):
     return node_signal_info
 
 
+# plot time series of tpt
+def plot_tpt_timeseries(num_completed, num_arrived, pdf):
+    total_arrived, total_completed  = dict(), dict()
+    for src, dest_info in num_arrived.items():
+        for dest, info in dest_info.items():
+            for i, (time, value) in enumerate(info[1:-1]):
+                cur_completed = total_completed.get(time, 0)
+                cur_arrived = total_arrived.get(time, 0)
+                total_completed[time] = cur_completed + num_completed[src][dest][i + 1][1]
+                total_arrived[time] = cur_arrived + value 
+
+
+    times = sorted(total_completed.keys()) 
+    tpts = []
+    for time in times:
+        tpt = float(total_completed[time])/total_arrived[time]
+        tpts.append(tpt)
+
+    plt.figure()
+    plt.plot(times, tpts)
+    plt.xlabel("Time")
+    plt.ylabel("Throughput %")
+    plt.grid()
+    pdf.savefig()  # saves the current figure into a pdf page
+    plt.close()
+           
+
+
 
 
 # plots every router's signal_type info in a new pdf page
@@ -499,6 +527,10 @@ def plot_per_src_dest_stats(args, text_to_add):
         firstPage.text(0.5, 0, txt, transform=firstPage.transFigure, ha="center")
         pdf.savefig()
         plt.close()
+         
+        num_completed = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numCompleted", False)
+        num_arrived = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numArrived", False)
+        plot_tpt_timeseries(num_completed, num_arrived, pdf)    
         
         if args.timeouts: 
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map,  "numTimedOutPerDest", False)
@@ -577,6 +609,7 @@ def plot_per_src_dest_stats(args, text_to_add):
         if args.numCompleted:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateCompleted", False)
             plot_relevant_stats(data_to_plot, pdf, "number of txns completed")
+
 
 
  

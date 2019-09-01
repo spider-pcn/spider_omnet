@@ -118,6 +118,8 @@ INTERESTING_SIGNALS = dict()
 INTERESTING_SIGNALS["completion_rate_cdfs"] = ["rateCompletedPerDest",\
         "rateArrivedPerDest"]
 INTERESTING_SIGNALS["rateCompleted"] = ["rateCompletedPerDest_Total"] 
+INTERESTING_SIGNALS["numCompleted"] = ["numCompletedPerDest_Total"] 
+INTERESTING_SIGNALS["numArrived"] = ["numArrivedPerDest_Total"] 
 INTERESTING_SIGNALS["rateArrived"] = ["rateArrivedPerDest_Total"]
 INTERESTING_SIGNALS["rateToSendTrans"] = ["rateToSendTransPerDestPerPath"]
 INTERESTING_SIGNALS["rateSent"] = ["rateSentPerDestPerPath"]
@@ -138,6 +140,7 @@ for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", \
     INTERESTING_SIGNALS[signal] = signal + "PerDest"
     per_dest_list.append(signal + "PerDest")
 per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", \
+        "numCompletedPerDest_Total", "numArrivedPerDest_Total", \
         "rateToSendTransPerDestPerPath", "rateSentPerDestPerPath", "rateOfAcksPerDestPerPath", \
         "fractionMarkedPerDestPerPath", "sumOfTransUnitsInFlightPerDestPerPath", "windowPerDestPerPath", \
         "priceLastSeenPerDestPerPath", "numTimedOutPerDest", "smoothedFractionMarkedPerDestPerPath",\
