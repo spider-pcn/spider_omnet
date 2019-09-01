@@ -105,7 +105,7 @@ for credit in credit_list:
 
                             if scheme != "shortestPath":
                                 file_name += "_" + str(num_paths) 
-                            if queue_threshold is not None:
+                            if queue_threshold is not None and percent != '0' and scheme =="DCTCPQ":
                                 file_name += "_qd" + str(queue_threshold)
                             file_name += "_summary.txt"
                             
