@@ -305,7 +305,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     circ_total = reduce(lambda x, value: x + value, demand_dict_circ.itervalues(), 0)
     dag_total = reduce(lambda x, value: x + value, demand_dict_dag.itervalues(), 0)
 
-    if "weird" not in filename:
+    if "weird" not in filename or dag_frac == 0.20 or dag_frac == 0.45:
         demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
             for key in set(demand_dict_circ) | set(demand_dict_dag) } 
     else:
@@ -376,16 +376,26 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         amt_absolute_circ = [SCALE_AMOUNT * x for x in amt_relative_circ]
         
         # circ for 1000s
-        write_txns_to_file(filename + '_workload.txt', start_nodes_circ, end_nodes_circ, amt_absolute_circ,\
+        if dag_frac == 0.20 or dag_frac == 0.45:
+            # dag plus circ for 2000s
+            write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
+                workload_type, 2000, log_normal, kaggle_size, txn_size_mean, timeout_value, "a")
+
+            # circ again for 1000s
+            write_txns_to_file(filename + '_workload.txt', start_nodes_circ, end_nodes_circ, amt_absolute_circ,\
+                workload_type, 1000, log_normal, kaggle_size, txn_size_mean, timeout_value, "a", 2000)
+
+        else:
+            write_txns_to_file(filename + '_workload.txt', start_nodes_circ, end_nodes_circ, amt_absolute_circ,\
             workload_type, 1000, log_normal, kaggle_size, txn_size_mean, timeout_value)
 
-        # dag plus circ for 1000s
-        write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, 3000, log_normal, kaggle_size, txn_size_mean, timeout_value, "a", 1000)
+            # dag plus circ for 1000s
+            write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
+                workload_type, 1000, log_normal, kaggle_size, txn_size_mean, timeout_value, "a", 1000)
 
-        # circ again for 1000s
-        write_txns_to_file(filename + '_workload.txt', start_nodes_circ, end_nodes_circ, amt_absolute_circ,\
-            workload_type, 2000, log_normal, kaggle_size, txn_size_mean, timeout_value, "a", 4000)
+            # circ again for 1000s
+            write_txns_to_file(filename + '_workload.txt', start_nodes_circ, end_nodes_circ, amt_absolute_circ,\
+                workload_type, 1000, log_normal, kaggle_size, txn_size_mean, timeout_value, "a", 2000)
 
 
 # parse a given line of edge relationships from the topology file

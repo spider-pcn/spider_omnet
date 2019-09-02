@@ -276,7 +276,7 @@ def plot_tpt_timeseries(num_completed, num_arrived, pdf):
     plt.figure()
     plt.plot(times, tpts)
     plt.xlabel("Time")
-    plt.ylim(0,1)
+    plt.ylim(0,100)
     plt.ylabel("Throughput %")
     plt.grid()
     pdf.savefig()  # saves the current figure into a pdf page
@@ -540,7 +540,7 @@ def plot_per_src_dest_stats(args, text_to_add):
          
         num_completed = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numCompleted", False)
         num_arrived = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numArrived", False)
-        plot_tpt_timeseries(num_completed, num_arrived, pdf)    
+        plot_tpt_timeseries(num_completed, num_arrived, pdf)   
         
         if args.timeouts: 
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map,  "numTimedOutPerDest", False)
