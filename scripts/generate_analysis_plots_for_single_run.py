@@ -267,16 +267,26 @@ def plot_tpt_timeseries(num_completed, num_arrived, pdf):
     times = sorted(total_completed.keys()) 
     tpts = []
     for time in times:
-        tpt = float(total_completed[time])/total_arrived[time]
+        if total_arrived[time] < total_completed[time]:
+            print "worry at time ", time, total_arrived[time], total_completed[time]
+            total_completed[time] = total_arrived[time]
+        tpt = float(100*total_completed[time])/max(total_arrived[time],1)
         tpts.append(tpt)
 
     plt.figure()
     plt.plot(times, tpts)
     plt.xlabel("Time")
+    plt.ylim(0,1)
     plt.ylabel("Throughput %")
     plt.grid()
     pdf.savefig()  # saves the current figure into a pdf page
     plt.close()
+
+    tpt_file = open(args.save + "_tpttimeseries.txt", "w+")
+    tpt_file.write("topo,time,tpt\n")
+    for time, tpt in zip(times, tpts):
+        tpt_file.write("sw," + str(time) + "," + str(tpt) + "\n")
+    tpt_file.close()
            
 
 

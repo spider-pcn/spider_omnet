@@ -372,7 +372,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         for i, j in demand_dict_circ.keys():
             start_nodes_circ.append(end_host_map[i])
             end_nodes_circ.append(end_host_map[j])
-            amt_relative_circ.append(demand_dict[i, j])
+            amt_relative_circ.append(demand_dict_circ[i, j])
         amt_absolute_circ = [SCALE_AMOUNT * x for x in amt_relative_circ]
         
         # circ for 1000s
@@ -381,11 +381,11 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
 
         # dag plus circ for 1000s
         write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
-            workload_type, 1000, log_normal, kaggle_size, txn_size_mean, timeout_value, "a", 1000)
+            workload_type, 3000, log_normal, kaggle_size, txn_size_mean, timeout_value, "a", 1000)
 
         # circ again for 1000s
         write_txns_to_file(filename + '_workload.txt', start_nodes_circ, end_nodes_circ, amt_absolute_circ,\
-            workload_type, 1000, log_normal, kaggle_size, txn_size_mean, timeout_value, "a", 2000)
+            workload_type, 2000, log_normal, kaggle_size, txn_size_mean, timeout_value, "a", 4000)
 
 
 # parse a given line of edge relationships from the topology file
