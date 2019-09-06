@@ -59,15 +59,15 @@ pathMonitorRate=10
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_PREFIX}
 
-dag_percent=("20" "45" "65")
-balance=160
+dag_percent=("45" "65")
+balance=40
 scale=3 # "60" "90")
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
 prefix="lnd_july15_2019"
-for num in {0..4}
+for num in 3
 do
     echo "doing run $num"
     # create workload files and run different demand levels

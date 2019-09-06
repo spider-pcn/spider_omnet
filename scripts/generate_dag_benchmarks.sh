@@ -15,7 +15,7 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
 scale=3 # "60" "90")
 random_init_bal=false
 random_capacity=false
-lnd_capacity=true
+lnd_capacity=false
 
 
 #general parameters that do not affect config names
@@ -47,12 +47,12 @@ PYTHON="/usr/bin/python"
 mkdir -p ${PATH_PREFIX}
 
 dag_percent=("20" "45" "65")
-balance=160
+balance=40
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-array=(7) #10 11 13 22 24)
+array=(17) #10 11 13 22 24)
 for i in "${array[@]}" 
 do    
     # create workload files and run different demand levels
@@ -151,7 +151,7 @@ do
         echo $graph_type
     
         # create 5 workload files for 5 runs
-        for num in {0..4}
+        for num in #{0..4}
         do
             echo "generating dag ${num} for ${dag_amt}"
             workloadname="${prefix[i]}_demand${scale}_dag${dag_amt}_num${num}"
