@@ -956,4 +956,14 @@ bool sortFIFO(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
     return (get<4>(a).dbl() < get<4>(b).dbl());
 }
 
+/*
+ * sortFunction - to do FIFO sorting 
+ */
+bool sortLIFO(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
+      const tuple<int,double, routerMsg*, Id, simtime_t> &b)
+{
+    return (get<4>(a).dbl() > get<4>(b).dbl());
+}
+
+
 #endif

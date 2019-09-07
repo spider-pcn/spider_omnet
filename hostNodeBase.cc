@@ -710,7 +710,7 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
             (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
                   ttmsg, key, simTime()));
             neighbor->totalAmtInQueue += transMsg->getAmount();
-            push_heap((*q).begin(), (*q).end(), sortFIFO);
+            push_heap((*q).begin(), (*q).end(), sortLIFO);
             processTransUnits(nextNode, *q);
         }
     }
@@ -1105,7 +1105,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                 
                 // resort the queue based on priority
                 make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), 
-                        sortFIFO);
+                        sortLIFO);
             }
 
             // remove from incoming TransUnits from the previous node
@@ -1264,7 +1264,7 @@ void hostNodeBase::initialize() {
 
         _transStatStart = par("transStatStart");
         _transStatEnd = par("transStatEnd");
-        _waterfillingStartTime = 0;
+        _waterfillingStartTime = 200;
         _landmarkRoutingStartTime = 0;
         _shortestPathStartTime = 0;
         _shortestPathEndTime = 5000;
@@ -1364,7 +1364,7 @@ void hostNodeBase::initialize() {
 
         //initialize queuedTransUnits
         vector<tuple<int, double , routerMsg *, Id, simtime_t>> temp;
-        make_heap(temp.begin(), temp.end(), sortFIFO);
+        make_heap(temp.begin(), temp.end(), sortLIFO);
         nodeToPaymentChannel[key].queuedTransUnits = temp;
 
         //register PerChannel signals
@@ -1503,7 +1503,7 @@ void hostNodeBase::finish() {
 void hostNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
     bool successful = true;
     while ((int)q.size() > 0 && successful) {
-        pop_heap(q.begin(), q.end(), sortFIFO);
+        pop_heap(q.begin(), q.end(), sortLIFO);
         successful = forwardTransactionMessage(get<2>(q.back()), get<4>(q.back()));
         if (successful){
             q.pop_back();
