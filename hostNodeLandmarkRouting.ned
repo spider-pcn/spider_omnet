@@ -37,6 +37,11 @@ simple hostNodeLandmarkRouting
                 bool obliviousRoutingEnabled = default(false);
                 bool kspYenEnabled = default(false);
                 
+                bool LIFOEnabled = default(false);
+                bool FIFOEnabled = default(false);
+                bool SPFEnabled = default(false);
+                bool RREnabled = default(false);
+                
                 bool changingPathsEnabled = default(false);
                 int maxPathsToConsider = default(100);
                 double windowThresholdForChange = default(1);

@@ -296,6 +296,20 @@ void hostNodeDCTCP::initializePathInfo(vector<vector<int>> kShortestPaths, int d
     }
 }
 
+/* get maximum window size from amongs the paths considered
+ */
+double hostNodeDCTCP::getMaxWindowSize(unordered_map<int, PathInfo> pathList) {
+    double maxWindowSize = 0;
+    for (auto p = pathList.begin(); p != pathList.end(); p++) {
+        int pathIndex = p->first;
+        PathInfo *pInfo = &(p->second);
+
+        if (pInfo->inUse && pInfo->windowSum/_monitorRate > maxWindowSize)
+            maxWindowSize = pInfo->windowSum/_monitorRate;
+    }
+    return max(maxWindowSize, _minDCTCPWindow);
+}
+
 /* routine to monitor paths periodically and change them out if need be
  * in particular, marks the path as "candidate" for changing if its window is small
  * next time, it actually changes the path out if its window is still small
@@ -313,13 +327,15 @@ void hostNodeDCTCP::handleMonitorPathsMessage(routerMsg* ttmsg) {
     for (auto it = 0; it < _numHostNodes; it++){ 
         if (it != getIndex() && _destList[myIndex()].count(it) > 0) {
             if (nodeToShortestPathsMap.count(it) > 0) {
+                double maxWindowSize = getMaxWindowSize(nodeToShortestPathsMap[it]);
+
                 for (auto p = nodeToShortestPathsMap[it].begin(); p != nodeToShortestPathsMap[it].end();){
                     int pathIndex = p->first;
                     PathInfo *pInfo = &(p->second);
 
                     //signals for price scheme per path
                     if (pInfo->inUse) {
-                        if (pInfo->windowSum/_monitorRate <= _windowThresholdForChange && 
+                        if (pInfo->windowSum/_monitorRate <= _windowThresholdForChange * maxWindowSize / 100.0  && 
                                 nodeToDestInfo[it].sumTxnsWaiting/_monitorRate > 0) {
                             int maxK = nodeToDestInfo[it].maxPathId;
                             if (pInfo->candidate) {

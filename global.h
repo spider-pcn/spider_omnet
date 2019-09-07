@@ -159,3 +159,11 @@ extern double _totalPaths; // total number of paths over which cannonical RTT wa
 extern bool _changingPathsEnabled;
 extern int _maxPathsToConsider;
 extern double _windowThresholdForChange; 
+
+// scheduling algorithm knob
+extern bool _LIFOEnabled;
+extern bool _FIFOEnabled;
+extern bool _SPFEnabled;
+extern bool _RREnabled;
+extern bool (*_schedulingAlgorithm) (const tuple<int,double, routerMsg*, Id, simtime_t> &a,
+      const tuple<int,double, routerMsg*, Id, simtime_t> &b);

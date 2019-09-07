@@ -27,6 +27,7 @@ class hostNodeDCTCP : public hostNodeBase {
         virtual void handleClearStateMessage(routerMsg *msg) override;
 
         // helper method
+        virtual double getMaxWindowSize(unordered_map<int, PathInfo> pathList); 
         virtual void initializePathInfo(vector<vector<int>> kShortestPaths, int destNode);
         virtual void initializeThisPath(vector<int> thisPath, int pathIdx, int destNode);
         virtual void sendMoreTransactionsOnPath(int destNode, int pathIndex);

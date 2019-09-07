@@ -55,6 +55,14 @@ bool _heuristicPathsEnabled;
 bool _obliviousRoutingEnabled;
 bool _kspYenEnabled;
 
+// scheduling algorithms
+bool _LIFOEnabled;
+bool _FIFOEnabled;
+bool _RREnabled;
+bool _SPFEnabled;
+bool (*_schedulingAlgorithm) (const tuple<int,double, routerMsg*, Id, simtime_t> &a,
+      const tuple<int,double, routerMsg*, Id, simtime_t> &b);
+
 // for all precision errors
 double _epsilon; 
 
@@ -710,7 +718,7 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
             (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
                   ttmsg, key, simTime()));
             neighbor->totalAmtInQueue += transMsg->getAmount();
-            push_heap((*q).begin(), (*q).end(), sortLIFO);
+            push_heap((*q).begin(), (*q).end(), _schedulingAlgorithm);
             processTransUnits(nextNode, *q);
         }
     }
@@ -1105,7 +1113,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                 
                 // resort the queue based on priority
                 make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), 
-                        sortLIFO);
+                        _schedulingAlgorithm);
             }
 
             // remove from incoming TransUnits from the previous node
@@ -1302,6 +1310,19 @@ void hostNodeBase::initialize() {
         else if (_kspYenEnabled)
             pathFileName = topologyFile_ + "_kspYenPaths";
 
+        // scheduling algorithms
+        _LIFOEnabled = par("LIFOEnabled");
+        _FIFOEnabled = par("FIFOEnabled");
+        _SPFEnabled = par("SPFEnabled");
+        _RREnabled = par("RREnabled");
+
+        if (_LIFOEnabled) 
+            _schedulingAlgorithm = &sortLIFO;
+        else if (_FIFOEnabled)
+            _schedulingAlgorithm = &sortFIFO;
+        else if (_SPFEnabled)
+            _schedulingAlgorithm = &sortSPF;
+
         if (_widestPathsEnabled || _kspYenEnabled || _obliviousRoutingEnabled || _heuristicPathsEnabled)
             initializePathMaps(pathFileName);
 
@@ -1364,7 +1385,7 @@ void hostNodeBase::initialize() {
 
         //initialize queuedTransUnits
         vector<tuple<int, double , routerMsg *, Id, simtime_t>> temp;
-        make_heap(temp.begin(), temp.end(), sortLIFO);
+        make_heap(temp.begin(), temp.end(), _schedulingAlgorithm);
         nodeToPaymentChannel[key].queuedTransUnits = temp;
 
         //register PerChannel signals
@@ -1503,7 +1524,7 @@ void hostNodeBase::finish() {
 void hostNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
     bool successful = true;
     while ((int)q.size() > 0 && successful) {
-        pop_heap(q.begin(), q.end(), sortLIFO);
+        pop_heap(q.begin(), q.end(), _schedulingAlgorithm);
         successful = forwardTransactionMessage(get<2>(q.back()), get<4>(q.back()));
         if (successful){
             q.pop_back();

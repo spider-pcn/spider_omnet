@@ -131,7 +131,7 @@ void routerNodeBase::initialize()
       
         //initialize queuedTransUnits
         vector<tuple<int, double , routerMsg *, Id, simtime_t>> temp;
-        make_heap(temp.begin(), temp.end(), sortLIFO);
+        make_heap(temp.begin(), temp.end(), _schedulingAlgorithm);
         nodeToPaymentChannel[key].queuedTransUnits = temp;
        
         //register PerChannel signals
@@ -202,7 +202,7 @@ void routerNodeBase::finish(){
 void routerNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
     bool successful = true;
     while ((int)q.size() > 0 && successful) {
-        pop_heap(q.begin(), q.end(), sortLIFO);
+        pop_heap(q.begin(), q.end(), _schedulingAlgorithm);
         successful = forwardTransactionMessage(get<2>(q.back()), dest, get<4>(q.back()));
         if (successful){
             q.pop_back();
@@ -546,7 +546,7 @@ void routerNodeBase::handleTransactionMessage(routerMsg* ttmsg) {
         (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
                ttmsg, make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex()), simTime()));
         neighbor->totalAmtInQueue += transMsg->getAmount();
-        push_heap((*q).begin(), (*q).end(), sortLIFO);
+        push_heap((*q).begin(), (*q).end(), _schedulingAlgorithm);
         processTransUnits(nextNode, *q);
     }
 }
@@ -808,7 +808,7 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                 
                 // resort the queue based on priority
                 make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), 
-                        sortLIFO);
+                        _schedulingAlgorithm);
             }
 
             // remove from incoming TransUnits from the previous node

@@ -5,6 +5,7 @@ GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 routing_scheme=$1
 capacity_type=$2
 pathChoice=$3
+schedulingAlgorithm=$4
 echo $routing_scheme
 random_init_bal=false
 random_capacity=false
@@ -63,6 +64,9 @@ if [ -z "$pathChoice" ]; then
     pathChoice="shortest"
 fi
 
+if [ -z "$schedulingAlgorithm" ]; then
+    schedulingAlgorithm="LIFO"
+fi
 
 prefix="lnd_july15_2019"
 workload_prefix="lnd_july15_2019"
@@ -145,8 +149,8 @@ do
           # if you add more choices for the number of paths you might run out of cores/memory
           for numPathChoices in 4
           do
-            output_file=outputs/${prefix}_${balance}_circ${num}_${routing_scheme}_demand${scale}0_${pathChoice}_${numPathChoices}
-            inifile=${PATH_NAME}${prefix}_${balance}_circ${num}_${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}.ini
+            output_file=outputs/${prefix}_${balance}_circ${num}_${routing_scheme}_demand${scale}0_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}
+            inifile=${PATH_NAME}${prefix}_${balance}_circ${num}_${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}.ini
 
             if [[ $routing_scheme =~ .*Window.* ]]; then
                 windowEnabled=true
@@ -187,6 +191,7 @@ do
                     --transStatStart $transStatStart\
                     --transStatEnd $transStatEnd\
                     --path-choice $pathChoice\
+                    --scheduling-algorithm $schedulingAlgorithm\
                     --balance $balance\
                     --circ-num $num \
                     --window-alpha $windowAlpha \
@@ -201,7 +206,7 @@ do
             # run the omnetexecutable with the right parameters
             # in the background
             ./spiderNet -u Cmdenv -f ${inifile} -c\
-            ${network}_${balance}_${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices} -n ${PATH_NAME}\
+            ${network}_${balance}_${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}  -n ${PATH_NAME}\
                 > ${output_file}.txt &
             pids+=($!)
             done
@@ -239,15 +244,15 @@ do
         else
           for numPathChoices in 4
             do
-                vec_file_path=${vec_file_prefix}${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}-#0.vec
-                sca_file_path=${vec_file_prefix}${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}-#0.sca
+                vec_file_path=${vec_file_prefix}${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm} -#0.vec
+                sca_file_path=${vec_file_prefix}${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm} -#0.sca
 
 
                 python scripts/generate_analysis_plots_for_single_run.py \
                   --detail $signalsEnabled \
                   --vec_file ${vec_file_path} \
                   --sca_file ${sca_file_path} \
-                  --save ${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices} \
+                  --save ${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}  \
                   --balance \
                   --queue_info --timeouts --frac_completed \
                   --frac_completed_window \

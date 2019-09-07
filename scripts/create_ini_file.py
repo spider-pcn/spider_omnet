@@ -25,7 +25,9 @@ parser.add_argument('--demand-scale', type=int, help='how much has demand been s
 parser.add_argument('--transStatStart', type=int, help='when to start collecting stats from', default=3000)
 parser.add_argument('--transStatEnd', type=int,help='when to end stats collection', default=5000)
 parser.add_argument('--path-choice', type=str, help='type of path choices', dest='pathChoice', default='shortest',
-        choices=['widest', 'oblivious', 'kspYen', 'shortest', 'heuristic'])
+        choices=['widest', 'oblivious', 'kspYen', 'shortest', 'heuristic', 'dynamic'])
+parser.add_argument('--scheduling-algorithm', type=str, help='type of scheduling alg', dest='schedulingAlgorithm', \
+        default='LIFO', choices=['LIFO', 'FIFO', 'SPF', 'RR'])
 parser.add_argument('--capacity', type=int,help='mean cap for topology')
 parser.add_argument('--mtu', type=float,help='smallest indivisible unit', default=5.0)
 
@@ -81,7 +83,7 @@ parser.add_argument('--rate-decrease-frequency', type=float, help='frequency wit
 parser.add_argument('--changing-paths-enabled', type=str, help='are dynamic path changes enabled?', \
         dest='changingPathsEnabled', default='false')
 parser.add_argument('--window-threshold-for-path-change', type=float, help='window size at which we switch paths', \
-        dest='windowThresholdForPathChange', default=1)
+        dest='windowThresholdForPathChange', default=5)
 parser.add_argument('--path-monitor-rate', type=float, help='frequency with which to monitor paths', \
         dest='pathMonitorRate', default=5)
 parser.add_argument('--max-paths-to-consider', type=int, help='max number of paths to consider for changing out', \
@@ -143,6 +145,7 @@ if args.numPathChoices != 'default':
     configname = configname + "_" + args.numPathChoices
 else:   
     args.numPathChoices = '4'
+configname += "_" + args.schedulingAlgorithm
 
 if args.routingScheme == "DCTCPQ" and args.queueDelayThreshold != 300 and args.queueDelayThreshold != 500:
     configname += "_qd" + str(int(args.queueDelayThreshold))
@@ -236,6 +239,19 @@ elif args.pathChoice == "heuristic":
     f.write("**.heuristicPathsEnabled = true\n")
 elif args.pathChoice == "kspYen":
     f.write("**.kspYenEnabled = true\n")
+elif args.pathChoice == "dynamic":
+    f.write("**.kspYenEnabled = true\n")
+    args.changingPathsEnabled = "true"
+
+if args.schedulingAlgorithm == "LIFO":
+    f.write("**.LIFOEnabled = true\n")
+elif args.schedulingAlgorithm == "FIFO":
+    f.write("**.FIFOEnabled = true\n")
+elif args.schedulingAlgorithm == "SPF":
+    f.write("**.SPFEnabled = true\n")
+elif args.schedulingAlgorithm == "RR":
+    f.write("**.RREnabled = true\n")
+
 
 if args.changingPathsEnabled == "true":
     f.write("**.changingPathsEnabled = true\n")

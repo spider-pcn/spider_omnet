@@ -396,7 +396,7 @@ void initializePathMaps(string filename) {
         _pathsMap[sender][receiver] = pathList;
     }
     else {
-        cout << "unable to open paths file " << endl;
+        cout << "unable to open paths file " << filename << endl;
     }
 }
 
@@ -957,13 +957,29 @@ bool sortFIFO(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
 }
 
 /*
- * sortFunction - to do FIFO sorting 
+ * sortFunction - to do LIFO sorting 
  */
 bool sortLIFO(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
       const tuple<int,double, routerMsg*, Id, simtime_t> &b)
 {
     return (get<4>(a).dbl() > get<4>(b).dbl());
 }
+
+/*
+ * sortFunction - to do shortest payment first sorting 
+ */
+bool sortSPF(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
+      const tuple<int,double, routerMsg*, Id, simtime_t> &b)
+{
+    transactionMsg *transA = check_and_cast<transactionMsg *>((get<2>(a))->getEncapsulatedPacket());
+    transactionMsg *transB = check_and_cast<transactionMsg *>((get<2>(b))->getEncapsulatedPacket());
+    
+    SplitState splitInfoA = _numSplits[transA->getSender()][transA->getLargerTxnId()];
+    SplitState splitInfoB = _numSplits[transB->getSender()][transB->getLargerTxnId()];
+
+    return (splitInfoA.numTotal < splitInfoB.numTotal);
+}
+
 
 
 #endif
