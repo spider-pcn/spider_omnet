@@ -28,6 +28,8 @@ bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, Id, simtime
       const tuple<int,double, routerMsg*, Id, simtime_t> &b);
 bool sortFIFO(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
       const tuple<int,double, routerMsg*, Id, simtime_t> &b);
+bool sortLIFO(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
+      const tuple<int,double, routerMsg*, Id, simtime_t> &b);
 
 unordered_map<int, vector<pair<int,int>>> removeRoute( unordered_map<int, vector<pair<int,int>>> channels, vector<int> route);
 vector<int> dijkstraInputGraph(int src,  int dest, unordered_map<int, vector<pair<int,int>>> channels);
