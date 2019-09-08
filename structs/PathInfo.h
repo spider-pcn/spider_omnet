@@ -70,5 +70,6 @@ struct PathInfo{
         bool inUse;
         bool candidate;
         double windowSum;
+        double timeStartedUse; 
 
 };

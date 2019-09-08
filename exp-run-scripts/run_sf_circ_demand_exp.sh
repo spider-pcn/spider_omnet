@@ -245,8 +245,8 @@ do
         else
           for numPathChoices in 4
             do
-                vec_file_path=${vec_file_prefix}${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm} -#0.vec
-                sca_file_path=${vec_file_prefix}${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm} -#0.sca
+                vec_file_path=${vec_file_prefix}${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}-#0.vec
+                sca_file_path=${vec_file_prefix}${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}-#0.sca
 
 
                 python scripts/generate_analysis_plots_for_single_run.py \

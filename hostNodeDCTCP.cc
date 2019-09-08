@@ -261,6 +261,7 @@ void hostNodeDCTCP::initializeThisPath(vector<int> thisPath, int pathIdx, int de
     temp.path = thisPath;
     temp.window = _minDCTCPWindow;
     temp.inUse = true;
+    temp.timeStartedUse = simTime().dbl();
     // TODO: change this to something sensible
     temp.rttMin = (thisPath.size() - 1) * 2 * _avgDelay/1000.0;
     nodeToShortestPathsMap[destNode][pathIdx] = temp;
@@ -335,8 +336,9 @@ void hostNodeDCTCP::handleMonitorPathsMessage(routerMsg* ttmsg) {
 
                     //signals for price scheme per path
                     if (pInfo->inUse) {
+                        double timeSincePathUse = simTime().dbl() - pInfo->timeStartedUse;
                         if (pInfo->windowSum/_monitorRate <= _windowThresholdForChange * maxWindowSize / 100.0  && 
-                                nodeToDestInfo[it].sumTxnsWaiting/_monitorRate > 0) {
+                                nodeToDestInfo[it].sumTxnsWaiting/_monitorRate > 0 && timeSincePathUse > 15.0) {
                             int maxK = nodeToDestInfo[it].maxPathId;
                             if (pInfo->candidate) {
                                 pInfo->inUse = false;
