@@ -147,7 +147,8 @@ else:
     args.numPathChoices = '4'
 configname += "_" + args.schedulingAlgorithm
 
-if args.routingScheme == "DCTCPQ" and args.queueDelayThreshold != 300 and args.queueDelayThreshold != 500:
+if args.routingScheme == "DCTCPQ" and ((args.queueDelayThreshold != 300 and args.queueDelayThreshold != 500) or \
+        "weird" in args.topo_filename):
     configname += "_qd" + str(int(args.queueDelayThreshold))
 
 if args.rebalancingEnabled:
