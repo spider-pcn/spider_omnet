@@ -19,9 +19,10 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "random_30_routers" "sw_sparse_40_routers" "lnd_gaussian" "lnd_uniform" "toy_dctcp")
 
 
-demand_scale=("5") # "60" "90")
+demand_scale=("10") # "60" "90")
 routing_scheme=$1
 pathChoice=$2
+schedulingAlgorithm="LIFO"
 echo $routing_scheme
 random_init_bal=false
 random_capacity=false
@@ -37,7 +38,7 @@ timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-transStatStart=500
+transStatStart=0
 transStatEnd=2000
 mtu=1.0
 
@@ -269,7 +270,7 @@ do
                 # run the omnetexecutable with the right parameters
                 # in the background
                 ./spiderNet -u Cmdenv -f ${inifile}\
-                    -c ${network}_${balance}_${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices} -n ${PATH_NAME}\
+                    -c ${network}_${balance}_${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}  -n ${PATH_NAME}\
                     > ${output_file}.txt &
                 pids+=($!)
                 done
@@ -306,10 +307,10 @@ do
 
             #routing schemes where number of path choices matter
             else
-              for numPathChoices in 4
+              for numPathChoices in 2
                 do
-                    vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}-#0.vec
-                    sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}-#0.sca
+                    vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}-#0.vec
+                    sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}-#0.sca
 
 
                     python scripts/generate_analysis_plots_for_single_run.py \
