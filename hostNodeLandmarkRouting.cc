@@ -288,7 +288,7 @@ void hostNodeLandmarkRouting::handleClearStateMessage(routerMsg *ttmsg) {
         int nextNode = get<3>(*it);
         int destNode = get<4>(*it);
         
-        if (simTime() > (msgArrivalTime + _maxTravelTime)){
+        if (simTime() > (msgArrivalTime + _maxTravelTime + 1)){
             for (auto p : nodeToShortestPathsMap[destNode]) {
                 int pathIndex = p.first;
                 tuple<int,int> key = make_tuple(transactionId, pathIndex);

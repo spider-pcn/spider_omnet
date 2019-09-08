@@ -615,7 +615,7 @@ void hostNodePriceScheme::handleClearStateMessage(routerMsg *ttmsg) {
         int nextNode = get<3>(*it);
         int destNode = get<4>(*it);
         
-        if (simTime() > (msgArrivalTime + _maxTravelTime)){
+        if (simTime() > (msgArrivalTime + _maxTravelTime + 1)){
             // ack was not received,safely can consider this txn done
             for (auto p : nodeToShortestPathsMap[destNode]) {
                 int pathIndex = p.first;

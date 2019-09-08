@@ -169,9 +169,11 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
 
     //increment transaction amount ack on a path. 
     tuple<int,int> key = make_tuple(transactionId, pathIndex);
-    transPathToAckState[key].amtReceived += aMsg->getAmount();
-
-    nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= aMsg->getAmount();
+    if (transPathToAckState.count(key) > 0) {
+        transPathToAckState[key].amtReceived += aMsg->getAmount();
+        nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= aMsg->getAmount();
+    }
+   
     destNodeToNumTransPending[destNode] -= 1;     
     hostNodeBase::handleAckMessage(ttmsg);
     
@@ -260,6 +262,7 @@ void hostNodeDCTCP::initializeThisPath(vector<int> thisPath, int pathIdx, int de
     PathInfo temp = {};
     temp.path = thisPath;
     temp.window = _minDCTCPWindow;
+    temp.sumOfTransUnitsInFlight = 0;
     temp.inUse = true;
     temp.timeStartedUse = simTime().dbl();
     // TODO: change this to something sensible
@@ -338,14 +341,20 @@ void hostNodeDCTCP::handleMonitorPathsMessage(routerMsg* ttmsg) {
                     if (pInfo->inUse) {
                         double timeSincePathUse = simTime().dbl() - pInfo->timeStartedUse;
                         if (pInfo->windowSum/_monitorRate <= _windowThresholdForChange * maxWindowSize / 100.0  && 
-                                nodeToDestInfo[it].sumTxnsWaiting/_monitorRate > 0 && timeSincePathUse > 15.0) {
+                                nodeToDestInfo[it].sumTxnsWaiting/_monitorRate > 0 && timeSincePathUse > 10.0) {
                             int maxK = nodeToDestInfo[it].maxPathId;
                             if (pInfo->candidate) {
                                 pInfo->inUse = false;
-                                tuple<int, vector<int>> nextPath =  getNextPath(getIndex(), it, maxK);
+                                tuple<int, vector<int>> nextPath;
+                                while (true) {
+                                    nextPath =  getNextPath(getIndex(), it, maxK);
+                                    int nextPathIndex = get<0>(nextPath);
+
+                                    if (nodeToShortestPathsMap[it].count(nextPathIndex) == 0)
+                                       break;
+                                    maxK =  (nextPathIndex == 0) ? 0 : maxK + 1;
+                                }
                                 initializeThisPath(get<1>(nextPath), get<0>(nextPath), it);
-                                cout << "switching paths at time " << simTime() << " from " << getIndex() << " to " << 
-                                    it << " path " << pathIndex << " is being replaced by " << get<0>(nextPath) << endl;
                             }
                             pInfo->candidate = true;
                         } else {
@@ -547,7 +556,7 @@ void hostNodeDCTCP::handleClearStateMessage(routerMsg *ttmsg) {
         int nextNode = get<3>(*it);
         int destNode = get<4>(*it);
         
-        if (simTime() > (msgArrivalTime + _maxTravelTime)){
+        if (simTime() > (msgArrivalTime + _maxTravelTime + 0.001)){
             // ack was not received,safely can consider this txn done
             for (auto p : nodeToShortestPathsMap[destNode]) {
                 int pathIndex = p.first;
@@ -555,8 +564,9 @@ void hostNodeDCTCP::handleClearStateMessage(routerMsg *ttmsg) {
                 if (transPathToAckState.count(key) != 0) {
                     nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= 
                         (transPathToAckState[key].amtSent - transPathToAckState[key].amtReceived);
+
                     transPathToAckState.erase(key);
-                    
+
                     // treat this basiscally as one marked packet
                     // TODO: if more than one packet was in flight 
                     nodeToShortestPathsMap[destNode][pathIndex].window  -= _windowBeta;
