@@ -9,6 +9,7 @@ random_capacity=false
 pathChoice=$2
 prefix=$3 
 workload_prefix=$4 
+schedulingAlgorithm="LIFO"
 
 if [ -z "$pathChoice" ]; then
     pathChoice="shortest"
@@ -59,15 +60,14 @@ pathMonitorRate=10
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_PREFIX}
 
-dag_percent=("45" "65")
-balance=40
+dag_percent=("20" "45" "65")
+balance=4000
 scale=3 # "60" "90")
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
-prefix="lnd_july15_2019"
-for num in 3
+for num in {0..4}
 do
     echo "doing run $num"
     # create workload files and run different demand levels
@@ -138,9 +138,9 @@ do
           # if you add more choices for the number of paths you might run out of cores/memory
           for numPathChoices in 4
           do
-            output_file=outputs/${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}0_${pathChoice}            
-            inifile=${PATH_NAME}${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}_${pathChoice}
-            configname=${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}
+            output_file=outputs/${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}0_${pathChoice}_${schedulingAlgorithm}           
+            inifile=${PATH_NAME}${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}_${pathChoice}_${schedulingAlgorithm}
+            configname=${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}
 
             if [[ $routing_scheme =~ .*Window.* ]]; then
                 windowEnabled=true
@@ -186,6 +186,7 @@ do
                     --transStatStart $transStatStart\
                     --transStatEnd $transStatEnd\
                     --path-choice $pathChoice \
+                    --scheduling-algorithm $schedulingAlgorithm\
                     --balance $balance\
                     --dag-num $num \
                     --window-alpha $windowAlpha \
@@ -241,7 +242,7 @@ do
             do
                 vec_file_path=${PATH_NAME}results/${configname}-#0.vec
                 sca_file_path=${PATH_NAME}results/${configname}-#0.sca
-                graph_name=${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices}
+                graph_name=${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}
 
                 if [ ${routing_scheme} ==  "DCTCPQ" ]; then 
                     graph_name=${graph_name}_qd${queueDelayThreshold}
