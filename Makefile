@@ -53,7 +53,8 @@ OBJS = \
     $O/timeOutMsg_m.o \
     $O/transactionMsg_m.o \
     $O/transactionSendMsg_m.o \
-    $O/updateMsg_m.o
+    $O/updateMsg_m.o \
+    $O/addFundsMsg_m.o
 
 # Message files
 MSGFILES = \
@@ -65,6 +66,7 @@ MSGFILES = \
     timeOutMsg.msg \
     transactionMsg.msg \
     transactionSendMsg.msg \
+    addFundsMsg.msg \
     updateMsg.msg
 
 # SM files

@@ -251,11 +251,14 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
                     str(round(balance_for_this_channel/2)) + "\n")
 
     # generate extra end host nodes
-    if separate_end_hosts: 
+    if separate_end_hosts : 
         for n in G.nodes():
             f1.write(str(n) + "e " + str(n) + "r ")
             f1.write(str(end_host_delay) + " " + str(end_host_delay) + " ")
-            f1.write(str(LARGE_BALANCE/2) + " " + str(LARGE_BALANCE/2) + "\n")
+            if rebalancing_enabled:
+                f1.write(str(REASONABLE_BALANCE/2) + " " + str(REASONABLE_BALANCE/2) + "\n")
+            else:
+                f1.write(str(LARGE_BALANCE/2) + " " + str(LARGE_BALANCE/2) + "\n")
     f1.close()
 
     nx.set_edge_attributes(G, capacity_dict, 'capacity')
@@ -283,8 +286,10 @@ parser.add_argument('--random-channel-capacity', type=str, dest='random_channel_
         help='Give channels a random balance between bal/2 and bal', default='False')
 parser.add_argument('--lnd-channel-capacity', type=str, dest='lnd_capacity', \
         help='Give channels a random balance sampled from lnd', default='False')
-routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting', 'lndBaseline', 'DCTCP'\
-        , 'DCTCPBal', 'DCTCPRate', 'DCTCPQ']
+parser.add_argument('--rebalancing-enabled', type=str, dest="rebalancing_enabled",\
+        help="should the end host router channel be reasonably sized")
+routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting', 'lndBaseline', \
+        'DCTCP', 'DCTCPBal', 'DCTCPRate', 'DCTCPQ']
 
 
 args = parser.parse_args()

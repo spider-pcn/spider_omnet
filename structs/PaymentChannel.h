@@ -15,6 +15,7 @@ public:
     //channel information
     cGate* gate;
     double balance;
+    double minAvailBalance;
     double balanceEWMA;
     vector<tuple<int, double, routerMsg*,  Id, simtime_t >> queuedTransUnits; //make_heap in initialization
     

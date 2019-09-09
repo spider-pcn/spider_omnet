@@ -13,6 +13,7 @@
 #include "priceUpdateMsg_m.h"
 #include "priceQueryMsg_m.h"
 #include "transactionSendMsg_m.h"
+#include "addFundsMsg_m.h"
 #include <iostream>
 #include <algorithm>
 #include <numeric>
@@ -141,6 +142,8 @@ extern double _rebalancingUpFactor;
 extern double _queueDelayThreshold;
 extern double _gamma;
 extern double _maxGammaImbalanceQueueSize;
+extern double _delayForAddingFunds;
+extern double _rebalanceRate;
 
 // DCTCP params
 extern double _windowAlpha;

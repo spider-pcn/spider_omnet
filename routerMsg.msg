@@ -32,6 +32,8 @@ cplusplus {{
 #define TRIGGER_RATE_DECREASE_MSG 13
 
 #define MONITOR_PATHS_MSG 14
+#define TRIGGER_REBALANCING_MSG 15
+#define ADD_FUNDS_MSG 16
 
 
 typedef std::vector<int> IntVector;

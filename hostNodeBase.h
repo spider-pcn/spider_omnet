@@ -124,6 +124,8 @@ class hostNodeBase : public cSimpleModule {
         virtual routerMsg *generateClearStateMessage();
         virtual routerMsg* generateTimeOutMessageForPath(vector<int> path, int transactionId, int receiver);
         virtual routerMsg *generateTimeOutMessage(routerMsg *transMsg);
+        virtual routerMsg *generateTriggerRebalancingMessage();
+        virtual routerMsg *generateAddFundsMessage(map<int,double> fundsToBeAdded);
       
 
         // message handlers
@@ -134,6 +136,8 @@ class hostNodeBase : public cSimpleModule {
         virtual bool handleTransactionMessageTimeOut(routerMsg *msg); 
         virtual void handleTimeOutMessage(routerMsg *msg);
         virtual void handleAckMessageSpecialized(routerMsg *msg);
+        virtual void handleTriggerRebalancingMessage(routerMsg* ttmsg);
+        virtual void handleAddFundsMessage(routerMsg* ttmsg);
 
         
         virtual void handleAckMessage(routerMsg *msg);
