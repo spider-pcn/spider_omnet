@@ -51,6 +51,7 @@ class routerNodeBase : public cSimpleModule
         virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount, int htlcIndex);
         //just generates routerMsg with no encapsulated msg inside
         virtual routerMsg *generateStatMessage();
+        virtual routerMsg *generateComputeMinBalanceMessage();
         virtual routerMsg *generateTriggerRebalancingMessage();
         virtual routerMsg *generateAddFundsMessage(map<int,double> fundsToBeAdded);
         virtual routerMsg *generateClearStateMessage();
@@ -65,6 +66,7 @@ class routerNodeBase : public cSimpleModule
         virtual void handleTransactionMessage(routerMsg *msg);
         virtual void handleTriggerRebalancingMessage(routerMsg* ttmsg);
         virtual void handleAddFundsMessage(routerMsg* ttmsg);
+        virtual void handleComputeMinAvailableBalanceMessage(routerMsg* ttmsg);
         // returns true if message has timed out
         virtual bool handleTransactionMessageTimeOut(routerMsg *msg);
 

@@ -40,13 +40,14 @@
 #define MONITOR_PATHS_MSG 14
 #define TRIGGER_REBALANCING_MSG 15
 #define ADD_FUNDS_MSG 16
+#define COMPUTE_BALANCE_MSG 17
 
 
 typedef std::vector<int> IntVector;
 // }}
 
 /**
- * Class generated from <tt>routerMsg.msg:46</tt> by nedtool.
+ * Class generated from <tt>routerMsg.msg:47</tt> by nedtool.
  * <pre>
  * packet routerMsg
  * {

@@ -144,6 +144,7 @@ extern double _gamma;
 extern double _maxGammaImbalanceQueueSize;
 extern double _delayForAddingFunds;
 extern double _rebalanceRate;
+extern double _computeBalanceRate;
 
 // DCTCP params
 extern double _windowAlpha;

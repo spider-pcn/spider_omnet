@@ -168,6 +168,9 @@ void routerNodeBase::initialize()
     if (_rebalancingEnabled) {
         routerMsg *triggerRebalancingMsg = generateTriggerRebalancingMessage();
         scheduleAt(simTime() + _rebalanceRate, triggerRebalancingMsg);
+        
+        routerMsg *computeMinBalanceMsg = generateComputeMinBalanceMessage();
+        scheduleAt(simTime() + _computeBalanceRate, computeMinBalanceMsg);
     }
 }
 
@@ -283,6 +286,16 @@ routerMsg *routerNodeBase::generateStatMessage(){
     sprintf(msgname, "node-%d statMsg", myIndex());
     routerMsg *rMsg = new routerMsg(msgname);
     rMsg->setMessageType(STAT_MSG);
+    return rMsg;
+}
+
+/* generate message trigger t generate balances for all the payment channels
+ */
+routerMsg *routerNodeBase::generateComputeMinBalanceMessage(){
+    char msgname[MSGSIZE];
+    sprintf(msgname, "node-%d computeMinBalanceMsg", myIndex());
+    routerMsg *rMsg = new routerMsg(msgname);
+    rMsg->setMessageType(COMPUTE_BALANCE_MSG);
     return rMsg;
 }
 
@@ -524,6 +537,13 @@ void routerNodeBase::handleMessage(cMessage *msg){
             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
             break;
 
+        case COMPUTE_BALANCE_MSG:
+            if (_loggingEnabled) cout<< "[ROUTER "<< myIndex() 
+                <<": RECEIVED COMPUTE BALANCE MSG] "<< msg->getName() << endl;
+                handleComputeMinAvailableBalanceMessage(ttmsg);
+            if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
+            break;
+
         case ADD_FUNDS_MSG:
             if (_loggingEnabled) cout<< "[ROUTER "<< myIndex() 
                 <<": RECEIVED ADD FUNDS MSG] "<< msg->getName() << endl;
@@ -739,6 +759,25 @@ void routerNodeBase::handleUpdateMessage(routerMsg* msg) {
     q = &(prevChannel->queuedTransUnits);
     processTransUnits(prevNode, *q);
 } 
+
+/* handler that periodically computes the minimum balance on a payment channel 
+ * this is then used accordingly to trigger rebalancing events */
+void routerNodeBase::handleComputeMinAvailableBalanceMessage(routerMsg* ttmsg) {
+    // reschedule this message to be sent again
+    if (simTime() > _simulationLength || !_rebalancingEnabled) {
+        delete ttmsg;
+    }
+    else {
+        scheduleAt(simTime()+_computeBalanceRate, ttmsg);
+    }
+    
+    for (auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
+        PaymentChannel *p = &(it->second);
+
+        if (p->balance < p->minAvailBalance)
+            p->minAvailBalance = p->balance;
+    }
+}
 
 
 /* handler for the periodic rebalancing message that gets triggered 
