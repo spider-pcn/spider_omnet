@@ -61,12 +61,11 @@ PYTHON="/usr/bin/python"
 mkdir -p ${PATH_PREFIX}
 
 dag_percent=("20" "45" "65")
-balance=4000
+balance=40
 scale=3 # "60" "90")
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
-#array=( 0 1 4 5 8 19 32)
 for num in {0..4}
 do
     echo "doing run $num"

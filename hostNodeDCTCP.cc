@@ -344,19 +344,34 @@ void hostNodeDCTCP::handleMonitorPathsMessage(routerMsg* ttmsg) {
                                 nodeToDestInfo[it].sumTxnsWaiting/_monitorRate > 0 && timeSincePathUse > 10.0) {
                             int maxK = nodeToDestInfo[it].maxPathId;
                             if (pInfo->candidate) {
-                                pInfo->inUse = false;
                                 tuple<int, vector<int>> nextPath;
+
+                                // search for a replacement path
                                 while (true) {
                                     nextPath =  getNextPath(getIndex(), it, maxK);
                                     int nextPathIndex = get<0>(nextPath);
+                                    maxK =  (nextPathIndex == 0) ? 0 : maxK + 1;
 
+                                    // valid new path found
                                     if (nodeToShortestPathsMap[it].count(nextPathIndex) == 0)
                                        break;
-                                    maxK =  (nextPathIndex == 0) ? 0 : maxK + 1;
+                                    
+                                    // implies we came a full circle, no eligible path
+                                    if (nextPathIndex == pathIndex) {
+                                        pInfo->candidate = false;
+                                        break;
+                                    }
                                 }
-                                initializeThisPath(get<1>(nextPath), get<0>(nextPath), it);
+
+                                // if this path is still a candidate, then find a new path
+                                if (pInfo->candidate) {
+                                    initializeThisPath(get<1>(nextPath), get<0>(nextPath), it);
+                                    pInfo->inUse = false;
+                                }
                             }
-                            pInfo->candidate = true;
+                            else {
+                                pInfo->candidate = true;
+                            }
                         } else {
                             pInfo->candidate = false;
                         }
