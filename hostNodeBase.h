@@ -86,7 +86,12 @@ class hostNodeBase : public cSimpleModule {
         // this is per transaction across all paths
         unordered_map<int, AckState> transToAmtLeftToComplete = {};
         //allows us to calculate the htlcIndex number
-        unordered_map<int, int> transactionIdToNumHtlc = {};         
+        unordered_map<int, int> transactionIdToNumHtlc = {};       
+
+        // structure to enable rebalancing - keeps track of how much each sender has sent to you, so you can refund 
+        // accordingly and how muh you've sent to each receiver
+        unordered_map<int, double> senderToAmtRefundable = {};  
+        unordered_map<int, double> receiverToAmtRefunded = {};  
     
     protected:
 

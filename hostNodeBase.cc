@@ -710,6 +710,7 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
     int hopcount = ttmsg->getHopCount();
     vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
     int destination = transMsg->getReceiver();
+    int sender = transMsg->getSender();
     int transactionId = transMsg->getTransactionId();
     
     if (!revisit && transMsg->getTimeSent() >= _transStatStart && 
@@ -740,6 +741,11 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
                 canceledTransactions.erase(iter);
             }
         }
+
+        // keep track of how much you need to refund this sender if rebalancing is enabled
+        double curAmt = (senderToAmtRefundable.count(sender) == 0) ? 0 : senderToAmtRefundable[sender];
+        senderToAmtRefundable[sender] = curAmt + transMsg->getAmount();
+        
         // send ack even if it has timed out because txns wait till _maxTravelTime before being 
         // cleared by clearState
         routerMsg* newMsg =  generateAckMessage(ttmsg);
@@ -871,8 +877,11 @@ void hostNodeBase::handleComputeMinAvailableBalanceMessage(routerMsg* ttmsg) {
 
 
 /* handler for the periodic rebalancing message that gets triggered 
- * that is responsible for equalizing the available balance across all of the
- * payment channels of a given router */
+ * that is responsible for implicit rebalancing at the end-hosts
+ * basically refunds from what has been sent out and remove what's been
+ * received, all to be adjusted on the single payment channel
+ * connected to it
+ */ 
 void hostNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
     // reschedule the message again to be periodic
     if (simTime() > _simulationLength || !_rebalancingEnabled){
@@ -882,36 +891,42 @@ void hostNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
         scheduleAt(simTime()+_rebalanceRate, ttmsg);
     }
 
-    // compute avalable stash to redistribute
-    double stash = 0.0;
-    int numChannels = 0;
+    map<int, double> pcsNeedingFunds;
     for (auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
-        PaymentChannel *p = &(it->second);
-        stash += min(p->minAvailBalance, p->balance);
-        numChannels += 1;
-    }
-
-    // figure out how much to give each channel
-    double targetBalancePerChannel = stash/numChannels;
-    map<int, double> pcsNeedingFunds; 
-    for (auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
+        // technically there's only payment channel here
         int id = it->first;
         PaymentChannel *p = &(it->second);
-        double differential = min(p->minAvailBalance, p->balance) - targetBalancePerChannel;
+        double totalAmtToBeRemoved = 0;
+        double totalAmtToBeAdded = 0;
 
-        if (differential > 0) {
+        // remove funds for everything that has been received and needs to be refunded
+        for (auto senderIt = senderToAmtRefundable.begin(); senderIt != senderToAmtRefundable.end(); senderIt++) {
+            totalAmtToBeRemoved += senderIt->second;
+            senderIt->second = 0;
+        }
+        if (totalAmtToBeRemoved > 0) {
             // remove capacity immediately from these channel
-            p->balance -= differential; 
+            p->balance -= totalAmtToBeRemoved; 
             if (p->balance < 0)
                 cout << "abhishtu" << endl;
             
+            p->amtImplicitlyRebalanced += totalAmtToBeRemoved;
+            p->numRebalanceEvents += 1;
+            
             tuple<int, int> senderReceiverTuple = (id < myIndex()) ? make_tuple(id, myIndex()) :
                 make_tuple(myIndex(), id);
-            _capacities[senderReceiverTuple] -=  differential;
-        } else {
+            _capacities[senderReceiverTuple] -= totalAmtToBeRemoved; 
+        } 
+        
+        // schedule message to add funds for everything that has been sent and therefore is getting refunded 
+        for (auto receiverIt = receiverToAmtRefunded.begin(); receiverIt != receiverToAmtRefunded.end(); receiverIt++) {
+            totalAmtToBeAdded += receiverIt->second;
+            receiverIt->second = 0;
+        }
+        if (totalAmtToBeAdded > 0) {
             // add this to the list of payment channels to be addressed 
             // along with a particular addFundsEvent
-            pcsNeedingFunds[id] =  -1 * differential;
+            pcsNeedingFunds[id] = totalAmtToBeAdded;
         }
     }
 
@@ -939,6 +954,7 @@ void hostNodeBase::handleAddFundsMessage(routerMsg* ttmsg) {
         
         p->numRebalanceEvents += 1;
         p->amtAdded += fundsToAdd;
+        p->amtImplicitlyRebalanced += fundsToAdd;
 
         // process as many new transUnits as you can for this payment channel
         processTransUnits(pcIdentifier, p->queuedTransUnits);

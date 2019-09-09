@@ -812,6 +812,8 @@ void routerNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
         if (differential > 0) {
             // remove capacity immediately from these channel
             p->balance -= differential; 
+            p->amtExplicitlyRebalanced += differential; 
+            p->numRebalanceEvents += 1;
             if (p->balance < 0)
                 cout << "abhishtu" << endl;
             
@@ -849,6 +851,7 @@ void routerNodeBase::handleAddFundsMessage(routerMsg* ttmsg) {
         
         p->numRebalanceEvents += 1;
         p->amtAdded += fundsToAdd;
+        p->amtExplicitlyRebalanced += fundsToAdd;
 
         // process as many new transUnits as you can for this payment channel
         processTransUnits(pcIdentifier, p->queuedTransUnits);
