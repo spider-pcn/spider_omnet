@@ -977,9 +977,22 @@ bool sortSPF(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
     SplitState splitInfoA = _numSplits[transA->getSender()][transA->getLargerTxnId()];
     SplitState splitInfoB = _numSplits[transB->getSender()][transB->getLargerTxnId()];
 
-    return (splitInfoA.numTotal < splitInfoB.numTotal);
+    if (splitInfoA.numTotal != splitInfoB.numTotal)
+        return splitInfoA.numTotal < splitInfoB.numTotal;
+    else
+        return (get<4>(a).dbl() > get<4>(b).dbl());
 }
 
-
+/*
+ * sortFunction - to do earliest deadline first sorting 
+ */
+bool sortEDF(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
+      const tuple<int,double, routerMsg*, Id, simtime_t> &b)
+{
+    transactionMsg *transA = check_and_cast<transactionMsg *>((get<2>(a))->getEncapsulatedPacket());
+    transactionMsg *transB = check_and_cast<transactionMsg *>((get<2>(b))->getEncapsulatedPacket());
+    
+    return (transA->getTimeSent() < transB->getTimeSent());
+}
 
 #endif

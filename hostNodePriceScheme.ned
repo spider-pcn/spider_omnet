@@ -32,6 +32,7 @@ simple hostNodePriceScheme
                 bool FIFOEnabled = default(false);
                 bool SPFEnabled = default(false);
                 bool RREnabled = default(false);
+                bool EDFEnabled = default(false);
                 
                 bool changingPathsEnabled = default(false);
                 int maxPathsToConsider = default(100);

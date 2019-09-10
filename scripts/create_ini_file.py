@@ -27,7 +27,7 @@ parser.add_argument('--transStatEnd', type=int,help='when to end stats collectio
 parser.add_argument('--path-choice', type=str, help='type of path choices', dest='pathChoice', default='shortest',
         choices=['widest', 'oblivious', 'kspYen', 'shortest', 'heuristic', 'dynamic'])
 parser.add_argument('--scheduling-algorithm', type=str, help='type of scheduling alg', dest='schedulingAlgorithm', \
-        default='LIFO', choices=['LIFO', 'FIFO', 'SPF', 'RR'])
+        default='LIFO', choices=['LIFO', 'FIFO', 'SPF', 'RR', 'EDF'])
 parser.add_argument('--capacity', type=int,help='mean cap for topology')
 parser.add_argument('--mtu', type=float,help='smallest indivisible unit', default=5.0)
 
@@ -252,6 +252,8 @@ elif args.schedulingAlgorithm == "SPF":
     f.write("**.SPFEnabled = true\n")
 elif args.schedulingAlgorithm == "RR":
     f.write("**.RREnabled = true\n")
+elif args.schedulingAlgorithm == "EDF":
+    f.write("**.EDFEnabled = true\n")
 
 
 if args.changingPathsEnabled == "true":

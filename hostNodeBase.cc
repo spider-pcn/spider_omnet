@@ -60,6 +60,7 @@ bool _LIFOEnabled;
 bool _FIFOEnabled;
 bool _RREnabled;
 bool _SPFEnabled;
+bool _EDFEnabled;
 bool (*_schedulingAlgorithm) (const tuple<int,double, routerMsg*, Id, simtime_t> &a,
       const tuple<int,double, routerMsg*, Id, simtime_t> &b);
 
@@ -1315,6 +1316,7 @@ void hostNodeBase::initialize() {
         _FIFOEnabled = par("FIFOEnabled");
         _SPFEnabled = par("SPFEnabled");
         _RREnabled = par("RREnabled");
+        _EDFEnabled = par("EDFEnabled");
 
         if (_LIFOEnabled) 
             _schedulingAlgorithm = &sortLIFO;
@@ -1322,6 +1324,8 @@ void hostNodeBase::initialize() {
             _schedulingAlgorithm = &sortFIFO;
         else if (_SPFEnabled)
             _schedulingAlgorithm = &sortSPF;
+        else if (_EDFEnabled)
+            _schedulingAlgorithm = &sortEDF;
 
         if (_widestPathsEnabled || _kspYenEnabled || _obliviousRoutingEnabled || _heuristicPathsEnabled)
             initializePathMaps(pathFileName);

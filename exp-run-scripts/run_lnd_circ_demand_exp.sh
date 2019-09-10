@@ -89,7 +89,7 @@ echo $pathChoice
 #balance_scale=("600" "1200") #"50" "75" "150" "300" "600" "1200" "2400" "4800")
 #balance_scale=("100" "200" "400" "800" "1600" "3200") #"1200" "2400" "4800" "9600") 
 balance_scale=("160" "80" "40" "20" "10") #"1200" "2400" "4800" "9600") 
-for num in 2 3 4 #{0..4}
+for num in {0..4}
 do
     echo "doing run $num"
     for balance in "${balance_scale[@]}"
@@ -244,8 +244,8 @@ do
         else
           for numPathChoices in 4
             do
-                vec_file_path=${vec_file_prefix}${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm} -#0.vec
-                sca_file_path=${vec_file_prefix}${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm} -#0.sca
+                vec_file_path=${vec_file_prefix}${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}-#0.vec
+                sca_file_path=${vec_file_prefix}${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}-#0.sca
 
 
                 python scripts/generate_analysis_plots_for_single_run.py \
