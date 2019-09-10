@@ -56,15 +56,25 @@ parser.add_argument('--tau', type=float, help='time unit factor in smooth waterf
 parser.add_argument('--normalizer', type=float, help='C in probability update', dest='normalizer', \
         default=100)
 
-parser.add_argument('--rebalancing-enabled', action='store_true', dest="rebalancingEnabled")
-parser.add_argument('--gamma', type=float, help='factor to weigh rebalancing', dest='gamma', default=1)
 parser.add_argument('--balance', type=int, help='average per channel balance', dest='balance')
 parser.add_argument('--circ-num', type=int, help='run number', dest='circNum')
 parser.add_argument('--dag-num', type=int, help='run number', dest='dagNum')
+
+
+# rebalancing arguments
+parser.add_argument('--rebalancing-enabled', action='store_true', dest="rebalancingEnabled")
 parser.add_argument('--rebalancing-queue-delay-threshold', type=int, help='threshold for rebalancing',\
         dest='rebalancingQueueDelayThreshold', default=3)
 parser.add_argument('--gamma-imbalance-queue-size', type=float, help='threshold queue size for rebalancing', 
         dest='gammaImbalanceQueueSize', default=5)
+parser.add_argument('--gamma', type=float, help='factor to weigh rebalancing', dest='gamma', default=1)
+parser.add_argument('--rebalancing-delay', type=float, help='time(ms) before funds are added', dest='rebalancingDelay', \
+        default=10)
+parser.add_argument('--rebalancing-rate', type=float, help='frequency(s) of rebalancing events', dest='rebalancingRate', default=5)
+parser.add_argument('--min-balance-compute-rate', type=float, help='frequency(s) of computing minimum balance', \
+        dest='minBalanceComputeRate', default=0.1)
+
+
 
 # dctcp arguments
 parser.add_argument('--window-alpha', type=float, help='size for window inc', dest='windowAlpha', default=0.01)
@@ -147,16 +157,13 @@ else:
     args.numPathChoices = '4'
 configname += "_" + args.schedulingAlgorithm
 
+if args.rebalancingEnabled:
+    configname += "_rebalancing"
+    configname += str(int(args.rebalancingDelay))
+
 if args.routingScheme == "DCTCPQ" and ((args.queueDelayThreshold != 300 and args.queueDelayThreshold != 500) or \
         "weird" in args.topo_filename or args.dagNum != None):
     configname += "_qd" + str(int(args.queueDelayThreshold))
-
-if args.rebalancingEnabled:
-    configname += "_rebalancing_"
-    configname += str(int(args.gamma * 100))
-    #configname += "_" + str(int(args.gammaImbalanceQueueSize * 100))
-    configname += "_" + str(int(args.rebalancingQueueDelayThreshold))
-
 
 
 if args.capacityFactor != None:
@@ -266,6 +273,9 @@ if args.changingPathsEnabled == "true":
 
 if args.rebalancingEnabled:
     f.write("**.rebalancingEnabled = true\n")
+    f.write("**.rebalancingRate = " + str(args.rebalancingRate) + "\n")
+    f.write("**.minBalanceComputeRate = " + str(args.minBalanceComputeRate) + "\n")
+    f.write("**.rebalancingDelayForAddingFunds = " + str(args.rebalancingDelay/1000.0) + "\n")
     if "priceScheme" in args.routingScheme:
         f.write("**.gamma = " + str(args.gamma) + "\n")
         f.write("**.gammaImbalanceQueueSize = " + str(args.gammaImbalanceQueueSize) + "\n")

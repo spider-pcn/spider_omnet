@@ -161,7 +161,7 @@ def generate_graph(size, graph_type):
 # generate extra end host nodes if need be
 # make the first line list of landmarks for this topology
 def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_filename, separate_end_hosts,\
-        randomize_init_bal=False, random_channel_capacity=False, lnd_capacity=False, is_lnd=False):
+        randomize_init_bal=False, random_channel_capacity=False, lnd_capacity=False, is_lnd=False, rebalancing_enabled=False):
     f1 = open(output_filename, "w+")
     end_host_delay = delay_per_channel
 
@@ -269,7 +269,7 @@ parser.add_argument('--num-nodes', type=int, dest='num_nodes', help='number of n
 parser.add_argument('--delay-per-channel', type=int, dest='delay_per_channel', \
         help='delay between nodes (ms)', default=30)
 parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'hotnets_topo', 'simple_line', 'toy_dctcp', \
-        'simple_deadlock', 'simple_topologies', 'lnd_dec4_2018','lnd_dec4_2018lessScale', \
+        'simple_deadlock', 'simple_topologies', 'dag_example', 'lnd_dec4_2018','lnd_dec4_2018lessScale', \
         'lnd_dec4_2018_randomCap', 'lnd_dec4_2018_modified', 'lnd_uniform', 'tree', 'random', \
         'lnd_july15_2019'], \
         help='type of graph (Small world or scale free or custom topology list)', default='small_world')
@@ -287,7 +287,7 @@ parser.add_argument('--random-channel-capacity', type=str, dest='random_channel_
 parser.add_argument('--lnd-channel-capacity', type=str, dest='lnd_capacity', \
         help='Give channels a random balance sampled from lnd', default='False')
 parser.add_argument('--rebalancing-enabled', type=str, dest="rebalancing_enabled",\
-        help="should the end host router channel be reasonably sized")
+        help="should the end host router channel be reasonably sized", default="false")
 routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting', 'lndBaseline', \
         'DCTCP', 'DCTCPBal', 'DCTCPRate', 'DCTCPQ']
 
@@ -314,6 +314,9 @@ elif args.graph_type in ['small_world', 'scale_free', 'tree', 'random']:
     G = generate_graph(args.num_nodes, args.graph_type)
 elif args.graph_type == 'toy_dctcp':
     G = toy_dctcp_graph
+elif args.graph_type == 'dag_example':
+    print "generating dag example"
+    G = dag_example_graph
 elif args.graph_type == 'hotnets_topo':
     G = hotnets_topo_graph
 elif args.graph_type == 'simple_deadlock':
@@ -331,7 +334,7 @@ args.lnd_capacity = args.lnd_capacity == 'true'
 
 print_topology_in_format(G, args.balance_per_channel, args.delay_per_channel, args.topo_filename, \
         args.separate_end_hosts, args.randomize_start_bal, args.random_channel_capacity,\
-        args.lnd_capacity, args.graph_type.startswith('lnd_'))
+        args.lnd_capacity, args.graph_type.startswith('lnd_'), args.rebalancing_enabled == "true")
 network_base = os.path.basename(args.network_name)
 
 for routing_alg in routing_alg_list:

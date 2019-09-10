@@ -15,7 +15,7 @@ public:
     //channel information
     cGate* gate;
     double balance;
-    double minAvailBalance;
+    double minAvailBalance = 100000;
     double balanceEWMA;
     vector<tuple<int, double, routerMsg*,  Id, simtime_t >> queuedTransUnits; //make_heap in initialization
     
@@ -89,5 +89,8 @@ public:
     simsignal_t balancePerChannelSignal;
     simsignal_t numInflightPerChannelSignal;
     simsignal_t queueDelayEWMASignal;
+
+    simsignal_t explicitRebalancingAmtPerChannelSignal;
+    simsignal_t implicitRebalancingAmtPerChannelSignal;
 
 };

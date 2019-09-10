@@ -64,6 +64,10 @@ simple routerNodePriceScheme
                 @signal[numInflightPerChannel*](type="unsigned long"); 
 		@statisticTemplate[numInflightPerChannelTemplate](record=vector, stats);
 
+		@signal[implicitRebalancingAmtPerChannel*](type="double"); 
+		@statisticTemplate[implicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
+		@signal[explicitRebalancingAmtPerChannel*](type="double"); 
+		@statisticTemplate[explicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
 
 	gates:
 		input in[];

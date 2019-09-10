@@ -68,6 +68,10 @@ toy_dctcp_graph.add_edge(1, 7)
 toy_dctcp_graph.add_edge(1, 9)
 toy_dctcp_graph.add_edge(1, 11)
 
+# three node graph - triangle
+dag_example_graph = nx.Graph()
+dag_example_graph.add_edge(0, 1)
+dag_example_graph.add_edge(1, 2)
 
 # Filenames for Kaggle data
 KAGGLE_PATH = '/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/data/'
@@ -84,7 +88,7 @@ SCALE_AMOUNT = 30
 MEAN_RATE = 10
 CIRCULATION_STD_DEV = 2
 LARGE_BALANCE = 1000000000
-REASONABLE_BALANCE = 100 
+REASONABLE_BALANCE = 400 
 MIN_TXN_SIZE = 0.1
 MAX_TXN_SIZE = 10
 SMALLEST_UNIT=1
@@ -150,7 +154,7 @@ per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", 
 per_channel_list = []
 for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "nValue", "serviceRate", "arrivalRate",
         "inflightOutgoing", "inflightIncoming", 'queueDelayEWMA', 'fakeRebalanceQ',\
-        "numSent", "muRemote", "numInflight", "timeInFlight"]:
+        "numSent", "muRemote", "numInflight", "timeInFlight", "explicitRebalancingAmt", "implicitRebalancingAmt"]:
     INTERESTING_SIGNALS[signal] = signal + "PerChannel"
     per_channel_list.append(signal + "PerChannel")
 

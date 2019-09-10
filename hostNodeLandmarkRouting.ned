@@ -36,6 +36,9 @@ simple hostNodeLandmarkRouting
                 bool heuristicPathsEnabled = default(false);
                 bool obliviousRoutingEnabled = default(false);
                 bool kspYenEnabled = default(false);
+                double rebalancingRate = default(10.0);
+                double rebalancingDelayForAddingFunds = default(0.1);
+                double minBalanceComputeRate = default(0.1);
                 
                 bool LIFOEnabled = default(false);
                 bool FIFOEnabled = default(false);
@@ -161,7 +164,12 @@ simple hostNodeLandmarkRouting
 		@signal[muRemotePerChannel*](type="double"); 
 		@statisticTemplate[muRemotePerChannelTemplate](record=vector, stats);
 		
-		//price scheme path specific signals
+		@signal[implicitRebalancingAmtPerChannel*](type="double"); 
+		@statisticTemplate[implicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
+		@signal[explicitRebalancingAmtPerChannel*](type="double"); 
+		@statisticTemplate[explicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
+		
+                //price scheme path specific signals
 		@signal[rateToSendTransPerDestPerPath*](type="double"); 
 		@statisticTemplate[rateToSendTransPerDestPerPathTemplate](record=vector, stats);
 		

@@ -44,6 +44,9 @@ simple hostNodeLndBaseline
                 double queueDelayThreshold = default(3.0);
                 double gamma = default(1.0);
                 double gammaImbalanceQueueSize = default(5.0);
+                double rebalancingRate = default(10.0);
+                double rebalancingDelayForAddingFunds = default(0.1);
+                double minBalanceComputeRate = default(0.1);
 
                 double alpha = default(0.01);
                 double kappa = default(0.01);
@@ -122,6 +125,11 @@ simple hostNodeLndBaseline
 
 		@signal[balancePerChannel*](type="long"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
+		
+		@signal[implicitRebalancingAmtPerChannel*](type="double"); 
+		@statisticTemplate[implicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
+		@signal[explicitRebalancingAmtPerChannel*](type="double"); 
+		@statisticTemplate[explicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
 		
 		@signal[timeInFlightPerChannel*](type="double"); 
 		@statisticTemplate[timeInFlightPerChannelTemplate](record=vector, stats);   

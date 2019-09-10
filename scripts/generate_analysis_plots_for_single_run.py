@@ -121,6 +121,9 @@ parser.add_argument('--queue_delay',
 parser.add_argument('--fake_rebalance_queue',
         action='store_true',
         help='Plot the perchannel fake queue delay')
+parser.add_argument('--rebalancing-amt',
+        action='store_true',
+        help='Plot the implicit and explicit rebalancing amt')
 
 
 parser.add_argument('--save',
@@ -158,17 +161,17 @@ def aggregate_info_per_node(all_timeseries, vec_id_to_info_map, signal_type, is_
                                 print "End host " + str(src_node) + " hitting zero at time " + str(t[0])'''
 
             
-        '''if is_both:
+        if is_both:
             if src_node_type == "host":
-                src_node = 2 + src_node
+                src_node = -1 * src_node if src_node > 0 else 10000
             elif dest_node_type == "host":
-                dest_node = 2 + dest_node'''
-        #else:
-        if is_router and (src_node_type != "router" or dest_node_type != "router"):
-            continue
+                dest_node = -1 * dest_node if dest_node > 0 else 10000
+        else:
+            if is_router and (src_node_type != "router" or dest_node_type != "router"):
+                continue
 
-        if not is_router and (src_node_type != "host" or dest_node_type != "host"):
-            continue
+            if not is_router and (src_node_type != "host" or dest_node_type != "host"):
+                continue
             '''elif not is_router:
                 src_node = src_node + 2
                 dest_node = dest_node + 2'''
@@ -446,11 +449,13 @@ def plot_per_payment_channel_stats(args, text_to_add):
         pdf.savefig()
         plt.close()
 
+        isboth = args.rebalancing_amt
+
         if args.balance: 
-            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "balance", True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "balance", True, is_both=isboth)
             plot_relevant_stats(data_to_plot, pdf, "Balance", compute_router_wealth=True)
 
-            inflight = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numInflight", True)
+            inflight = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numInflight", True,is_both=isboth)
             plot_relevant_stats(inflight, pdf, "Inflight funds")
             #find_problem(data_to_plot, inflight)
 
@@ -511,6 +516,16 @@ def plot_per_payment_channel_stats(args, text_to_add):
         if args.inflight_incoming:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "inflightIncoming", True, is_both=False)
             plot_relevant_stats(data_to_plot, pdf, "inflight incoming on channel")
+
+        if args.rebalancing_amt:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "implicitRebalancingAmt", \
+                    True, is_both=True)
+            plot_relevant_stats(data_to_plot, pdf, "Implicit amount rebalanced")
+
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "explicitRebalancingAmt", \
+                    True, is_both=True)
+            plot_relevant_stats(data_to_plot, pdf, "Explicit amount rebalanced")
+
 
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
             os.path.basename(args.save) + "_per_channel_info.pdf"

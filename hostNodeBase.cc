@@ -900,39 +900,55 @@ void hostNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
         double totalAmtToBeAdded = 0;
 
         // remove funds for everything that has been received and needs to be refunded
-        for (auto senderIt = senderToAmtRefundable.begin(); senderIt != senderToAmtRefundable.end(); senderIt++) {
-            totalAmtToBeRemoved += senderIt->second;
-            senderIt->second = 0;
+        for (auto nodeIt = senderToAmtRefundable.begin(); nodeIt != senderToAmtRefundable.end(); nodeIt++) {
+            totalAmtToBeRemoved += nodeIt->second;
+            nodeIt->second = 0;
         }
-        if (totalAmtToBeRemoved > 0) {
-            // remove capacity immediately from these channel
-            p->balance -= totalAmtToBeRemoved; 
-            if (p->balance < 0)
-                cout << "abhishtu" << endl;
-            
-            p->amtImplicitlyRebalanced += totalAmtToBeRemoved;
-            p->numRebalanceEvents += 1;
-            
-            tuple<int, int> senderReceiverTuple = (id < myIndex()) ? make_tuple(id, myIndex()) :
-                make_tuple(myIndex(), id);
-            _capacities[senderReceiverTuple] -= totalAmtToBeRemoved; 
-        } 
-        
         // schedule message to add funds for everything that has been sent and therefore is getting refunded 
-        for (auto receiverIt = receiverToAmtRefunded.begin(); receiverIt != receiverToAmtRefunded.end(); receiverIt++) {
+        for (auto receiverIt = receiverToAmtRefunded.begin(); receiverIt != receiverToAmtRefunded.end(); 
+                receiverIt++) {
             totalAmtToBeAdded += receiverIt->second;
             receiverIt->second = 0;
         }
-        if (totalAmtToBeAdded > 0) {
-            // add this to the list of payment channels to be addressed 
+
+        double differential = totalAmtToBeAdded - totalAmtToBeRemoved;
+        if (differential > 0) {
+              // add this to the list of payment channels to be addressed 
             // along with a particular addFundsEvent
-            pcsNeedingFunds[id] = totalAmtToBeAdded;
-        }
+            pcsNeedingFunds[id] = differential;
+            cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " adding " 
+                << differential << " to " << it->first << endl;
+        } 
+        else if (differential < 0) {
+            double amtToRemove = max(-1 * differential - getTotalAmountOutgoingInflight(it->first), 0.0);
+
+            // remove capacity immediately from these channel
+            if (amtToRemove == 0)
+                continue;
+
+            p->balance -= amtToRemove; 
+            if (p->balance < 0)
+                cout << "abhishtu at " << myIndex() << "difference " 
+                    << differential << " balance " << p->balance << "min available balance "
+                    << p->minAvailBalance << endl;
+            
+            p->amtImplicitlyRebalanced += amtToRemove;
+            p->numRebalanceEvents += 1;
+            
+            cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " removing " 
+                << amtToRemove << " from " << it->first << endl;
+            
+            tuple<int, int> senderReceiverTuple = (id < myIndex()) ? make_tuple(id, myIndex()) :
+                make_tuple(myIndex(), id);
+            _capacities[senderReceiverTuple] -= amtToRemove; 
+        } 
     }
 
     // generate and schedule add funds message to add these funds after some fixed time period
-    routerMsg* addFundsMsg = generateAddFundsMessage(pcsNeedingFunds);
-    scheduleAt(simTime() + _delayForAddingFunds, addFundsMsg);
+    if (pcsNeedingFunds.size() > 0) {
+        routerMsg* addFundsMsg = generateAddFundsMessage(pcsNeedingFunds);
+        scheduleAt(simTime() + _delayForAddingFunds, addFundsMsg);
+    }
 }
 
 /* handler to add the desired amount of funds to the given payment channels when an addFundsMessage
@@ -1041,6 +1057,12 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
                 prevNode, aMsg->getAmount(), aMsg->getHtlcIndex() );
         prevChannel->numUpdateMessages += 1;
         forwardMessage(uMsg);
+
+        // keep track of how much you have sent to others if rebalancing is enabled
+        // and how much of that needs to be replenished
+        int dest = aMsg->getReceiver();
+        double curAmt = (receiverToAmtRefunded.count(dest) == 0) ? 0 : receiverToAmtRefunded[dest];
+        receiverToAmtRefunded[dest] = curAmt + aMsg->getAmount();
     }
     
     //delete ack message
@@ -1124,6 +1146,8 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
             
             emit(p->amtInQueuePerChannelSignal, getTotalAmount(it->first));
             emit(p->balancePerChannelSignal, p->balance);
+            emit(p->explicitRebalancingAmtPerChannelSignal, p->amtExplicitlyRebalanced);
+            emit(p->implicitRebalancingAmtPerChannelSignal, p->amtImplicitlyRebalanced);
             emit(p->timeInFlightPerChannelSignal, p->sumTimeInFlight/p->timeInFlightSamples);
             p->sumTimeInFlight = 0;
             p->timeInFlightSamples = 0;
@@ -1445,7 +1469,7 @@ void hostNodeBase::initialize() {
         _gamma = par("gamma");
         _maxGammaImbalanceQueueSize = par("gammaImbalanceQueueSize");
         _delayForAddingFunds = par("rebalancingDelayForAddingFunds");
-        _rebalanceRate = par("rebalanceRate");
+        _rebalanceRate = par("rebalancingRate");
         _computeBalanceRate = par("minBalanceComputeRate");
 
 
@@ -1551,6 +1575,12 @@ void hostNodeBase::initialize() {
             
             signal = registerSignalPerChannel("timeInFlight", key);
             nodeToPaymentChannel[key].timeInFlightPerChannelSignal = signal;
+            
+            signal = registerSignalPerChannel("implicitRebalancingAmt", key);
+            nodeToPaymentChannel[key].implicitRebalancingAmtPerChannelSignal = signal;
+            
+            signal = registerSignalPerChannel("explicitRebalancingAmt", key);
+            nodeToPaymentChannel[key].explicitRebalancingAmtPerChannelSignal = signal;
         }
     }
 

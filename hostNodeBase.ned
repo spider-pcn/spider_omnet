@@ -42,6 +42,9 @@ simple hostNodeBase
                 double queueDelayThreshold = default(3.0);
                 double gamma = default(1.0);
                 double gammaImbalanceQueueSize = default(5.0);
+                double rebalancingRate = default(10.0);
+                double rebalancingDelayForAddingFunds = default(0.1);
+                double minBalanceComputeRate = default(0.1);
 
                 bool windowEnabled = default(false);
 		int numPathChoices = default(4);
@@ -73,6 +76,11 @@ simple hostNodeBase
 		
 		@display("i=block/routing"); 
 
+		@signal[implicitRebalancingAmtPerChannel*](type="double"); 
+		@statisticTemplate[implicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
+		@signal[explicitRebalancingAmtPerChannel*](type="double"); 
+		@statisticTemplate[explicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
+		
 		@signal[numInQueuePerChannel*](type="unsigned long"); 
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
 

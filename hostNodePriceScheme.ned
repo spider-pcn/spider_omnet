@@ -65,6 +65,9 @@ simple hostNodePriceScheme
                 double queueDelayThreshold = default(3.0);
                 double gamma = default(1.0);
                 double gammaImbalanceQueueSize = default(5.0);
+                double rebalancingRate = default(10.0);
+                double rebalancingDelayForAddingFunds = default(0.1);
+                double minBalanceComputeRate = default(0.1);
 		
 		@signal[completionTime](type="simtime_t"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 
@@ -162,6 +165,11 @@ simple hostNodePriceScheme
 		
 		@signal[muRemotePerChannel*](type="double"); 
 		@statisticTemplate[muRemotePerChannelTemplate](record=vector, stats);
+		
+		@signal[implicitRebalancingAmtPerChannel*](type="double"); 
+		@statisticTemplate[implicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
+		@signal[explicitRebalancingAmtPerChannel*](type="double"); 
+		@statisticTemplate[explicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
 		
 		//price scheme path specific signals
 		@signal[rateToSendTransPerDestPerPath*](type="double"); 

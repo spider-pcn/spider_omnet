@@ -151,6 +151,12 @@ void routerNodeBase::initialize()
 
             signal = registerSignalPerChannel("timeInFlight", key);
             nodeToPaymentChannel[key].timeInFlightPerChannelSignal = signal;
+            
+            signal = registerSignalPerChannel("implicitRebalancingAmt", key);
+            nodeToPaymentChannel[key].implicitRebalancingAmtPerChannelSignal = signal;
+            
+            signal = registerSignalPerChannel("explicitRebalancingAmt", key);
+            nodeToPaymentChannel[key].explicitRebalancingAmtPerChannelSignal = signal;
         }
     }
     
@@ -801,8 +807,11 @@ void routerNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
         numChannels += 1;
     }
 
+    cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " stash " 
+        << stash << endl;
+
     // figure out how much to give each channel
-    double targetBalancePerChannel = stash/numChannels;
+    double targetBalancePerChannel = int(stash/numChannels);
     map<int, double> pcsNeedingFunds; 
     for (auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
         int id = it->first;
@@ -814,22 +823,30 @@ void routerNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
             p->balance -= differential; 
             p->amtExplicitlyRebalanced += differential; 
             p->numRebalanceEvents += 1;
-            if (p->balance < 0)
-                cout << "abhishtu" << endl;
+            if (p->balance < 0) 
+                cout << "abhishtu" << differential << " balance " << p->balance << "min available balance "
+                    << p->minAvailBalance << endl;
             
+            cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " removing " 
+                << differential << " from " << it->first << endl;
             tuple<int, int> senderReceiverTuple = (id < myIndex()) ? make_tuple(id, myIndex()) :
                 make_tuple(myIndex(), id);
             _capacities[senderReceiverTuple] -=  differential;
-        } else {
+        } else if (differential < 0) {
             // add this to the list of payment channels to be addressed 
             // along with a particular addFundsEvent
             pcsNeedingFunds[id] =  -1 * differential;
+            cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " adding " 
+                <<  -1 * differential << " to " << it->first << endl;
         }
+        p->minAvailBalance = 1000000;
     }
 
     // generate and schedule add funds message to add these funds after some fixed time period
-    routerMsg* addFundsMsg = generateAddFundsMessage(pcsNeedingFunds);
-    scheduleAt(simTime() + _delayForAddingFunds, addFundsMsg);
+    if (pcsNeedingFunds.size() > 0) {
+        routerMsg* addFundsMsg = generateAddFundsMessage(pcsNeedingFunds);
+        scheduleAt(simTime() + _delayForAddingFunds, addFundsMsg);
+    }
 }
 
 /* handler to add the desired amount of funds to the given payment channels when an addFundsMessage
@@ -853,6 +870,8 @@ void routerNodeBase::handleAddFundsMessage(routerMsg* ttmsg) {
         p->amtAdded += fundsToAdd;
         p->amtExplicitlyRebalanced += fundsToAdd;
 
+            cout << "sctually adding funds at " << simTime() << " at " << myIndex() << " adding " 
+                <<  fundsToAdd << " to " << it->first << endl;
         // process as many new transUnits as you can for this payment channel
         processTransUnits(pcIdentifier, p->queuedTransUnits);
     }
