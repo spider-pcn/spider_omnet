@@ -62,8 +62,9 @@ mkdir -p ${PATH_PREFIX}
 
 dag_percent=("20") # "45" "65")
 balance=100
-scale=5 # "60" "90")
+scale=1 # "60" "90")
 rebalancingDelay=1
+rebalancingRate=1
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
@@ -102,8 +103,12 @@ do
         # STEP 3: run the experiment
         # routing schemes where number of path choices doesn't matter
         if [ ${routing_scheme} ==  "shortestPath" ]; then 
-          output_file=outputs/${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}0_${pathChoice}_rebalancing${rebalancingDelay}
-          inifile=${PATH_NAME}${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}_${pathChoice}_${schedulingAlgorithm}_rebalancing${rebalancingDelay}.ini
+          configname=${balance}_${routing_scheme}_dag${num}_demand${scale}_
+          configname=${configname}${pathChoice}_${schedulingAlgorithm}_rebalancing${rebalancingDelay}_
+          configname=${configname}rate${rebalancingRate}
+          output_file=outputs/${prefix}_dag${dag_amt}_${configname}
+          inifile=${PATH_NAME}${prefix}_dag${dag_amt}_${configname}.ini
+
 
           # create the ini file with specified parameters
           python scripts/create_ini_file.py \
@@ -125,15 +130,12 @@ do
                   --balance $balance\
                   --dag-num $num \
                   --rebalancing-delay $rebalancingDelay \
+                  --rebalancing-rate $rebalancingRate \
                   --rebalancing-enabled \
 
 
           # run the omnetexecutable with the right parameters
-          ./spiderNet -u Cmdenv -f $inifile -c\
-          ${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${schedulingAlgorithm}_rebalancing${rebalancingDelay} \
-          -n ${PATH_NAME}\
-                > ${output_file}.txt & 
-        
+          ./spiderNet -u Cmdenv -f $inifile -c ${network}_${configname} -n ${PATH_NAME} > ${output_file}.txt & 
 
         #routing schemes where number of path choices matter
         else
@@ -141,9 +143,9 @@ do
           # if you add more choices for the number of paths you might run out of cores/memory
           for numPathChoices in 4
           do
-            output_file=outputs/${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}0_${pathChoice}_${schedulingAlgorithm}_rebalancing${rebalancingDelay}
-            inifile=${PATH_NAME}${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}_${pathChoice}_${schedulingAlgorithm}_rebalancing${rebalancingDelay}
-            configname=${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}_rebalancing${rebalancingDelay}
+            output_file=outputs/${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}0_${pathChoice}_${schedulingAlgorithm}_rebalancing${rebalancingDelay}_rate${rebalancingRate}
+            inifile=${PATH_NAME}${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}_${pathChoice}_${schedulingAlgorithm}_rebalancing${rebalancingDelay}_rate${rebalancingRate}
+            configname=${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}_rebalancing${rebalancingDelay}_rate${rebalancingRate}
 
             if [[ $routing_scheme =~ .*Window.* ]]; then
                 windowEnabled=true
@@ -201,6 +203,7 @@ do
                     --min-dctcp-window $minDCTCPWindow\
                     --rate-decrease-frequency $rateDecreaseFrequency \
                     --rebalancing-delay $rebalancingDelay \
+                    --rebalancing-rate $rebalancingRate \
                     --rebalancing-enabled \
 
 
@@ -227,20 +230,19 @@ do
         
         #routing schemes where number of path choices doesn't matter
         if [ ${routing_scheme} ==  "shortestPath" ]; then 
-            vec_file_path=${vec_file_prefix}${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${schedulingAlgorithm}_rebalancing${rebalancingDelay}-#0.vec
-            sca_file_path=${vec_file_prefix}${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${schedulingAlgorithm}_rebalancing${rebalancingDelay}-#0.sca
-
+            vec_file_path=${PATH_NAME}results/${network}_${configname}-#0.vec
+            sca_file_path=${PATH_NAME}results/${network}_${configname}-#0.sca
 
             python scripts/generate_analysis_plots_for_single_run.py \
               --detail $signalsEnabled \
               --vec_file ${vec_file_path} \
               --sca_file ${sca_file_path} \
-              --save ${graph_op_prefix}${routing_scheme}_${pathChoice}_rebalancing${rebalancingDelay} \
+              --save ${graph_op_prefix}${routing_scheme}_${pathChoice}_rebalancing${rebalancingDelay}_rate${rebalancingRate} \
               --balance \
               --queue_info --timeouts --frac_completed \
               --inflight --timeouts_sender \
               --waiting --bottlenecks --time_inflight --queue_delay \
-              --rebalancing-amt
+              --rebalancing-amt --capacity --bank --inflight_outgoing
 
         #routing schemes where number of path choices matter
         else
@@ -248,7 +250,7 @@ do
             do
                 vec_file_path=${PATH_NAME}results/${configname}-#0.vec
                 sca_file_path=${PATH_NAME}results/${configname}-#0.sca
-                graph_name=${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}_rebalancing${rebalancingDelay}
+                graph_name=${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}_rebalancing${rebalancingDelay}_rate${rebalancingRate}
 
                 if [ ${routing_scheme} ==  "DCTCPQ" ]; then 
                     graph_name=${graph_name}_qd${queueDelayThreshold}
