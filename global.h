@@ -145,6 +145,7 @@ extern double _maxGammaImbalanceQueueSize;
 extern double _delayForAddingFunds;
 extern double _rebalanceRate;
 extern double _computeBalanceRate;
+extern double _bank; // global accounter of all money in the system
 
 // DCTCP params
 extern double _windowAlpha;

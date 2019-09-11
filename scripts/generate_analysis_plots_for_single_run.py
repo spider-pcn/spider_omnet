@@ -124,6 +124,12 @@ parser.add_argument('--fake_rebalance_queue',
 parser.add_argument('--rebalancing-amt',
         action='store_true',
         help='Plot the implicit and explicit rebalancing amt')
+parser.add_argument('--capacity',
+        action='store_true',
+        help='Plot the capacity of payment channels')
+parser.add_argument('--bank',
+        action='store_true',
+        help='Plot the bank')
 
 
 parser.add_argument('--save',
@@ -271,7 +277,6 @@ def plot_tpt_timeseries(num_completed, num_arrived, pdf):
     tpts = []
     for time in times:
         if total_arrived[time] < total_completed[time]:
-            print "worry at time ", time, total_arrived[time], total_completed[time]
             total_completed[time] = total_arrived[time]
         tpt = float(100*total_completed[time])/max(total_arrived[time],1)
         tpts.append(tpt)
@@ -356,7 +361,22 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
             else:
                 time = [t[0] for t in info]
                 values = [t[1] for t in info]
-                label_name = str(router) + "->" + str(channel)
+                if router < 0:
+                    router_name = "e" + str(-1 * router)
+                elif router == 10000:
+                    router_name = "e0"
+                else:
+                    router_name = str(router)
+                if channel < 0:
+                    channel_name = "e" + str(-1*channel)
+                elif channel == 10000:
+                    channel_name = "e0"
+                else:
+                    channel_name = str(channel)
+
+
+                label_name = router_name + "->" + channel_name
+
                 if compute_router_wealth:
                     channel_bal_timeseries.append((time, values))
 
@@ -389,7 +409,7 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
         
         # close plot after every router unless it is per path information
         if not per_path_info:
-            plt.title(signal_type + " for Router " + str(router))
+            plt.title(signal_type + " for Router " + str(router_name))
             plt.xlabel("Time")
             plt.ylabel(signal_type)
             plt.legend()
@@ -468,7 +488,7 @@ def plot_per_payment_channel_stats(args, text_to_add):
             plot_relevant_stats(data_to_plot, pdf, "Time spent in flight per channel(s)")
             
         if args.queue_info:
-            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numInQueue", True)
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numInQueue", True, is_both=True)
             plot_relevant_stats(data_to_plot, pdf, "Queue Size")
 
         if args.queue_delay:
@@ -525,6 +545,16 @@ def plot_per_payment_channel_stats(args, text_to_add):
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "explicitRebalancingAmt", \
                     True, is_both=True)
             plot_relevant_stats(data_to_plot, pdf, "Explicit amount rebalanced")
+
+        if args.capacity:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "capacity", \
+                    True, is_both=True)
+            plot_relevant_stats(data_to_plot, pdf, "Capacity")
+
+        if args.bank:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "bank", \
+                    True, is_both=True)
+            plot_relevant_stats(data_to_plot, pdf, "Bank")
 
 
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \

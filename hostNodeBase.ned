@@ -132,7 +132,13 @@ simple hostNodeBase
 		@signal[balancePerChannel*](type="double"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
 		
-		@signal[timeInFlightPerChannel*](type="double"); 
+		@signal[capacityPerChannel*](type="double"); 
+		@statisticTemplate[capacityPerChannelTemplate](record=vector, stats);  
+
+ 		@signal[bankPerChannel*](type="double"); 
+		@statisticTemplate[bankPerChannelTemplate](record=vector, stats); 
+		
+                @signal[timeInFlightPerChannel*](type="double"); 
 		@statisticTemplate[timeInFlightPerChannelTemplate](record=vector, stats);   
 		
                 @signal[bottleneckPerDestPerPath*](type="long"); 

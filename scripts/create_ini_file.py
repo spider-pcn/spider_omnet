@@ -70,9 +70,9 @@ parser.add_argument('--gamma-imbalance-queue-size', type=float, help='threshold 
 parser.add_argument('--gamma', type=float, help='factor to weigh rebalancing', dest='gamma', default=1)
 parser.add_argument('--rebalancing-delay', type=float, help='time(ms) before funds are added', dest='rebalancingDelay', \
         default=10)
-parser.add_argument('--rebalancing-rate', type=float, help='frequency(s) of rebalancing events', dest='rebalancingRate', default=5)
+parser.add_argument('--rebalancing-rate', type=float, help='frequency(s) of rebalancing events', dest='rebalancingRate', default=1e-3)
 parser.add_argument('--min-balance-compute-rate', type=float, help='frequency(s) of computing minimum balance', \
-        dest='minBalanceComputeRate', default=0.1)
+        dest='minBalanceComputeRate', default=0.001)
 
 
 

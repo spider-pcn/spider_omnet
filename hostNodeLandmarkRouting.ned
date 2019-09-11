@@ -126,6 +126,12 @@ simple hostNodeLandmarkRouting
 		@signal[balancePerChannel*](type="long"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
 		
+		@signal[capacityPerChannel*](type="double"); 
+		@statisticTemplate[capacityPerChannelTemplate](record=vector, stats);   
+ 		
+                @signal[bankPerChannel*](type="double"); 
+		@statisticTemplate[bankPerChannelTemplate](record=vector, stats); 
+		
 		@signal[timeInFlightPerChannel*](type="double"); 
 		@statisticTemplate[timeInFlightPerChannelTemplate](record=vector, stats);   
 		

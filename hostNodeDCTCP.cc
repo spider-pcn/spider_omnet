@@ -389,6 +389,37 @@ void hostNodeDCTCP::handleMonitorPathsMessage(routerMsg* ttmsg) {
     } 
 }
 
+/* handles forwarding of  transactions out of the queue
+ * the way other schemes' routers do except that it marks the packet
+ * if the queue is larger than the threshold, therfore mostly similar to the base code */ 
+bool hostNodeDCTCP::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) {
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
+    int nextDest = msg->getRoute()[msg->getHopCount()+1];
+    PaymentChannel *neighbor = &(nodeToPaymentChannel[nextDest]);
+    
+    //don't mark yet if the packet can't be sent out
+    if (neighbor->balance <= 0 || transMsg->getAmount() > neighbor->balance){
+        return false;
+    }
+ 
+    // else mark before forwarding if need be
+    vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
+    q = &(neighbor->queuedTransUnits);
+     
+    if (_qDelayVersion) {
+        simtime_t curQueueingDelay = simTime()  - arrivalTime;
+        if (curQueueingDelay.dbl() > _qDelayEcnThreshold) {
+            transMsg->setIsMarked(true); 
+        }
+    } 
+    else {
+        if (getTotalAmount(nextDest) > _qEcnThreshold) {
+            transMsg->setIsMarked(true); 
+        }
+
+    }
+    return hostNodeBase::forwardTransactionMessage(msg, dest, arrivalTime);
+}
 
 
 /* main routine for handling a new transaction under DCTCP
@@ -431,20 +462,7 @@ void hostNodeDCTCP::handleTransactionMessageSpecialized(routerMsg* ttmsg){
 
     // at destination, add to incoming transUnits and trigger ack
     if (transMsg->getReceiver() == myIndex()) {
-        int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
-        unordered_map<Id, double, hashId> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-        (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] =
-            transMsg->getAmount();
-        
-        if (_timeoutEnabled) {
-            auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
-            if (iter != canceledTransactions.end()){
-                canceledTransactions.erase(iter);
-            }
-        }
-        routerMsg* newMsg =  generateAckMessage(ttmsg);
-        forwardMessage(newMsg);
-        return;
+       handleTransactionMessage(ttmsg, false); 
     }
     else if (ttmsg->isSelfMessage()) {
         // at sender, either queue up or send on a path that allows you to send

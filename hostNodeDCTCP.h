@@ -32,5 +32,6 @@ class hostNodeDCTCP : public hostNodeBase {
         virtual void initializeThisPath(vector<int> thisPath, int pathIdx, int destNode);
         virtual void sendMoreTransactionsOnPath(int destNode, int pathIndex);
         virtual routerMsg *generateMonitorPathsMessage();
+        virtual bool forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) override;
 };
 #endif

@@ -17,6 +17,8 @@ public:
     double balance;
     double minAvailBalance = 100000;
     double balanceEWMA;
+    double entitledFunds; 
+    double owedFunds;
     vector<tuple<int, double, routerMsg*,  Id, simtime_t >> queuedTransUnits; //make_heap in initialization
     
     double queueSizeSum = 0;
@@ -87,8 +89,10 @@ public:
     int statNumSent;
     simsignal_t amtInQueuePerChannelSignal;
     simsignal_t balancePerChannelSignal;
+    simsignal_t capacityPerChannelSignal;
     simsignal_t numInflightPerChannelSignal;
     simsignal_t queueDelayEWMASignal;
+    simsignal_t bankSignal;
 
     simsignal_t explicitRebalancingAmtPerChannelSignal;
     simsignal_t implicitRebalancingAmtPerChannelSignal;

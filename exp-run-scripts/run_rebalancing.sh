@@ -267,7 +267,7 @@ do
                   --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
                   --inflight_incoming --rate_to_send --price --mu_remote --demand \
                   --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked --queue_delay \
-                  --rebalancing-amt
+                  --rebalancing-amt --capacity --bank --inflight_outgoing
             done
         fi
 

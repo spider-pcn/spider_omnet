@@ -87,8 +87,11 @@ simple hostNodeWaterfilling
 
 		@signal[numSentPerChannel*](type="long");  
 		@statisticTemplate[numSentPerChannelTemplate](record=vector, stats);   
-
-		@signal[rateCompletedPerDest*](type="long");  
+                
+                @signal[bankPerChannel*](type="double"); 
+		@statisticTemplate[bankPerChannelTemplate](record=vector, stats); 
+		
+                @signal[rateCompletedPerDest*](type="long");  
 		@statisticTemplate[rateCompletedPerDestTemplate](record=vector, stats);   
 		
 		@signal[numCompletedPerDest*](type="long");  
@@ -126,6 +129,9 @@ simple hostNodeWaterfilling
 
 		@signal[balancePerChannel*](type="double"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
+		
+		@signal[capacityPerChannel*](type="double"); 
+		@statisticTemplate[capacityPerChannelTemplate](record=vector, stats);   
 		
 		@signal[timeInFlightPerChannel*](type="double"); 
 		@statisticTemplate[timeInFlightPerChannelTemplate](record=vector, stats);   

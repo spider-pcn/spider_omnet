@@ -143,6 +143,9 @@ void routerNodeBase::initialize()
             signal = registerSignalPerChannel("balance", key);
             nodeToPaymentChannel[key].balancePerChannelSignal = signal;
 
+            signal = registerSignalPerChannel("capacity", key);
+            nodeToPaymentChannel[key].capacityPerChannelSignal = signal;
+            
             signal = registerSignalPerChannel("queueDelayEWMA", key);
             nodeToPaymentChannel[key].queueDelayEWMASignal = signal;
 
@@ -803,45 +806,65 @@ void routerNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
     int numChannels = 0;
     for (auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
         PaymentChannel *p = &(it->second);
-        stash += min(p->minAvailBalance, p->balance);
+        stash += p->balance;
         numChannels += 1;
     }
 
-    cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " stash " 
-        << stash << endl;
 
     // figure out how much to give each channel
-    double targetBalancePerChannel = int(stash/numChannels);
+    double targetBalancePerChannel = int(stash/numChannels); // target will always be lower as a result
+    if (myIndex() == 4) {
+        cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " stash " 
+       << stash << " target " << targetBalancePerChannel << endl;
+    }
+    double totalToRemove = 0;
     map<int, double> pcsNeedingFunds; 
     for (auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
         int id = it->first;
         PaymentChannel *p = &(it->second);
-        double differential = min(p->minAvailBalance, p->balance) - targetBalancePerChannel;
+        double differential = p->balance - targetBalancePerChannel;
 
+        if (differential < 0) {
+            // add this to the list of payment channels to be addressed 
+            // along with a particular addFundsEvent
+            pcsNeedingFunds[id] =  -1 * differential;
+            if (myIndex() == 4) {
+                cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " adding " 
+                <<  -1 * differential << " to " << it->first << endl;
+            }
+            totalToRemove += -1 * differential;
+        }
+    }
+
+    if (totalToRemove > 0 && myIndex() == 4)
+        cout << "totalToRemove " << totalToRemove << endl;
+    // make sure the amount given is appropriately removed from other channels
+    for (auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
+        int id = it->first;
+        PaymentChannel *p = &(it->second);
+        double differential = min(totalToRemove, p->balance - targetBalancePerChannel);
         if (differential > 0) {
             // remove capacity immediately from these channel
             p->balance -= differential; 
-            p->amtExplicitlyRebalanced += differential; 
+            p->amtExplicitlyRebalanced -= differential; 
             p->numRebalanceEvents += 1;
+            totalToRemove -= differential;
+            
             if (p->balance < 0) 
                 cout << "abhishtu" << differential << " balance " << p->balance << "min available balance "
                     << p->minAvailBalance << endl;
             
-            cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " removing " 
+            if (myIndex() == 4) {
+                cout << "REBALANCING rebalancing event triggered at " << simTime() << " at " << myIndex() << " removing " 
                 << differential << " from " << it->first << endl;
+            }
             tuple<int, int> senderReceiverTuple = (id < myIndex()) ? make_tuple(id, myIndex()) :
                 make_tuple(myIndex(), id);
             _capacities[senderReceiverTuple] -=  differential;
-        } else if (differential < 0) {
-            // add this to the list of payment channels to be addressed 
-            // along with a particular addFundsEvent
-            pcsNeedingFunds[id] =  -1 * differential;
-            cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " adding " 
-                <<  -1 * differential << " to " << it->first << endl;
         }
         p->minAvailBalance = 1000000;
     }
-
+    
     // generate and schedule add funds message to add these funds after some fixed time period
     if (pcsNeedingFunds.size() > 0) {
         routerMsg* addFundsMsg = generateAddFundsMessage(pcsNeedingFunds);
@@ -870,8 +893,8 @@ void routerNodeBase::handleAddFundsMessage(routerMsg* ttmsg) {
         p->amtAdded += fundsToAdd;
         p->amtExplicitlyRebalanced += fundsToAdd;
 
-            cout << "sctually adding funds at " << simTime() << " at " << myIndex() << " adding " 
-                <<  fundsToAdd << " to " << it->first << endl;
+            //cout << "sctually adding funds at " << simTime() << " at " << myIndex() << " adding " 
+              //  <<  fundsToAdd << " to " << it->first << endl;
         // process as many new transUnits as you can for this payment channel
         processTransUnits(pcIdentifier, p->queuedTransUnits);
     }
@@ -897,6 +920,7 @@ void routerNodeBase::handleStatMessage(routerMsg* ttmsg){
     // per channel Stats
     for (auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
         PaymentChannel *p = &(it->second);
+        int id = it->first;
 
         if (simTime() > _transStatStart && simTime() < _transStatEnd)
             p->queueSizeSum += getTotalAmount(it->first);
@@ -908,6 +932,15 @@ void routerNodeBase::handleStatMessage(routerMsg* ttmsg){
                     getTotalAmountOutgoingInflight(it->first));
             emit(p->queueDelayEWMASignal, p->queueDelayEWMA);
 
+            tuple<int, int> senderReceiverTuple = (id < myIndex()) ? make_tuple(id, myIndex()) :
+                make_tuple(myIndex(), id);
+            emit(p->capacityPerChannelSignal, _capacities[senderReceiverTuple]);
+            emit(p->explicitRebalancingAmtPerChannelSignal, p->amtExplicitlyRebalanced/_statRate);
+            emit(p->implicitRebalancingAmtPerChannelSignal, p->amtImplicitlyRebalanced/_statRate);
+            
+            p->amtExplicitlyRebalanced = 0;
+            p->amtImplicitlyRebalanced = 0;
+            
             emit(p->timeInFlightPerChannelSignal, p->sumTimeInFlight/p->timeInFlightSamples);
             p->sumTimeInFlight = 0;
             p->timeInFlightSamples = 0;

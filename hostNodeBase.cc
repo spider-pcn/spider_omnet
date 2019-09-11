@@ -28,6 +28,7 @@ double _landmarkRoutingStartTime;
 double _shortestPathStartTime;
 double _shortestPathEndTime;
 double _splitSize;
+double _bank;
 
  //adjacency list format of graph edges of network
 unordered_map<int, vector<pair<int,int>>> _channels;
@@ -774,7 +775,7 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
 
         // if there is insufficient balance at the first node, return failure
         if (_hasQueueCapacity && _queueCapacity == 0) {
-            if (forwardTransactionMessage(ttmsg, simTime()) == false) {
+            if (forwardTransactionMessage(ttmsg, destNode, simTime()) == false) {
                 routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
                 handleAckMessage(failedAckMsg);
             }
@@ -896,51 +897,62 @@ void hostNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
         // technically there's only payment channel here
         int id = it->first;
         PaymentChannel *p = &(it->second);
-        double totalAmtToBeRemoved = 0;
-        double totalAmtToBeAdded = 0;
+        double totalAmtReceived = 0;
+        double totalAmtSent = 0;
+        double currentlyInflight = getTotalAmountOutgoingInflight(it->first);
 
         // remove funds for everything that has been received and needs to be refunded
         for (auto nodeIt = senderToAmtRefundable.begin(); nodeIt != senderToAmtRefundable.end(); nodeIt++) {
-            totalAmtToBeRemoved += nodeIt->second;
+            totalAmtReceived += nodeIt->second;
             nodeIt->second = 0;
         }
         // schedule message to add funds for everything that has been sent and therefore is getting refunded 
         for (auto receiverIt = receiverToAmtRefunded.begin(); receiverIt != receiverToAmtRefunded.end(); 
                 receiverIt++) {
-            totalAmtToBeAdded += receiverIt->second;
+            totalAmtSent += receiverIt->second;
             receiverIt->second = 0;
         }
 
-        double differential = totalAmtToBeAdded - totalAmtToBeRemoved;
-        if (differential > 0) {
-              // add this to the list of payment channels to be addressed 
-            // along with a particular addFundsEvent
-            pcsNeedingFunds[id] = differential;
-            cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " adding " 
-                << differential << " to " << it->first << endl;
-        } 
-        else if (differential < 0) {
-            double amtToRemove = max(-1 * differential - getTotalAmountOutgoingInflight(it->first), 0.0);
+        p->owedFunds += max(totalAmtReceived - totalAmtSent, 0.0);
+        double removableFunds = min(p->owedFunds, p->balance);
+        /*cout << " at time " << simTime() << " end host " << myIndex() << " sent " << totalAmtSent 
+            << " and received " << totalAmtReceived << " inflight " << currentlyInflight  << " removable " << removableFunds << endl;*/
 
-            // remove capacity immediately from these channel
-            if (amtToRemove == 0)
-                continue;
-
-            p->balance -= amtToRemove; 
+        if (removableFunds > 0) {
+            _bank += removableFunds;
+            p->balance -= removableFunds; 
+            p->owedFunds -= removableFunds;
             if (p->balance < 0)
-                cout << "abhishtu at " << myIndex() << "difference " 
-                    << differential << " balance " << p->balance << "min available balance "
-                    << p->minAvailBalance << endl;
+                cout << "abhishtu at " << myIndex() << " removable  " 
+                    << removableFunds << " balance " << p->balance << "min available balance "
+                    << p->minAvailBalance << " bank balance " << _bank << endl;
             
-            p->amtImplicitlyRebalanced += amtToRemove;
+            p->amtImplicitlyRebalanced -= removableFunds;
             p->numRebalanceEvents += 1;
             
-            cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " removing " 
-                << amtToRemove << " from " << it->first << endl;
+            //cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " removing " 
+             //   << removableFunds << " from " << it->first  << " bank balance " << _bank << endl;
             
             tuple<int, int> senderReceiverTuple = (id < myIndex()) ? make_tuple(id, myIndex()) :
                 make_tuple(myIndex(), id);
-            _capacities[senderReceiverTuple] -= amtToRemove; 
+            _capacities[senderReceiverTuple] -= removableFunds; 
+        } 
+        
+        p->entitledFunds += max(totalAmtSent - totalAmtReceived, 0.0);
+        if (p->entitledFunds > _bank) {
+            cout << "bank abhishtu at time " << simTime() << " entitled " << p->entitledFunds 
+                << " bank " << _bank << endl;
+            // throw std::exception();
+        }
+        double addableFunds = min(p->entitledFunds, _bank); 
+        if (addableFunds > 0) {
+            // add this to the list of payment channels to be addressed 
+            // along with a particular addFundsEvent
+            pcsNeedingFunds[id] = addableFunds;
+            _bank -= addableFunds;
+            p->entitledFunds -= addableFunds;
+            //cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " adding " 
+             //   << addableFunds << " to " << it->first << " bank balance " << _bank << endl;
         } 
     }
 
@@ -1143,14 +1155,24 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
         // per channel Stats
         for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
             PaymentChannel *p = &(it->second);
+            int id = it->first;
+            if (myIndex() == 0)
+                emit(p->bankSignal, _bank);
             
             emit(p->amtInQueuePerChannelSignal, getTotalAmount(it->first));
             emit(p->balancePerChannelSignal, p->balance);
-            emit(p->explicitRebalancingAmtPerChannelSignal, p->amtExplicitlyRebalanced);
-            emit(p->implicitRebalancingAmtPerChannelSignal, p->amtImplicitlyRebalanced);
+            emit(p->explicitRebalancingAmtPerChannelSignal, p->amtExplicitlyRebalanced/_statRate);
+            emit(p->implicitRebalancingAmtPerChannelSignal, p->amtImplicitlyRebalanced/_statRate);
             emit(p->timeInFlightPerChannelSignal, p->sumTimeInFlight/p->timeInFlightSamples);
             p->sumTimeInFlight = 0;
             p->timeInFlightSamples = 0;
+            
+            p->amtExplicitlyRebalanced = 0;
+            p->amtImplicitlyRebalanced = 0;
+            
+            tuple<int, int> senderReceiverTuple = (id < myIndex()) ? make_tuple(id, myIndex()) :
+                make_tuple(myIndex(), id);
+            emit(p->capacityPerChannelSignal, _capacities[senderReceiverTuple]);
         }
     }
 
@@ -1343,7 +1365,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
  *  adjusts (decrements) channel balance, sends message to next node on route
  *  as long as it isn't cancelled
  */
-bool hostNodeBase::forwardTransactionMessage(routerMsg *msg, simtime_t arrivalTime) {
+bool hostNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
     int nextDest = msg->getRoute()[msg->getHopCount()+1];
     int transactionId = transMsg->getTransactionId();
@@ -1463,6 +1485,7 @@ void hostNodeBase::initialize() {
             _timeoutEnabled = false;
         }
 
+        // rebalancing related flags/parameters
         _rebalancingEnabled = par("rebalancingEnabled");
         _rebalancingUpFactor = 3.0;
         _queueDelayThreshold = par("queueDelayThreshold");
@@ -1471,8 +1494,10 @@ void hostNodeBase::initialize() {
         _delayForAddingFunds = par("rebalancingDelayForAddingFunds");
         _rebalanceRate = par("rebalancingRate");
         _computeBalanceRate = par("minBalanceComputeRate");
+        _bank = 0;
 
 
+        // path choices
         string pathFileName;
         if (_widestPathsEnabled)
             pathFileName = topologyFile_ + "_widestPaths";
@@ -1573,8 +1598,14 @@ void hostNodeBase::initialize() {
             signal = registerSignalPerChannel("balance", key);
             nodeToPaymentChannel[key].balancePerChannelSignal = signal;
             
+            signal = registerSignalPerChannel("capacity", key);
+            nodeToPaymentChannel[key].capacityPerChannelSignal = signal;
+            
             signal = registerSignalPerChannel("timeInFlight", key);
             nodeToPaymentChannel[key].timeInFlightPerChannelSignal = signal;
+
+            signal = registerSignalPerChannel("bank", key);
+            nodeToPaymentChannel[key].bankSignal = signal;
             
             signal = registerSignalPerChannel("implicitRebalancingAmt", key);
             nodeToPaymentChannel[key].implicitRebalancingAmtPerChannelSignal = signal;
@@ -1716,7 +1747,7 @@ void hostNodeBase:: processTransUnits(int dest, vector<tuple<int, double , route
     bool successful = true;
     while ((int)q.size() > 0 && successful) {
         pop_heap(q.begin(), q.end(), _schedulingAlgorithm);
-        successful = forwardTransactionMessage(get<2>(q.back()), get<4>(q.back()));
+        successful = forwardTransactionMessage(get<2>(q.back()), dest, get<4>(q.back()));
         if (successful){
             q.pop_back();
         }

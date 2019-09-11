@@ -76,6 +76,8 @@ simple hostNodeLndBaseline
 		@display("i=block/routing"); 
 
 		@signal[numInQueuePerChannel*](type="long"); // note an asterisk and the type of emitted values  
+                @signal[bankPerChannel*](type="double"); 
+		@statisticTemplate[bankPerChannelTemplate](record=vector, stats); 
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
 
 		@signal[numProcessedPerChannel*](type="long");  
@@ -125,6 +127,9 @@ simple hostNodeLndBaseline
 
 		@signal[balancePerChannel*](type="long"); 
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
+		
+		@signal[capacityPerChannel*](type="double"); 
+		@statisticTemplate[capacityPerChannelTemplate](record=vector, stats);   
 		
 		@signal[implicitRebalancingAmtPerChannel*](type="double"); 
 		@statisticTemplate[implicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
