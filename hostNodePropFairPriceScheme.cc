@@ -231,7 +231,7 @@ void hostNodePropFairPriceScheme::handleTimeOutMessage(routerMsg* ttmsg) {
     timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
     int destination = toutMsg->getReceiver();
     int transactionId = toutMsg->getTransactionId();
-    set<routerMsg*, transCompare> *transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
+    multiset<routerMsg*, transCompare> *transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
     
     if (ttmsg->isSelfMessage()) {
         // if transaction was successful don't do anything more

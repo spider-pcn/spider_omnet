@@ -154,7 +154,7 @@ int hostNodeBase::sampleFromDistribution(vector<double> probabilities) {
 }
 
 void hostNodeBase::pushIntoSenderQueue(DestInfo* destInfo, routerMsg* ttmsg) {
-    set<routerMsg*, transCompare> *senderQ = &(destInfo->transWaitingToBeSent);
+    multiset<routerMsg*, transCompare> *senderQ = &(destInfo->transWaitingToBeSent);
     senderQ->insert(ttmsg);
     auto position = senderQ->end();
     if (senderQ->size() > MAX_SENDER_PER_DEST_QUEUE) {

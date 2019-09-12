@@ -198,7 +198,7 @@ void hostNodeWaterfilling::handleTimeOutMessage(routerMsg* ttmsg){
         //is at the sender
         int transactionId = toutMsg->getTransactionId();
         int destination = toutMsg->getReceiver();
-        set<routerMsg*, transCompare>* transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
+        multiset<routerMsg*, transCompare>* transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
 
         // if transaction was successful don't do anything more
         if (successfulDoNotSendTimeOut.count(transactionId) > 0) {

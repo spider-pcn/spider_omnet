@@ -22,7 +22,7 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
 demand_scale=("10") # "60" "90")
 routing_scheme=$1
 pathChoice=$2
-schedulingAlgorithm="LIFO"
+schedulingAlgorithm=$3
 echo $routing_scheme
 random_init_bal=false
 random_capacity=false
@@ -260,6 +260,7 @@ do
                         --window-alpha $windowAlpha \
                         --window-beta $windowBeta \
                         --queue-threshold $queueThreshold \
+                        --scheduling-algorithm $schedulingAlgorithm\
                         --queue-delay-threshold $queueDelayThreshold \
                         --balance-ecn-threshold $balanceThreshold \
                         --mtu $mtu\
@@ -307,7 +308,7 @@ do
 
             #routing schemes where number of path choices matter
             else
-              for numPathChoices in 2
+              for numPathChoices in 4
                 do
                     vec_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}-#0.vec
                     sca_file_path=${vec_file_prefix}${routing_scheme}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}-#0.sca

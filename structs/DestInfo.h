@@ -42,7 +42,7 @@ struct transCompare {
 
 class DestInfo{
 public:
-    set<routerMsg *, transCompare > transWaitingToBeSent;
+    multiset<routerMsg *, transCompare > transWaitingToBeSent;
     
 
     // units are txns per second
