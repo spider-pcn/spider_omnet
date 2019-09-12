@@ -27,7 +27,6 @@
 #include "structs/TransUnit.h"
 #include "structs/CanceledTrans.h"
 #include "structs/AckState.h"
-#include "structs/SplitState.h"
 #include "structs/DestInfo.h"
 #include "structs/PathRateTuple.h"
 #include "structs/ProbeInfo.h"
@@ -48,7 +47,6 @@ struct LaterTransUnit
 extern unordered_map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
 // extern unordered_map<int, deque<TransUnit>> _transUnitList;
 extern unordered_map<int, set<int>> _destList;
-extern unordered_map<int, unordered_map<double, SplitState>> _numSplits;
 extern unordered_map<int, unordered_map<int, vector<vector<int>>>> _pathsMap;
 extern int _numNodes;
 //number of nodes in network
@@ -160,11 +158,4 @@ extern bool _changingPathsEnabled;
 extern int _maxPathsToConsider;
 extern double _windowThresholdForChange; 
 
-// scheduling algorithm knob
-extern bool _LIFOEnabled;
-extern bool _FIFOEnabled;
-extern bool _SPFEnabled;
-extern bool _RREnabled;
-extern bool _EDFEnabled;
-extern bool (*_schedulingAlgorithm) (const tuple<int,double, routerMsg*, Id, simtime_t> &a,
-      const tuple<int,double, routerMsg*, Id, simtime_t> &b);
+

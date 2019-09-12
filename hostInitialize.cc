@@ -977,8 +977,8 @@ bool sortSPF(const tuple<int,double, routerMsg*, Id, simtime_t> &a,
     SplitState splitInfoA = _numSplits[transA->getSender()][transA->getLargerTxnId()];
     SplitState splitInfoB = _numSplits[transB->getSender()][transB->getLargerTxnId()];
 
-    if (splitInfoA.numTotal != splitInfoB.numTotal)
-        return splitInfoA.numTotal < splitInfoB.numTotal;
+    if (splitInfoA.totalAmount != splitInfoB.totalAmount)
+        return splitInfoA.totalAmount < splitInfoB.totalAmount;
     else
         return (get<4>(a).dbl() > get<4>(b).dbl());
 }

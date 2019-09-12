@@ -154,10 +154,13 @@ int hostNodeBase::sampleFromDistribution(vector<double> probabilities) {
 }
 
 void hostNodeBase::pushIntoSenderQueue(DestInfo* destInfo, routerMsg* ttmsg) {
-    destInfo->transWaitingToBeSent.push_back(ttmsg);
-    if (destInfo->transWaitingToBeSent.size() > MAX_SENDER_PER_DEST_QUEUE) {
-        routerMsg* lastMsg = destInfo->transWaitingToBeSent.front();
-        destInfo->transWaitingToBeSent.pop_front();
+    set<routerMsg*, transCompare> *senderQ = &(destInfo->transWaitingToBeSent);
+    senderQ->insert(ttmsg);
+    auto position = senderQ->end();
+    if (senderQ->size() > MAX_SENDER_PER_DEST_QUEUE) {
+        position--;
+        routerMsg* lastMsg = *position;
+        senderQ->erase(position);
         deleteTransaction(lastMsg);
     }
 }
@@ -1557,13 +1560,12 @@ void hostNodeBase::deleteMessagesInQueues(){
     // remove any waiting transactions too
     for (auto iter = nodeToDestInfo.begin(); iter!=nodeToDestInfo.end(); iter++){
         int dest = iter->first;
-        while ((nodeToDestInfo[dest].transWaitingToBeSent).size() > 0) {
-            routerMsg * rMsg = nodeToDestInfo[dest].transWaitingToBeSent.front();
+        for (auto &rMsg : nodeToDestInfo[dest].transWaitingToBeSent) {
             auto tMsg = rMsg->getEncapsulatedPacket();
             rMsg->decapsulate();
             delete tMsg;
             delete rMsg;
-            nodeToDestInfo[dest].transWaitingToBeSent.pop_front();
         }
+        nodeToDestInfo[dest].transWaitingToBeSent.clear();
     }
 }

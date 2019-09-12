@@ -231,7 +231,7 @@ void hostNodePropFairPriceScheme::handleTimeOutMessage(routerMsg* ttmsg) {
     timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
     int destination = toutMsg->getReceiver();
     int transactionId = toutMsg->getTransactionId();
-    deque<routerMsg*> *transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
+    set<routerMsg*, transCompare> *transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
     
     if (ttmsg->isSelfMessage()) {
         // if transaction was successful don't do anything more
@@ -702,13 +702,14 @@ void hostNodePropFairPriceScheme::handleTriggerTransactionSendMessage(routerMsg*
 
     bool sentSomething = false;
     if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0) {
-        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.back();
+        auto firstPosition = nodeToDestInfo[destNode].transWaitingToBeSent.begin();
+        routerMsg *msgToSend = *firstPosition;
         transactionMsg *transMsg = 
            check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
         
         if (p->sumOfTransUnitsInFlight + transMsg->getAmount() <= p->window){
             //remove the transaction $tu$ at the head of the queue
-            nodeToDestInfo[destNode].transWaitingToBeSent.pop_back();
+            nodeToDestInfo[destNode].transWaitingToBeSent.erase(firstPosition);
             sentSomething = true;
             
             //Send the transaction $tu$ along the corresponding path.

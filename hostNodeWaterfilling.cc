@@ -198,7 +198,7 @@ void hostNodeWaterfilling::handleTimeOutMessage(routerMsg* ttmsg){
         //is at the sender
         int transactionId = toutMsg->getTransactionId();
         int destination = toutMsg->getReceiver();
-        deque<routerMsg*>* transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
+        set<routerMsg*, transCompare>* transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
 
         // if transaction was successful don't do anything more
         if (successfulDoNotSendTimeOut.count(transactionId) > 0) {
@@ -302,8 +302,9 @@ void hostNodeWaterfilling::handleProbeMessage(routerMsg* ttmsg){
         if (destNodeToNumTransPending[destNode] > 0){
             // service first transaction on path
             if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0 && availBal > 0) {
-                routerMsg *nextTrans = nodeToDestInfo[destNode].transWaitingToBeSent.back();
-                nodeToDestInfo[destNode].transWaitingToBeSent.pop_back();
+                auto firstPosition = nodeToDestInfo[destNode].transWaitingToBeSent.begin();
+                routerMsg *nextTrans = *firstPosition;
+                nodeToDestInfo[destNode].transWaitingToBeSent.erase(firstPosition);
                 handleTransactionMessageSpecialized(nextTrans);
             }
             

@@ -291,7 +291,7 @@ void hostNodePriceScheme::handleTimeOutMessage(routerMsg* ttmsg) {
     timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
     int destination = toutMsg->getReceiver();
     int transactionId = toutMsg->getTransactionId();
-    deque<routerMsg*> *transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
+    set<routerMsg*, transCompare> *transList = &(nodeToDestInfo[destination].transWaitingToBeSent);
     
     if (ttmsg->isSelfMessage()) {
         // if transaction was successful don't do anything more
@@ -987,8 +987,9 @@ void hostNodePriceScheme::handleTriggerTransactionSendMessage(routerMsg* ttmsg){
     if (nodeToDestInfo[destNode].transWaitingToBeSent.size() > 0 && (!_windowEnabled || 
             (_windowEnabled && p->sumOfTransUnitsInFlight < p->window))){
         //remove the transaction $tu$ at the head of the queue
-        routerMsg *msgToSend = nodeToDestInfo[destNode].transWaitingToBeSent.back();
-        nodeToDestInfo[destNode].transWaitingToBeSent.pop_back();
+        auto firstPosition = nodeToDestInfo[destNode].transWaitingToBeSent.begin();
+        routerMsg *msgToSend = *firstPosition;
+        nodeToDestInfo[destNode].transWaitingToBeSent.erase(firstPosition);
         transactionMsg *transMsg = 
            check_and_cast<transactionMsg *>(msgToSend->getEncapsulatedPacket());
         
