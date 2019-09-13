@@ -305,6 +305,7 @@ def plot_tpt_timeseries(num_completed, num_arrived, pdf):
 def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per_path_info=False, window_info=None):
     color_opts = ['#fa9e9e', '#a4e0f9', '#57a882', '#ad62aa']
     router_wealth_info =[]
+    sum_vals = 0
     
     for router, channel_info in data.items():
         channel_bal_timeseries = []
@@ -389,6 +390,9 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                 plt.plot(time, values, label=label_name + \
                         "(" + str(np.average(values[start:])) + ")")
 
+                if ("Explicit" in signal_type):
+                    sum_vals += abs(np.average(values[start:]))
+
                 if (signal_type == "Queue Size"):
                         for t, v in zip(time, values):
                             router_not = "router v" if router == 0 else "router u"
@@ -428,6 +432,10 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
         plt.grid()
         pdf.savefig()  # saves the current figure into a pdf page
         plt.close()
+
+
+    if ("Explicit" in signal_type):
+        print "explicit sum", sum_vals
 
 
 # see if infligh plus balance was ever more than capacity

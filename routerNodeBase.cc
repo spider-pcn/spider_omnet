@@ -848,8 +848,10 @@ void routerNodeBase::performRebalancing() {
             p->balance -= differential; 
             p->balanceEWMA -= differential;
             p->amtExplicitlyRebalanced -= differential;
-            p->amtAdded += differential; 
-            p->numRebalanceEvents += 1;
+            if (simTime() > _transStatStart && simTime() < _transStatEnd) {
+                p->amtAdded += differential; 
+                p->numRebalanceEvents += 1;
+            }
             totalToRemove -= differential;
             
             if (p->balance < 0) 
@@ -887,8 +889,10 @@ void routerNodeBase::addFunds(map<int, double> pcsNeedingFunds) {
             make_tuple(myIndex(), pcIdentifier);
         _capacities[senderReceiverTuple] +=  fundsToAdd;
         
-        p->numRebalanceEvents += 1;
-        p->amtAdded += fundsToAdd;
+        if (simTime() > _transStatStart && simTime() < _transStatEnd) {
+            p->numRebalanceEvents += 1;
+            p->amtAdded += fundsToAdd;
+        }
         p->amtExplicitlyRebalanced += fundsToAdd;
 
             //cout << "sctually adding funds at " << simTime() << " at " << myIndex() << " adding " 

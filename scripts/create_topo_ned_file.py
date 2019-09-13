@@ -256,7 +256,7 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
             f1.write(str(n) + "e " + str(n) + "r ")
             f1.write(str(end_host_delay) + " " + str(end_host_delay) + " ")
             if rebalancing_enabled:
-                f1.write(str(REASONABLE_BALANCE/2) + " " + str(REASONABLE_BALANCE/2) + "\n")
+                f1.write(str(REASONABLE_BALANCE) + " " + str(REASONABLE_BALANCE/2) + "\n")
             else:
                 f1.write(str(LARGE_BALANCE/2) + " " + str(LARGE_BALANCE/2) + "\n")
     f1.close()

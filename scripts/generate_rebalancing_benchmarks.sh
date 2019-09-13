@@ -80,7 +80,7 @@ do
         fi
         
         network="${prefix_to_use}_dag${dag_amt}_net"
-        topofile="${PATH_NAME}${prefix_to_use}_topo${balance}.txt"
+        topofile="${PATH_NAME}${prefix_to_use}_topo${balance}_rb.txt"
 
         # identify graph type for topology
         if [ ${prefix[i]:0:2} == "sw" ]; then
@@ -155,13 +155,13 @@ do
         echo $graph_type
     
         # create 5 workload files for 5 runs
-        for num in 0 #{0..4}
+        for num in {0..4}
         do
             echo "generating dag ${num} for ${dag_amt}"
             workloadname="${prefix[i]}_demand${scale}_dag${dag_amt}_num${num}"
             workload="${PATH_NAME}$workloadname"
             inifile="${PATH_NAME}${workloadname}_default.ini"
-            payment_graph_topo="dag_example"
+            payment_graph_topo="custom"
 
             # STEP 2: create transactions corresponding to this experiment run
             $PYTHON scripts/create_workload.py $workload poisson \
@@ -171,6 +171,7 @@ do
                     --experiment-time $simulationLength \
                     --generate-json-also \
                     --timeout-value 5 \
+                    --kaggle-size \
                     --scale-amount $scale \
                     --run-num ${num}
         done

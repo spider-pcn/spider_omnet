@@ -4,10 +4,10 @@ import collections
 
 OP_FILE_PATH="../benchmarks/circulations/"
 
-topo_filelist = ['lnd', 'scale_free', 'sw_50_random_capacity']
-file_prefix = ['lnd_dec4_2018lessScale', 'sf_50_routers', 'sw_50_routers']
-path_type_list = ['kwp_edge_disjoint', 'ksp_yen', 'oblivious', 'ksp_edge_disjoint']
-op_suffix_list = ['_widestPaths', '_kspYenPaths', '_obliviousPaths', '_edgeDisjointPaths']
+topo_filelist = ['sw_50_routers_lndCap_topo4000', 'sf_50_routers_lndCap_topo4000', 'lnd_july15_2019_topo40'] 
+topo_filelist = ['sw_50_routers_lndCap_topo4000', 'sf_50_routers_lndCap_topo4000', 'lnd_july15_2019_topo40'] 
+path_type_list = ['ksp_yen', 'oblivious', 'ksp_edge_disjoint', 'heuristic', 'kwp_edge_disjoint']
+op_suffix_list = ['_kspYenPaths', '_obliviousPaths', '_edgeDisjointPaths', '_heuristicPaths', '_widestPaths']
 
 
 for topo, op_prefix in zip(topo_filelist, file_prefix):
@@ -18,7 +18,7 @@ for topo, op_prefix in zip(topo_filelist, file_prefix):
         paths = pickle.load(pkl_file)
         pkl_file.close()
 
-        output_filename = OP_FILE_PATH + op_prefix + "_topo.txt" + op_suffix
+        output_filename = OP_FILE_PATH + op_prefix + ".txt" + op_suffix
         output_file = open(output_filename, "w+")
 
         for (sender, receiver) in paths.keys():
