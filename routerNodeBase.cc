@@ -856,10 +856,6 @@ void routerNodeBase::performRebalancing() {
                 cout << "abhishtu" << differential << " balance " << p->balance << "min available balance "
                     << p->minAvailBalance << endl;
             
-            /*if (myIndex() == 4) {
-                cout << "REBALANCING rebalancing event triggered at " << simTime() << " at " << myIndex() << " removing " 
-                << differential << " from " << it->first << endl;
-            }*/
             tuple<int, int> senderReceiverTuple = (id < myIndex()) ? make_tuple(id, myIndex()) :
                 make_tuple(myIndex(), id);
             _capacities[senderReceiverTuple] -=  differential;
@@ -870,8 +866,6 @@ void routerNodeBase::performRebalancing() {
     // generate and schedule add funds message to add these funds after some fixed time period
     if (pcsNeedingFunds.size() > 0) {
         addFunds(pcsNeedingFunds);
-        /*routerMsg* addFundsMsg = generateAddFundsMessage(pcsNeedingFunds);
-        scheduleAt(simTime() + _delayForAddingFunds, addFundsMsg);*/
     }
 }
 

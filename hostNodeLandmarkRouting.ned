@@ -78,6 +78,8 @@ simple hostNodeLandmarkRouting
 		@signal[numInQueuePerChannel*](type="long"); // note an asterisk and the type of emitted values  
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
 
+                @signal[numInflightPerChannel*](type="unsigned long"); 
+		@statisticTemplate[numInflightPerChannelTemplate](record=vector, stats);
 		@signal[numProcessedPerChannel*](type="long");  
 		@statisticTemplate[numProcessedPerChannelTemplate](record=vector, stats);  
 

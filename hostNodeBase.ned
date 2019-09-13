@@ -83,6 +83,9 @@ simple hostNodeBase
 		
 		@signal[numInQueuePerChannel*](type="unsigned long"); 
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
+                
+                @signal[numInflightPerChannel*](type="unsigned long"); 
+		@statisticTemplate[numInflightPerChannelTemplate](record=vector, stats);
 
 		@signal[numProcessedPerChannel*](type="long");  
 		@statisticTemplate[numProcessedPerChannelTemplate](record=vector, stats);  

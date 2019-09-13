@@ -915,9 +915,7 @@ void hostNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
 
         p->owedFunds += max(totalAmtReceived - totalAmtSent, 0.0);
         double removableFunds = min(p->owedFunds, p->balance);
-        /*cout << " at time " << simTime() << " end host " << myIndex() << " sent " << totalAmtSent 
-            << " and received " << totalAmtReceived << " inflight " << currentlyInflight  << " removable " << removableFunds << endl;*/
-
+        
         if (removableFunds > 0) {
             _bank += removableFunds;
             p->balance -= removableFunds; 
@@ -929,9 +927,6 @@ void hostNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
             
             p->amtImplicitlyRebalanced -= removableFunds;
             p->numRebalanceEvents += 1;
-            
-            //cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " removing " 
-             //   << removableFunds << " from " << it->first  << " bank balance " << _bank << endl;
             
             tuple<int, int> senderReceiverTuple = (id < myIndex()) ? make_tuple(id, myIndex()) :
                 make_tuple(myIndex(), id);
