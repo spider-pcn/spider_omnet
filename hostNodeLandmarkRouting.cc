@@ -120,23 +120,7 @@ void hostNodeLandmarkRouting::handleTransactionMessageSpecialized(routerMsg* ttm
         initializeLandmarkRoutingProbes(ttmsg, transMsg->getTransactionId(), destNode);
     }
     else if (ttmsg->getHopCount() ==  ttmsg->getRoute().size() - 1) { 
-        // txn is at destination, add to incoming units
-        int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
-        unordered_map<Id, double, hashId> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-        (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = 
-            transMsg->getAmount();
-
-        if (_timeoutEnabled) {
-            auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
-            if (iter!=canceledTransactions.end()){
-                canceledTransactions.erase(iter);
-            }
-        }
-
-        // send ack
-        routerMsg* newMsg =  generateAckMessage(ttmsg);
-        forwardMessage(newMsg);
-        return;
+       handleTransactionMessage(ttmsg, false); 
     }
     else {
         cout << "entering this case " << endl;

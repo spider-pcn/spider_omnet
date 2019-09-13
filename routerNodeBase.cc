@@ -580,12 +580,23 @@ void routerNodeBase::handleTransactionMessage(routerMsg* ttmsg) {
     int destination = transMsg->getReceiver();
     int transactionId = transMsg->getTransactionId();
 
+    // ignore if txn is already cancelled
+    auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+    if ( iter!=canceledTransactions.end() ){
+        //delete yourself, message won't be encountered again
+        ttmsg->decapsulate();
+        delete transMsg;
+        delete ttmsg;
+        return;
+    }
+
     // add to incoming trans units
     int prevNode = ttmsg->getRoute()[ttmsg->getHopCount()-1];
     unordered_map<Id, double, hashId> *incomingTransUnits = 
         &(nodeToPaymentChannel[prevNode].incomingTransUnits);
     (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = 
         transMsg->getAmount();
+    
     nodeToPaymentChannel[prevNode].totalAmtIncomingInflight += transMsg->getAmount();
 
     // find the outgoing channel to check capacity/ability to send on it
@@ -602,15 +613,6 @@ void routerNodeBase::handleTransactionMessage(routerMsg* ttmsg) {
         neighbor->sumArrivalWindowTxns -= frontAmt;
     }
 
-    // ignore if txn is already cancelled
-    auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
-    if ( iter!=canceledTransactions.end() ){
-        //delete yourself, message won't be encountered again
-        ttmsg->decapsulate();
-        delete transMsg;
-        delete ttmsg;
-        return;
-    }
 
     // if balance is insufficient at the first node, return failure ack
     if (_hasQueueCapacity && _queueCapacity == 0) {
@@ -885,6 +887,7 @@ void routerNodeBase::handleAddFundsMessage(routerMsg* ttmsg) {
 
         // add funds at this end
         p->balance += fundsToAdd;
+        p->balanceEWMA += fundsToAdd;
         tuple<int, int> senderReceiverTuple = (pcIdentifier < myIndex()) ? make_tuple(pcIdentifier, myIndex()) :
             make_tuple(myIndex(), pcIdentifier);
         _capacities[senderReceiverTuple] +=  fundsToAdd;

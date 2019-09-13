@@ -142,7 +142,10 @@ simple hostNodeLndBaseline
 		@signal[bottleneckPerDestPerPath*](type="long"); 
 		@statisticTemplate[bottleneckPerDestPerPathTemplate](record=vector, stats);
 		
-		@signal[probeBackPerDestPerPath*](type="long"); 
+                @signal[numInflightPerChannel*](type="unsigned long"); 
+		@statisticTemplate[numInflightPerChannelTemplate](record=vector, stats);
+		
+                @signal[probeBackPerDestPerPath*](type="long"); 
 		@statisticTemplate[probeBackPerDestPerPathTemplate](record=vector, stats);
 		
 		@signal[rateCompletedPerDestPerPath*](type="long"); 

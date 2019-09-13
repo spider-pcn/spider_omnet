@@ -55,11 +55,11 @@ void routerNodeWaterfilling::forwardProbeMessage(routerMsg *msg){
 
     if (pMsg->getIsReversed() == true && updateOnReverse == true){
         vector<double> *pathBalances = & ( pMsg->getPathBalances());
-        (*pathBalances).push_back(nodeToPaymentChannel[prevDest].balanceEWMA);
+        (*pathBalances).push_back(nodeToPaymentChannel[prevDest].balance);
     } 
     else if (pMsg->getIsReversed() == false && updateOnReverse == false) {
         vector<double> *pathBalances = & ( pMsg->getPathBalances());
-        (*pathBalances).push_back(nodeToPaymentChannel[nextDest].balanceEWMA);
+        (*pathBalances).push_back(nodeToPaymentChannel[nextDest].balance);
     }
     send(msg, nodeToPaymentChannel[nextDest].gate);
 }

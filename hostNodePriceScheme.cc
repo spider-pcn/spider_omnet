@@ -401,20 +401,7 @@ void hostNodePriceScheme::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     
     // at destination, add to incoming transUnits and trigger ack
     if (transMsg->getReceiver() == myIndex()) {
-        int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
-        unordered_map<Id, double, hashId> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-        (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] =
-            transMsg->getAmount();
-        
-        if (_timeoutEnabled) {
-            auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
-            if (iter != canceledTransactions.end()){
-                canceledTransactions.erase(iter);
-            }
-        }
-        routerMsg* newMsg =  generateAckMessage(ttmsg);
-        forwardMessage(newMsg);
-        return;
+       handleTransactionMessage(ttmsg, false); 
     }
     else if (ttmsg->isSelfMessage()) {
         // at sender, either queue up or send on a path that allows you to send

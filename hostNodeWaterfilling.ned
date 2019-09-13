@@ -79,7 +79,10 @@ simple hostNodeWaterfilling
 		@signal[numInQueuePerChannel*](type="double"); 
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
 
-		@signal[numProcessedPerChannel*](type="long");  
+                @signal[numInflightPerChannel*](type="unsigned long"); 
+		@statisticTemplate[numInflightPerChannelTemplate](record=vector, stats);
+		
+                @signal[numProcessedPerChannel*](type="long");  
 		@statisticTemplate[numProcessedPerChannelTemplate](record=vector, stats);  
 
  		@signal[probabilityPerDestPerPath*](type="double");  
@@ -192,7 +195,11 @@ simple hostNodeWaterfilling
 		@signal[isSendTimerSetPerDestPerPath*](type="long"); 
 		@statisticTemplate[isSendTimerSetPerDestPerPathTemplate](record=vector, stats);
 		
-		
+		@signal[sumOfTransUnitsInFlightPerDestPerPath*](type="double"); 
+		@statisticTemplate[sumOfTransUnitsInFlightPerDestPerPathTemplate](record=vector, stats);
+			
+        	@signal[windowPerDestPerPath*](type="double"); 
+		@statisticTemplate[windowPerDestPerPathTemplate](record=vector, stats);		
 		
 
 	gates:

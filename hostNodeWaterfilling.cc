@@ -24,6 +24,15 @@ void hostNodeWaterfilling::initialize(){
         _smoothWaterfillingEnabled = par("smoothWaterfillingEnabled");
     }
 
+    //initialize signals with all other nodes in graph
+    // that there is demand for
+    for (int i = 0; i < _numHostNodes; ++i) {
+        if (_destList[myIndex()].count(i) > 0) {
+            simsignal_t signal;
+            signal = registerSignalPerDest("numWaiting", i, "_Total");
+            numWaitingPerDestSignals[i] = signal;
+        }
+    }
 }
 
 
@@ -98,23 +107,7 @@ void hostNodeWaterfilling::handleTransactionMessageSpecialized(routerMsg* ttmsg)
     
     // txn at receiver
     if (ttmsg->getRoute()[hopCount] == destNode) {
-        // add to incoming units
-        int prevNode = ttmsg->getRoute()[hopCount - 1];
-        unordered_map<Id, double, hashId> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
-        (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = 
-            transMsg->getAmount();
-
-        if (_timeoutEnabled) {
-            auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
-            if (iter!=canceledTransactions.end()){
-                canceledTransactions.erase(iter);
-            }
-        }
-
-        // send ack
-        routerMsg* newMsg =  generateAckMessage(ttmsg);
-        forwardMessage(newMsg);
-        return; 
+       handleTransactionMessage(ttmsg, false); 
     }
     else { 
         // transaction received at sender
@@ -489,7 +482,7 @@ void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
  * output the wf stats in addition to the default
  */
 void hostNodeWaterfilling::handleStatMessage(routerMsg* ttmsg){
-    if (_signalsEnabled && _smoothWaterfillingEnabled) {     
+    if (_signalsEnabled) {     
         // per destination statistics
         for (auto it = 0; it < _numHostNodes; it++){ 
             if (it != getIndex() && _destList[myIndex()].count(it) > 0) {
@@ -499,9 +492,15 @@ void hostNodeWaterfilling::handleStatMessage(routerMsg* ttmsg){
                         PathInfo *pInfo = &(p.second);
 
                         emit(pInfo->bottleneckPerDestPerPathSignal, pInfo->bottleneck);
-                        emit(pInfo->probabilityPerDestPerPathSignal, pInfo->probability);
+                        emit(pInfo->windowSignal, pInfo->bottleneck);
+                        if (_smoothWaterfillingEnabled)
+                            emit(pInfo->probabilityPerDestPerPathSignal, pInfo->probability);
+                        emit(pInfo->sumOfTransUnitsInFlightSignal, 
+                                pInfo->sumOfTransUnitsInFlight);
                     }
                 }
+                emit(numWaitingPerDestSignals[it], 
+                    nodeToDestInfo[it].transWaitingToBeSent.size());
             }        
         }
     } 
@@ -534,13 +533,19 @@ void hostNodeWaterfilling::initializeProbes(vector<vector<int>> kShortestPaths, 
             if (_smoothWaterfillingEnabled) {
                 signal = registerSignalPerDestPath("probability", pathIdx, destNode);
                 nodeToShortestPathsMap[destNode][pathIdx].probabilityPerDestPerPathSignal = signal;
-
-                signal = registerSignalPerDestPath("bottleneck", pathIdx, destNode);
-                nodeToShortestPathsMap[destNode][pathIdx].bottleneckPerDestPerPathSignal = signal;
             }
 
             signal = registerSignalPerDestPath("rateAttempted", pathIdx, destNode);
             nodeToShortestPathsMap[destNode][pathIdx].rateAttemptedPerDestPerPathSignal = signal;
+    
+            signal = registerSignalPerDestPath("sumOfTransUnitsInFlight", pathIdx, destNode);
+            nodeToShortestPathsMap[destNode][pathIdx].sumOfTransUnitsInFlightSignal = signal;
+    
+            signal = registerSignalPerDestPath("window", pathIdx, destNode);
+            nodeToShortestPathsMap[destNode][pathIdx].windowSignal = signal;
+            
+            signal = registerSignalPerDestPath("bottleneck", pathIdx, destNode);
+            nodeToShortestPathsMap[destNode][pathIdx].bottleneckPerDestPerPathSignal = signal;
         }
 
         // generate a probe message on this path
@@ -578,7 +583,7 @@ void hostNodeWaterfilling::forwardProbeMessage(routerMsg *msg){
     int nextDest = msg->getRoute()[msg->getHopCount()];
 
     probeMsg *pMsg = check_and_cast<probeMsg *>(msg->getEncapsulatedPacket());
-    if (pMsg->getIsReversed() == false){
+    if (pMsg->getIsReversed() == false && !_rebalancingEnabled){
         vector<double> *pathBalances = & ( pMsg->getPathBalances());
         (*pathBalances).push_back(nodeToPaymentChannel[nextDest].balanceEWMA);
     }

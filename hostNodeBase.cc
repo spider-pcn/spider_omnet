@@ -1370,6 +1370,7 @@ bool hostNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t
     int nextDest = msg->getRoute()[msg->getHopCount()+1];
     int transactionId = transMsg->getTransactionId();
     PaymentChannel *neighbor = &(nodeToPaymentChannel[nextDest]);
+    int amt = transMsg->getAmount();
 
     if (neighbor->balance <= 0 || transMsg->getAmount() > neighbor->balance){
         return false;
@@ -1378,9 +1379,15 @@ bool hostNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t
         // return true directly if txn has been cancelled
         // so that you waste not resources on this and move on to a new txn
         // if you return false processTransUnits won't look for more txns
+        // return true directly if txn has been cancelled
+        // so that you waste not resources on this and move on to a new txn
+        // if you return false processTransUnits won't look for more txns
         auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
-        // can potentially erase info?
         if (iter != canceledTransactions.end()) {
+            msg->decapsulate();
+            delete transMsg;
+            delete msg;
+            neighbor->totalAmtInQueue -= amt;
             return true;
         }
 
@@ -1464,7 +1471,7 @@ void hostNodeBase::initialize() {
 
         _transStatStart = par("transStatStart");
         _transStatEnd = par("transStatEnd");
-        _waterfillingStartTime = 200;
+        _waterfillingStartTime = 0;
         _landmarkRoutingStartTime = 0;
         _shortestPathStartTime = 0;
         _shortestPathEndTime = 5000;
@@ -1604,6 +1611,9 @@ void hostNodeBase::initialize() {
             signal = registerSignalPerChannel("timeInFlight", key);
             nodeToPaymentChannel[key].timeInFlightPerChannelSignal = signal;
 
+            signal = registerSignalPerChannel("numInflight", key);
+            nodeToPaymentChannel[key].numInflightPerChannelSignal = signal;
+            
             signal = registerSignalPerChannel("bank", key);
             nodeToPaymentChannel[key].bankSignal = signal;
             

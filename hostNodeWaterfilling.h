@@ -16,6 +16,7 @@ class hostNodeWaterfilling : public hostNodeBase {
 
         // waterfilling specific signals
         unordered_map<int, simsignal_t> probabilityPerDestSignals = {};
+        unordered_map<int, simsignal_t> numWaitingPerDestSignals = {};
 
     protected:
         virtual void initialize() override;

@@ -88,9 +88,13 @@ simple hostNodeDCTCP
 		@signal[numInQueuePerChannel*](type="double"); 
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
 
-		@signal[implicitRebalancingAmtPerChannel*](type="double"); 
+                @signal[numInflightPerChannel*](type="unsigned long"); 
+		@statisticTemplate[numInflightPerChannelTemplate](record=vector, stats);
+		
+                @signal[implicitRebalancingAmtPerChannel*](type="double"); 
 		@statisticTemplate[implicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
-		@signal[explicitRebalancingAmtPerChannel*](type="double"); 
+	
+        	@signal[explicitRebalancingAmtPerChannel*](type="double"); 
 		@statisticTemplate[explicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
 		
 		@signal[numProcessedPerChannel*](type="long");  
