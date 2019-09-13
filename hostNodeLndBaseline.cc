@@ -194,7 +194,7 @@ void hostNodeLndBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
         else
         {
             routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
-            handleAckMessageNoMoreRoutes(failedAckMsg);
+            handleAckMessageNoMoreRoutes(failedAckMsg, true);
         }
     }
     else{
@@ -204,7 +204,7 @@ void hostNodeLndBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
 
 /* handleAckMessageNoMoreRoute - increments failed statistics, and deletes all three messages:
    ackMsg, transMsg, routerMsg */
-void hostNodeLndBaseline::handleAckMessageNoMoreRoutes(routerMsg *msg){
+void hostNodeLndBaseline::handleAckMessageNoMoreRoutes(routerMsg *msg, bool toDelete){
     ackMsg *aMsg = check_and_cast<ackMsg *>(msg->getEncapsulatedPacket());
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(aMsg->getEncapsulatedPacket());
     int numPathsAttempted = aMsg->getPathIndex() + 1;
@@ -214,13 +214,15 @@ void hostNodeLndBaseline::handleAckMessageNoMoreRoutes(routerMsg *msg){
         statAmtFailed[aMsg->getReceiver()] += aMsg->getAmount();
     }
     
-    aMsg->decapsulate();
-    delete transMsg;
-    /*if (_signalsEnabled)
-        emit(numPathsPerTransPerDestSignals[aMsg->getReceiver()], numPathsAttempted);*/
-    msg->decapsulate();
-    delete aMsg;
-    delete msg;
+    if (toDelete) {
+        aMsg->decapsulate();
+        delete transMsg;
+        /*if (_signalsEnabled)
+            emit(numPathsPerTransPerDestSignals[aMsg->getReceiver()], numPathsAttempted);*/
+        msg->decapsulate();
+        delete aMsg;
+        delete msg;
+    }
 }
 
 /* handles ack messages - guaranteed to be returning from an attempted path to the sender
@@ -287,10 +289,12 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
         vector<int> newRoute = generateNextPath(transMsg->getReceiver());
         if (newRoute.size() == 0)
         {
-            handleAckMessageNoMoreRoutes(msg);
+            handleAckMessageNoMoreRoutes(msg, false);
+            hostNodeBase::handleAckMessage(msg);
         } else if (iter != canceledTransactions.end()) {
             canceledTransactions.erase(iter);
-            handleAckMessageNoMoreRoutes(msg);
+            handleAckMessageNoMoreRoutes(msg, false);
+            hostNodeBase::handleAckMessage(msg);
         }
         else{
             //generate new router  message for transaction message

@@ -21,7 +21,7 @@ class hostNodeLndBaseline : public hostNodeBase {
         virtual void initialize() override;
         virtual void handleTransactionMessageSpecialized(routerMsg *msg) override;
         virtual void handleAckMessageSpecialized(routerMsg *msg) override;
-        virtual void handleAckMessageNoMoreRoutes(routerMsg *msg);
+        virtual void handleAckMessageNoMoreRoutes(routerMsg *msg, bool toDelete);
         virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true) override;
 
         //HELPER FUNCTIONS
