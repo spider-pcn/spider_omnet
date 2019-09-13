@@ -47,7 +47,7 @@ serviceArrivalWindow=300
 windowBeta=0.1
 windowAlpha=10
 queueThreshold=160
-queueDelayThreshold=300
+queueDelayThreshold=50
 balanceThreshold=0.1
 minDCTCPWindow=1
 rateDecreaseFrequency=3.0
@@ -64,14 +64,14 @@ dag_percent=("20") # "45" "65")
 balance=100
 scale=1 # "60" "90")
 rebalancingDelay=1
-rebalancingRate=1
+rebalancingRate=40
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
 #array=( 0 1 4 5 8 19 32)
 for num in 0
 do
     echo "doing run $num"
-    # create workload files and run different demand levels
+    # create woirkload files and run different demand levels
     for dag_amt in "${dag_percent[@]}"
     do
         # generate the graph first to ned file
@@ -269,7 +269,7 @@ do
                   --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
                   --inflight_incoming --rate_to_send --price --mu_remote --demand \
                   --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked --queue_delay \
-                  --rebalancing-amt --capacity --bank --inflight_outgoing
+                  --rebalancing-amt --capacity --bank --inflight_outgoing --waiting
             done
         fi
 

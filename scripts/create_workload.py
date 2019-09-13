@@ -49,9 +49,9 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         graph = simple_deadlock_graph
 
     elif payment_graph_topo == 'dag_example':
-        start_nodes = [1,0,2]
-        end_nodes = [2,2,0]
-        amt_relative = [1,1,1]
+        start_nodes = [0, 2, 1]
+        end_nodes = [2, 1, 2]
+        amt_relative = [10, 5, 5]
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
         graph = dag_example_graph
 
@@ -228,60 +228,60 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
 # generates the json file necessary for the distributed testbed to be used to test
 # the lnd implementation
 def generate_json_files(filename, graph, inside_graph, start_nodes, end_nodes, amt_absolute):
-    json_string = {}
-
-    # create btcd connections
-    # routers connected to each other and end hosts connected to respective router
-    btcd_connections = []
-    for i in range(graph.number_of_nodes() - 1):
-        connection = {"src": str(i) + "r", "dst" : str(i + 1) + "r"}
+    for balance in balance_list: 
+        json_string = {}
+        # create btcd connections
+        # routers connected to each other and end hosts connected to respective router
+        btcd_connections = []
+        for i in range(graph.number_of_nodes() - 1):
+            connection = {"src": str(i) + "r", "dst" : str(i + 1) + "r"}
+            btcd_connections.append(connection)
+            connection = {"src": str(i) + "e", "dst" : str(i) + "r"}
+            btcd_connections.append(connection)
+        connection = {"src": str(graph.number_of_nodes() - 1) + "e", "dst" : str(graph.number_of_nodes() - 1) + "r"}
         btcd_connections.append(connection)
-        connection = {"src": str(i) + "e", "dst" : str(i) + "r"}
-        btcd_connections.append(connection)
-    connection = {"src": str(graph.number_of_nodes() - 1) + "e", "dst" : str(graph.number_of_nodes() - 1) + "r"}
-    btcd_connections.append(connection)
-    json_string["btcd_connections"] = btcd_connections
+        json_string["btcd_connections"] = btcd_connections
 
-    # miner node
-    json_string["miner"] = "0r"
+        # miner node
+        json_string["miner"] = "0r"
 
 
-    # create nodesi for end hosts and router nodes and assign them distinct ips
-    nodes = []
-    for n in graph.nodes():
-        node = {"name": str(n) + "r", "ip" : "10.0.1." + str(100 + n)}
-        nodes.append(node)
-        node = {"name": str(n) + "e", "ip" : "10.0.2." + str(100 + n)}
-        nodes.append(node)
-    json_string["nodes"] = nodes
+        # create nodesi for end hosts and router nodes and assign them distinct ips
+        nodes = []
+        for n in graph.nodes():
+            node = {"name": str(n) + "r", "ip" : "10.0.1." + str(100 + n)}
+            nodes.append(node)
+            node = {"name": str(n) + "e", "ip" : "10.0.2." + str(100 + n)}
+            nodes.append(node)
+        json_string["nodes"] = nodes
 
-    # creates all the lnd channels
-    edges = []
-    for (u,v) in graph.edges():
-        if  u == v:
-            cap = ENDHOST_LND_ONE_WAY_CAPACITY
-            node_type = "e"
-        else:
-            cap = balance/2
-            node_type = "r"
+        # creates all the lnd channels
+        edges = []
+        for (u,v) in graph.edges():
+            if  u == v:
+                cap = ENDHOST_LND_ONE_WAY_CAPACITY
+                node_type = "e"
+            else:
+                cap = balance * 200 / 2
+                node_type = "r"
 
-        if u <= v: 
-            edge = {"src": str(u) + "r", "dst": str(v) + node_type, "capacity" : cap}
-            edges.append(edge)
+            if u <= v: 
+                edge = {"src": str(u) + "r", "dst": str(v) + node_type, "capacity" : cap}
+                edges.append(edge)
 
-    json_string["lnd_channels"] = edges
+        json_string["lnd_channels"] = edges
 
-    # creates the string for the demands
-    demands = []
-    for s, e, a in zip(start_nodes, end_nodes, amt_absolute):
-        demand_entry = {"src": str(s) + "e", "dst": str(e) + "e",\
-                        "rate": a/SCALE_AMOUNT}
-        demands.append(demand_entry)
+        # creates the string for the demands
+        demands = []
+        for s, e, a in zip(start_nodes, end_nodes, amt_absolute):
+            demand_entry = {"src": str(s) + "e", "dst": str(e) + "e",\
+                            "rate": a}
+            demands.append(demand_entry)
 
-    json_string["demands"] = demands
+        json_string["demands"] = demands
 
-    with open(filename, 'w') as outfile:
-            json.dump(json_string, outfile, indent=8)
+        with open(filename + '_' + str(balance) + '.json', 'w') as outfile:
+                json.dump(json_string, outfile, indent=8)
 
 
 
@@ -367,7 +367,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         print "ALERT!", "maximum circulation: ", max_circ, " or ", float(max_circ)/total
 
     if generate_json_also:
-        generate_json_files(filename + '.json', whole_graph, inside_graph, start_nodes, end_nodes, amt_absolute)
+        generate_json_files(filename, whole_graph, inside_graph, start_nodes, end_nodes, amt_absolute)
 
 
     if "weird" not in filename:
@@ -569,7 +569,7 @@ parser.add_argument('--log-normal', action='store_true', help='should txns be ex
 parser.add_argument('--kaggle-size', action='store_true', help='should txns be kaggle in size')
 parser.add_argument('--generate-json-also', action="store_true", help="do you need to generate json file also \
         for the custom topology")
-parser.add_argument('--balance-per-channel', type=int, dest='balance_per_channel', default=100)
+parser.add_argument('--balance-list', type=int, nargs='+', dest='balance_list', default=[100])
 parser.add_argument('--timeout-value', type=float, help='generic time out for all transactions', default=5)
 parser.add_argument('--scale-amount', type=int, help='how much to scale the mean deamnd by', default=5)
 parser.add_argument('--run-num', type=int, help='influences the seed', default=1)
@@ -587,7 +587,7 @@ kaggle_size = args.kaggle_size
 topo_filename = args.topo_filename
 generate_json_also = args.generate_json_also
 graph_topo = args.graph_topo
-balance = args.balance_per_channel
+balance_list = args.balance_list
 timeout_value = args.timeout_value
 SCALE_AMOUNT = args.scale_amount
 
