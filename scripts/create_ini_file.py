@@ -275,7 +275,7 @@ if args.changingPathsEnabled == "true":
 
 if args.rebalancingEnabled:
     f.write("**.rebalancingEnabled = true\n")
-    f.write("**.rebalancingRate = " + str(args.rebalancingRate/1000) + "\n")
+    f.write("**.rebalancingRate = " + str(args.rebalancingRate) + "\n")
     f.write("**.minBalanceComputeRate = " + str(args.minBalanceComputeRate) + "\n")
     f.write("**.rebalancingDelayForAddingFunds = " + str(args.rebalancingDelay/1000.0) + "\n")
     if "priceScheme" in args.routingScheme:

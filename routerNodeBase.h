@@ -31,6 +31,7 @@ class routerNodeBase : public cSimpleModule
     protected:
         unordered_map<int, PaymentChannel> nodeToPaymentChannel = {};
         unordered_set<CanceledTrans, hashCanceledTrans, equalCanceledTrans> canceledTransactions = {};
+        double amtSuccessfulSoFar = 0;
 
         // helper methods
         virtual int myIndex();
@@ -40,6 +41,7 @@ class routerNodeBase : public cSimpleModule
         virtual double getTotalAmount(int x);
         virtual double getTotalAmountIncomingInflight(int x);
         virtual double getTotalAmountOutgoingInflight(int x);
+        virtual void performRebalancing();
 
         // core simulator functions 
         virtual void initialize() override;
@@ -64,8 +66,8 @@ class routerNodeBase : public cSimpleModule
         // message handlers
         virtual void handleMessage(cMessage *msg) override;
         virtual void handleTransactionMessage(routerMsg *msg);
-        virtual void handleTriggerRebalancingMessage(routerMsg* ttmsg);
-        virtual void handleAddFundsMessage(routerMsg* ttmsg);
+        // virtual void handleTriggerRebalancingMessage(routerMsg* ttmsg);
+        virtual void addFunds(map<int, double> pcsNeedingFunds);
         virtual void handleComputeMinAvailableBalanceMessage(routerMsg* ttmsg);
         // returns true if message has timed out
         virtual bool handleTransactionMessageTimeOut(routerMsg *msg);

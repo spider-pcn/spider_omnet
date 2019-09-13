@@ -90,6 +90,7 @@ def parse_sca_files_overall(filename):
     parameters = ""
     stats = dict()
     stats_3000 = dict()
+    amt_added, num_rebalancing = 0, 0
     with open(filename) as f:
         line = f.readline()
         flag = False
@@ -107,6 +108,13 @@ def parse_sca_files_overall(filename):
                     stats[sender, receiver] = temp
                 if "completionTime" in line:
                     flag = False
+            elif line.startswith("scalar") and "totalNumRebalancingEvents" in line:
+                sender, receiver, stat_name, value = parse_overall_stat_line(line)
+                num_rebalancing += float(value)
+            elif line.startswith("scalar") and "totalAmtAdded" in line:
+                sender, receiver, stat_name, value = parse_overall_stat_line(line)
+                amt_added += float(value)
+
             elif "time 3000" in line:
                 flag = True
             else:
@@ -182,6 +190,8 @@ def parse_sca_files_overall(filename):
             " over attempted", vol_completed/vol_attempted
     print " Avg completion time ", completion_time/num_completed
     print "Success Rate " + str(num_completed/1000.0)
+    print "Amt rebalanced " + str(amt_added) 
+    print "num rebalanced " + str(num_rebalancing)
 
 
     return "Stats for " + filename + "\nSuccess ratio over arrived: " + str(num_completed/num_arrived) +\
@@ -189,7 +199,9 @@ def parse_sca_files_overall(filename):
             "\nSuccess volume  over arrived: " + str(vol_completed/vol_arrived) + \
             " over attempted" + str(vol_completed/vol_attempted) + \
             "\nAvg completion time " + str(completion_time/max(num_completed, 1.0)) + \
-            "\nSuccess Rate " + str(vol_completed/1000.0)
+            "\nSuccess Rate " + str(vol_completed/1000.0) + \
+            "\nAmt rebalanced " + str(amt_added) + \
+            "\nnum rebalanced " + str(num_rebalancing) 
 
 
 

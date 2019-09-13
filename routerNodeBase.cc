@@ -175,11 +175,11 @@ void routerNodeBase::initialize()
 
     // generate rebalancing trigger messages
     if (_rebalancingEnabled) {
-        routerMsg *triggerRebalancingMsg = generateTriggerRebalancingMessage();
-        scheduleAt(simTime() + _rebalanceRate, triggerRebalancingMsg);
+        //routerMsg *triggerRebalancingMsg = generateTriggerRebalancingMessage();
+        //scheduleAt(simTime() + _rebalanceRate, triggerRebalancingMsg);
         
-        routerMsg *computeMinBalanceMsg = generateComputeMinBalanceMessage();
-        scheduleAt(simTime() + _computeBalanceRate, computeMinBalanceMsg);
+        //routerMsg *computeMinBalanceMsg = generateComputeMinBalanceMessage();
+        //scheduleAt(simTime() + _computeBalanceRate, computeMinBalanceMsg);
     }
 }
 
@@ -205,11 +205,11 @@ void routerNodeBase::finish(){
     }
     
     // total amount of rebalancing incurred by this node
-    char buffer[30];
-    sprintf(buffer, "totalNumRebalancingEvents %d", myIndex());
-    recordScalar(buffer, sumRebalancing);
-    sprintf(buffer, "totalAmtAdded %d", myIndex());
-    recordScalar(buffer, sumAmtAdded);
+    char buffer[60];
+    sprintf(buffer, "totalNumRebalancingEvents %d blah 1", myIndex());
+    recordScalar(buffer, sumRebalancing/(_transStatEnd - _transStatStart));
+    sprintf(buffer, "totalAmtAdded %d blah 2", myIndex());
+    recordScalar(buffer, sumAmtAdded/(_transStatEnd - _transStatStart));
 }
 
 /*
@@ -539,12 +539,12 @@ void routerNodeBase::handleMessage(cMessage *msg){
             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
             break;
         
-        case TRIGGER_REBALANCING_MSG:
+        /*case TRIGGER_REBALANCING_MSG:
             if (_loggingEnabled) cout<< "[ROUTER "<< myIndex() 
                 <<": RECEIVED TRIGGER REBALANCE MSG] "<< msg->getName() << endl;
                 handleTriggerRebalancingMessage(ttmsg);
             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
-            break;
+            break;*/
 
         case COMPUTE_BALANCE_MSG:
             if (_loggingEnabled) cout<< "[ROUTER "<< myIndex() 
@@ -553,12 +553,12 @@ void routerNodeBase::handleMessage(cMessage *msg){
             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
             break;
 
-        case ADD_FUNDS_MSG:
+        /*case ADD_FUNDS_MSG:
             if (_loggingEnabled) cout<< "[ROUTER "<< myIndex() 
                 <<": RECEIVED ADD FUNDS MSG] "<< msg->getName() << endl;
                 handleAddFundsMessage(ttmsg);
             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
-            break;
+            break;*/
 
         default:
                 handleMessage(ttmsg);
@@ -723,6 +723,12 @@ void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
                 aMsg->getAmount(), aMsg->getHtlcIndex() );
         prevChannel->numUpdateMessages += 1;
         forwardMessage(uMsg);
+
+        amtSuccessfulSoFar += aMsg->getAmount();
+        if (amtSuccessfulSoFar > _rebalanceRate && _rebalancingEnabled) {
+            amtSuccessfulSoFar = 0;
+            performRebalancing();
+        }
     }
     forwardMessage(ttmsg);
 }
@@ -794,15 +800,7 @@ void routerNodeBase::handleComputeMinAvailableBalanceMessage(routerMsg* ttmsg) {
 /* handler for the periodic rebalancing message that gets triggered 
  * that is responsible for equalizing the available balance across all of the
  * payment channels of a given router */
-void routerNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
-    // reschedule the message again to be periodic
-    if (simTime() > _simulationLength || !_rebalancingEnabled){
-        delete ttmsg;
-    }
-    else {
-        scheduleAt(simTime()+_rebalanceRate, ttmsg);
-    }
-
+void routerNodeBase::performRebalancing() {
     // compute avalable stash to redistribute
     double stash = 0.0;
     int numChannels = 0;
@@ -815,10 +813,10 @@ void routerNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
 
     // figure out how much to give each channel
     double targetBalancePerChannel = int(stash/numChannels); // target will always be lower as a result
-    if (myIndex() == 4) {
+    /*if (myIndex() == 4) {
         cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " stash " 
        << stash << " target " << targetBalancePerChannel << endl;
-    }
+    }*/
     double totalToRemove = 0;
     map<int, double> pcsNeedingFunds; 
     for (auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
@@ -830,16 +828,16 @@ void routerNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
             // add this to the list of payment channels to be addressed 
             // along with a particular addFundsEvent
             pcsNeedingFunds[id] =  -1 * differential;
-            if (myIndex() == 4) {
+            /*if (myIndex() == 4) {
                 cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " adding " 
                 <<  -1 * differential << " to " << it->first << endl;
-            }
+            }*/
             totalToRemove += -1 * differential;
         }
     }
 
-    if (totalToRemove > 0 && myIndex() == 4)
-        cout << "totalToRemove " << totalToRemove << endl;
+    /*if (totalToRemove > 0 && myIndex() == 4)
+        cout << "totalToRemove " << totalToRemove << endl;*/
     // make sure the amount given is appropriately removed from other channels
     for (auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
         int id = it->first;
@@ -848,7 +846,9 @@ void routerNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
         if (differential > 0) {
             // remove capacity immediately from these channel
             p->balance -= differential; 
-            p->amtExplicitlyRebalanced -= differential; 
+            p->balanceEWMA -= differential;
+            p->amtExplicitlyRebalanced -= differential;
+            p->amtAdded += differential; 
             p->numRebalanceEvents += 1;
             totalToRemove -= differential;
             
@@ -856,10 +856,10 @@ void routerNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
                 cout << "abhishtu" << differential << " balance " << p->balance << "min available balance "
                     << p->minAvailBalance << endl;
             
-            if (myIndex() == 4) {
+            /*if (myIndex() == 4) {
                 cout << "REBALANCING rebalancing event triggered at " << simTime() << " at " << myIndex() << " removing " 
                 << differential << " from " << it->first << endl;
-            }
+            }*/
             tuple<int, int> senderReceiverTuple = (id < myIndex()) ? make_tuple(id, myIndex()) :
                 make_tuple(myIndex(), id);
             _capacities[senderReceiverTuple] -=  differential;
@@ -869,17 +869,18 @@ void routerNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
     
     // generate and schedule add funds message to add these funds after some fixed time period
     if (pcsNeedingFunds.size() > 0) {
-        routerMsg* addFundsMsg = generateAddFundsMessage(pcsNeedingFunds);
-        scheduleAt(simTime() + _delayForAddingFunds, addFundsMsg);
+        addFunds(pcsNeedingFunds);
+        /*routerMsg* addFundsMsg = generateAddFundsMessage(pcsNeedingFunds);
+        scheduleAt(simTime() + _delayForAddingFunds, addFundsMsg);*/
     }
 }
 
 /* handler to add the desired amount of funds to the given payment channels when an addFundsMessage
  * is received 
  */
-void routerNodeBase::handleAddFundsMessage(routerMsg* ttmsg) {
-    addFundsMsg *afMsg = check_and_cast<addFundsMsg *>(ttmsg->getEncapsulatedPacket());
-    map<int, double> pcsNeedingFunds = afMsg->getPcsNeedingFunds();
+void routerNodeBase::addFunds(map<int, double> pcsNeedingFunds) {
+    // addFundsMsg *afMsg = check_and_cast<addFundsMsg *>(ttmsg->getEncapsulatedPacket());
+    // map<int, double> pcsNeedingFunds = afMsg->getPcsNeedingFunds();
     for (auto it = pcsNeedingFunds.begin(); it!= pcsNeedingFunds.end(); it++) {
         int pcIdentifier = it->first;
         double fundsToAdd = it->second;
@@ -902,9 +903,6 @@ void routerNodeBase::handleAddFundsMessage(routerMsg* ttmsg) {
         processTransUnits(pcIdentifier, p->queuedTransUnits);
     }
     
-    ttmsg->decapsulate();
-    delete afMsg;
-    delete ttmsg;
 }
 
 

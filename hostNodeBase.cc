@@ -744,8 +744,6 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
         }
 
         // keep track of how much you need to refund this sender if rebalancing is enabled
-        double curAmt = (senderToAmtRefundable.count(sender) == 0) ? 0 : senderToAmtRefundable[sender];
-        senderToAmtRefundable[sender] = curAmt + transMsg->getAmount();
         
         // send ack even if it has timed out because txns wait till _maxTravelTime before being 
         // cleared by clearState
@@ -884,6 +882,8 @@ void hostNodeBase::handleComputeMinAvailableBalanceMessage(routerMsg* ttmsg) {
  * connected to it
  */ 
 void hostNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
+    delete ttmsg;
+    return;
     // reschedule the message again to be periodic
     if (simTime() > _simulationLength || !_rebalancingEnabled){
         delete ttmsg;
@@ -939,11 +939,6 @@ void hostNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
         } 
         
         p->entitledFunds += max(totalAmtSent - totalAmtReceived, 0.0);
-        if (p->entitledFunds > _bank) {
-            cout << "bank abhishtu at time " << simTime() << " entitled " << p->entitledFunds 
-                << " bank " << _bank << endl;
-            // throw std::exception();
-        }
         double addableFunds = min(p->entitledFunds, _bank); 
         if (addableFunds > 0) {
             // add this to the list of payment channels to be addressed 
@@ -1042,15 +1037,21 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
     double timeInflight = (simTime() - prevChannel->txnSentTimes[thisTrans]).dbl();
     (prevChannel->outgoingTransUnits).erase(thisTrans);
     (prevChannel->txnSentTimes).erase(thisTrans);
-    prevChannel->totalAmtOutgoingInflight -= aMsg->getAmount();
    
     if (aMsg->getIsSuccess() == false) {
         // increment funds on this channel unless this is the node that caused the fauilure
         // in which case funds were never decremented in the first place
-        if (aMsg->getFailedHopNum() < ttmsg->getHopCount())
-           prevChannel->balance += aMsg->getAmount();
+        if (aMsg->getFailedHopNum() < ttmsg->getHopCount()) {
+            double updatedBalance = prevChannel->balance + aMsg->getAmount();
+            prevChannel->balanceEWMA = 
+                (1 -_ewmaFactor) * prevChannel->balanceEWMA + (_ewmaFactor) * updatedBalance; 
+            prevChannel->balance = updatedBalance;
+            prevChannel->totalAmtOutgoingInflight -= aMsg->getAmount();
+            
+        }
 
-        // no relevant incoming_trans_units because no node on fwd path before this
+        
+            // no relevant incoming_trans_units because no node on fwd path before this
         if (ttmsg->getHopCount() < ttmsg->getRoute().size() - 1) {
             int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
             unordered_map<Id, double, hashId> *incomingTransUnits = 
@@ -1064,6 +1065,7 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
         // mark the time it spent inflight
         prevChannel->sumTimeInFlight += timeInflight;
         prevChannel->timeInFlightSamples += 1;
+        prevChannel->totalAmtOutgoingInflight -= aMsg->getAmount();
 
         routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), 
                 prevNode, aMsg->getAmount(), aMsg->getHtlcIndex() );
@@ -1073,8 +1075,15 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
         // keep track of how much you have sent to others if rebalancing is enabled
         // and how much of that needs to be replenished
         int dest = aMsg->getReceiver();
-        double curAmt = (receiverToAmtRefunded.count(dest) == 0) ? 0 : receiverToAmtRefunded[dest];
-        receiverToAmtRefunded[dest] = curAmt + aMsg->getAmount();
+        // replenish my end host - router link immediately to make up (simulates receiving money back)
+        if (_rebalancingEnabled) {
+            tuple<int, int> senderReceiverTuple = make_tuple(myIndex(), prevNode);
+            _capacities[senderReceiverTuple] += aMsg->getAmount();
+            double newBalance = prevChannel->balance + aMsg->getAmount();
+            prevChannel->balanceEWMA = (1 -_ewmaFactor) * prevChannel->balanceEWMA + 
+            (_ewmaFactor) * newBalance;
+            prevChannel->balance = newBalance;
+        }
     }
     
     //delete ack message
@@ -1120,9 +1129,19 @@ void hostNodeBase::handleUpdateMessage(routerMsg* msg) {
    
     //increment the in flight funds back
     double newBalance = prevChannel->balance + uMsg->getAmount();
-    prevChannel->balance =  newBalance;       
     prevChannel->balanceEWMA = (1 -_ewmaFactor) * prevChannel->balanceEWMA 
-        + (_ewmaFactor) * newBalance; 
+        + (_ewmaFactor) * newBalance;
+    prevChannel->balance =  newBalance;   
+
+    // immediately remove these funds - simulates giving end host back these funds
+    if (_rebalancingEnabled) {
+        tuple<int, int> senderReceiverTuple = make_tuple(myIndex(), prevNode);
+        _capacities[senderReceiverTuple] -= uMsg->getAmount();
+        double newBalance = prevChannel->balance - uMsg->getAmount();
+        prevChannel->balanceEWMA = (1 -_ewmaFactor) * prevChannel->balanceEWMA + 
+        (_ewmaFactor) * newBalance;
+        prevChannel->balance = newBalance;
+    }
 
     //remove transaction from incoming_trans_units
     unordered_map<Id, double, hashId> *incomingTransUnits = &(prevChannel->incomingTransUnits);
@@ -1156,14 +1175,22 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
         for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
             PaymentChannel *p = &(it->second);
             int id = it->first;
-            if (myIndex() == 0)
+            if (myIndex() == 0) {
                 emit(p->bankSignal, _bank);
+
+                double sumCapacities = accumulate(begin(_capacities), end(_capacities), 0,
+                    [] (double value, const std::map<tuple<int,int>, double>::value_type& p)
+                   { return value + p.second; }
+                    ); 
+            }
             
             emit(p->amtInQueuePerChannelSignal, getTotalAmount(it->first));
             emit(p->balancePerChannelSignal, p->balance);
             emit(p->explicitRebalancingAmtPerChannelSignal, p->amtExplicitlyRebalanced/_statRate);
             emit(p->implicitRebalancingAmtPerChannelSignal, p->amtImplicitlyRebalanced/_statRate);
             emit(p->timeInFlightPerChannelSignal, p->sumTimeInFlight/p->timeInFlightSamples);
+            emit(p->numInflightPerChannelSignal, getTotalAmountIncomingInflight(it->first) +
+                    getTotalAmountOutgoingInflight(it->first));
             p->sumTimeInFlight = 0;
             p->timeInFlightSamples = 0;
             
