@@ -54,13 +54,14 @@ rateDecreaseFrequency=3.0
 # dynamic paths
 changingPathsEnabled=true
 pathMonitorRate=10
+schedulingAlgorithm="LIFO"
 
 
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_PREFIX}
 
 dag_percent=("45")
-balance=800
+balance=4000
 scale=20 # "60" "90")
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
@@ -141,7 +142,7 @@ do
           do
             output_file=outputs/${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}0_${pathChoice}            
             inifile=${PATH_NAME}${prefix}_dag${dag_amt}_${balance}_dag${num}_${routing_scheme}_demand${scale}_${pathChoice}
-            configname=${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}
+            configname=${network}_${balance}_${routing_scheme}_dag${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}
 
             if [[ $routing_scheme =~ .*Window.* ]]; then
                 windowEnabled=true
@@ -242,7 +243,8 @@ do
             do
                 vec_file_path=${PATH_NAME}results/${configname}-#0.vec
                 sca_file_path=${PATH_NAME}results/${configname}-#0.sca
-                graph_name=${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices}
+                graph_name=${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}
+
 
                 if [ ${routing_scheme} ==  "DCTCPQ" ]; then 
                     graph_name=${graph_name}_qd${queueDelayThreshold}

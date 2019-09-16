@@ -64,9 +64,9 @@ dag_percent=("45") # "45" "65")
 balance=4000
 scale=3 # "60" "90")
 rebalancingDelay=1
-for num in 0 1 2
+for num in {0..4}
 do
-    for rebalancingRate in 10000
+    for rebalancingRate in 10 100 1000 10000 100000
     do
         echo "doing run $num"
         # create woirkload files and run different demand levels

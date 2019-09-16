@@ -138,7 +138,8 @@ def generate_graph(size, graph_type):
     elif graph_type == 'small_world_sparse':
         G = nx.watts_strogatz_graph(size, size/8, 0.25, seed=SEED)
     elif graph_type == 'scale_free':
-        G = nx.barabasi_albert_graph(size, 8, seed=SEED)
+        #G = nx.barabasi_albert_graph(size, 8, seed=SEED)
+        G = nx.barabasi_albert_graph(size, 5, seed=12)
     elif graph_type == 'scale_free_sparse':
         G = nx.barabasi_albert_graph(size, size/8, seed=SEED)
     elif graph_type == 'tree':
