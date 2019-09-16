@@ -73,7 +73,7 @@ else:
 output_file.write("Topo,CreditType,NumPaths,PathType,SchedulingAlg," + \
         "Threshold,RebalancingRate,SuccRatio,SuccRatioMin,SuccRatioMax,SuccVolume," + \
         "SuccVolumeMin," +\
-        "SuccVolumeMax,CompTime,CompTimeMin,CompTimeMax" +
+        "SuccVolumeMax,CompTime,CompTimeMin,CompTimeMax," +
         "RebalancingAmt,RebalancingAmtMin,RebalancingAmtMax\n")
 
 # determine topology and credit type

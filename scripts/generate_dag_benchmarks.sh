@@ -2,7 +2,7 @@
 PATH_PREFIX="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/"
 GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
-num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "50" "60" "80" "30" "40" "0" "0" "50" "50")
+num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "50" "60" "80" "30" "40" "0" "0" "50" "50" "0")
 
 
 prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_node_hardcoded" \
@@ -10,7 +10,7 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sw_10_routers" "sw_20_routers" "sw_50_routers" \
    "sf_50_routers" "sf_60_routers" "sf_80_routers"  \
     "random_30_routers" "sw_sparse_40_routers" "lnd_july15_2019" "lnd_uniform" \
-    "sw_weird_combo" "sf_weird_combo")
+    "sw_weird_combo" "sf_weird_combo", "lnd_weird_combo")
 
 scale=3 # "60" "90")
 random_init_bal=false
@@ -93,7 +93,7 @@ do
         elif [ ${prefix[i]:0:11} == "lnd_uniform" ]; then
             graph_type="lnd_uniform"
         elif [ ${prefix[i]:0:3} == "lnd" ]; then
-            graph_type=${prefix[i]}
+            graph_type="lnd_july15_2019"
         elif [ ${prefix[i]} == "hotnets" ]; then
             graph_type="hotnets_topo"
         elif [ ${prefix[i]:0:6} == "random" ]; then
@@ -165,7 +165,7 @@ do
                     --payment-graph-dag-percentage ${dag_amt}\
                     --topo-filename $topofile\
                     --experiment-time $simulationLength \
-                    --balance-per-channel $balance\
+                    --balance-list $balance\
                     --generate-json-also \
                     --timeout-value 5 \
                     --kaggle-size \
