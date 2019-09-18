@@ -3,7 +3,7 @@ PATH_NAME="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulatio
 GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
 num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" \
-    "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40" "0" "0" "11")
+    "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40" "0" "0" "11" "4")
 
 #balance=100
 
@@ -16,7 +16,7 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "sf_50_routers" "sf_60_routers" "sf_80_routers"  \
     "sf_100_routers" "sf_200_routers" "sf_400_routers" "sf_600_routers" \
     "sf_800_routers" "sf_1000_routers" "tree_40_routers" "random_10_routers" "random_20_routers"\
-    "random_30_routers" "sw_sparse_40_routers" "lnd_gaussian" "lnd_uniform" "toy_dctcp")
+    "random_30_routers" "sw_sparse_40_routers" "lnd_gaussian" "lnd_uniform" "toy_dctcp" "parallel_graph")
 
 
 demand_scale=("10") # "60" "90")
@@ -113,6 +113,8 @@ do
             graph_type="hotnets_topo"
         elif [ ${prefix[i]} == "toy_dctcp" ]; then
             graph_type="toy_dctcp"
+        elif [ ${prefix[i]:0:8} == "parallel" ]; then
+            graph_type="parallel_graph"
         elif [ ${prefix[i]:0:6} == "random" ]; then
             graph_type="random"
         else
@@ -159,6 +161,8 @@ do
                 payment_graph_topo="toy_dctcp"
             elif [ ${prefix[i]:0:7} == "hotnets" ]; then
                 payment_graph_topo="hotnets_topo"
+            elif [ ${prefix[i]:0:8} == "parallel" ]; then
+                payment_graph_topo="parallel_graph"
             fi
 
             echo $network

@@ -98,7 +98,7 @@ void generateChannelsBalancesMap(string topologyFile) {
     else 
         cout << "Unable to open file " << topologyFile << endl;
 
-    cout << "finished generateChannelsBalancesMap" << endl;
+    cout << "finished generateChannelsBalancesMap whose size: " << _capacities.size() << endl;
     return;
 }
 

@@ -9,6 +9,7 @@ double _qDelayEcnThreshold;
 double _minDCTCPWindow;
 double _balEcnThreshold;
 bool _qDelayVersion;
+bool _tcpVersion;
 
 // knobs for enabling changing of paths
 bool _changingPathsEnabled;
@@ -39,6 +40,7 @@ void hostNodeDCTCP::initialize(){
         _qEcnThreshold = par("queueThreshold");
         _qDelayEcnThreshold = par("queueDelayEcnThreshold");
         _qDelayVersion = par("DCTCPQEnabled");
+        _tcpVersion = par("TCPEnabled");
         _balEcnThreshold = par("balanceThreshold");
         _minDCTCPWindow = par("minDCTCPWindow");
 
@@ -126,7 +128,11 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
         double sumWindows = 0;
         for (auto p: nodeToShortestPathsMap[destNode])
             sumWindows += p.second.window;
-        nodeToShortestPathsMap[destNode][pathIndex].window += _windowAlpha / sumWindows;
+        if (!_tcpVersion)
+            nodeToShortestPathsMap[destNode][pathIndex].window += _windowAlpha / sumWindows;
+        else 
+            nodeToShortestPathsMap[destNode][pathIndex].window += _windowAlpha / 
+                nodeToShortestPathsMap[destNode][pathIndex].window;
         nodeToShortestPathsMap[destNode][pathIndex].unmarkedPackets += 1; 
     }
 
@@ -455,7 +461,12 @@ void hostNodeDCTCP::handleTransactionMessageSpecialized(routerMsg* ttmsg){
 
     // initiate paths and windows if it is a new destination
     if (nodeToShortestPathsMap.count(destNode) == 0 && ttmsg->isSelfMessage()){
-        vector<vector<int>> kShortestRoutes = getKPaths(transMsg->getSender(),destNode, _kValue);
+        int kForPaths = _kValue;
+        /*if (getIndex() != 1)
+            kForPaths = 1;
+        else 
+            kForPaths = 2;*/
+        vector<vector<int>> kShortestRoutes = getKPaths(transMsg->getSender(),destNode, kForPaths);
         initializePathInfo(kShortestRoutes, destNode);
     }
 

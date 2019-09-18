@@ -55,6 +55,13 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
         graph = dag_example_graph
 
+    elif payment_graph_topo == 'parallel_graph':
+        start_nodes = [0, 2, 1, 3]
+        end_nodes = [2, 0, 3, 1]
+        amt_relative = [1, 1, 1, 1]
+        amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
+        graph = parallel_graph
+
 
     elif payment_graph_topo == 'simple_line':
         if "five" in filename:
@@ -551,7 +558,7 @@ def dag_demand(node_list, mean, std_dev, skew_param=5,gen_method="topological_so
 # parse arguments
 parser = argparse.ArgumentParser(description="Create arbitrary txn workloads to run the omnet simulator on")
 parser.add_argument('--graph-topo', \
-        choices=['hotnets_topo', 'simple_line', 'simple_deadlock', 'custom', 'hardcoded_circ', 'toy_dctcp', 'dag_example'],\
+        choices=['hotnets_topo', 'simple_line', 'simple_deadlock', 'custom', 'hardcoded_circ', 'toy_dctcp', 'dag_example', 'parallel_graph'],\
         help='type of graph (Small world or scale free or custom topology)', default='simple_line')
 parser.add_argument('--payment-graph-dag-percentage', type=int,\
 	help='percentage of circulation to put in the payment graph', default=0)

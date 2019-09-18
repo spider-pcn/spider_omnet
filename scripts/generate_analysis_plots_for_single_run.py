@@ -344,7 +344,14 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                     
                     if (signal_type == "Rate acknowledged"):
                         for t, v in zip(time, values):
-                            router_not = "router v" if router == 0 else "router u"
+                            if router == 0 and path == 0:
+                                router_not = "endhost a"
+                            elif router == 1 and path == 1:
+                                router_not = "endhost b"
+                            elif router == 2 and path == 0:
+                                router_not = "endhost c"
+                            else:
+                                break
                             ggplot.write(tag + "," + str(router_not) + ",rate," + str(t) + "," + str(v) + "\n")
 
 
@@ -395,7 +402,12 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
 
                 if (signal_type == "Queue Size"):
                         for t, v in zip(time, values):
-                            router_not = "router v" if router == 0 else "router u"
+                            if router == 0:
+                                router_not = "router a" 
+                            elif router == 2:
+                                router_not = "router c"
+                            else:
+                                break
                             ggplot.write(tag + "," + str(router_not) + ",queue," + str(t) + "," + str(v) + "\n")
 
                 

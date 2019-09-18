@@ -1577,16 +1577,18 @@ void hostNodeBase::initialize() {
     setIndex(getIndex());
 
     // Assign gates to all the payment channels
+    const char * gateName = "out";
     cGate *destGate = NULL;
-    cGate* curOutGate = gate("out", 0);
 
     int i = 0;
-    int gateSize = curOutGate->size();
+    int gateSize = gate(gateName, 0)->size();
+    
     do {
-        cGate *nextGate = curOutGate->getNextGate();
-        if (nextGate ) {
+        destGate = gate(gateName, i++);
+        cGate *nextGate = destGate->getNextGate();
+        if (nextGate) {
             PaymentChannel temp =  {};
-            temp.gate = curOutGate;
+            temp.gate = destGate;
 
             bool isHost = nextGate->getOwnerModule()->par("isHost");
             int key = nextGate->getOwnerModule()->getIndex();
@@ -1595,8 +1597,6 @@ void hostNodeBase::initialize() {
             }
             nodeToPaymentChannel[key] = temp;
         }
-        i++;
-        curOutGate = nextGate;
     } while (i < gateSize);
 
 

@@ -73,6 +73,12 @@ dag_example_graph = nx.Graph()
 dag_example_graph.add_edge(0, 1)
 dag_example_graph.add_edge(1, 2)
 
+
+# parallel graph
+parallel_graph = nx.Graph()
+parallel_graph.add_edge(0,2)
+parallel_graph.add_edge(1,3)
+
 # Filenames for Kaggle data
 KAGGLE_PATH = '/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/data/'
 KAGGLE_AMT_DIST_FILENAME = KAGGLE_PATH + 'amt_dist.npy'

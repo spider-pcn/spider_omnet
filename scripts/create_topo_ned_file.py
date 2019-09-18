@@ -83,7 +83,7 @@ def write_ned_file(topo_filename, output_filename, network_name, routing_alg):
         host_node_type = 'hostNodeBase'
         router_node_type = 'routerNodeBase'
     else:
-        if routing_alg == 'DCTCPBal' or routing_alg == 'DCTCPQ':
+        if routing_alg == 'DCTCPBal' or routing_alg == 'DCTCPQ' or routing_alg == 'TCP':
             host_node_type = 'hostNodeDCTCP'
         elif routing_alg == 'DCTCPRate':
             host_node_type = 'hostNodePropFairPriceScheme'
@@ -92,7 +92,7 @@ def write_ned_file(topo_filename, output_filename, network_name, routing_alg):
         
         if routing_alg == 'landmarkRouting':
             router_node_type = 'routerNodeWaterfilling'
-        elif routing_alg == 'DCTCPRate' or routing_alg == 'DCTCPQ':
+        elif routing_alg == 'DCTCPRate' or routing_alg == 'DCTCPQ' or routing_alg == 'TCP':
             router_node_type = 'routerNodeDCTCP'
         else:
             router_node_type = 'routerNode' + routing_alg[0].upper() + routing_alg[1:]
@@ -260,6 +260,12 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
                 f1.write(str(REASONABLE_BALANCE) + " " + str(REASONABLE_ROUTER_BALANCE) + "\n")
             else:
                 f1.write(str(LARGE_BALANCE/2) + " " + str(LARGE_BALANCE/2) + "\n")
+
+        if args.graph_type == "parallel_graph":
+            for (e,r) in zip([1,3], [0, 2]):
+                f1.write(str(e) + "e " + str(r) + "r ")
+                f1.write(str(end_host_delay) + " " + str(end_host_delay) + " ")
+                f1.write(str(LARGE_BALANCE/2) + " " + str(LARGE_BALANCE/2) + "\n")
     f1.close()
 
     nx.set_edge_attributes(G, capacity_dict, 'capacity')
@@ -270,7 +276,7 @@ parser.add_argument('--num-nodes', type=int, dest='num_nodes', help='number of n
 parser.add_argument('--delay-per-channel', type=int, dest='delay_per_channel', \
         help='delay between nodes (ms)', default=30)
 parser.add_argument('graph_type', choices=['small_world', 'scale_free', 'hotnets_topo', 'simple_line', 'toy_dctcp', \
-        'simple_deadlock', 'simple_topologies', 'dag_example', 'lnd_dec4_2018','lnd_dec4_2018lessScale', \
+        'simple_deadlock', 'simple_topologies', 'parallel_graph', 'dag_example', 'lnd_dec4_2018','lnd_dec4_2018lessScale', \
         'lnd_dec4_2018_randomCap', 'lnd_dec4_2018_modified', 'lnd_uniform', 'tree', 'random', \
         'lnd_july15_2019'], \
         help='type of graph (Small world or scale free or custom topology list)', default='small_world')
@@ -290,7 +296,7 @@ parser.add_argument('--lnd-channel-capacity', type=str, dest='lnd_capacity', \
 parser.add_argument('--rebalancing-enabled', type=str, dest="rebalancing_enabled",\
         help="should the end host router channel be reasonably sized", default="false")
 routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting', 'lndBaseline', \
-        'DCTCP', 'DCTCPBal', 'DCTCPRate', 'DCTCPQ']
+        'DCTCP', 'DCTCPBal', 'DCTCPRate', 'DCTCPQ', 'TCP']
 
 
 args = parser.parse_args()
@@ -318,6 +324,8 @@ elif args.graph_type == 'toy_dctcp':
 elif args.graph_type == 'dag_example':
     print "generating dag example"
     G = dag_example_graph
+elif args.graph_type == 'parallel_graph':
+    G = parallel_graph
 elif args.graph_type == 'hotnets_topo':
     G = hotnets_topo_graph
 elif args.graph_type == 'simple_deadlock':
