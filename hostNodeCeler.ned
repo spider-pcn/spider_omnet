@@ -1,4 +1,4 @@
-simple hostNodeDCTCP
+simple hostNodeCeler
 {
 	parameters:
 	    bool isHost = true;
@@ -15,18 +15,15 @@ simple hostNodeDCTCP
 		bool timeoutEnabled = default(true);
 		double timeoutClearRate = default(0.5);
 
-		bool celerEnabled = default(false);
+		bool celerEnabled = default(true);
 		bool waterfillingEnabled = default(false);
 		bool priceSchemeEnabled = default(false);
 		bool smoothWaterfillingEnabled = default(false);
-                bool windowEnabled = default(false);
                 bool landmarkRoutingEnabled = default(false);
                 bool lndBaselineEnabled = default(false);
                 bool dctcpEnabled = default(false);
-                bool DCTCPQEnabled = default(false);
-                bool TCPEnabled = default(false);
 
-	        bool widestPathsEnabled = default(false);
+                bool widestPathsEnabled = default(false);
                 bool heuristicPathsEnabled = default(false);
                 bool obliviousRoutingEnabled = default(false);
                 bool kspYenEnabled = default(false);
@@ -36,41 +33,12 @@ simple hostNodeDCTCP
                 bool SPFEnabled = default(false);
                 bool RREnabled = default(false);
                 bool EDFEnabled = default(false);
-
+                
                 bool changingPathsEnabled = default(false);
                 int maxPathsToConsider = default(100);
                 double windowThresholdForChange = default(1);
                 double pathMonitorRate = default(5);
-	        
-                double transStatStart = default(3000);
-                double transStatEnd = default(5000);
-                int numPathChoices = default(4);
-
-                double alpha = default(0.01);
-                double kappa = default(0.01);
-                double eta = default(0.01);
-                double zeta = default(0.01);
-                double rhoValue = default(0.05);
-                double capacityFactor = default(1.0);
-
-                double windowAlpha = default(0.2);
-                double windowBeta = default(0.2);
-                double queueThreshold = default(30);
-                double queueDelayEcnThreshold = default(0.5);
-                double balanceThreshold = default(0.01);
-                double minDCTCPWindow = default(5.0);
-                
-                bool useQueueEquation = default(true);
-                bool splittingEnabled = default(true);
-                double minRate = default(0.25);
-                double updateQueryTime = default(0.8);
-                double xi = default(1);
-                int serviceArrivalWindow = default(100);
-                double routerQueueDrainTime = default(1);
-
-                double tau = default(10);
-                double normalizer = default(100);
-
+               
                 bool rebalancingEnabled = default(false);
                 double queueDelayThreshold = default(3.0);
                 double gamma = default(1.0);
@@ -78,6 +46,28 @@ simple hostNodeDCTCP
                 double rebalancingRate = default(10.0);
                 double rebalancingDelayForAddingFunds = default(0.1);
                 double minBalanceComputeRate = default(0.1);
+
+                bool windowEnabled = default(false);
+		int numPathChoices = default(4);
+                
+                double transStatStart = default(3000);
+                double transStatEnd = default(5000);
+
+                double alpha = default(0.01);
+                double kappa = default(0.01);
+                double eta = default(0.01);
+                double zeta = default(0.01);
+                double rhoValue = default(0.05);
+                double minRate = default(0.25);
+                double updateQueryTime = default(0.8);
+                double xi = default(1);
+                int serviceArrivalWindow = default(100);
+                double routerQueueDrainTime = default(1);
+                
+                bool splittingEnabled = default(false);
+                double tau = default(10);
+                double normalizer = default(100);
+
 		
 		@signal[completionTime](type="simtime_t"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 
@@ -87,18 +77,17 @@ simple hostNodeDCTCP
 		
 		@display("i=block/routing"); 
 
-		@signal[numInQueuePerChannel*](type="double"); 
-		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
-
-                @signal[numInflightPerChannel*](type="unsigned long"); 
-		@statisticTemplate[numInflightPerChannelTemplate](record=vector, stats);
-		
-                @signal[implicitRebalancingAmtPerChannel*](type="double"); 
+		@signal[implicitRebalancingAmtPerChannel*](type="double"); 
 		@statisticTemplate[implicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
-	
-        	@signal[explicitRebalancingAmtPerChannel*](type="double"); 
+		@signal[explicitRebalancingAmtPerChannel*](type="double"); 
 		@statisticTemplate[explicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
 		
+		@signal[numInQueuePerChannel*](type="unsigned long"); 
+		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
+                
+                @signal[numInflightPerChannel*](type="unsigned long"); 
+		@statisticTemplate[numInflightPerChannelTemplate](record=vector, stats);
+
 		@signal[numProcessedPerChannel*](type="long");  
 		@statisticTemplate[numProcessedPerChannelTemplate](record=vector, stats);  
 
@@ -117,10 +106,10 @@ simple hostNodeDCTCP
 		@signal[numPendingPerDest*](type="long");  
 		@statisticTemplate[numPendingPerDestTemplate](record=vector, stats); 
 
- 		@signal[numWaitingPerDest*](type="unsigned long");  
+ 		@signal[numWaitingPerDest*](type="long");  
 		@statisticTemplate[numWaitingPerDestTemplate](record=vector, stats);  
 	
-		@signal[fracSuccessfulPerDest*](type="double");  
+		@signal[fracSuccessfulPerDest*](type="long");  
 		@statisticTemplate[fracSuccessfulPerDestTemplate](record=vector, stats);   
 		
 		@signal[pathPerTransPerDest*](type="long");  
@@ -148,12 +137,12 @@ simple hostNodeDCTCP
 		@statisticTemplate[balancePerChannelTemplate](record=vector, stats);   
 		
 		@signal[capacityPerChannel*](type="double"); 
-		@statisticTemplate[capacityPerChannelTemplate](record=vector, stats);   
- 		
-                @signal[bankPerChannel*](type="double"); 
+		@statisticTemplate[capacityPerChannelTemplate](record=vector, stats);  
+
+ 		@signal[bankPerChannel*](type="double"); 
 		@statisticTemplate[bankPerChannelTemplate](record=vector, stats); 
 		
-		@signal[timeInFlightPerChannel*](type="double"); 
+                @signal[timeInFlightPerChannel*](type="double"); 
 		@statisticTemplate[timeInFlightPerChannelTemplate](record=vector, stats);   
 		
                 @signal[bottleneckPerDestPerPath*](type="long"); 
@@ -168,25 +157,47 @@ simple hostNodeDCTCP
 		@signal[rateAttemptedPerDestPerPath*](type="long"); 
 		@statisticTemplate[rateAttemptedPerDestPerPathTemplate](record=vector, stats);
 		
-                @signal[rateOfAcksPerDestPerPath*](type="double"); 
-		@statisticTemplate[rateOfAcksPerDestPerPathTemplate](record=vector, stats);
-		
-                @signal[fractionMarkedPerDestPerPath*](type="double"); 
-		@statisticTemplate[fractionMarkedPerDestPerPathTemplate](record=vector, stats);
-                
-                //has queue capacity specific signals
+		//has queue capacity specific signals
 		@signal[numFailedPerDest*](type="long");  
 		@statisticTemplate[numFailedPerDestTemplate](record=vector, stats);
 		
 		@signal[rateFailedPerDest*](type="long");  
 		@statisticTemplate[rateFailedPerDestTemplate](record=vector, stats);
-				
-		//price scheme path specific signals		
+		
+		//price scheme payment channel specific signals
+		@signal[nValuePerChannel*](type="long"); 
+		@statisticTemplate[nValuePerChannelTemplate](record=vector, stats);
+		
+		@signal[xLocalPerChannel*](type="double"); 
+		@statisticTemplate[xLocalPerChannelTemplate](record=vector, stats);
+
+		@signal[lambdaPerChannel*](type="double"); 
+		@statisticTemplate[lambdaPerChannelTemplate](record=vector, stats);
+		
+		@signal[muLocalPerChannel*](type="double"); 
+		@statisticTemplate[muLocalPerChannelTemplate](record=vector, stats);
+		
+		@signal[muRemotePerChannel*](type="double"); 
+		@statisticTemplate[muRemotePerChannelTemplate](record=vector, stats);
+		
+		//price scheme path specific signals
+		@signal[rateToSendTransPerDestPerPath*](type="double"); 
+		@statisticTemplate[rateToSendTransPerDestPerPathTemplate](record=vector, stats);
+		
+		@signal[timeToNextSendPerDestPerPath*](type="simtime_t"); 
+		@statisticTemplate[timeToNextSendPerDestPerPathTemplate](record=vector, stats);
+		
 		@signal[sumOfTransUnitsInFlightPerDestPerPath*](type="double"); 
 		@statisticTemplate[sumOfTransUnitsInFlightPerDestPerPathTemplate](record=vector, stats);
-			
-        	@signal[windowPerDestPerPath*](type="double"); 
-		@statisticTemplate[windowPerDestPerPathTemplate](record=vector, stats);		
+		
+		@signal[priceLastSeenPerDestPerPath*](type="double"); 
+		@statisticTemplate[priceLastSeenPerDestPerPathTemplate](record=vector, stats);
+		
+		@signal[isSendTimerSetPerDestPerPath*](type="long"); 
+		@statisticTemplate[isSendTimerSetPerDestPerPathTemplate](record=vector, stats);
+		
+		
+		
 
 	gates:
 		input in[];

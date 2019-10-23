@@ -49,6 +49,7 @@ bool _landmarkRoutingEnabled;
 bool _windowEnabled;
 bool _lndBaselineEnabled;
 bool _splittingEnabled;
+bool _celerEnabled;
 
 
 bool _widestPathsEnabled;
@@ -191,7 +192,7 @@ void hostNodeBase::generateNextTransaction() {
       routerMsg *msg = generateTransactionMessage(j); //TODO: flag to whether to calculate path
 
       if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled || _lndBaselineEnabled 
-              || _dctcpEnabled){
+              || _dctcpEnabled || _celerEnabled){
          vector<int> blankPath = {};
          //Radhika TODO: maybe no need to compute path to begin with?
          msg->setRoute(blankPath);
@@ -1505,6 +1506,7 @@ void hostNodeBase::initialize() {
 
         _splitSize = par("splitSize");
 
+        _celerEnabled = par("celerEnabled");
         _lndBaselineEnabled = par("lndBaselineEnabled");
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");
                                   

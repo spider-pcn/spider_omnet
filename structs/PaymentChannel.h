@@ -86,7 +86,8 @@ public:
 
     //statistics - ones for per payment channel
     int statNumProcessed;
-    int statNumSent;
+    double statAmtSent = 0.0;
+    double statAmtReceived = 0.0;
     simsignal_t amtInQueuePerChannelSignal;
     simsignal_t balancePerChannelSignal;
     simsignal_t capacityPerChannelSignal;

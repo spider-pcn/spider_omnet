@@ -15,6 +15,7 @@ simple hostNodeBase
 		bool timeoutEnabled = default(true);
 		double timeoutClearRate = default(0.5);
 
+		bool celerEnabled = default(false);
 		bool waterfillingEnabled = default(false);
 		bool priceSchemeEnabled = default(false);
 		bool smoothWaterfillingEnabled = default(false);
