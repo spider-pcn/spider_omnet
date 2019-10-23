@@ -1,5 +1,5 @@
-import routerNodeBase;
-import hostNodeBase;
+import routerNodeCeler;
+import hostNodeCeler;
 
 network simpleNet
 {
@@ -7,8 +7,8 @@ network simpleNet
 		double linkDelay @unit("s") = default(100us);
 		double linkDataRate @unit("Gbps") = default(1Gbps);
 	submodules:
-		host[40]: hostNodeBase {} 
-		router[40]: routerNodeBase {} 
+		host[40]: hostNodeCeler {} 
+		router[40]: routerNodeCeler {} 
 connections: 
 		router[0].out++ --> {delay = 30.0ms; } --> router[1].in++;  
 		router[0].in++ <-- {delay = 30.0ms; } <-- router[1].out++;  

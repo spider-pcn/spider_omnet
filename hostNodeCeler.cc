@@ -17,12 +17,14 @@ Define_Module(hostNodeCeler);
 void hostNodeCeler::initialize(){
     hostNodeBase::initialize();
     if (myIndex() == 0) {
-        for (int i = 0; i < _numHostNodes; ++i) { //initialize debt queues map
+        _celerBeta = 0.2;
+        _nodeToDebtQueue = {};
+        for (int i = 0; i < _numNodes; ++i) { //initialize debt queues map, one for each node (host and router)
             _nodeToDebtQueue[i] = {};
          }
     }
 
-    for (int i = 0; i < _numHostNodes; ++i) { //initialize debt queues values to 0 for each dest node
+    for (int i = 0; i < _numHostNodes; ++i) { //initialize debt queues values to 0 for each dest/host node
         _nodeToDebtQueue[myIndex()][i] = 0;
     }
 }
@@ -183,5 +185,6 @@ bool hostNodeCeler::forwardTransactionMessage(routerMsg *msg, int dest, simtime_
         neighbor->statAmtSent+=  transMsg->getAmount();
 
         hostNodeBase::forwardTransactionMessage(msg, dest, arrivalTime);
+        return true;
     }
 }

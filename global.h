@@ -31,6 +31,7 @@
 #include "structs/DestInfo.h"
 #include "structs/PathRateTuple.h"
 #include "structs/ProbeInfo.h"
+#include "structs/DestNodeStruct.h"
 
 #define MSGSIZE 100
 using namespace std;
@@ -166,7 +167,7 @@ extern double _windowThresholdForChange;
 
 // celer network params
 //global debt queues
-unordered_map<int, unordered_map<int, double>> _nodeToDebtQueue = {};
+extern unordered_map<int, unordered_map<int, double>> _nodeToDebtQueue; // = {};
        // (key1, (key2, value)) where key1 is nodeA (whose debt queue), and key2 is nodeB (dest node),
         // and value is amt needs to be transferred from nodeA to nodeB
 //celerBeta

@@ -84,6 +84,8 @@ double _delayForAddingFunds;
 double _rebalanceRate;
 double _computeBalanceRate;
 
+unordered_map<int, unordered_map<int, double>> _nodeToDebtQueue;
+double _celerBeta;
 
 
 Define_Module(hostNodeBase);
