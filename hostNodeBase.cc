@@ -921,7 +921,7 @@ void hostNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
         
         if (removableFunds > 0) {
             _bank += removableFunds;
-            p->balance -= removableFunds; 
+            setPaymentChannelBalanceByNode(it->first, p->balance - removableFunds);
             p->owedFunds -= removableFunds;
             if (p->balance < 0)
                 cout << "abhishtu at " << myIndex() << " removable  " 
@@ -968,7 +968,7 @@ void hostNodeBase::handleAddFundsMessage(routerMsg* ttmsg) {
         PaymentChannel *p = &(nodeToPaymentChannel[pcIdentifier]);
 
         // add funds at this end
-        p->balance += fundsToAdd;
+        setPaymentChannelBalanceByNode(pcIdentifier, p->balance + fundsToAdd);
         tuple<int, int> senderReceiverTuple = (pcIdentifier < myIndex()) ? make_tuple(pcIdentifier, myIndex()) :
             make_tuple(myIndex(), pcIdentifier);
         _capacities[senderReceiverTuple] +=  fundsToAdd;
@@ -1043,7 +1043,7 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
             double updatedBalance = prevChannel->balance + aMsg->getAmount();
             prevChannel->balanceEWMA = 
                 (1 -_ewmaFactor) * prevChannel->balanceEWMA + (_ewmaFactor) * updatedBalance; 
-            prevChannel->balance = updatedBalance;
+            setPaymentChannelBalanceByNode(prevNode, updatedBalance);
             prevChannel->totalAmtOutgoingInflight -= aMsg->getAmount();
             
         }
@@ -1080,7 +1080,7 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
             double newBalance = prevChannel->balance + aMsg->getAmount();
             prevChannel->balanceEWMA = (1 -_ewmaFactor) * prevChannel->balanceEWMA + 
             (_ewmaFactor) * newBalance;
-            prevChannel->balance = newBalance;
+            setPaymentChannelBalanceByNode(prevNode, newBalance);
         }
     }
     
@@ -1129,7 +1129,7 @@ void hostNodeBase::handleUpdateMessage(routerMsg* msg) {
     double newBalance = prevChannel->balance + uMsg->getAmount();
     prevChannel->balanceEWMA = (1 -_ewmaFactor) * prevChannel->balanceEWMA 
         + (_ewmaFactor) * newBalance;
-    prevChannel->balance =  newBalance;   
+    setPaymentChannelBalanceByNode(prevNode, newBalance);
 
     // immediately remove these funds - simulates giving end host back these funds
     if (_rebalancingEnabled) {
@@ -1138,7 +1138,7 @@ void hostNodeBase::handleUpdateMessage(routerMsg* msg) {
         double newBalance = prevChannel->balance - uMsg->getAmount();
         prevChannel->balanceEWMA = (1 -_ewmaFactor) * prevChannel->balanceEWMA + 
         (_ewmaFactor) * newBalance;
-        prevChannel->balance = newBalance;
+        setPaymentChannelBalanceByNode(prevNode, newBalance);
     }
 
     //remove transaction from incoming_trans_units
@@ -1364,7 +1364,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
               
                     PaymentChannel *nextChannel = &(nodeToPaymentChannel[nextNode]);
                     double updatedBalance = nextChannel->balance + amount;
-                    nextChannel->balance = updatedBalance; 
+                    setPaymentChannelBalanceByNode(nextNode, updatedBalance);
                     nextChannel->balanceEWMA = (1 -_ewmaFactor) * nextChannel->balanceEWMA + 
                         (_ewmaFactor) * updatedBalance;
                     nextChannel->totalAmtOutgoingInflight -= amount;
@@ -1437,7 +1437,7 @@ bool hostNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t
         // update balance
         int amt = transMsg->getAmount();
         double newBalance = neighbor->balance - amt;
-        neighbor->balance = newBalance;
+        setPaymentChannelBalanceByNode(nextDest, newBalance);
         neighbor-> balanceEWMA = (1 -_ewmaFactor) * neighbor->balanceEWMA + 
             (_ewmaFactor) * newBalance;
         neighbor->totalAmtInQueue -= amt;
@@ -1819,4 +1819,9 @@ void hostNodeBase::deleteMessagesInQueues(){
         }
         nodeToDestInfo[dest].transWaitingToBeSent.clear();
     }
+}
+
+
+void hostNodeBase::setPaymentChannelBalanceByNode(int node, double amt){
+       nodeToPaymentChannel[node].balance = amt;
 }

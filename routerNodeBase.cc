@@ -454,7 +454,7 @@ bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime
       
         // update balance
         double newBalance = neighbor->balance - amt;
-        neighbor->balance = newBalance;
+        setPaymentChannelBalanceByNode(nextDest, newBalance); //neighbor->balance = newBalance;
         neighbor-> balanceEWMA = (1 -_ewmaFactor) * neighbor->balanceEWMA + 
             (_ewmaFactor) * newBalance;
         neighbor->totalAmtInQueue -= amt;
@@ -701,7 +701,7 @@ void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
             double updatedBalance = prevChannel->balance + aMsg->getAmount();
             prevChannel->balanceEWMA = 
                 (1 -_ewmaFactor) * prevChannel->balanceEWMA + (_ewmaFactor) * updatedBalance; 
-            prevChannel->balance = updatedBalance;
+            setPaymentChannelBalanceByNode(prevNode, updatedBalance); //prevChannel->balance = updatedBalance;
             prevChannel->totalAmtOutgoingInflight -= aMsg->getAmount();
         }
         
@@ -759,7 +759,7 @@ void routerNodeBase::handleUpdateMessage(routerMsg* msg) {
    
     //increment the in flight funds back
     double newBalance = prevChannel->balance + uMsg->getAmount();
-    prevChannel->balance =  newBalance;       
+    setPaymentChannelBalanceByNode(prevNode, newBalance); //prevChannel->balance =  newBalance;
     prevChannel->balanceEWMA = (1 -_ewmaFactor) * prevChannel->balanceEWMA 
         + (_ewmaFactor) * newBalance; 
     
@@ -845,7 +845,7 @@ void routerNodeBase::performRebalancing() {
         double differential = min(totalToRemove, p->balance - targetBalancePerChannel);
         if (differential > 0) {
             // remove capacity immediately from these channel
-            p->balance -= differential; 
+            setPaymentChannelBalanceByNode(it->first, p->balance - differential);
             p->balanceEWMA -= differential;
             p->amtExplicitlyRebalanced -= differential;
             if (simTime() > _transStatStart && simTime() < _transStatEnd) {
@@ -883,7 +883,7 @@ void routerNodeBase::addFunds(map<int, double> pcsNeedingFunds) {
         PaymentChannel *p = &(nodeToPaymentChannel[pcIdentifier]);
 
         // add funds at this end
-        p->balance += fundsToAdd;
+        setPaymentChannelBalanceByNode(pcIdentifier, p->balance+fundsToAdd);
         p->balanceEWMA += fundsToAdd;
         tuple<int, int> senderReceiverTuple = (pcIdentifier < myIndex()) ? make_tuple(pcIdentifier, myIndex()) :
             make_tuple(myIndex(), pcIdentifier);
@@ -1033,7 +1033,7 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
               
                     PaymentChannel *nextChannel = &(nodeToPaymentChannel[nextNode]);
                     double updatedBalance = nextChannel->balance + amount;
-                    nextChannel->balance = updatedBalance; 
+                    setPaymentChannelBalanceByNode(nextNode, updatedBalance); //nextChannel->balance = updatedBalance;
                     nextChannel->balanceEWMA = (1 -_ewmaFactor) * nextChannel->balanceEWMA + 
                         (_ewmaFactor) * updatedBalance;
                     nextChannel->totalAmtOutgoingInflight -= amount;
@@ -1047,4 +1047,8 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
             it++;
         }
     }
+}
+
+void routerNodeBase::setPaymentChannelBalanceByNode(int node, double amt){
+       nodeToPaymentChannel[node].balance = amt;
 }

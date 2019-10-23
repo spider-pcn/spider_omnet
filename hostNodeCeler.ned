@@ -9,10 +9,10 @@ simple hostNodeCeler
 		double simulationLength = default(30.0);
 		double statRate = default(0.2);
 		bool signalsEnabled = default(false);
-		bool loggingEnabled = default(false);
+		bool loggingEnabled = default(true);
                 double splitSize = default(5.0);
 
-		bool timeoutEnabled = default(true);
+		bool timeoutEnabled = default(false);
 		double timeoutClearRate = default(0.5);
 
 		bool celerEnabled = default(true);

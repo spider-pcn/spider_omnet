@@ -78,5 +78,8 @@ class routerNodeBase : public cSimpleModule
         virtual void handleUpdateMessage(routerMsg *msg);
         virtual void handleStatMessage(routerMsg *msg);
         virtual void handleClearStateMessage(routerMsg *msg);
+
+        virtual void setPaymentChannelBalanceByNode(int node, double balance);
+
 };
 #endif

@@ -1,16 +1,5 @@
 #include "hostNodeCeler.h"
 
-/*
-// global parameters
-// set to 1 to report exact instantaneous balances
-double _ewmaFactor;
-
-// parameters for smooth waterfilling
-double _Tau;
-double _Normalizer;
-bool _smoothWaterfillingEnabled;
-#define SMALLEST_INDIVISIBLE_UNIT 1 
-*/
 Define_Module(hostNodeCeler);
 
 /* initialization function to initialize parameters */
@@ -21,7 +10,7 @@ void hostNodeCeler::initialize(){
         _nodeToDebtQueue = {};
         for (int i = 0; i < _numNodes; ++i) { //initialize debt queues map, one for each node (host and router)
             _nodeToDebtQueue[i] = {};
-         }
+        }
     }
 
     for (int i = 0; i < _numHostNodes; ++i) { //initialize debt queues values to 0 for each dest/host node
@@ -32,7 +21,6 @@ void hostNodeCeler::initialize(){
 
 /* TODO: KATHY - rewrite this
  * main routine for handling transaction messages for celer
- * that initiates probes and splits transactions according to latest probes
  */
 void hostNodeCeler::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
@@ -44,11 +32,11 @@ void hostNodeCeler::handleTransactionMessageSpecialized(routerMsg* ttmsg){
 
     // txn at receiver
     if (myIndex() == destNode) { //if is at the destination
-       //increment statAmtReceived
-       int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
-       PaymentChannel *prevNeighbor = &(nodeToPaymentChannel[prevNode]);
-       prevNeighbor->statAmtReceived += transMsg->getAmount();
-       handleTransactionMessage(ttmsg, false);  //bool revisit == false? - KATHY: think this is right...
+        //increment statAmtReceived
+        int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
+        PaymentChannel *prevNeighbor = &(nodeToPaymentChannel[prevNode]);
+        prevNeighbor->statAmtReceived += transMsg->getAmount();
+        handleTransactionMessage(ttmsg, false);  //bool revisit == false? - KATHY: think this is right...
     }
     else {
 
@@ -58,74 +46,87 @@ void hostNodeCeler::handleTransactionMessageSpecialized(routerMsg* ttmsg){
 
         //send transactions if possible (possible if: 1) more transaction received [here], 2) more funds unlocked)
 
-           //at the sender
-           int destNode = transMsg->getReceiver();
-           DestNodeStruct *destStruct = &(nodeToDestNodeStruct[destNode]);
+        //at the sender
+        int destNode = transMsg->getReceiver();
+        DestNodeStruct *destStruct = &(nodeToDestNodeStruct[destNode]);
 
-           q = &(destStruct->queuedTransUnits);
-           tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
+        q = &(destStruct->queuedTransUnits);
+        tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
 
-           /* KATHY - ???
-           if (!revisit)
-               transMsg->setTimeAttempted(simTime().dbl());
-            */
+        /* KATHY - ???
+		   if (!revisit)
+		   transMsg->setTimeAttempted(simTime().dbl());
+         */
 
-           // mark the arrival
-           /* KATHY - ???
-           neighbor->arrivalTimeStamps.push_back(make_tuple(transMsg->getAmount(), simTime()));
-           neighbor->sumArrivalWindowTxns += transMsg->getAmount();
-           if (neighbor->arrivalTimeStamps.size() > _serviceArrivalWindow) {
-               double frontAmt = get<0>(neighbor->serviceArrivalTimeStamps.front());
-               neighbor->arrivalTimeStamps.pop_front();
-               neighbor->sumArrivalWindowTxns -= frontAmt;
-           }
-            */
+        // mark the arrival
+        /* KATHY - ???
+		   neighbor->arrivalTimeStamps.push_back(make_tuple(transMsg->getAmount(), simTime()));
+		   neighbor->sumArrivalWindowTxns += transMsg->getAmount();
+		   if (neighbor->arrivalTimeStamps.size() > _serviceArrivalWindow) {
+		   double frontAmt = get<0>(neighbor->serviceArrivalTimeStamps.front());
+		   neighbor->arrivalTimeStamps.pop_front();
+		   neighbor->sumArrivalWindowTxns -= frontAmt;
+		   }
+         */
 
-           // if there is insufficient balance at the first node, return failure
-           if (false){ //KATHY - ??? _hasQueueCapacity && _queueCapacity == 0) {
-               if (forwardTransactionMessage(ttmsg, destNode, simTime()) == false) {
-                   routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
-                   handleAckMessage(failedAckMsg);
-               }
-           }
-           else if (false){ // KATHY - ??? _hasQueueCapacity && getTotalAmount(nextNode) >= _queueCapacity) {
-               // there are other transactions ahead in the queue so don't attempt to forward
-               routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
-               handleAckMessage(failedAckMsg);
-           }
-           else{
-               // add to queue and process in order of queue
-               (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
-                     ttmsg, key, simTime()));
+        // if there is insufficient balance at the first node, return failure
+        if (false){ //KATHY - ??? _hasQueueCapacity && _queueCapacity == 0) {
+            if (forwardTransactionMessage(ttmsg, destNode, simTime()) == false) {
+                routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
+                handleAckMessage(failedAckMsg);
+            }
+        }
+        else if (false){ // KATHY - ??? _hasQueueCapacity && getTotalAmount(nextNode) >= _queueCapacity) {
+            // there are other transactions ahead in the queue so don't attempt to forward
+            routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
+            handleAckMessage(failedAckMsg);
+        }
+        else{
+            // add to queue and process in order of queue
+            (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
+                    ttmsg, key, simTime()));
 
+            destStruct->totalAmtInQueue += transMsg->getAmount();
 
-               destStruct->totalAmtInQueue += transMsg->getAmount();
+            // because hostNode, don't need to increment statNumReceived
 
-               // because hostNode, don't need to increment statNumReceived
+            //update global debt queue
+            _nodeToDebtQueue[myIndex()][destNode] += transMsg->getAmount();
+            push_heap((*q).begin(), (*q).end()); //, _schedulingAlgorithm); //TODO: KATHY - why is this crashing?
+            celerProcessTransactions();
 
-               // TODO: KATHY - do above for router node
-               //update global debt queue
-               _nodeToDebtQueue[myIndex()][destNode] += transMsg->getAmount();
-
-               push_heap((*q).begin(), (*q).end(), _schedulingAlgorithm);
-
-               // for each payment channel (nextNode), choose a k*/destNode queue to use as q*, and send as much as possible
-               for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
-               {
-                   int key =iter->first; //node
-
-                   int kStar = findKStar(key);
-                   if (kStar >= 0){
-                       vector<tuple<int, double , routerMsg *, Id, simtime_t>> *k;
-                       k = &(nodeToDestNodeStruct[destNode].queuedTransUnits);
-                       processTransUnits(key, *k);
-                   }
-
-                   //KATHY - TODO: Question: proessTransUnits might not use up all the balance on the payment channel,
-                   //should we do this for-loop multiple times?
-               }
-           }
+        }
     }
+}
+
+void hostNodeCeler::celerProcessTransactions(int endLinkNode){
+    if (endLinkNode != -1){
+        int kStar = findKStar(endLinkNode);
+        if (kStar >= 0){
+            vector<tuple<int, double , routerMsg *, Id, simtime_t>> *k;
+            k = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
+            processTransUnits(endLinkNode, *k);
+        }
+    }
+    else{
+        cout<< "here5" << endl;
+        // for each payment channel (nextNode), choose a k*/destNode queue to use as q*, and send as much as possible
+        for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
+        {
+            int key =iter->first; //node
+
+            int kStar = findKStar(key);
+            if (kStar >= 0){
+                vector<tuple<int, double , routerMsg *, Id, simtime_t>> *k;
+                k = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
+                processTransUnits(key, *k);
+            }
+
+            //KATHY - TODO: Question: proessTransUnits might not use up all the balance on the payment channel,
+            //should we do this for-loop multiple times?
+        }
+    }
+
 }
 
 int hostNodeCeler::findKStar(int endLinkNode){
@@ -156,9 +157,9 @@ double hostNodeCeler::calculateCPI(int destNode, int neighborNode){
 }
 
 /* TODO: KATHY - need to write this
- * handles forwarding of  transactions out of the queue
- * the way other schemes' routers do except that it marks the packet
- * if the queue is larger than the threshold, therfore mostly similar to the base code */
+ *
+ *
+ * */
 bool hostNodeCeler::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
     //int nextDest = msg->getRoute()[msg->getHopCount()+1];
@@ -187,4 +188,18 @@ bool hostNodeCeler::forwardTransactionMessage(routerMsg *msg, int dest, simtime_
         hostNodeBase::forwardTransactionMessage(msg, dest, arrivalTime);
         return true;
     }
+    return true;
+}
+
+
+void hostNodeCeler::setPaymentChannelBalanceByNode(int node, double amt){
+       bool addedFunds = false;
+       if (amt > nodeToPaymentChannel[node].balance){
+           addedFunds = true;
+       }
+       nodeToPaymentChannel[node].balance = amt;
+       if (addedFunds){
+           celerProcessTransactions(node);
+       }
+
 }
