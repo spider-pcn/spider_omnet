@@ -6,6 +6,7 @@ import numpy as np
 import collections
 
 def read_file(filename):
+    capacity_list = []
     with open(filename) as f:
         lnd_graph = nx.Graph()
         data = json.load(f)
@@ -19,7 +20,7 @@ def read_file(filename):
             n1 = edge["node1_pub"]
             n2 = edge["node2_pub"]
             cap = edge["capacity"]
-            capacity_list.append(capacity)
+            capacity_list.append(cap)
 
             try: 
                 n1_id = node_list[n1]

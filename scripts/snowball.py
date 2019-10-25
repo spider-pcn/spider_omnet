@@ -118,16 +118,27 @@ for filename in lnd_file_list:
 		graph_size = len(sampled_graph.nodes())
 		sampled_graph = prune_deg_one_nodes(sampled_graph)
 
-	""" make all node numbers start from 0 """
+        # convert all capacities to EUROS, doesn't matter if you do before or after snowball sampling
+        count = 0
+	for e in sampled_graph.edges():
+                edge_cap = int(str(graph.edges[e]['capacity'])) / SAT_TO_EUR
+                if edge_cap < 25:
+                    edge_cap = 25
+                    count += 1
+		sampled_graph.edges[e]['capacity'] = edge_cap
+        print "massaged", count, "out of", len(sampled_graph.edges()), "edges"
+	
+        """ make all node numbers start from 0 """
 	numbered_graph = nx.convert_node_labels_to_integers(sampled_graph)
 	print "graph size: ", numbered_graph.number_of_nodes(), " nodes" , \
 			numbered_graph.number_of_edges(), " edges"
 
 	nx.write_edgelist(numbered_graph, LND_FILE_PATH + filename + "_reducedsize" + ".edgelist")
-
-        """capacities = nx.get_edge_attributes(sampled_graph, 'capacity')
-        capacities = [float(c * 10) for c in capacities.values()]
-        write_capacities_to_file("lnd_july15_data", capacities)
-        plt.hist(capacities, bins=100, normed=True, cumulative=True)
-        print np.mean(np.array(capacities)), "stddev" , np.std(np.array(capacities),), min(capacities)
-        plt.show()"""
+        
+        capacities = nx.get_edge_attributes(sampled_graph, 'capacity')
+        capacities = [float(c) for c in capacities.values()]
+        write_capacities_to_file("lnd_july15_data_min25", capacities)
+        #plt.hist(capacities, bins=100, normed=True, cumulative=True)
+        print np.mean(np.array(capacities)), "stddev" , np.std(np.array(capacities),), min(capacities), \
+                np.median(np.array(capacities)), np.percentile(np.array(capacities), 25)
+        #plt.show()
