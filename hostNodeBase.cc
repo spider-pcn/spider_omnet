@@ -1552,6 +1552,8 @@ void hostNodeBase::initialize() {
             _schedulingAlgorithm = &sortSPF;
         else if (_EDFEnabled)
             _schedulingAlgorithm = &sortEDF;
+        else // default
+            _schedulingAlgorithm = &sortLIFO;
 
         if (_widestPathsEnabled || _kspYenEnabled || _obliviousRoutingEnabled || _heuristicPathsEnabled)
             initializePathMaps(pathFileName);

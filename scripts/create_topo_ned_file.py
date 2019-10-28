@@ -296,7 +296,7 @@ parser.add_argument('--lnd-channel-capacity', type=str, dest='lnd_capacity', \
 parser.add_argument('--rebalancing-enabled', type=str, dest="rebalancing_enabled",\
         help="should the end host router channel be reasonably sized", default="false")
 routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting', 'lndBaseline', \
-        'DCTCP', 'DCTCPBal', 'DCTCPRate', 'DCTCPQ', 'TCP']
+        'DCTCP', 'DCTCPBal', 'DCTCPRate', 'DCTCPQ', 'TCP', 'celer']
 
 
 args = parser.parse_args()
