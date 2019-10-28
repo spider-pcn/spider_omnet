@@ -107,6 +107,7 @@ class hostNodeBase : public cSimpleModule {
         virtual double getTotalAmount(int x);
         virtual double getTotalAmountIncomingInflight(int x);
         virtual double getTotalAmountOutgoingInflight(int x);
+        virtual void setPaymentChannelBalanceByNode(int node, double balance);
 
         virtual void pushIntoSenderQueue(DestInfo* destInfo, routerMsg* msg);
         virtual void deleteTransaction(routerMsg* msg);
@@ -163,8 +164,6 @@ class hostNodeBase : public cSimpleModule {
         virtual void processTransUnits(int dest, 
                 vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q);
         virtual void deleteMessagesInQueues();
-
-        virtual void setPaymentChannelBalanceByNode(int node, double balance);
 };
 
 #endif

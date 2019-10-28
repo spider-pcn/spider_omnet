@@ -454,7 +454,7 @@ bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime
       
         // update balance
         double newBalance = neighbor->balance - amt;
-        setPaymentChannelBalanceByNode(nextDest, newBalance); //neighbor->balance = newBalance;
+        setPaymentChannelBalanceByNode(nextDest, newBalance); 
         neighbor-> balanceEWMA = (1 -_ewmaFactor) * neighbor->balanceEWMA + 
             (_ewmaFactor) * newBalance;
         neighbor->totalAmtInQueue -= amt;
@@ -701,7 +701,7 @@ void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
             double updatedBalance = prevChannel->balance + aMsg->getAmount();
             prevChannel->balanceEWMA = 
                 (1 -_ewmaFactor) * prevChannel->balanceEWMA + (_ewmaFactor) * updatedBalance; 
-            setPaymentChannelBalanceByNode(prevNode, updatedBalance); //prevChannel->balance = updatedBalance;
+            setPaymentChannelBalanceByNode(prevNode, updatedBalance); 
             prevChannel->totalAmtOutgoingInflight -= aMsg->getAmount();
         }
         
@@ -759,7 +759,7 @@ void routerNodeBase::handleUpdateMessage(routerMsg* msg) {
    
     //increment the in flight funds back
     double newBalance = prevChannel->balance + uMsg->getAmount();
-    setPaymentChannelBalanceByNode(prevNode, newBalance); //prevChannel->balance =  newBalance;
+    setPaymentChannelBalanceByNode(prevNode, newBalance); 
     prevChannel->balanceEWMA = (1 -_ewmaFactor) * prevChannel->balanceEWMA 
         + (_ewmaFactor) * newBalance; 
     
@@ -813,10 +813,6 @@ void routerNodeBase::performRebalancing() {
 
     // figure out how much to give each channel
     double targetBalancePerChannel = int(stash/numChannels); // target will always be lower as a result
-    /*if (myIndex() == 4) {
-        cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " stash " 
-       << stash << " target " << targetBalancePerChannel << endl;
-    }*/
     double totalToRemove = 0;
     map<int, double> pcsNeedingFunds; 
     for (auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
@@ -828,10 +824,6 @@ void routerNodeBase::performRebalancing() {
             // add this to the list of payment channels to be addressed 
             // along with a particular addFundsEvent
             pcsNeedingFunds[id] =  -1 * differential;
-            /*if (myIndex() == 4) {
-                cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " adding " 
-                <<  -1 * differential << " to " << it->first << endl;
-            }*/
             totalToRemove += -1 * differential;
         }
     }
@@ -895,8 +887,6 @@ void routerNodeBase::addFunds(map<int, double> pcsNeedingFunds) {
         }
         p->amtExplicitlyRebalanced += fundsToAdd;
 
-            //cout << "sctually adding funds at " << simTime() << " at " << myIndex() << " adding " 
-              //  <<  fundsToAdd << " to " << it->first << endl;
         // process as many new transUnits as you can for this payment channel
         processTransUnits(pcIdentifier, p->queuedTransUnits);
     }
@@ -1033,7 +1023,7 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
               
                     PaymentChannel *nextChannel = &(nodeToPaymentChannel[nextNode]);
                     double updatedBalance = nextChannel->balance + amount;
-                    setPaymentChannelBalanceByNode(nextNode, updatedBalance); //nextChannel->balance = updatedBalance;
+                    setPaymentChannelBalanceByNode(nextNode, updatedBalance);
                     nextChannel->balanceEWMA = (1 -_ewmaFactor) * nextChannel->balanceEWMA + 
                         (_ewmaFactor) * updatedBalance;
                     nextChannel->totalAmtOutgoingInflight -= amount;
@@ -1049,6 +1039,8 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
     }
 }
 
+/* helper method to set a particular payment channel's balance to the passed in amount 
+ */ 
 void routerNodeBase::setPaymentChannelBalanceByNode(int node, double amt){
        nodeToPaymentChannel[node].balance = amt;
 }

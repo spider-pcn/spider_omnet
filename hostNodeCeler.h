@@ -10,7 +10,6 @@ using namespace omnetpp;
 class hostNodeCeler : public hostNodeBase {
 
     private:
-
         unordered_map<int, DestNodeStruct> nodeToDestNodeStruct;
 
     protected:
@@ -22,7 +21,5 @@ class hostNodeCeler : public hostNodeBase {
         virtual int findKStar(int endLinkNode);
         virtual void celerProcessTransactions(int endLinkNode = -1);
         virtual void setPaymentChannelBalanceByNode(int node, double balance) override;
-
-
 };
 #endif

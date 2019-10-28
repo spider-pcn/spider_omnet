@@ -28,7 +28,7 @@ simple hostNodeCeler
                 bool obliviousRoutingEnabled = default(false);
                 bool kspYenEnabled = default(false);
                 
-                bool LIFOEnabled = default(false);
+                bool LIFOEnabled = default(true);
                 bool FIFOEnabled = default(false);
                 bool SPFEnabled = default(false);
                 bool RREnabled = default(false);

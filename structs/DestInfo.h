@@ -36,6 +36,7 @@ struct transCompare {
             else
                 return transLHS->getTimeSent() > transRHS->getTimeSent();
         }
+        return true;
     }
 };
 

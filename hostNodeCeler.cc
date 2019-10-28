@@ -2,139 +2,139 @@
 
 Define_Module(hostNodeCeler);
 
+// global debt queue and beta value
+unordered_map<int, unordered_map<int, double>> _nodeToDebtQueue;
+double _celerBeta;
+
 /* initialization function to initialize parameters */
 void hostNodeCeler::initialize(){
     hostNodeBase::initialize();
     if (myIndex() == 0) {
         _celerBeta = 0.2;
         _nodeToDebtQueue = {};
-        for (int i = 0; i < _numNodes; ++i) { //initialize debt queues map, one for each node (host and router)
+        for (int i = 0; i < _numNodes; ++i) { 
             _nodeToDebtQueue[i] = {};
         }
     }
 
-    for (int i = 0; i < _numHostNodes; ++i) { //initialize debt queues values to 0 for each dest/host node
+    // initialize debt queues values to 0 for each dest/host node
+    for (int i = 0; i < _numHostNodes; ++i) {         
         _nodeToDebtQueue[myIndex()][i] = 0;
     }
 }
 
 
-/* TODO: KATHY - rewrite this
- * main routine for handling transaction messages for celer
+/* main routine for handling transaction messages for celer
+ * first adds transactions to the appropriate per destination queue at a router
+ * and then processes transactions in order of the destination with highest CPI
  */
 void hostNodeCeler::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
     int hopCount = ttmsg->getHopCount();
     int destNode = transMsg->getReceiver();
     vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
-    //int nextNode = ttmsg->getRoute()[hopCount+1];
     int transactionId = transMsg->getTransactionId();
 
-    // txn at receiver
-    if (myIndex() == destNode) { //if is at the destination
-        //increment statAmtReceived
+    // process transaction at sender/receiver
+    if (myIndex() == destNode) { 
+        //if at destination, increment stats and generate ack
         int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
         PaymentChannel *prevNeighbor = &(nodeToPaymentChannel[prevNode]);
         prevNeighbor->statAmtReceived += transMsg->getAmount();
-        handleTransactionMessage(ttmsg, false);  //bool revisit == false? - KATHY: think this is right...
+        handleTransactionMessage(ttmsg, false); 
     }
     else {
-
         // transaction received at sender
-
-        //add transaction to appropriate queue (sorted based on dest node)
-
-        //send transactions if possible (possible if: 1) more transaction received [here], 2) more funds unlocked)
-
-        //at the sender
+        // add transaction to appropriate queue (sorted based on dest node)
         int destNode = transMsg->getReceiver();
         DestNodeStruct *destStruct = &(nodeToDestNodeStruct[destNode]);
-
         q = &(destStruct->queuedTransUnits);
         tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
 
-        /* KATHY - ???
-		   if (!revisit)
-		   transMsg->setTimeAttempted(simTime().dbl());
-         */
+        // ignore if txn is already cancelled
+        auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+        if ( iter != canceledTransactions.end() ){
+            //delete yourself, message won't be encountered again
+            ttmsg->decapsulate();
+            delete transMsg;
+            delete ttmsg;
+            return;
+        }
 
-        // mark the arrival
-        /* KATHY - ???
-		   neighbor->arrivalTimeStamps.push_back(make_tuple(transMsg->getAmount(), simTime()));
-		   neighbor->sumArrivalWindowTxns += transMsg->getAmount();
-		   if (neighbor->arrivalTimeStamps.size() > _serviceArrivalWindow) {
-		   double frontAmt = get<0>(neighbor->serviceArrivalTimeStamps.front());
-		   neighbor->arrivalTimeStamps.pop_front();
-		   neighbor->sumArrivalWindowTxns -= frontAmt;
-		   }
-         */
+        // gather stats for completion time
+        transMsg->setTimeAttempted(simTime().dbl());
 
         // if there is insufficient balance at the first node, return failure
-        if (false){ //KATHY - ??? _hasQueueCapacity && _queueCapacity == 0) {
+        if (_hasQueueCapacity && _queueCapacity == 0) {
             if (forwardTransactionMessage(ttmsg, destNode, simTime()) == false) {
                 routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
                 handleAckMessage(failedAckMsg);
             }
         }
-        else if (false){ // KATHY - ??? _hasQueueCapacity && getTotalAmount(nextNode) >= _queueCapacity) {
+        else if (_hasQueueCapacity && getTotalAmount(nextNode) >= _queueCapacity) {
             // there are other transactions ahead in the queue so don't attempt to forward
             routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
             handleAckMessage(failedAckMsg);
         }
         else{
-            // add to queue and process in order of queue
+            // add to queue, udpate debt queue and process in order of queue
             (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
                     ttmsg, key, simTime()));
-
             destStruct->totalAmtInQueue += transMsg->getAmount();
-
-            // because hostNode, don't need to increment statNumReceived
-
-            //update global debt queue
             _nodeToDebtQueue[myIndex()][destNode] += transMsg->getAmount();
-            push_heap((*q).begin(), (*q).end()); //, _schedulingAlgorithm); //TODO: KATHY - why is this crashing?
+            push_heap((*q).begin(), (*q).end(), _schedulingAlgorithm); 
+            
             celerProcessTransactions();
-
         }
     }
 }
 
-void hostNodeCeler::celerProcessTransactions(int endLinkNode){
-    if (endLinkNode != -1){
-        int kStar = findKStar(endLinkNode);
+/* helper function to process transactions to the neighboring node if there are transactions to 
+ * be sent on this payment channel, if one is passed in
+ * otherwise use any payment channel to send out transactions
+ */
+void hostNodeCeler::celerProcessTransactions(int neighborNode){
+    // -1 denotes you can send on any of the links and not a particualr one
+    if (neighborNode != -1){ 
+        int kStar = findKStar(neighborNode);
         if (kStar >= 0){
-            vector<tuple<int, double , routerMsg *, Id, simtime_t>> *k;
-            k = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
-            processTransUnits(endLinkNode, *k);
+            vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
+            q = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
+            processTransUnits(neighborNode, *q);
         }
     }
     else{
         cout<< "here5" << endl;
-        // for each payment channel (nextNode), choose a k*/destNode queue to use as q*, and send as much as possible
+        // for each payment channel (nextNode), choose a k*
+        // destNode queue to use as q*, and send as much as possible
+        // TODO: maybe randomize this order so its not deterministically gonna congest the smallest link
         for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
         {
-            int key =iter->first; //node
-
+            int key = iter->first; //node
             int kStar = findKStar(key);
             if (kStar >= 0){
                 vector<tuple<int, double , routerMsg *, Id, simtime_t>> *k;
                 k = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
                 processTransUnits(key, *k);
             }
-
-            //KATHY - TODO: Question: proessTransUnits might not use up all the balance on the payment channel,
-            //should we do this for-loop multiple times?
         }
+        // TODO: processTransUnits will keep going till the balance is exhausted or queue is empty - you want
+        // to identify separately the two cases and either move on to the next link or stop processing 
+        // newer transactions only if balances on all payment channels are exhausted or all dest queues
+        // are empty
     }
-
 }
 
-int hostNodeCeler::findKStar(int endLinkNode){
+
+/* helper function to find the destination that has the maximum CPI weight for the 
+ * payment channel with passed in neighbor node so that you process its transactions next
+ */
+int hostNodeCeler::findKStar(int neighborNode){
     int destNode = -1;
     int highestCPI = -1;
     for (int i = 0; i < _numHostNodes; ++i) { //initialize debt queues map
-        if (nodeToDestNodeStruct[destNode].queuedTransUnits.size()> 0){
-            double CPI = calculateCPI(i,endLinkNode); //calculateCPI(destNode, neighbor)
+        if (nodeToDestNodeStruct[i].queuedTransUnits.size() > 0){
+            double CPI = calculateCPI(i, neighborNode); //calculateCPI(destNode, neighbor)
             if (destNode == -1 || (CPI > highestCPI)){
                 destNode = i;
                 highestCPI = CPI;
@@ -144,6 +144,9 @@ int hostNodeCeler::findKStar(int endLinkNode){
     return destNode;
 }
 
+/* helper function to calculate the congestion plus imbalance weight associated with a 
+ * payment channel and a particular destination 
+ */
 double hostNodeCeler::calculateCPI(int destNode, int neighborNode){
     PaymentChannel *neighbor = &(nodeToPaymentChannel[neighborNode]);
 
@@ -156,13 +159,11 @@ double hostNodeCeler::calculateCPI(int destNode, int neighborNode){
     return W_ijk;
 }
 
-/* TODO: KATHY - need to write this
- *
- *
- * */
+/* updates debt queue information (removing from it) before performing the regular
+ * routine of forwarding a transction only if there's balance on the payment channel
+ */
 bool hostNodeCeler::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
-    //int nextDest = msg->getRoute()[msg->getHopCount()+1];
     int transactionId = transMsg->getTransactionId();
     PaymentChannel *neighbor = &(nodeToPaymentChannel[dest]);
     int amt = transMsg->getAmount();
@@ -176,22 +177,19 @@ bool hostNodeCeler::forwardTransactionMessage(routerMsg *msg, int dest, simtime_
         newRoute.push_back(dest);
         msg->setRoute(newRoute);
 
-        //decrement the local view of total amount in queue
+        //decrement debt queue stats and payment stats
         nodeToDestNodeStruct[dest].totalAmtInQueue -= transMsg->getAmount();
-
-        //decrement the global debt queue
         _nodeToDebtQueue[myIndex()][dest] -= transMsg->getAmount();
-
-        //increment statAmtSent for channel in-balance calculations
         neighbor->statAmtSent+=  transMsg->getAmount();
 
-        hostNodeBase::forwardTransactionMessage(msg, dest, arrivalTime);
-        return true;
+        return hostNodeBase::forwardTransactionMessage(msg, dest, arrivalTime);
     }
     return true;
 }
 
-
+/* set balance of a payment channel to the passed in amount and if funds were added process
+ * more payments that can be sent via celer
+ */
 void hostNodeCeler::setPaymentChannelBalanceByNode(int node, double amt){
        bool addedFunds = false;
        if (amt > nodeToPaymentChannel[node].balance){
@@ -201,5 +199,4 @@ void hostNodeCeler::setPaymentChannelBalanceByNode(int node, double amt){
        if (addedFunds){
            celerProcessTransactions(node);
        }
-
 }

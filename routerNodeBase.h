@@ -35,13 +35,15 @@ class routerNodeBase : public cSimpleModule
 
         // helper methods
         virtual int myIndex();
-        virtual void checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id, simtime_t >> queuedTransUnits, int node);
+        virtual void checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id, simtime_t >> 
+                queuedTransUnits, int node);
         virtual void printNodeToPaymentChannel();
         virtual simsignal_t registerSignalPerChannel(string signalStart, int id);
         virtual double getTotalAmount(int x);
         virtual double getTotalAmountIncomingInflight(int x);
         virtual double getTotalAmountOutgoingInflight(int x);
         virtual void performRebalancing();
+        virtual void setPaymentChannelBalanceByNode(int node, double balance);
 
         // core simulator functions 
         virtual void initialize() override;
@@ -78,8 +80,5 @@ class routerNodeBase : public cSimpleModule
         virtual void handleUpdateMessage(routerMsg *msg);
         virtual void handleStatMessage(routerMsg *msg);
         virtual void handleClearStateMessage(routerMsg *msg);
-
-        virtual void setPaymentChannelBalanceByNode(int node, double balance);
-
 };
 #endif

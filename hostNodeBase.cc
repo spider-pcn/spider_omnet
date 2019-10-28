@@ -84,10 +84,6 @@ double _delayForAddingFunds;
 double _rebalanceRate;
 double _computeBalanceRate;
 
-unordered_map<int, unordered_map<int, double>> _nodeToDebtQueue;
-double _celerBeta;
-
-
 Define_Module(hostNodeBase);
 
 void hostNodeBase::setIndex(int index) {
@@ -1821,7 +1817,8 @@ void hostNodeBase::deleteMessagesInQueues(){
     }
 }
 
-
+/* helper method to set a particular payment channel's balance to the passed in amount 
+ */ 
 void hostNodeBase::setPaymentChannelBalanceByNode(int node, double amt){
        nodeToPaymentChannel[node].balance = amt;
 }
