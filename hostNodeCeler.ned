@@ -64,7 +64,7 @@ simple hostNodeCeler
                 int serviceArrivalWindow = default(100);
                 double routerQueueDrainTime = default(1);
                 
-                bool splittingEnabled = default(false);
+                bool splittingEnabled = default(true);
                 double tau = default(10);
                 double normalizer = default(100);
 

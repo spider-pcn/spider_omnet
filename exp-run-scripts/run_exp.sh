@@ -65,7 +65,7 @@ balanceThreshold=0.01
 minDCTCPWindow=1
 rateDecreaseFrequency=3.0
 
-for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
+for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP" "celer"
 do
     cp hostNode${suffix}.ned ${PATH_NAME}
     cp routerNode${suffix}.ned ${PATH_NAME}
@@ -83,7 +83,12 @@ if [ -z "$pathChoice" ]; then
     pathChoice="shortest"
 fi
 
+if [ -z "$schedulingAlgorithm" ]; then
+    schedulingAlgorithm="LIFO"
+fi
+
 echo $pathChoice
+echo $schedulingAlgorithm
 
 echo "${#num_nodes[@]}"
 

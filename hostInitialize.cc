@@ -220,7 +220,7 @@ void generateTransUnitList(string workloadFile){
             // instantiate all the transUnits that need to be sent
             int numSplits = 0;
             double totalAmount = amount;
-            while (amount >= _splitSize && (_waterfillingEnabled || _priceSchemeEnabled || _lndBaselineEnabled || _dctcpEnabled)
+            while (amount >= _splitSize && (_waterfillingEnabled || _priceSchemeEnabled || _lndBaselineEnabled || _dctcpEnabled || _celerEnabled)
                    && _splittingEnabled) {
                 TransUnit tempTU = TransUnit(_splitSize, timeSent, 
                         sender, receiver, priorityClass, hasTimeOut, timeOut, largerTxnID);
