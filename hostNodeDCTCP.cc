@@ -10,6 +10,8 @@ double _minDCTCPWindow;
 double _balEcnThreshold;
 bool _qDelayVersion;
 bool _tcpVersion;
+bool _isCubic;
+double _cubicScalingConstant;
 
 // knobs for enabling changing of paths
 bool _changingPathsEnabled;
@@ -43,6 +45,8 @@ void hostNodeDCTCP::initialize(){
         _tcpVersion = par("TCPEnabled");
         _balEcnThreshold = par("balanceThreshold");
         _minDCTCPWindow = par("minDCTCPWindow");
+        _isCubic = false;
+        _cubicScalingConstant = 0.4;
 
 
         // changing paths related
@@ -114,26 +118,39 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
     int destNode = ttmsg->getRoute()[0];
     int transactionId = aMsg->getTransactionId();
     double largerTxnId = aMsg->getLargerTxnId();
-
-
+    PathInfo *thisPathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
 
     // window update based on marked or unmarked packet
     if (aMsg->getIsMarked()) {
-        nodeToShortestPathsMap[destNode][pathIndex].window  -= _windowBeta;
-        nodeToShortestPathsMap[destNode][pathIndex].window = max(_minDCTCPWindow, 
-                nodeToShortestPathsMap[destNode][pathIndex].window);
-        nodeToShortestPathsMap[destNode][pathIndex].markedPackets += 1; 
+        if (_isCubic) {
+            thisPathInfo->windowMax = thisPathInfo->window;
+            thisPathInfo->lastWindowReductionTime = simTime().dbl();
+        }
+        thisPathInfo->window  -= _windowBeta;
+        thisPathInfo->window = max(_minDCTCPWindow, thisPathInfo->window);
+        thisPathInfo->markedPackets += 1;
+        thisPathInfo->inSlowStart = false;
     }
     else {
         double sumWindows = 0;
         for (auto p: nodeToShortestPathsMap[destNode])
             sumWindows += p.second.window;
-        if (!_tcpVersion)
-            nodeToShortestPathsMap[destNode][pathIndex].window += _windowAlpha / sumWindows;
-        else 
-            nodeToShortestPathsMap[destNode][pathIndex].window += _windowAlpha / 
-                nodeToShortestPathsMap[destNode][pathIndex].window;
-        nodeToShortestPathsMap[destNode][pathIndex].unmarkedPackets += 1; 
+
+        if (thisPathInfo->inSlowStart) {
+            cout << "slow start" << endl;
+            thisPathInfo->window += 1;
+        }
+        else if (_isCubic) {
+            double K = cbrt(thisPathInfo->windowMax * _windowBeta / _cubicScalingConstant);
+            double timeElapsed = simTime().dbl() - thisPathInfo->lastWindowReductionTime;
+            double timeTerm = (timeElapsed - K) * (timeElapsed - K) * (timeElapsed - K);
+            thisPathInfo->window = _cubicScalingConstant * timeTerm + thisPathInfo->windowMax;
+        }
+        else if (!_tcpVersion)
+            thisPathInfo->window += _windowAlpha / sumWindows;
+        else
+            thisPathInfo->window += _windowAlpha / thisPathInfo->window;
+        thisPathInfo->unmarkedPackets += 1; 
     }
 
     // general bookkeeping to track completion state
@@ -171,15 +188,15 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
         }
         if (splitInfo->numTotal == splitInfo->numReceived) 
             statNumCompleted[destNode] += 1; 
-        nodeToShortestPathsMap[destNode][pathIndex].statRateCompleted += 1;
-        nodeToShortestPathsMap[destNode][pathIndex].amtAcked += aMsg->getAmount();
+        thisPathInfo->statRateCompleted += 1;
+        thisPathInfo->amtAcked += aMsg->getAmount();
     }
 
     //increment transaction amount ack on a path. 
     tuple<int,int> key = make_tuple(transactionId, pathIndex);
     if (transPathToAckState.count(key) > 0) {
         transPathToAckState[key].amtReceived += aMsg->getAmount();
-        nodeToShortestPathsMap[destNode][pathIndex].sumOfTransUnitsInFlight -= aMsg->getAmount();
+        thisPathInfo->sumOfTransUnitsInFlight -= aMsg->getAmount();
     }
    
     destNodeToNumTransPending[destNode] -= 1;     
@@ -270,6 +287,7 @@ void hostNodeDCTCP::initializeThisPath(vector<int> thisPath, int pathIdx, int de
     PathInfo temp = {};
     temp.path = thisPath;
     temp.window = _minDCTCPWindow;
+    temp.inSlowStart = true;
     temp.sumOfTransUnitsInFlight = 0;
     temp.inUse = true;
     temp.timeStartedUse = simTime().dbl();

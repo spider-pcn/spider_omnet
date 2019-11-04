@@ -19,7 +19,7 @@ struct PathInfo{
         simsignal_t rateCompletedPerDestPerPathSignal;
         simsignal_t rateAttemptedPerDestPerPathSignal;
 
-        // signal for dctcp
+        // signals and stats for dctcp
         simsignal_t fractionMarkedSignal;
         simsignal_t smoothedFractionMarkedSignal;
         simsignal_t rateOfAcksSignal;
@@ -35,7 +35,7 @@ struct PathInfo{
         int statRateCompleted = 0;
         int statRateAttempted = 0;
 
-        //additional parameters for price scheme
+        //additional parameters for price scheme and DCTCP
         double rateToSendTrans = 1;
         double yRateToSendTrans = 1;
         simtime_t timeToNextSend = 0;
@@ -50,6 +50,11 @@ struct PathInfo{
         double lastTransSize = 0.0;
         double amtAllowedToSend = 0.0;
         bool isSendTimerSet = false;
+        bool inSlowStart = true;
+
+        // cubic parameters
+        double windowMax = 1;
+        double lastWindowReductionTime;
 
         // number and rate of txns sent to a particular destination on this path
         double nValue = 0;
