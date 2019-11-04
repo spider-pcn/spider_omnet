@@ -103,6 +103,8 @@ def parse_sca_files_overall(filename):
     stats_3000 = dict()
     amt_added, num_rebalancing = 0, 0
     num_retries, comp_times = [], []
+    num_rebalancing_list, amt_rebalanced_list = [], []
+    
     with open(filename) as f:
         line = f.readline()
         flag = False
@@ -122,6 +124,7 @@ def parse_sca_files_overall(filename):
                     flag = False
             elif line.startswith("scalar") and "totalNumRebalancingEvents" in line:
                 sender, receiver, stat_name, value = parse_overall_stat_line(line)
+                num_rebalancing_list.append(float(value))
                 num_rebalancing += float(value)
             elif line.startswith("scalar") and "retries" in line:
                 sender, stat_name, value = parse_simple_stat_line(line)
@@ -131,6 +134,7 @@ def parse_sca_files_overall(filename):
                 comp_times.append(float(value))
             elif line.startswith("scalar") and "totalAmtAdded" in line:
                 sender, receiver, stat_name, value = parse_overall_stat_line(line)
+                amt_rebalanced_list.append(float(value))
                 amt_added += float(value)
 
             elif "time 3000" in line:
@@ -215,7 +219,7 @@ def parse_sca_files_overall(filename):
     print " Avg completion time ", completion_time/num_completed
     print "Success Rate " + str(num_completed/1000.0)
     print "Amt rebalanced " + str(amt_added) 
-    print "num rebalanced " + str(num_rebalancing)
+    print "Num rebalanced " + str(num_rebalancing)
     print "Num arrived " + str(num_arrived) 
     print "Num completed " + str(num_completed) 
 
@@ -224,7 +228,7 @@ def parse_sca_files_overall(filename):
         print str_to_add
 
 
-    return "Stats for " + filename + "\nSuccess ratio over arrived: " + str(num_completed/num_arrived) +\
+    stats_str = "Stats for " + filename + "\nSuccess ratio over arrived: " + str(num_completed/num_arrived) +\
             " over attempted" + str(num_completed/num_attempted) + \
             "\nSuccess volume  over arrived: " + str(vol_completed/vol_arrived) + \
             " over attempted" + str(vol_completed/vol_attempted) + \
@@ -235,3 +239,5 @@ def parse_sca_files_overall(filename):
             "\nNum arrived " + str(num_arrived) + \
             "\nNum completed " + str(num_completed) + \
             str_to_add 
+
+    return (num_rebalancing_list, amt_rebalanced_list, stats_str) 

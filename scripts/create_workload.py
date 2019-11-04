@@ -269,7 +269,7 @@ def generate_json_files(filename, graph, inside_graph, start_nodes, end_nodes, a
                 cap = ENDHOST_LND_ONE_WAY_CAPACITY
                 node_type = "e"
             else:
-                cap = balance * 800 / 2
+                cap = balance * 400 / 2
                 node_type = "r"
 
             if u <= v: 

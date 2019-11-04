@@ -767,7 +767,7 @@ def main():
     plt.rc('legend', fontsize=34)    # legend fontsize'''
     summary_stats = parse_sca_files_overall(args.sca_file) 
     f = open(args.save + "_summary.txt", "w+")
-    f.write(summary_stats)
+    f.write(summary_stats[2])
     f.close()
 
     if args.detail == 'true':

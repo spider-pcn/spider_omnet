@@ -141,8 +141,8 @@ def generate_graph(size, graph_type):
         # regular expts
         G = nx.barabasi_albert_graph(size, 8, seed=SEED) 
 
-        # implementation - 10 node graph
-        # G = nx.barabasi_albert_graph(size, 3, seed=12)
+        # implementation, celer expts - 10 node graph
+        # G = nx.barabasi_albert_graph(size, 5, seed=12)
     elif graph_type == 'scale_free_sparse':
         G = nx.barabasi_albert_graph(size, size/8, seed=SEED)
     elif graph_type == 'tree':
