@@ -197,6 +197,10 @@ simple hostNodeCeler
 		@statisticTemplate[isSendTimerSetPerDestPerPathTemplate](record=vector, stats);
 		
 		
+		//celer network signals
+		@signal[cpiPerChannelPerDest*](type="double"); 
+		@statisticTemplate[cpiPerChannelPerDestTemplate](record=vector, stats);
+		
 		
 
 	gates:

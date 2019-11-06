@@ -87,6 +87,33 @@ simsignal_t routerNodeBase::registerSignalPerChannel(string signalStart, int id)
     return signal;
 }
 
+/* register a signal per destination for this path of the particular type passed in
+ * and return the signal created
+ */
+simsignal_t routerNodeBase::registerSignalPerChannelPerDest(string signalStart, int chnlEndNode, int destNode) {
+    cout << "router0" << endl;
+    string signalPrefix = signalStart + "PerChannelPerDest";
+    char signalName[64];
+    string templateString = signalPrefix + "Template";
+    cout << "router1" << endl;
+    if (chnlEndNode < _numHostNodes){
+        sprintf(signalName, "%s_(host %d)%d", signalPrefix.c_str(), chnlEndNode, destNode);
+    } else{
+        sprintf(signalName, "%s_(router %d [%d])%d", signalPrefix.c_str(),
+             chnlEndNode, chnlEndNode - _numHostNodes, destNode);
+    }
+    cout << "router2" << endl;
+    simsignal_t signal = registerSignal(signalName);
+    cout << "router3" << endl;
+    cProperty *statisticTemplate = getProperties()->get("statisticTemplate",
+            templateString.c_str());
+    cout << "router4" << endl;
+    getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+    cout << "router5" << endl;
+    return signal;
+}
+
+
 
 /* initialize  basic
  * per channel information as well as default signals for all

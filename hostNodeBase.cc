@@ -230,6 +230,29 @@ simsignal_t hostNodeBase::registerSignalPerDestPath(string signalStart, int path
 }
 
 
+
+/* register a signal per destination for this path of the particular type passed in
+ * and return the signal created
+ */
+simsignal_t hostNodeBase::registerSignalPerChannelPerDest(string signalStart, int chnlEndNode, int destNode) {
+    string signalPrefix = signalStart + "PerChannelPerDest";
+    char signalName[64];
+    string templateString = signalPrefix + "Template";
+
+    if (chnlEndNode < _numHostNodes){
+        sprintf(signalName, "%s_(host %d)%d", signalPrefix.c_str(), chnlEndNode, destNode);
+    } else{
+        sprintf(signalName, "%s_(router %d [%d])%d", signalPrefix.c_str(),
+             chnlEndNode, chnlEndNode - _numHostNodes, destNode);
+    }
+    simsignal_t signal = registerSignal(signalName);
+    cProperty *statisticTemplate = getProperties()->get("statisticTemplate",
+            templateString.c_str());
+    getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
+    return signal;
+}
+
+
 /* register a signal per channel of the particular type passed in
  * and return the signal created
  */
@@ -342,8 +365,14 @@ routerMsg *hostNodeBase::generateTransactionMessage(TransUnit unit) {
     
     routerMsg *rMsg = new routerMsg(msgname);
     // compute route only once
-    if (destNodeToPath.count(unit.receiver) == 0){ 
-       vector<int> route = getRoute(unit.sender,unit.receiver);
+    if (destNodeToPath.count(unit.receiver) == 0){
+        cout << "route before" << endl;
+        vector<int> route;
+        if (_celerEnabled)
+            route = {};
+        else
+            route = getRoute(unit.sender,unit.receiver);
+       cout << "route after" << endl;
        destNodeToPath[unit.receiver] = route;
        rMsg->setRoute(route);
     }

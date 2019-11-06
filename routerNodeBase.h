@@ -80,5 +80,10 @@ class routerNodeBase : public cSimpleModule
         virtual void handleUpdateMessage(routerMsg *msg);
         virtual void handleStatMessage(routerMsg *msg);
         virtual void handleClearStateMessage(routerMsg *msg);
+
+
+        //register signals
+        virtual simsignal_t registerSignalPerChannelPerDest(string signalStart,
+              int pathIdx, int destNode);
 };
 #endif

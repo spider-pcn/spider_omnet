@@ -117,6 +117,8 @@ class hostNodeBase : public cSimpleModule {
         virtual simsignal_t registerSignalPerChannel(string signalStart, int id);
         virtual simsignal_t registerSignalPerDest(string signalStart, int destNode, 
                 string suffix);
+        virtual simsignal_t registerSignalPerChannelPerDest(string signalStart,
+              int pathIdx, int destNode);
 
         // generators for the standard messages
         virtual routerMsg* generateTransactionMessageForPath(double amt, 

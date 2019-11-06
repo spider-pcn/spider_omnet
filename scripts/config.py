@@ -168,6 +168,16 @@ for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "nValue",
 INTERESTING_SIGNALS["per_src_dest_plot"] = per_dest_list
 INTERESTING_SIGNALS["per_channel_plot"] = per_channel_list
 
+# added for celer_network
+per_channel_dest_list = []
+for signal in ["cpi"]:
+    INTERESTING_SIGNALS[signal] = signal + "PerChannelPerDest"
+    per_channel_dest_list.append(signal + "PerChannelPerDest")
+
+INTERESTING_SIGNALS["per_channel_dest_plot"] = per_channel_dest_list
+
+
+
 
 ## ggplot related constants
 PLOT_DIR = "data/"

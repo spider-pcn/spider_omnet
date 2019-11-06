@@ -9,8 +9,48 @@ void routerNodeCeler::initialize(){
     for (int i = 0; i < _numHostNodes; ++i) { 
         _nodeToDebtQueue[myIndex()][i] = 0;
     }
+
+
+    cout << "router before register signals" << endl;
+    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
+        PaymentChannel *p = &(it->second);
+        int id = it->first;
+
+        for (int destNode = 0; destNode < _numHostNodes; destNode++){
+            simsignal_t signal;
+            cout << "router before naming" << endl;
+            signal = registerSignalPerChannelPerDest("cpi", id, destNode);
+            cout << "router after naming" << endl;
+            //naming: signal_(paymentChannel endNode)destNode
+            p->destToCPISignal[destNode] = signal;
+            p->destToCPIValue[destNode] = -1;
+
+        }
+
+    }
+    cout << "router after register signals" << endl;
+
 }
 
+
+/* handler for the statistic message triggered every x seconds
+ */
+void routerNodeCeler::handleStatMessage(routerMsg* ttmsg){
+    if (_signalsEnabled) {
+
+        for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
+            int node = it->first; //key
+            PaymentChannel* p = &(nodeToPaymentChannel[node]);
+
+            for (auto destNode = 0; destNode < _numHostNodes; destNode++){
+                emit(p->destToCPISignal[destNode], p->destToCPIValue[destNode]);
+            }
+        }
+    }
+
+    // call the base method to output rest of the stats
+    routerNodeBase::handleStatMessage(ttmsg);
+}
 
 /* main routine for handling transaction messages for celer
  * first adds transactions to the appropriate per destination queue at a router
@@ -53,7 +93,7 @@ void routerNodeCeler::handleTransactionMessage(routerMsg* ttmsg){
             handleAckMessage(failedAckMsg);
         }
     }
-    else if (_hasQueueCapacity && getTotalAmount(nextNode) >= _queueCapacity) {
+    else if (false){ //_hasQueueCapacity && getTotalAmount(nextNode) >= _queueCapacity) {
         // there are other transactions ahead in the queue so don't attempt to forward
         routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
         handleAckMessage(failedAckMsg);
@@ -81,7 +121,7 @@ void routerNodeCeler::celerProcessTransactions(int neighborNode){
         int kStar = findKStar(neighborNode);
         if (kStar >= 0){
             vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
-            k = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
+            q = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
             processTransUnits(neighborNode, *q);
         }
     }
@@ -90,16 +130,35 @@ void routerNodeCeler::celerProcessTransactions(int neighborNode){
         // destNode queue to use as q*, and send as much as possible
         // TODO: maybe randomize this ordering so you don't deterministically flood the first
         // payment channel
-        for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
-        {
-            int key = iter->first; //node
-            int kStar = findKStar(key);
-            if (kStar >= 0){
-                vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
-                k = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
-                processTransUnits(key, *q);
-            }
-        }
+        while (true){
+
+               //get all paymentChannels with positive balance
+               vector<int> positiveKey = {};
+               for (auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter){
+                   if (iter->second.balance > 0){
+                       positiveKey.push_back(iter->first);
+
+                   }
+               }
+
+               if (positiveKey.size() == 0)
+                   break;
+
+               //generate random channel to process
+               int randIdx = rand() % positiveKey.size();
+
+               int key = positiveKey[randIdx]; //node
+               int kStar = findKStar(key);
+               if (kStar >= 0) {
+                   vector<tuple<int, double, routerMsg *, Id, simtime_t>> *k;
+                   k = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
+                   processTransUnits(key, *k);
+               }
+               else{
+                   //if kStar == -1, means no transactions left in queue
+                   break;
+               }
+           }
         // TODO: processTransUnits should keep going till the balance is exhausted or queue is empty - you want
         // to identify separately the two cases and either move on to the next link or stop processing 
         // newer transactions only if balances on all payment channels are exhausted or all dest queues
@@ -135,7 +194,9 @@ double routerNodeCeler::calculateCPI(int destNode, int neighborNode){
     double Q_jk = _nodeToDebtQueue[neighborNode][destNode];
 
     double W_ijk = Q_ik - Q_jk + _celerBeta*channelInbalance;
-
+    neighbor->destToCPIValue[destNode] = W_ijk;
+    //want to emit every time recalculated?
+    emit(neighbor->destToCPISignal[destNode], W_ijk);
     return W_ijk;
 }
 

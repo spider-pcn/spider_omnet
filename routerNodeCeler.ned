@@ -5,7 +5,7 @@ simple routerNodeCeler
 		string topologyFile = default("sample-topology.txt");
 		string workloadFile = default("sample-workload.txt");
 		bool timeoutEnabled = default(true);
-		bool waterfillingEnabled = default(true);
+		bool waterfillingEnabled = default(false);
 		
 		@signal[completionTime](type="long"); 
 		@statistic[completionTime](title="completionTime"; source="completionTime"; record=vector,stats; interpolationmode=none); 
@@ -71,6 +71,10 @@ simple routerNodeCeler
 		@statisticTemplate[implicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
 		@signal[explicitRebalancingAmtPerChannel*](type="double"); 
 		@statisticTemplate[explicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
+		
+				//celer network signals
+		@signal[cpiPerChannelPerDest*](type="double"); 
+		@statisticTemplate[cpiPerChannelPerDestTemplate](record=vector, stats);
 
 	gates:
 		input in[];
