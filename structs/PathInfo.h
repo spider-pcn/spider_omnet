@@ -50,7 +50,11 @@ struct PathInfo{
         double lastTransSize = 0.0;
         double amtAllowedToSend = 0.0;
         bool isSendTimerSet = false;
+
+        // slow start parameters 
         bool inSlowStart = true;
+        double windowThreshold;
+
 
         // cubic parameters
         double windowMax = 1;

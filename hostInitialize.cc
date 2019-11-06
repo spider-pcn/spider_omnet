@@ -318,6 +318,24 @@ double bottleneckOnPath(vector<int> route) {
     return min;
 }
 
+/* find the bottleneck "capacity" on the path
+ * so that windows are not allowed to grow larger than them 
+ */
+double bottleneckCapacityOnPath(vector<int> route) {
+   double min = 10000000;
+    // ignore end hosts
+    for (int i = 1; i < route.size() - 2; i++) {
+        int thisNode = route[i];
+        int nextNode = route[i + 1];
+        tuple<int, int> senderReceiverTuple = (thisNode < nextNode) ? make_tuple(thisNode, nextNode) :
+                make_tuple(nextNode, thisNode);
+        double cap = _capacities[senderReceiverTuple];
+        if (cap < min)
+            min = cap;
+    }
+    return min;
+}
+
 void updateCannonicalRTT(vector<int> route) {
         // update cannonical RTT
         double sumRTT = (route.size() - 1) * 2 * _avgDelay / 1000.0;

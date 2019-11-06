@@ -24,6 +24,7 @@ vector<int> dijkstra(int src, int dest);
 void generateTransUnitList(string);
 vector<string> split(string str, char delimiter);
 vector<int> getRoute(int sender, int receiver);
+double bottleneckCapacityOnPath(vector<int> thisPath);
 
 // scheudling functions for the queue 
 bool sortPriorityThenAmtFunction(const tuple<int,double, routerMsg*, Id, simtime_t> &a,

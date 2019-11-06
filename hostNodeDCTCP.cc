@@ -137,8 +137,9 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
             sumWindows += p.second.window;
 
         if (thisPathInfo->inSlowStart) {
-            cout << "slow start" << endl;
             thisPathInfo->window += 1;
+            if (thisPathInfo->window > thisPathInfo->windowThreshold) 
+                thisPathInfo->inSlowStart = false;
         }
         else if (_isCubic) {
             double K = cbrt(thisPathInfo->windowMax * _windowBeta / _cubicScalingConstant);
@@ -152,6 +153,7 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
             thisPathInfo->window += _windowAlpha / thisPathInfo->window;
         thisPathInfo->unmarkedPackets += 1; 
     }
+    thisPathInfo->window = min(thisPathInfo->window, thisPathInfo->windowThreshold);
 
     // general bookkeeping to track completion state
     if (aMsg->getIsSuccess() == false) {
@@ -291,6 +293,8 @@ void hostNodeDCTCP::initializeThisPath(vector<int> thisPath, int pathIdx, int de
     temp.sumOfTransUnitsInFlight = 0;
     temp.inUse = true;
     temp.timeStartedUse = simTime().dbl();
+    temp.windowThreshold = bottleneckCapacityOnPath(thisPath);
+
     // TODO: change this to something sensible
     temp.rttMin = (thisPath.size() - 1) * 2 * _avgDelay/1000.0;
     nodeToShortestPathsMap[destNode][pathIdx] = temp;
