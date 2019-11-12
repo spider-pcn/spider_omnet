@@ -83,7 +83,7 @@ def write_ned_file(topo_filename, output_filename, network_name, routing_alg):
         host_node_type = 'hostNodeBase'
         router_node_type = 'routerNodeBase'
     else:
-        if routing_alg == 'DCTCPBal' or routing_alg == 'DCTCPQ' or routing_alg == 'TCP':
+        if routing_alg == 'DCTCPBal' or routing_alg == 'DCTCPQ' or routing_alg == 'TCP' or routing_alg == 'TCPCubic':
             host_node_type = 'hostNodeDCTCP'
         elif routing_alg == 'DCTCPRate':
             host_node_type = 'hostNodePropFairPriceScheme'
@@ -92,7 +92,7 @@ def write_ned_file(topo_filename, output_filename, network_name, routing_alg):
         
         if routing_alg == 'landmarkRouting':
             router_node_type = 'routerNodeWaterfilling'
-        elif routing_alg == 'DCTCPRate' or routing_alg == 'DCTCPQ' or routing_alg == 'TCP':
+        elif routing_alg == 'DCTCPRate' or routing_alg == 'DCTCPQ' or routing_alg == 'TCP' or routing_alg == 'TCPCubic':
             router_node_type = 'routerNodeDCTCP'
         else:
             router_node_type = 'routerNode' + routing_alg[0].upper() + routing_alg[1:]
@@ -299,8 +299,7 @@ parser.add_argument('--lnd-channel-capacity', type=str, dest='lnd_capacity', \
 parser.add_argument('--rebalancing-enabled', type=str, dest="rebalancing_enabled",\
         help="should the end host router channel be reasonably sized", default="false")
 routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting', 'lndBaseline', \
-        'DCTCP', 'DCTCPBal', 'DCTCPRate', 'DCTCPQ', 'TCP', 'celer']
-
+        'DCTCP', 'DCTCPBal', 'DCTCPRate', 'DCTCPQ', 'TCP', 'TCPCubic', 'celer']
 
 args = parser.parse_args()
 np.random.seed(SEED)

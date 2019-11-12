@@ -26,6 +26,7 @@ simple hostNodeDCTCP
                 bool dctcpEnabled = default(false);
                 bool DCTCPQEnabled = default(false);
                 bool TCPEnabled = default(false);
+                bool cubicEnabled = default(false);
 
 	        bool widestPathsEnabled = default(false);
                 bool heuristicPathsEnabled = default(false);

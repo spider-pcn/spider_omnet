@@ -18,7 +18,7 @@ parser.add_argument('--timeout-clear-rate', type=str, help='rate of clearing dat
 parser.add_argument('--timeout-enabled', type=str, help='are timeouts enabled?', dest='timeoutEnabled', default='true')
 parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, LP,' +
         'silentWhispers, smoothWaterfilling, priceScheme, landmarkRouting, lndBaseline, DCTCP, DCTCPBal,\
-                DCTCPRate, DCTCPQ, TCP, celer],' +  
+                DCTCPRate, DCTCPQ, TCP, celer, TCPCubic],' +  
         'else will default to waterfilling', 
         dest='routingScheme', default='default')
 parser.add_argument('--num-path-choices', type=str, help='number of path choices', dest='numPathChoices', default='default')
@@ -131,7 +131,7 @@ if args.capacity is not None:
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
         'smoothWaterfilling', 'priceSchemeWindow', 'priceSchemeWindowNoQueue', 'priceSchemeWindowNoSplit',\
         'landmarkRouting', 'lndBaseline', 'priceSchemeNoQueue', 'lndBaselineSplit', 'DCTCP', 'DCTCPBal', \
-        'DCTCPRate', 'DCTCPQ', 'TCP', 'celer']:
+        'DCTCPRate', 'DCTCPQ', 'TCP', 'celer', 'TCPCubic']:
     if args.routingScheme != 'default':
         print "******************"
         print "WARNING: ill-specified routing scheme, defaulting to waterfilling,",\
@@ -246,9 +246,11 @@ if 'TCP' in args.routingScheme:
 
     if 'TCP' == args.routingScheme:
         f.write("**.TCPEnabled = true\n")
+    if 'celer' == args.routingScheme:
+        f.write("**.celerEnabled = true\n")
+    if 'TCPCubic' == args.routingScheme:
+        f.write("**.cubicEnabled = true\n")
 
-if args.routingScheme == 'celer':
-    f.write("**.celerEnabled = true\n")
 
 
 if args.pathChoice == "oblivious":

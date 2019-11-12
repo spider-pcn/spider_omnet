@@ -45,7 +45,7 @@ void hostNodeDCTCP::initialize(){
         _tcpVersion = par("TCPEnabled");
         _balEcnThreshold = par("balanceThreshold");
         _minDCTCPWindow = par("minDCTCPWindow");
-        _isCubic = false;
+        _isCubic = par("cubicEnabled");
         _cubicScalingConstant = 0.4;
 
 
@@ -120,38 +120,56 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
     double largerTxnId = aMsg->getLargerTxnId();
     PathInfo *thisPathInfo = &(nodeToShortestPathsMap[destNode][pathIndex]);
 
-    // window update based on marked or unmarked packet
-    if (aMsg->getIsMarked()) {
-        if (_isCubic) {
-            thisPathInfo->windowMax = thisPathInfo->window;
-            thisPathInfo->lastWindowReductionTime = simTime().dbl();
+    // window update based on marked or unmarked packet for non-cubic approach
+    if (!_isCubic) {
+        if (aMsg->getIsMarked()) {
+            thisPathInfo->window  -= _windowBeta;
+            thisPathInfo->window = max(_minDCTCPWindow, thisPathInfo->window);
+            thisPathInfo->markedPackets += 1;
+            thisPathInfo->inSlowStart = false;
         }
-        thisPathInfo->window  -= _windowBeta;
-        thisPathInfo->window = max(_minDCTCPWindow, thisPathInfo->window);
-        thisPathInfo->markedPackets += 1;
-        thisPathInfo->inSlowStart = false;
-    }
-    else {
-        double sumWindows = 0;
-        for (auto p: nodeToShortestPathsMap[destNode])
-            sumWindows += p.second.window;
+        else {
+            double sumWindows = 0;
+            for (auto p: nodeToShortestPathsMap[destNode])
+                sumWindows += p.second.window;
 
-        if (thisPathInfo->inSlowStart) {
-            thisPathInfo->window += 1;
-            if (thisPathInfo->window > thisPathInfo->windowThreshold) 
-                thisPathInfo->inSlowStart = false;
+            if (thisPathInfo->inSlowStart) {
+                thisPathInfo->window += 1;
+                if (thisPathInfo->window > thisPathInfo->windowThreshold) 
+                    thisPathInfo->inSlowStart = false;
+            }
+            else if (!_tcpVersion)
+                thisPathInfo->window += _windowAlpha / sumWindows;
+            else if (_tcpVersion)
+                thisPathInfo->window += _windowAlpha / thisPathInfo->window;
+            thisPathInfo->unmarkedPackets += 1; 
         }
-        else if (_isCubic) {
-            double K = cbrt(thisPathInfo->windowMax * _windowBeta / _cubicScalingConstant);
-            double timeElapsed = simTime().dbl() - thisPathInfo->lastWindowReductionTime;
-            double timeTerm = (timeElapsed - K) * (timeElapsed - K) * (timeElapsed - K);
-            thisPathInfo->window = _cubicScalingConstant * timeTerm + thisPathInfo->windowMax;
+    }
+
+    // cubic's window update based on successful or unsuccessful transmission
+    if (_isCubic) {
+        if (aMsg->getIsSuccess() == true) {
+            if (thisPathInfo->inSlowStart) {
+                thisPathInfo->window += 1;
+                if (thisPathInfo->window > thisPathInfo->windowThreshold) 
+                    thisPathInfo->inSlowStart = false;
+            } else {
+                double K = cbrt(thisPathInfo->windowMax * _windowBeta / _cubicScalingConstant);
+                double timeElapsed = simTime().dbl() - thisPathInfo->lastWindowReductionTime;
+                double timeTerm = (timeElapsed - K) * (timeElapsed - K) * (timeElapsed - K);
+                thisPathInfo->window = _cubicScalingConstant * timeTerm + thisPathInfo->windowMax;
+            }
+        } else {
+            /* lost packet */
+            if (thisPathInfo->window < thisPathInfo->windowMax) {
+                thisPathInfo->windowMax = thisPathInfo->window * ( 1 - _windowBeta/2.0);
+            } else {
+                thisPathInfo->windowMax = thisPathInfo->window;
+            }
+            thisPathInfo->lastWindowReductionTime = simTime().dbl();
+            thisPathInfo->window *= (1 - _windowBeta);
+            thisPathInfo->inSlowStart = false;
         }
-        else if (!_tcpVersion)
-            thisPathInfo->window += _windowAlpha / sumWindows;
-        else
-            thisPathInfo->window += _windowAlpha / thisPathInfo->window;
-        thisPathInfo->unmarkedPackets += 1; 
     }
     thisPathInfo->window = min(thisPathInfo->window, thisPathInfo->windowThreshold);
 
@@ -169,7 +187,6 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
             routerMsg *duplicateTrans = generateDuplicateTransactionMessage(aMsg);
             pushIntoSenderQueue(&(nodeToDestInfo[destNode]), duplicateTrans);
         }
- 
     }
     else {
         SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
