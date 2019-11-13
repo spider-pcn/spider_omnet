@@ -156,6 +156,9 @@ int hostNodeBase::sampleFromDistribution(vector<double> probabilities) {
     return 0;
 }
 
+/* helper function to push a transaction into the appropriate sender queue 
+ * in order 
+ */
 void hostNodeBase::pushIntoSenderQueue(DestInfo* destInfo, routerMsg* ttmsg) {
     multiset<routerMsg*, transCompare> *senderQ = &(destInfo->transWaitingToBeSent);
     senderQ->insert(ttmsg);
@@ -168,7 +171,8 @@ void hostNodeBase::pushIntoSenderQueue(DestInfo* destInfo, routerMsg* ttmsg) {
     }
 }
 
-
+/* helper function to delete router message and encapsulated transaction message
+ */
 void hostNodeBase::deleteTransaction(routerMsg* ttmsg) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
     int destination = transMsg->getReceiver();
@@ -572,9 +576,6 @@ routerMsg* hostNodeBase::generateTimeOutMessageForPath(vector<int> path,
     return rMsg;
 }
 
-
-
-
 /* responsible for generating the generic time out message 
  * generated whenever transaction is sent out into the network
  */
@@ -684,8 +685,7 @@ void hostNodeBase::handleMessage(cMessage *msg){
                 cout << "timeout message generated when it shouldn't have" << endl;
                 return;
             }
-
-                handleTimeOutMessage(ttmsg);
+            handleTimeOutMessage(ttmsg);
             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
             break;
         

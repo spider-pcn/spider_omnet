@@ -44,6 +44,7 @@ class routerNodeBase : public cSimpleModule
         virtual double getTotalAmountOutgoingInflight(int x);
         virtual void performRebalancing();
         virtual void setPaymentChannelBalanceByNode(int node, double balance);
+        virtual void deleteTransaction(routerMsg* ttmsg);
 
         // core simulator functions 
         virtual void initialize() override;

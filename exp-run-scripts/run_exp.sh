@@ -65,7 +65,7 @@ balanceThreshold=0.01
 minDCTCPWindow=1
 rateDecreaseFrequency=3.0
 
-for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP" "celer"
+for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP" "Celer"
 do
     cp hostNode${suffix}.ned ${PATH_NAME}
     cp routerNode${suffix}.ned ${PATH_NAME}
@@ -181,7 +181,7 @@ do
                     --payment-graph-dag-percentage 0\
                     --topo-filename $topofile\
                     --experiment-time $simulationLength \
-                    --balance-per-channel $balance\
+                    --balance-list $balance\
                     --generate-json-also \
                     --timeout-value 5 \
                     --scale-amount $scale \

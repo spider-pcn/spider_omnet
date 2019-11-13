@@ -82,10 +82,10 @@ simple hostNodeCeler
 		@signal[explicitRebalancingAmtPerChannel*](type="double"); 
 		@statisticTemplate[explicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
 		
-		@signal[numInQueuePerChannel*](type="unsigned long"); 
+		@signal[numInQueuePerChannel*](type="double"); 
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
                 
-                @signal[numInflightPerChannel*](type="unsigned long"); 
+                @signal[numInflightPerChannel*](type="double"); 
 		@statisticTemplate[numInflightPerChannelTemplate](record=vector, stats);
 
 		@signal[numProcessedPerChannel*](type="long");  
@@ -109,7 +109,7 @@ simple hostNodeCeler
  		@signal[numWaitingPerDest*](type="long");  
 		@statisticTemplate[numWaitingPerDestTemplate](record=vector, stats);  
 	
-		@signal[fracSuccessfulPerDest*](type="long");  
+		@signal[fracSuccessfulPerDest*](type="double");  
 		@statisticTemplate[fracSuccessfulPerDestTemplate](record=vector, stats);   
 		
 		@signal[pathPerTransPerDest*](type="long");  

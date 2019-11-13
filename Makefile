@@ -39,11 +39,13 @@ OBJS = \
     $O/hostNodePropFairPriceScheme.o \
     $O/hostNodeLndBaseline.o \
     $O/hostNodeDCTCP.o \
+    $O/hostNodeCeler.o \
     $O/routerNodeBase.o \
     $O/routerNodeWaterfilling.o \
     $O/routerNodePriceScheme.o \
     $O/routerNodeLndBaseline.o \
     $O/routerNodeDCTCP.o \
+    $O/routerNodeCeler.o \
     $O/routerNodeDCTCPBal.o \
     $O/ackMsg_m.o \
     $O/priceQueryMsg_m.o \

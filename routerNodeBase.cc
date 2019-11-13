@@ -65,6 +65,15 @@ double routerNodeBase::getTotalAmountOutgoingInflight(int x) {
     return nodeToPaymentChannel[x].totalAmtOutgoingInflight;
 } 
 
+/* helper function to delete router message and encapsulated transaction message
+ */
+void routerNodeBase::deleteTransaction(routerMsg* ttmsg) {
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
+    ttmsg->decapsulate();
+    delete transMsg;
+    delete ttmsg;
+}
+
 
 /* register a signal per channel of the particular type passed in
  * and return the signal created

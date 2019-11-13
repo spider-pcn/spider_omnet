@@ -2,7 +2,8 @@
 using namespace std;
 using namespace omnetpp;
 
-typedef tuple<int,int> Id;
+typedef tuple<int,int> Id; // first is transaction id, second is htlc index
+
 struct hashId {
     size_t operator()(const tuple<int, int> &tid ) const
     {
