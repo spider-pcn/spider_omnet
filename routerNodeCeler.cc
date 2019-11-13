@@ -14,6 +14,7 @@ void routerNodeCeler::initialize(){
     for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
         PaymentChannel *p = &(it->second);
         int id = it->first;
+        p->kStarSignal = registerSignalPerChannel("kStar", id); 
 
         for (int destNode = 0; destNode < _numHostNodes; destNode++){
             simsignal_t signal;
@@ -23,6 +24,11 @@ void routerNodeCeler::initialize(){
             p->destToCPIValue[destNode] = -1;
         }
     }
+    
+    for (int i = 0; i < _numHostNodes; ++i) {
+        nodeToDestNodeStruct[i].destQueueSignal = registerSignalPerDest("destQueue", i, ""); 
+    }
+
 }
 
 
@@ -33,10 +39,16 @@ void routerNodeCeler::handleStatMessage(routerMsg* ttmsg){
         for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
             int node = it->first; //key
             PaymentChannel* p = &(nodeToPaymentChannel[node]);
+            emit(p->kStarSignal, findKStar(node));
 
             for (auto destNode = 0; destNode < _numHostNodes; destNode++){
                 emit(p->destToCPISignal[destNode], p->destToCPIValue[destNode]);
             }
+        }
+
+        for (auto destNode = 0; destNode < _numHostNodes; destNode++) {
+            DestNodeStruct *destNodeInfo = &(nodeToDestNodeStruct[destNode]);
+            emit(destNodeInfo->destQueueSignal, destNodeInfo->totalAmtInQueue);
         }
     }
 

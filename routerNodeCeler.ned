@@ -72,9 +72,16 @@ simple routerNodeCeler
 		@signal[explicitRebalancingAmtPerChannel*](type="double"); 
 		@statisticTemplate[explicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
 		
-				//celer network signals
+		//celer network signals
 		@signal[cpiPerChannelPerDest*](type="double"); 
 		@statisticTemplate[cpiPerChannelPerDestTemplate](record=vector, stats);
+
+		@signal[destQueuePerDest*](type="double"); 
+		@statisticTemplate[destQueuePerDestTemplate](record=vector, stats);
+
+		@signal[kStarPerChannel*](type="int"); 
+		@statisticTemplate[kStarPerChannelTemplate](record=vector, stats);
+
 
 	gates:
 		input in[];

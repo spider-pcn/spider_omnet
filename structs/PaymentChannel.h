@@ -103,6 +103,7 @@ public:
     //statistics for celer_network
     map<int, simsignal_t> destToCPISignal = {};
     map<int, double>  destToCPIValue = {};
+    simsignal_t kStarSignal;
 
 
 };
