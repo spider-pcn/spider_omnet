@@ -131,7 +131,6 @@ void hostNodeCeler::handleTransactionMessageSpecialized(routerMsg* ttmsg){
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
     int hopCount = ttmsg->getHopCount();
     int destNode = transMsg->getReceiver();
-    vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
     int transactionId = transMsg->getTransactionId();
 
     // process transaction at sender/receiver
@@ -146,9 +145,6 @@ void hostNodeCeler::handleTransactionMessageSpecialized(routerMsg* ttmsg){
         // transaction received at sender
         // add transaction to appropriate queue (sorted based on dest node)
         int destNode = transMsg->getReceiver();
-        DestNodeStruct *destStruct = &(nodeToDestNodeStruct[destNode]);
-        q = &(destStruct->queuedTransUnits);
-        tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
 
         // ignore if txn is already cancelled
         auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
@@ -161,28 +157,103 @@ void hostNodeCeler::handleTransactionMessageSpecialized(routerMsg* ttmsg){
         }
 
         // gather stats for completion time
-        transMsg->setTimeAttempted(simTime().dbl());
+        SplitState* splitInfo = &(_numSplits[myIndex()][transMsg->getLargerTxnId()]);
+        splitInfo->numArrived += 1;
+        
+        // first time seeing this transaction so add to d_ij computation
+        // count the txn for accounting also
+        if (simTime() == transMsg->getTimeSent()) {
+            transMsg->setTimeAttempted(simTime().dbl());
+            destNodeToNumTransPending[destNode]  += 1;
+            nodeToDestInfo[destNode].transSinceLastInterval += transMsg->getAmount();
+            if (splitInfo->numArrived == 1)
+                splitInfo->firstAttemptTime = simTime().dbl();
+
+            if (transMsg->getTimeSent() >= _transStatStart && 
+                transMsg->getTimeSent() <= _transStatEnd) {
+                statAmtArrived[destNode] += transMsg->getAmount();
+                statAmtAttempted[destNode] += transMsg->getAmount();
+            
+                if (splitInfo->numArrived == 1) {       
+                    statRateArrived[destNode] += 1;
+                    statRateAttempted[destNode] += 1;
+                }
+            }
+            if (splitInfo->numArrived == 1) 
+                statNumArrived[destNode] += 1;
+        }
 
         // add to queue, udpate debt queue and process in order of queue
-        (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
-                ttmsg, key, simTime()));
-        destStruct->totalAmtInQueue += transMsg->getAmount();
-        _nodeToDebtQueue[myIndex()][destNode] += transMsg->getAmount();
-        push_heap((*q).begin(), (*q).end(), _schedulingAlgorithm); 
-        
+        pushIntoPerDestQueue(ttmsg, destNode);        
         celerProcessTransactions();
     }
 }
 
 /* specialized ack handler that removes transaction information
- * from the transToNextHop map
+ * from the transToNextHop map and updates stats
  * NOTE: acks are on the reverse path relative to the original sender
  */
 void hostNodeCeler::handleAckMessageSpecialized(routerMsg* ttmsg) {
     ackMsg *aMsg = check_and_cast<ackMsg*>(ttmsg->getEncapsulatedPacket());
     int transactionId = aMsg->getTransactionId();
+    int destNode = ttmsg->getRoute()[0];
+    double largerTxnId = aMsg->getLargerTxnId();
+    
+    // clear state
     transToNextHop.erase(transactionId);
-    hostNodeBase::handleAckMessageSpecialized(ttmsg);
+
+    // aggregate stats
+    SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
+    splitInfo->numReceived += 1;
+
+    if (aMsg->getTimeSent() >= _transStatStart && 
+            aMsg->getTimeSent() <= _transStatEnd) {
+        if (aMsg->getIsSuccess()) {
+            statAmtCompleted[destNode] += aMsg->getAmount();
+            if (splitInfo->numTotal == splitInfo->numReceived) {
+                statRateCompleted[destNode] += 1;
+                _transactionCompletionBySize[splitInfo->totalAmount] += 1;
+                double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
+                statCompletionTimes[destNode] += timeTaken * 1000;
+            }
+            if (splitInfo->numTotal == splitInfo->numReceived) 
+                statNumCompleted[destNode] += 1;
+        }
+    }
+
+    // retry transaction by placing it in queue if it hasn't timed out
+    if (aMsg->getIsSuccess() == false) {
+        // make sure transaction isn't cancelled yet
+        auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+        if (iter != canceledTransactions.end()) {
+            if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd)
+                statAmtFailed[destNode] += aMsg->getAmount();
+        } 
+        else {
+            // requeue transaction
+            routerMsg *duplicateTrans = generateDuplicateTransactionMessage(aMsg);
+            pushIntoPerDestQueue(duplicateTrans, destNode);
+        }
+    }
+
+    hostNodeBase::handleAckMessage(ttmsg);
+}
+
+/* helper function to push things into per destination queue and update debt queue 
+ * at the sender 
+ */
+void hostNodeCeler::pushIntoPerDestQueue(routerMsg* rMsg, int destNode) {
+    transactionMsg *transMsg = check_and_cast<transactionMsg *>(rMsg->getEncapsulatedPacket());
+    DestNodeStruct *destStruct = &(nodeToDestNodeStruct[destNode]);
+    tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
+    vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
+    q = &(destStruct->queuedTransUnits);
+    
+    (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
+            rMsg, key, simTime()));
+    destStruct->totalAmtInQueue += transMsg->getAmount();
+    _nodeToDebtQueue[myIndex()][destNode] += transMsg->getAmount();
+    push_heap((*q).begin(), (*q).end(), _schedulingAlgorithm); 
 }
 
 /* helper function to process transactions to the neighboring node if there are transactions to 

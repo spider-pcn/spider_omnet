@@ -26,6 +26,7 @@ class hostNodeCeler : public hostNodeBase {
         virtual int findKStar(int endLinkNode);
         virtual void celerProcessTransactions(int endLinkNode = -1);
         virtual void setPaymentChannelBalanceByNode(int node, double balance) override;
+        virtual void pushIntoPerDestQueue(routerMsg* rMsg, int destNode);
 
         virtual void handleStatMessage(routerMsg *msg) override;
 
