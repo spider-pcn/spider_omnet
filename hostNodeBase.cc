@@ -244,10 +244,10 @@ simsignal_t hostNodeBase::registerSignalPerChannelPerDest(string signalStart, in
     string templateString = signalPrefix + "Template";
 
     if (chnlEndNode < _numHostNodes){
-        sprintf(signalName, "%s_(host %d)%d", signalPrefix.c_str(), chnlEndNode, destNode);
+        sprintf(signalName, "%s_%d(host %d)", signalPrefix.c_str(), destNode, chnlEndNode);
     } else{
-        sprintf(signalName, "%s_(router %d [%d])%d", signalPrefix.c_str(),
-             chnlEndNode, chnlEndNode - _numHostNodes, destNode);
+        sprintf(signalName, "%s_%d(router %d [%d] )", signalPrefix.c_str(),
+             destNode, chnlEndNode, chnlEndNode - _numHostNodes);
     }
     simsignal_t signal = registerSignal(signalName);
     cProperty *statisticTemplate = getProperties()->get("statisticTemplate",
@@ -1537,10 +1537,11 @@ void hostNodeBase::initialize() {
         _lndBaselineEnabled = par("lndBaselineEnabled");
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");
                                   
-        if (_landmarkRoutingEnabled || _lndBaselineEnabled){
+        if (_landmarkRoutingEnabled || _lndBaselineEnabled || _celerEnabled){
             _hasQueueCapacity = true;
             _queueCapacity = 0;
-            _timeoutEnabled = false;
+            if (!_celerEnabled)
+                _timeoutEnabled = false;
         }
 
         // rebalancing related flags/parameters

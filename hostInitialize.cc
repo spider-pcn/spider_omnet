@@ -927,6 +927,14 @@ void printVector(vector<int> v){
     cout << endl;
 }
 
+void printVectorReverse(vector<int> v){
+    for (auto it = v.rbegin(); it != v.rend(); ++it) {
+        cout << *it << ", ";
+    }
+    cout << endl;
+}
+
+
 
 /*
  * sortFunction - helper function used to sort queued transUnit list by ascending priorityClass, then by

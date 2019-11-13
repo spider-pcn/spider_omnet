@@ -4,7 +4,6 @@ from parse_vec_files import *
 
 # parse a vector declaration line that maps a vector id to the signal that it is recording
 def parse_vec_declaration(line):
-    
     words = line.split(" ")
     if words[0] != "vector":
         print "Invalid line no vector"
@@ -14,25 +13,6 @@ def parse_vec_declaration(line):
     vector_id = int(words[1])
     owner_node = int(words[2].split("[")[1].split("]")[0])
     owner_node_type = words[2].split(".")[1].split("[")[0]
-
-
-    if (words[3].split('"')[1].startswith("cpi")):
-        #get payment channel node id and type
-        tempStrArr = words[len(words)-2].split("]")
-        if (len(tempStrArr) == 1 ): #host
-            channel_node = int(words[len(words)-2].split(")")[0])
-            channel_node_type = "host"
-
-        else: #router
-            channel_node = int(tempStrArr[0].split("[")[1])
-            channel_node_type = "router"
-
-        signal_info = words[3].split('"')[1].split("_")[0]
-        # get dest node id and type <- must be host
-        dest_node = int(words[len(words)-2].split(")")[1].split(":")[0])
-        dest_node_type = "host"
-        return vector_id, (owner_node, owner_node_type, signal_info, 
-                    channel_node, channel_node_type, dest_node, dest_node_type)
 
     signal_info = words[3].split('"')[1].split("(")[0] if'"' in words[3] else words[3].split(":")[0] 
     dest_node = -1

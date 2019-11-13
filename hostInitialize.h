@@ -45,6 +45,7 @@ double maxDouble(double x, double y);
 //logging functions
 void printChannels();
 void printVector(vector<int> v);
+void printVectorReverse(vector<int> v);
 void printChannels(unordered_map<int, vector<int>> channels);
 int minInt(int x, int y);
 

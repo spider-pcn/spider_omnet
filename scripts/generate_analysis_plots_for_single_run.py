@@ -149,7 +149,7 @@ tag = "balance" if "imbalance" in args.save else "capacity"
 # returns a dictionary of the necessary stats where key is a router node
 # and value is another dictionary where the key is the partner node 
 # and value is the time series of the signal_type recorded for this pair of nodes
-def aggregate_info_per_node(all_timeseries, vec_id_to_info_map, signal_type, is_router, aggregate_per_path=False, is_both=False):
+def aggregate_info_per_node(all_timeseries, vec_id_to_info_map, signal_type, is_router, aggregate_per_path=False, is_both=False, aggregate_per_dest=False):
     node_signal_info = dict()
    #all_timeseries, vec_id_to_info_map = parse_vec_file(filename, signal_type)
     
@@ -164,91 +164,71 @@ def aggregate_info_per_node(all_timeseries, vec_id_to_info_map, signal_type, is_
         src_node = vector_details[0]
         src_node_type = vector_details[1]
         src_node_key = (src_node * -1, src_node)[src_node_type == "host"]
-
-
-        if (signal_type == "cpi"):
-            
-            #signal_type in vector_details[2]):
-            
-            if (signal_type not in vector_details[2]):
+        dest_node_type = vector_details[4]
+        dest_node = vector_details[3]
+                
+        if is_both:
+            if src_node_type == "host":
+                src_node = -1 * src_node if src_node > 0 else 10000
+            elif dest_node_type == "host":
+                dest_node = -1 * dest_node if dest_node > 0 else 10000
+        else:
+            if is_router and (src_node_type != "router" or dest_node_type != "router"):
                 continue
-            channel_node = vector_details[3]
-            channel_node_type = vector_details[4]
-            #(if_test_is_false, if_test_is_true)[test]
-            channel_node_key = (channel_node*-1, channel_node)[channel_node_type == "host"]
-            dest_node_type = vector_details[6]
-            dest_node = vector_details[5]
-      
 
+            if not is_router and (src_node_type != "host" or dest_node_type != "host"):
+                continue
+            '''elif not is_router:
+                src_node = src_node + 2
+                dest_node = dest_node + 2'''
 
- 
+        signal_name = vector_details[2]
+        if signal_type not in signal_name:
+            continue
+
+        signal_values =  timeseries
+
+        '''if signal_type == "numInQueue":
+            ggplot_file = open("ggplot_op", "a+")
+            time = [t[0] for t in timeseries]
+            value = [t[1] for t in timeseries]
+            if src_node == 0:
+                queue_id = 1
+            elif src_node == 2:
+                queue_id = 4
+            elif dest_node == 0:
+                queue_id = 2
+            else:
+                queue_id = 3
+            for t, v in zip(time, value):
+                if t > 295 and t < 310:
+                    ggplot_file.write("Q" + str(queue_id) + "," + str(t - 295) + "," + str(v) + "\n")
+            ggplot_file.close()'''
+
+        if aggregate_per_path:
+            path_id = int(signal_name.split("_")[1])
+            cur_info = node_signal_info.get(src_node, dict())
+            dest_info = cur_info.get(dest_node, dict())
+            dest_info[path_id] = signal_values
+            cur_info[dest_node] = dest_info
+            node_signal_info[src_node] = cur_info
+        elif aggregate_per_dest:
+            # the stats so far have been separated per channel and the udnerscore denotes the dest
+            channel_node = dest_node
+            channel_node_type = dest_node_type
+            channel_node_key = (channel_node, channel_node*-1)[channel_node_type == "host" and channel_node != 10000]
+            
+            dest_node = int(signal_name.split("_")[1])
             cur_info = node_signal_info.get(src_node, dict())
             channel_info = cur_info.get(channel_node_key, dict())
             channel_info[dest_node] = timeseries
             cur_info[channel_node_key] = channel_info
             node_signal_info[src_node] = cur_info
         else: 
-            dest_node_type = vector_details[4]
-            dest_node = vector_details[3]
-            
-            '''if signal_type is "balance":
-                if (src_node_type == "router" and dest_node_type == "host") or \
-                        (src_node_type == "host" and dest_node_type == "router"):
-                            for t in timeseries:
-                                if t[1] == "0":
-                                    print "End host " + str(src_node) + " hitting zero at time " + str(t[0])'''
-
-                
-            if is_both:
-                if src_node_type == "host":
-                    src_node = -1 * src_node if src_node > 0 else 10000
-                elif dest_node_type == "host":
-                    dest_node = -1 * dest_node if dest_node > 0 else 10000
-            else:
-                if is_router and (src_node_type != "router" or dest_node_type != "router"):
-                    continue
-
-                if not is_router and (src_node_type != "host" or dest_node_type != "host"):
-                    continue
-                '''elif not is_router:
-                    src_node = src_node + 2
-                    dest_node = dest_node + 2'''
-
-            signal_name = vector_details[2]
-            if signal_type not in signal_name:
-                continue
-
-            signal_values =  timeseries
-
-            '''if signal_type == "numInQueue":
-                ggplot_file = open("ggplot_op", "a+")
-                time = [t[0] for t in timeseries]
-                value = [t[1] for t in timeseries]
-                if src_node == 0:
-                    queue_id = 1
-                elif src_node == 2:
-                    queue_id = 4
-                elif dest_node == 0:
-                    queue_id = 2
-                else:
-                    queue_id = 3
-                for t, v in zip(time, value):
-                    if t > 295 and t < 310:
-                        ggplot_file.write("Q" + str(queue_id) + "," + str(t - 295) + "," + str(v) + "\n")
-                ggplot_file.close()'''
-
-            if aggregate_per_path:
-                path_id = int(signal_name.split("_")[1])
-                cur_info = node_signal_info.get(src_node, dict())
-                dest_info = cur_info.get(dest_node, dict())
-                dest_info[path_id] = signal_values
-                cur_info[dest_node] = dest_info
-                node_signal_info[src_node] = cur_info
-            else: 
-                cur_info = node_signal_info.get(src_node, dict())
-                cur_info[dest_node] = signal_values
-                node_signal_info[src_node] = cur_info
-            
+            cur_info = node_signal_info.get(src_node, dict())
+            cur_info[dest_node] = signal_values
+            node_signal_info[src_node] = cur_info
+        
     return node_signal_info
 
 # use the balance information to get amount inlfight on every channel
@@ -349,6 +329,19 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
         
         i = 0
         for channel, info in channel_info.items():
+            # making labels and titles sensible if there are both end host and router data
+            if router < 0:
+                router_name = "e" + str(-1 * router)
+            elif router == 10000:
+                router_name = "e0"
+            else:
+                router_name = str(router)
+            if channel < 0:
+                channel_name = "e" + str(-1*channel)
+            elif channel == 10000:
+                channel_name = "e0"
+            else:
+                channel_name = str(channel)
 
             # plot one plot per src dest pair and multiple lines per path
             if per_path_info:
@@ -389,7 +382,8 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
 
                     sum_values += np.average(values[start:])
                     num_values += 1
-                plt.title(signal_type + " " + str(router) + "->" + str(channel) + "(" + str(sum_values/num_values) + ")")
+                plt.title(signal_type + " " + str(router_name) + "->" + str(channel_name) + \
+                        "(" + str(sum_values/num_values) + ")")
                 plt.xlabel("Time")
                 plt.ylabel(signal_type)
                 plt.legend()
@@ -401,20 +395,6 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
             else:
                 time = [t[0] for t in info]
                 values = [t[1] for t in info]
-                if router < 0:
-                    router_name = "e" + str(-1 * router)
-                elif router == 10000:
-                    router_name = "e0"
-                else:
-                    router_name = str(router)
-                if channel < 0:
-                    channel_name = "e" + str(-1*channel)
-                elif channel == 10000:
-                    channel_name = "e0"
-                else:
-                    channel_name = str(channel)
-
-
                 label_name = router_name + "->" + channel_name
 
                 if compute_router_wealth:
@@ -433,14 +413,14 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
                     sum_vals += abs(np.average(values[start:]))
 
                 if (signal_type == "Queue Size"):
-                        for t, v in zip(time, values):
-                            if router == 0:
-                                router_not = "router a" 
-                            elif router == 2:
-                                router_not = "router c"
-                            else:
-                                break
-                            ggplot.write(tag + "," + str(router_not) + ",queue," + str(t) + "," + str(v) + "\n")
+                    for t, v in zip(time, values):
+                        if router == 0:
+                            router_not = "router a" 
+                        elif router == 2:
+                            router_not = "router c"
+                        else:
+                            break
+                        ggplot.write(tag + "," + str(router_not) + ",queue," + str(t) + "," + str(v) + "\n")
 
                 
                 i += 1
@@ -717,16 +697,12 @@ def plot_per_src_dest_stats(args, text_to_add):
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateCompleted", False)
             plot_relevant_stats(data_to_plot, pdf, "number of txns completed")
 
-
-
- 
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
             os.path.basename(args.save) + "_per_src_dest_stats.pdf"
 
 
-############### KATHY ##################
-
-
+# plot per router channel information on a per destination basis depending on the type of signal wanted
+# mostly applicable to celer
 def plot_per_channel_dest_stats(args, text_to_add):
     color_opts = ['#fa9e9e', '#a4e0f9', '#57a882', '#ad62aa']
     dims = plt.rcParams["figure.figsize"]
@@ -747,33 +723,13 @@ def plot_per_channel_dest_stats(args, text_to_add):
         pdf.savefig()
         plt.close()
          
-        num_completed = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numCompleted", False)
-        num_arrived = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "numArrived", False)
-        plot_tpt_timeseries(num_completed, num_arrived, pdf)   
-       
-
         if args.cpi: 
-            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map,  "cpi", False)
-
-            # KATHY
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map,  "cpi", True, False,
+                    is_both=True, aggregate_per_dest=True)
             plot_relevant_stats(data_to_plot, pdf, "cpi", per_path_info = True)
-        
-        """
-        if args.frac_completed_window: 
-            successful = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateCompleted", False)
-            attempted = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateArrived", False)
-            data_to_plot = aggregate_frac_successful_info(successful, attempted)
-            plot_relevant_stats(data_to_plot, pdf, "Fraction of successful txns in each window")
-        if args.rate_to_send:
-            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateToSendTrans", False, True)
-            plot_relevant_stats(data_to_plot, pdf, "Rate to send per path", per_path_info=True)
-        """
 
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
             os.path.basename(args.save) + "_per_channel_dest_stats.pdf"
-
-
-
 
 
 def main():

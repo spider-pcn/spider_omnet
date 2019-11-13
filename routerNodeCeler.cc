@@ -241,8 +241,6 @@ double routerNodeCeler::calculateCPI(int destNode, int neighborNode){
 
     double W_ijk = Q_ik - Q_jk + _celerBeta*channelInbalance;
     neighbor->destToCPIValue[destNode] = W_ijk;
-    //want to emit every time recalculated?
-    emit(neighbor->destToCPISignal[destNode], W_ijk);
     return W_ijk;
 }
 

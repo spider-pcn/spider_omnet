@@ -202,6 +202,10 @@ void hostNodeCeler::handleAckMessageSpecialized(routerMsg* ttmsg) {
     // clear state
     transToNextHop.erase(transactionId);
 
+    // update max travel time
+    updateMaxTravelTime(ttmsg->getRoute());
+    printVectorReverse(ttmsg->getRoute());
+
     // aggregate stats
     SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
     splitInfo->numReceived += 1;
@@ -356,7 +360,7 @@ bool hostNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, simt
     else {
         //append next destination to the route of the routerMsg
         vector<int> newRoute = msg->getRoute();
-        if (newRoute.size() == 0){
+        if (newRoute.size() == 0) {
             newRoute.push_back(myIndex());
         }
         transToNextHop[transactionId] = nextNode;
@@ -366,7 +370,7 @@ bool hostNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, simt
         //decrement debt queue stats and payment stats
         nodeToDestNodeStruct[dest].totalAmtInQueue -= transMsg->getAmount();
         _nodeToDebtQueue[myIndex()][dest] -= transMsg->getAmount();
-        neighbor->statAmtSent+=  transMsg->getAmount();
+        neighbor->statAmtSent +=  transMsg->getAmount();
 
         return hostNodeBase::forwardTransactionMessage(msg, nextNode, arrivalTime);
     }
