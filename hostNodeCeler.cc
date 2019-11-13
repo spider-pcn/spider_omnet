@@ -22,7 +22,6 @@ void hostNodeCeler::initialize(){
         _nodeToDebtQueue[myIndex()][i] = 0;
     }
 
-    cout << "host before register signals" << endl;
     for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
         PaymentChannel *p = &(it->second);
         int id = it->first;
@@ -33,12 +32,8 @@ void hostNodeCeler::initialize(){
             //naming: signal_(paymentChannel endNode)destNode
             p->destToCPISignal[destNode] = signal;
             p->destToCPIValue[destNode] = -1;
-
-
         }
-
     }
-    cout << "host after register signals" << endl;
 }
 
 /* handler for the statistic message triggered every x seconds
@@ -168,28 +163,14 @@ void hostNodeCeler::handleTransactionMessageSpecialized(routerMsg* ttmsg){
         // gather stats for completion time
         transMsg->setTimeAttempted(simTime().dbl());
 
-        // if there is insufficient balance at the first node, return failure
-        if (_hasQueueCapacity && _queueCapacity == 0) {
-            if (forwardTransactionMessage(ttmsg, destNode, simTime()) == false) {
-                routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
-                handleAckMessage(failedAckMsg);
-            }
-        }
-        else if (false){ //_hasQueueCapacity && getTotalAmount(nextNode) >= _queueCapacity) {
-            // there are other transactions ahead in the queue so don't attempt to forward
-            routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
-            handleAckMessage(failedAckMsg);
-        }
-        else{
-            // add to queue, udpate debt queue and process in order of queue
-            (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
-                    ttmsg, key, simTime()));
-            destStruct->totalAmtInQueue += transMsg->getAmount();
-            _nodeToDebtQueue[myIndex()][destNode] += transMsg->getAmount();
-            push_heap((*q).begin(), (*q).end(), _schedulingAlgorithm); 
-            
-            celerProcessTransactions();
-        }
+        // add to queue, udpate debt queue and process in order of queue
+        (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
+                ttmsg, key, simTime()));
+        destStruct->totalAmtInQueue += transMsg->getAmount();
+        _nodeToDebtQueue[myIndex()][destNode] += transMsg->getAmount();
+        push_heap((*q).begin(), (*q).end(), _schedulingAlgorithm); 
+        
+        celerProcessTransactions();
     }
 }
 
@@ -219,29 +200,21 @@ void hostNodeCeler::celerProcessTransactions(int neighborNode){
         }
     }
     else{
-        cout<< "here5" << endl;
         // for each payment channel (nextNode), choose a k*
         // destNode queue to use as q*, and send as much as possible
-        // TODO: maybe randomize this order so its not deterministically gonna congest the smallest link
-
-
         while (true){
-
             //get all paymentChannels with positive balance
             vector<int> positiveKey = {};
             for (auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter){
                 if (iter->second.balance > 0){
                     positiveKey.push_back(iter->first);
-
                 }
             }
-
             if (positiveKey.size() == 0)
                 break;
 
-            //generate random channel to process
+            // generate random channel to process
             int randIdx = rand() % positiveKey.size();
-
             int key = positiveKey[randIdx]; //node
             int kStar = findKStar(key);
             if (kStar >= 0) {

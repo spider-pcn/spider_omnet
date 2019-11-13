@@ -11,25 +11,18 @@ void routerNodeCeler::initialize(){
     }
 
 
-    cout << "router before register signals" << endl;
     for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
         PaymentChannel *p = &(it->second);
         int id = it->first;
 
         for (int destNode = 0; destNode < _numHostNodes; destNode++){
             simsignal_t signal;
-            cout << "router before naming" << endl;
             signal = registerSignalPerChannelPerDest("cpi", id, destNode);
-            cout << "router after naming" << endl;
             //naming: signal_(paymentChannel endNode)destNode
             p->destToCPISignal[destNode] = signal;
             p->destToCPIValue[destNode] = -1;
-
         }
-
     }
-    cout << "router after register signals" << endl;
-
 }
 
 
@@ -37,7 +30,6 @@ void routerNodeCeler::initialize(){
  */
 void routerNodeCeler::handleStatMessage(routerMsg* ttmsg){
     if (_signalsEnabled) {
-
         for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
             int node = it->first; //key
             PaymentChannel* p = &(nodeToPaymentChannel[node]);
@@ -143,30 +135,16 @@ void routerNodeCeler::handleTransactionMessage(routerMsg* ttmsg){
     vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q = &(destStruct->queuedTransUnits);
     tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
 
-    // if there is insufficient balance at the first node, return failure
-    if (_hasQueueCapacity && _queueCapacity == 0) {
-        if (forwardTransactionMessage(ttmsg, destNode, simTime()) == false) {
-            routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
-            handleAckMessage(failedAckMsg);
-        }
-    }
-    else if (false){ //_hasQueueCapacity && getTotalAmount(nextNode) >= _queueCapacity) {
-        // there are other transactions ahead in the queue so don't attempt to forward
-        routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
-        handleAckMessage(failedAckMsg);
-    }
-    else{
-        // add to queue and process in order of queue
-        (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
-                ttmsg, key, simTime()));
-        push_heap((*q).begin(), (*q).end(), _schedulingAlgorithm);
-        
-        // update debt queues and process according to celer
-        destStruct->totalAmtInQueue += transMsg->getAmount();
-        _nodeToDebtQueue[myIndex()][destNode] += transMsg->getAmount();
-        nodeToPaymentChannel[prevNode].statAmtReceived +=  transMsg->getAmount();
-        celerProcessTransactions();
-    }
+    // add to queue and process in order of queue
+    (*q).push_back(make_tuple(transMsg->getPriorityClass(), transMsg->getAmount(),
+            ttmsg, key, simTime()));
+    push_heap((*q).begin(), (*q).end(), _schedulingAlgorithm);
+    
+    // update debt queues and process according to celer
+    destStruct->totalAmtInQueue += transMsg->getAmount();
+    _nodeToDebtQueue[myIndex()][destNode] += transMsg->getAmount();
+    nodeToPaymentChannel[prevNode].statAmtReceived +=  transMsg->getAmount();
+    celerProcessTransactions();
 }
 
 /* specialized ack handler that removes transaction information
