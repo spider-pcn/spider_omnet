@@ -370,13 +370,11 @@ routerMsg *hostNodeBase::generateTransactionMessage(TransUnit unit) {
     routerMsg *rMsg = new routerMsg(msgname);
     // compute route only once
     if (destNodeToPath.count(unit.receiver) == 0){
-        cout << "route before" << endl;
         vector<int> route;
         if (_celerEnabled)
             route = {};
         else
             route = getRoute(unit.sender,unit.receiver);
-       cout << "route after" << endl;
        destNodeToPath[unit.receiver] = route;
        rMsg->setRoute(route);
     }
@@ -1806,8 +1804,9 @@ void hostNodeBase::finish() {
  *  given an adjacent node, and TransUnit queue of things to send to that node, sends
  *  TransUnits until channel funds are too low
  *  calls forwardTransactionMessage on every individual TransUnit
+ *  returns true when it still can continue processing more transactions
  */
-void hostNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
+bool hostNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
     bool successful = true;
     while ((int)q.size() > 0 && successful) {
         pop_heap(q.begin(), q.end(), _schedulingAlgorithm);
@@ -1816,6 +1815,7 @@ void hostNodeBase:: processTransUnits(int dest, vector<tuple<int, double , route
             q.pop_back();
         }
     }
+    return successful;
 }
 
 

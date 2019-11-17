@@ -204,7 +204,7 @@ simple hostNodeCeler
 		@signal[destQueuePerDest*](type="double"); 
 		@statisticTemplate[destQueuePerDestTemplate](record=vector, stats);
 
-		@signal[kStarPerChannel*](type="int"); 
+		@signal[kStarPerChannel*](type="long"); 
 		@statisticTemplate[kStarPerChannelTemplate](record=vector, stats);	
 		
 

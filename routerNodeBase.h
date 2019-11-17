@@ -52,7 +52,7 @@ class routerNodeBase : public cSimpleModule
         // core simulator functions 
         virtual void initialize() override;
         virtual void finish() override;
-        virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q);
+        virtual bool processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q);
         virtual void deleteMessagesInQueues();
 
         // generators for standard messages

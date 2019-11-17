@@ -31,6 +31,24 @@ void routerNodeCeler::initialize(){
 
 }
 
+/* end routine to get rid of messages in queues */
+void routerNodeCeler::finish() {
+    // go through per dest queues if any 
+    for (int i = 0; i < _numHostNodes; ++i) {
+        vector<tuple<int, double, routerMsg*,  Id, simtime_t >> *q = 
+            &(nodeToDestNodeStruct[i].queuedTransUnits);
+        for (auto temp = q->begin(); temp != q->end(); ){
+            routerMsg * rMsg = get<2>(*temp);
+            auto tMsg = rMsg->getEncapsulatedPacket();
+            rMsg->decapsulate();
+            delete tMsg;
+            delete rMsg;
+            temp = q->erase(temp);
+        }
+    }
+    routerNodeBase::finish();
+}
+
 
 /* handler for the statistic message triggered every x seconds
  */
@@ -56,16 +74,7 @@ void routerNodeCeler::handleStatMessage(routerMsg* ttmsg){
     routerNodeBase::handleStatMessage(ttmsg);
 }
 
-/* special type of time out message for celer designed for a specific path 
- * that is contructed dynamically or one hop at a time, until the transaction
- * is deleted at the router itself and then the message needs to go 
- * no further
- */
-void routerNodeCeler::appendNextHopToTimeOutMessage(routerMsg* ttmsg, int nextNode) {
-    vector<int> newRoute = ttmsg->getRoute();
-    newRoute.push_back(nextNode);
-    ttmsg->setRoute(newRoute);
-}
+
 
 /* handler for timeout messages that is responsible for removing messages from 
  * per-dest queues if they haven't been sent yet and sends explicit time out messages
@@ -97,13 +106,16 @@ void routerNodeCeler::handleTimeOutMessage(routerMsg* ttmsg) {
 
     // check where to send transaction next if a next hop exists 
     if (transToNextHop.count(transactionId) > 0) {
-        int nextNode = transToNextHop[transactionId];
+        int nextNode = transToNextHop[transactionId].front();
+        transToNextHop[transactionId].pop_front();
+        if (transToNextHop[transactionId].size() == 0)
+            transToNextHop.erase(transactionId);
+
         appendNextHopToTimeOutMessage(ttmsg, nextNode);
         CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
                 simTime(), -1, nextNode, destination);
         canceledTransactions.insert(ct);
         forwardMessage(ttmsg);
-        transToNextHop.erase(nextNode);
     }
     else {
         ttmsg->decapsulate();
@@ -166,8 +178,23 @@ void routerNodeCeler::handleTransactionMessage(routerMsg* ttmsg){
 void routerNodeCeler::handleAckMessage(routerMsg* ttmsg) {
     ackMsg *aMsg = check_and_cast<ackMsg*>(ttmsg->getEncapsulatedPacket());
     int transactionId = aMsg->getTransactionId();
-    transToNextHop.erase(transactionId);
+    transToNextHop[transactionId].pop_back();
+    if (transToNextHop[transactionId].size() == 0)
+        transToNextHop.erase(transactionId);
     routerNodeBase::handleAckMessage(ttmsg);
+}
+
+
+
+/* special type of time out message for celer designed for a specific path 
+ * that is contructed dynamically or one hop at a time, until the transaction
+ * is deleted at the router itself and then the message needs to go 
+ * no further
+ */
+void routerNodeCeler::appendNextHopToTimeOutMessage(routerMsg* ttmsg, int nextNode) {
+    vector<int> newRoute = ttmsg->getRoute();
+    newRoute.push_back(nextNode);
+    ttmsg->setRoute(newRoute);
 }
 
 /* helper function to process transactions to the neighboring node if there are transactions to 
@@ -177,50 +204,46 @@ void routerNodeCeler::handleAckMessage(routerMsg* ttmsg) {
 void routerNodeCeler::celerProcessTransactions(int neighborNode){
     if (neighborNode != -1){
         int kStar = findKStar(neighborNode);
-        if (kStar >= 0){
+        while (kStar >= 0){
             vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
             q = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
-            processTransUnits(neighborNode, *q);
+            if (!processTransUnits(neighborNode, *q))
+                break;
+            kStar = findKStar(neighborNode);
         }
     }
     else{
-        // for each payment channel (nextNode), choose a k*/
-        // destNode queue to use as q*, and send as much as possible
-        // TODO: maybe randomize this ordering so you don't deterministically flood the first
-        // payment channel
-        while (true){
-
-               //get all paymentChannels with positive balance
-               vector<int> positiveKey = {};
-               for (auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter){
-                   if (iter->second.balance > 0){
-                       positiveKey.push_back(iter->first);
-
-                   }
-               }
-
-               if (positiveKey.size() == 0)
-                   break;
-
-               //generate random channel to process
-               int randIdx = rand() % positiveKey.size();
-
-               int key = positiveKey[randIdx]; //node
-               int kStar = findKStar(key);
-               if (kStar >= 0) {
-                   vector<tuple<int, double, routerMsg *, Id, simtime_t>> *k;
-                   k = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
-                   processTransUnits(key, *k);
-               }
-               else{
-                   //if kStar == -1, means no transactions left in queue
-                   break;
-               }
+        // get all paymentChannels with positive balance
+        vector<int> positiveKey = {};
+        for (auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter){
+           if (iter->second.balance > 0){
+               positiveKey.push_back(iter->first);
            }
-        // TODO: processTransUnits should keep going till the balance is exhausted or queue is empty - you want
-        // to identify separately the two cases and either move on to the next link or stop processing 
-        // newer transactions only if balances on all payment channels are exhausted or all dest queues
-        // are empty
+        }
+        while (true){
+            if (positiveKey.size() == 0)
+               break;
+            
+            //generate random channel with positie balance to process
+            int randIdx = rand() % positiveKey.size();
+            int key = positiveKey[randIdx]; //node
+            positiveKey.erase(positiveKey.begin() + randIdx);
+            
+            // for each payment channel (nextNode), choose a k* or 
+            // destNode queue to use as q*, and send as much as possible to that dest
+            // if no more transactions left, keep finding the next kStar for that channel
+            // until it is exhausted or no more transactions in any dest queue
+            int kStar = findKStar(key);
+            while (kStar >= 0) {
+                vector<tuple<int, double, routerMsg *, Id, simtime_t>> *k;
+                k = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
+                if (!processTransUnits(key, *k)) // cannot send more on this channel - balance or Head of line blocking
+                   break; 
+                kStar = findKStar(key);
+            }
+            if (kStar == -1) // no more transactions in any dest queue
+                break;
+        }
     }
 }
 
@@ -265,15 +288,20 @@ bool routerNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, si
     PaymentChannel *neighbor = &(nodeToPaymentChannel[nextNode]);
     int dest = transMsg->getReceiver();
     int amt = transMsg->getAmount();
+    Id thisTrans = make_tuple(transactionId, transMsg->getHtlcIndex());
 
     if (neighbor->balance <= 0 || transMsg->getAmount() > neighbor->balance){
+        return false;
+    }
+    else if (neighbor->incomingTransUnits.count(thisTrans) > 0) {
+        // don't cause cycles
         return false;
     }
     else {
         //append next node to the route of the routerMsg
         vector<int> newRoute = msg->getRoute();
         newRoute.push_back(nextNode);
-        transToNextHop[transactionId] = nextNode;
+        transToNextHop[transactionId].push_back(nextNode);
         msg->setRoute(newRoute);
 
         //decrement the local view of total amount in queue to the destination
@@ -303,5 +331,4 @@ void routerNodeCeler::setPaymentChannelBalanceByNode(int node, double amt){
        if (addedFunds){
            celerProcessTransactions(node);
        }
-
 }

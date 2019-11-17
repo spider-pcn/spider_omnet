@@ -261,8 +261,9 @@ void routerNodeBase::finish(){
  *  given an adjacent node, and TransUnit queue of things to send to that node, sends
  *  TransUnits until channel funds are too low
  *  calls forwardTransactionMessage on every individual TransUnit
+ *  returns true when it still can continue processing more transactions
  */
-void routerNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
+bool routerNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
     bool successful = true;
     while ((int)q.size() > 0 && successful) {
         pop_heap(q.begin(), q.end(), _schedulingAlgorithm);
@@ -271,11 +272,12 @@ void routerNodeBase:: processTransUnits(int dest, vector<tuple<int, double , rou
             q.pop_back();
         }
     }
+    return successful;
 }
 
 
-/* helper method to delete the messages in any payment channel queues at the end 
- * of the experiment 
+/* helper method to delete the messages in any payment channel queues 
+ * and per dest queues at the end of the experiment 
  */
 void routerNodeBase::deleteMessagesInQueues(){
     for (auto iter = nodeToPaymentChannel.begin(); iter!=nodeToPaymentChannel.end(); iter++){
