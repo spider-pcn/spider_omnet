@@ -247,7 +247,7 @@ simsignal_t hostNodeBase::registerSignalPerChannelPerDest(string signalStart, in
         sprintf(signalName, "%s_%d(host %d)", signalPrefix.c_str(), destNode, chnlEndNode);
     } else{
         sprintf(signalName, "%s_%d(router %d [%d] )", signalPrefix.c_str(),
-             destNode, chnlEndNode, chnlEndNode - _numHostNodes);
+             destNode, chnlEndNode - _numHostNodes, chnlEndNode);
     }
     simsignal_t signal = registerSignal(signalName);
     cProperty *statisticTemplate = getProperties()->get("statisticTemplate",
@@ -1305,6 +1305,7 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
  * queues
  */
 void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
+    double waitTime = max(_maxTravelTime, 1.0);
     //reschedule for the next interval
     if (simTime() > _simulationLength){
         delete ttmsg;
@@ -1321,7 +1322,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
         int destNode = get<4>(*it);
         
         // if grace period has passed
-        if (simTime() > (msgArrivalTime + _maxTravelTime)){
+        if (simTime() > (msgArrivalTime + waitTime)){
             // remove from queue to next node
             if (nextNode != -1){   
                 vector<tuple<int, double, routerMsg*, Id, simtime_t>>* queuedTransUnits = 

@@ -18,13 +18,14 @@ class routerNodeCeler : public routerNodeBase {
         // message handlers
         virtual void handleStatMessage(routerMsg *msg) override;
         virtual void handleTimeOutMessage(routerMsg *msg) override;
+        virtual void handleClearStateMessage(routerMsg *msg) override; 
         virtual void handleTransactionMessage(routerMsg *msg) override; 
         virtual void handleAckMessage(routerMsg *msg) override;
 
         // helper functions
         virtual void appendNextHopToTimeOutMessage(routerMsg* ttmsg, int nextNode);
         virtual void celerProcessTransactions(int endLinkNode = -1);
-        virtual int findKStar(int endLinkNode);
+        virtual int findKStar(int endLinkNode, unordered_set<int> exclude);
         virtual double calculateCPI(int destNode, int neighborNode);
         virtual void setPaymentChannelBalanceByNode(int node, double balance) override;
         virtual bool forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) override; 

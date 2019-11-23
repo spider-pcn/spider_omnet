@@ -133,7 +133,12 @@ parser.add_argument('--bank',
 parser.add_argument('--cpi',
         action='store_true',
         help='Plot the cpi weights per channel per destination')
-
+parser.add_argument('--perDestQueue',
+        action='store_true',
+        help='Plot the size of the per dest queue at every intermediary celer router')
+parser.add_argument('--kStar',
+        action='store_true',
+        help='Plot celer kstar destination on every payment channel')
 
 parser.add_argument('--save',
         type=str,
@@ -163,7 +168,6 @@ def aggregate_info_per_node(all_timeseries, vec_id_to_info_map, signal_type, is_
         vector_details = vec_id_to_info_map[vec_id]
         src_node = vector_details[0]
         src_node_type = vector_details[1]
-        src_node_key = (src_node * -1, src_node)[src_node_type == "host"]
         dest_node_type = vector_details[4]
         dest_node = vector_details[3]
                 
@@ -216,7 +220,8 @@ def aggregate_info_per_node(all_timeseries, vec_id_to_info_map, signal_type, is_
             # the stats so far have been separated per channel and the udnerscore denotes the dest
             channel_node = dest_node
             channel_node_type = dest_node_type
-            channel_node_key = (channel_node, channel_node*-1)[channel_node_type == "host" and channel_node != 10000]
+            channel_node_key = (channel_node, channel_node*-1)[channel_node_type == "host" and \
+                    channel_node != 10000 and not is_both]
             
             dest_node = int(signal_name.split("_")[1])
             cur_info = node_signal_info.get(src_node, dict())
@@ -588,6 +593,10 @@ def plot_per_payment_channel_stats(args, text_to_add):
                     True, is_both=True)
             plot_relevant_stats(data_to_plot, pdf, "Bank")
 
+        if args.kStar:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "kStar", \
+                    True, is_both=True)
+            plot_relevant_stats(data_to_plot, pdf, "kstar")
 
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
             os.path.basename(args.save) + "_per_channel_info.pdf"
@@ -696,6 +705,11 @@ def plot_per_src_dest_stats(args, text_to_add):
         if args.numCompleted:
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "rateCompleted", False)
             plot_relevant_stats(data_to_plot, pdf, "number of txns completed")
+
+        if args.perDestQueue:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "destQueue", \
+                    True, is_both=True)
+            plot_relevant_stats(data_to_plot, pdf, "Per destination queue sizes")
 
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
             os.path.basename(args.save) + "_per_src_dest_stats.pdf"

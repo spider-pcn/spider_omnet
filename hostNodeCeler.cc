@@ -69,14 +69,15 @@ void hostNodeCeler::handleStatMessage(routerMsg* ttmsg){
         for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
             int node = it->first; //key
             PaymentChannel* p = &(nodeToPaymentChannel[node]);
-            emit(p->kStarSignal, findKStar(node));
+            unordered_set<int> exclude;
+            emit(p->kStarSignal, findKStar(node, exclude));
 
             for (auto destNode = 0; destNode < _numHostNodes; destNode++){
                 emit(p->destToCPISignal[destNode], p->destToCPIValue[destNode]);
             }
         }
         for (auto destNode = 0; destNode < _numHostNodes; destNode++) {
-            if (destNode != myIndex()) {
+            if (_destList[myIndex()].count(destNode) > 0) {
                 DestNodeStruct *destNodeInfo = &(nodeToDestNodeStruct[destNode]);
                 emit(destNodeInfo->destQueueSignal, destNodeInfo->totalAmtInQueue);
             }
@@ -116,32 +117,33 @@ void hostNodeCeler::handleTimeOutMessage(routerMsg* ttmsg) {
            { return get<0>(get<3>(p)) == transactionId; });
 
         if (iter != transList->end()) {
+            double amount = get<1>(*iter);
             deleteTransaction(get<2>(*iter));
             transList->erase(iter);
-            ttmsg->decapsulate();
-            delete toutMsg;
-            delete ttmsg;
             push_heap((*transList).begin(), (*transList).end(), _schedulingAlgorithm);
-            return;
+            nodeToDestNodeStruct[destination].totalAmtInQueue -= amount;
+            _nodeToDebtQueue[myIndex()][destination] -= amount;
         }
 
+        int nextNode = -1;
         if (transToNextHop.count(transactionId) > 0) {
-            int nextNode = transToNextHop[transactionId];
+            nextNode = transToNextHop[transactionId];
             vector<int> twoHopRoute;
             twoHopRoute.push_back(myIndex());
             twoHopRoute.push_back(nextNode);
             routerMsg* ctMsg = generateTimeOutMessageForPath(
                    twoHopRoute, transactionId, destination);
-            CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
-                    simTime(), -1, nextNode, destination);
-            canceledTransactions.insert(ct);
             forwardMessage(ctMsg);
             transToNextHop.erase(transactionId);
         }
+    
+        CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
+        simTime(), -1, nextNode, destination);
+        canceledTransactions.insert(ct);
+
         ttmsg->decapsulate();
         delete toutMsg;
         delete ttmsg;
-
     }
     else {
         // at the receiver
@@ -297,15 +299,17 @@ void hostNodeCeler::pushIntoPerDestQueue(routerMsg* rMsg, int destNode) {
  * otherwise use any payment channel to send out transactions
  */
 void hostNodeCeler::celerProcessTransactions(int neighborNode){
+    unordered_set<int> exclude;
     // -1 denotes you can send on any of the links and not a particualr one
     if (neighborNode != -1){ 
-        int kStar = findKStar(neighborNode);
+        int kStar = findKStar(neighborNode, exclude);
         while (kStar >= 0){
             vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q;
             q = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
             if (!processTransUnits(neighborNode, *q))
                 break;
-            kStar = findKStar(neighborNode);
+            exclude.insert(kStar);
+            kStar = findKStar(neighborNode, exclude);
         }
     }
     else{
@@ -329,13 +333,14 @@ void hostNodeCeler::celerProcessTransactions(int neighborNode){
             // destNode queue to use as q*, and send as much as possible to that dest
             // if no more transactions left, keep finding the next kStar for that channel
             // until it is exhausted or no more transactions in any dest queue
-            int kStar = findKStar(key);
+            int kStar = findKStar(key, exclude);
             while (kStar >= 0) {
                 vector<tuple<int, double, routerMsg *, Id, simtime_t>> *k;
                 k = &(nodeToDestNodeStruct[kStar].queuedTransUnits);
-                if (!processTransUnits(key, *k)) // cannot send more on this channel - balance or Head of line blocking
-                   break; 
-                kStar = findKStar(key);
+                if (!processTransUnits(key, *k)) 
+                    break; 
+                exclude.insert(kStar); // ignore this dest because queue is empty
+                kStar = findKStar(key, exclude);
             }
             if (kStar == -1) // no more transactions in any dest queue
                 break;
@@ -347,12 +352,11 @@ void hostNodeCeler::celerProcessTransactions(int neighborNode){
 /* helper function to find the destination that has the maximum CPI weight for the 
  * payment channel with passed in neighbor node so that you process its transactions next
  */
-int hostNodeCeler::findKStar(int neighborNode){
+int hostNodeCeler::findKStar(int neighborNode, unordered_set<int> exclude){
     int destNode = -1;
     int highestCPI = -10000000;
     for (int i = 0; i < _numHostNodes; ++i) { //initialize debt queues map
-        if (nodeToDestNodeStruct[i].queuedTransUnits.size() > 0){
-            cout << " positive queue for " << i << " at " << myIndex() << endl;
+        if (nodeToDestNodeStruct.count(i) > 0 && exclude.count(i) == 0){
             double CPI = calculateCPI(i, neighborNode); //calculateCPI(destNode, neighbor)
             if (destNode == -1 || (CPI > highestCPI)){
                 destNode = i;
