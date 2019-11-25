@@ -264,15 +264,15 @@ void routerNodeBase::finish(){
  *  returns true when it still can continue processing more transactions
  */
 bool routerNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
-    bool successful = true;
-    while ((int)q.size() > 0 && successful) {
+    int successful = true;
+    while ((int)q.size() > 0 && successful == 1) {
         pop_heap(q.begin(), q.end(), _schedulingAlgorithm);
         successful = forwardTransactionMessage(get<2>(q.back()), dest, get<4>(q.back()));
-        if (successful){
+        if (successful == 1){
             q.pop_back();
         }
     }
-    return successful;
+    return (successful != 0); // anything other than balance exhausted implies you can go on
 }
 
 
@@ -458,7 +458,7 @@ void routerNodeBase::forwardMessage(routerMsg* msg){
  *  adjusts (decrements) channel balance, sends message to next node on route
  *  as long as it isn't cancelled
  */
-bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) {
+int routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
     int nextDest = msg->getRoute()[msg->getHopCount()+1];
     int transactionId = transMsg->getTransactionId();
@@ -474,11 +474,11 @@ bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime
         delete transMsg;
         delete msg;
         neighbor->totalAmtInQueue -= amt;
-        return true;
+        return 1;
     }
 
     if (neighbor->balance <= 0 || transMsg->getAmount() > neighbor->balance){
-        return false;
+        return 0;
     }
     else {
         // update state to send transaction out
@@ -508,7 +508,7 @@ bool routerNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime
 
         if (_loggingEnabled) cout << "forwardTransactionMsg send: " << simTime() << endl;
         send(msg, nodeToPaymentChannel[nextDest].gate);
-        return true;
+        return 1;
     } 
 }
 
@@ -662,7 +662,7 @@ void routerNodeBase::handleTransactionMessage(routerMsg* ttmsg) {
 
     // if balance is insufficient at the first node, return failure ack
     if (_hasQueueCapacity && _queueCapacity == 0) {
-        if (forwardTransactionMessage(ttmsg, nextNode, simTime()) == false) {
+        if (forwardTransactionMessage(ttmsg, nextNode, simTime()) == 0) {
             routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
             handleAckMessage(failedAckMsg);
         }

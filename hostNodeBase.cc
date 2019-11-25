@@ -799,7 +799,7 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
 
         // if there is insufficient balance at the first node, return failure
         if (_hasQueueCapacity && _queueCapacity == 0) {
-            if (forwardTransactionMessage(ttmsg, destNode, simTime()) == false) {
+            if (forwardTransactionMessage(ttmsg, destNode, simTime()) == 0) {
                 routerMsg * failedAckMsg = generateAckMessage(ttmsg, false);
                 handleAckMessage(failedAckMsg);
             }
@@ -1414,7 +1414,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
  *  adjusts (decrements) channel balance, sends message to next node on route
  *  as long as it isn't cancelled
  */
-bool hostNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) {
+int hostNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
     int nextDest = msg->getRoute()[msg->getHopCount()+1];
     int transactionId = transMsg->getTransactionId();
@@ -1808,15 +1808,15 @@ void hostNodeBase::finish() {
  *  returns true when it still can continue processing more transactions
  */
 bool hostNodeBase:: processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
-    bool successful = true;
-    while ((int)q.size() > 0 && successful) {
+    int successful = true;
+    while ((int)q.size() > 0 && successful == 1) {
         pop_heap(q.begin(), q.end(), _schedulingAlgorithm);
         successful = forwardTransactionMessage(get<2>(q.back()), dest, get<4>(q.back()));
-        if (successful){
+        if (successful == 1){
             q.pop_back();
         }
     }
-    return successful;
+    return (successful != 0); // anything other than balance exhausted implies you can go on
 }
 
 

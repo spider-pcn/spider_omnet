@@ -28,7 +28,7 @@ class hostNodeCeler : public hostNodeBase {
         virtual void celerProcessTransactions(int endLinkNode = -1);
         virtual double calculateCPI(int destNode, int neighborNode);
         virtual int findKStar(int endLinkNode, unordered_set<int> exclude); // find k* for each paymen channel
-        virtual bool forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) override; 
+        virtual int forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) override; 
         virtual void setPaymentChannelBalanceByNode(int node, double balance) override;
 
 

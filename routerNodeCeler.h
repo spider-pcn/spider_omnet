@@ -28,6 +28,6 @@ class routerNodeCeler : public routerNodeBase {
         virtual int findKStar(int endLinkNode, unordered_set<int> exclude);
         virtual double calculateCPI(int destNode, int neighborNode);
         virtual void setPaymentChannelBalanceByNode(int node, double balance) override;
-        virtual bool forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) override; 
+        virtual int forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) override; 
 };
 #endif

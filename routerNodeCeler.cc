@@ -312,7 +312,7 @@ double routerNodeCeler::calculateCPI(int destNode, int neighborNode){
 /* updates debt queue information (removing from it) before performing the regular
  * routine of forwarding a transction only if there's balance on the payment channel
  */
-bool routerNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, simtime_t arrivalTime) {
+int routerNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, simtime_t arrivalTime) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
     int transactionId = transMsg->getTransactionId();
     PaymentChannel *neighbor = &(nodeToPaymentChannel[nextNode]);
@@ -321,11 +321,11 @@ bool routerNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, si
     Id thisTrans = make_tuple(transactionId, transMsg->getHtlcIndex());
 
     if (neighbor->balance <= 0 || transMsg->getAmount() > neighbor->balance){
-        return false;
+        return 0;
     }
     else if (neighbor->incomingTransUnits.count(thisTrans) > 0) {
         // don't cause cycles
-        return false;
+        return -1;
     }
     else {
         // if cancelled, remove it from queue calculations 
@@ -351,7 +351,7 @@ bool routerNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, si
 
         return routerNodeBase::forwardTransactionMessage(msg, nextNode, arrivalTime);
     }
-    return true;
+    return 1;
 }
 
 

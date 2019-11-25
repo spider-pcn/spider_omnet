@@ -157,7 +157,7 @@ class hostNodeBase : public cSimpleModule {
         virtual void handleClearStateMessage(routerMsg *msg);
         
         // message forwarders
-        virtual bool forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime);
+        virtual int forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime);
         virtual void forwardMessage(routerMsg *msg);
 
         // core simulator functions

@@ -67,7 +67,7 @@ class routerNodeBase : public cSimpleModule
 
         // message forwarders
         virtual void forwardMessage(routerMsg *msg);
-        virtual bool forwardTransactionMessage(routerMsg *msg, int dest, simtime_t);
+        virtual int forwardTransactionMessage(routerMsg *msg, int dest, simtime_t);
 
         // message handlers
         virtual void handleMessage(cMessage *msg) override;

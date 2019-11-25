@@ -357,7 +357,7 @@ int hostNodeCeler::findKStar(int neighborNode, unordered_set<int> exclude){
     int highestCPI = -10000000;
     for (int i = 0; i < _numHostNodes; ++i) { //initialize debt queues map
         if (nodeToDestNodeStruct.count(i) > 0 && exclude.count(i) == 0){
-            double CPI = calculateCPI(i, neighborNode); //calculateCPI(destNode, neighbor)
+            double CPI = calculateCPI(i, neighborNode);
             if (destNode == -1 || (CPI > highestCPI)){
                 destNode = i;
                 highestCPI = CPI;
@@ -377,7 +377,6 @@ double hostNodeCeler::calculateCPI(int destNode, int neighborNode){
     double Q_ik = _nodeToDebtQueue[myIndex()][destNode];
     double Q_jk = _nodeToDebtQueue[neighborNode][destNode];
 
-
     double W_ijk = Q_ik - Q_jk + _celerBeta*channelImbalance;
     neighbor->destToCPIValue[destNode] = W_ijk;
     return W_ijk;
@@ -386,7 +385,7 @@ double hostNodeCeler::calculateCPI(int destNode, int neighborNode){
 /* updates debt queue information (removing from it) before performing the regular
  * routine of forwarding a transction only if there's balance on the payment channel
  */
-bool hostNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, simtime_t arrivalTime) {
+int hostNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, simtime_t arrivalTime) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
     int transactionId = transMsg->getTransactionId();
     PaymentChannel *neighbor = &(nodeToPaymentChannel[nextNode]);
@@ -395,11 +394,11 @@ bool hostNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, simt
     Id thisTrans = make_tuple(transactionId, transMsg->getHtlcIndex());
 
     if (neighbor->balance <= 0 || transMsg->getAmount() > neighbor->balance){
-        return false;
+        return 0;
     }
     else if (neighbor->incomingTransUnits.count(thisTrans) > 0) {
         // don't cause cycles
-        return false;
+        return -1;
     }
     else {
         //append next destination to the route of the routerMsg
@@ -418,7 +417,7 @@ bool hostNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, simt
 
         return hostNodeBase::forwardTransactionMessage(msg, nextNode, arrivalTime);
     }
-    return true;
+    return 1;
 }
 
 /* set balance of a payment channel to the passed in amount and if funds were added process
