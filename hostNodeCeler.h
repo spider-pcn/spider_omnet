@@ -19,6 +19,7 @@ class hostNodeCeler : public hostNodeBase {
 
         // message handlers
         virtual void handleStatMessage(routerMsg *msg) override;
+        virtual void handleClearStateMessage(routerMsg *msg) override;
         virtual void handleTimeOutMessage(routerMsg *msg) override;
         virtual void handleTransactionMessageSpecialized(routerMsg *msg) override; 
         virtual void handleAckMessageSpecialized(routerMsg *msg) override; 

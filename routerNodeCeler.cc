@@ -97,9 +97,17 @@ void routerNodeCeler::handleTimeOutMessage(routerMsg* ttmsg) {
         appendNextHopToTimeOutMessage(ttmsg, nextNode);
         forwardMessage(ttmsg);
     }
-    CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
-    simTime(), prevNode, nextNode, destination);
-    canceledTransactions.insert(ct);
+    if (nextNode == -1)     
+        updateMaxTravelTime(ttmsg->getRoute());
+
+    auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+    if (iter == canceledTransactions.end() ){
+        CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
+        simTime(), prevNode, nextNode, destination);
+        canceledTransactions.insert(ct);
+    } else {
+        get<1>(*iter) == simTime();
+    }
     
     if (nextNode == -1) {
         ttmsg->decapsulate();
@@ -113,35 +121,88 @@ void routerNodeCeler::handleTimeOutMessage(routerMsg* ttmsg) {
  * from per dest queues 
  */
 void routerNodeCeler::handleClearStateMessage(routerMsg* ttmsg) {
-     double waitTime = max(_maxTravelTime, 1.0);
-     for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); ++it) {       
-        int transactionId = get<0>(*it);
-        simtime_t msgArrivalTime = get<1>(*it);
-        int prevNode = get<2>(*it);
-        int nextNode = get<3>(*it);
-        int destNode = get<4>(*it);
-        vector<tuple<int, double, routerMsg*,  Id, simtime_t >> *transList = 
-        &(nodeToDestNodeStruct[destNode].queuedTransUnits);
-        
-        // if grace period has passed
-        if (simTime() > (msgArrivalTime + waitTime)){  
-            // check if txn is still in just sender queue, just delete and return then
-            auto iter = find_if(transList->begin(),
-                transList->end(),
-                [&transactionId](tuple<int, double, routerMsg*,  Id, simtime_t> p)
-                { return get<0>(get<3>(p)) == transactionId; });
+    //reschedule for the next interval
+    if (simTime() > _simulationLength){
+        delete ttmsg;
+    }
+    else{
+        scheduleAt(simTime()+_clearRate, ttmsg);
+    }
 
-            if (iter != transList->end()) {
-                deleteTransaction(get<2>(*iter));
-                double amount = get<1>(*iter);
-                transList->erase(iter);
-                make_heap((*transList).begin(), (*transList).end(), _schedulingAlgorithm);
-                nodeToDestNodeStruct[destNode].totalAmtInQueue -= amount;
-                _nodeToDebtQueue[myIndex()][destNode] -= amount;
-            }
-        }
-     }
-     routerNodeBase::handleClearStateMessage(ttmsg);
+    for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); ) {       
+       int transactionId = get<0>(*it);
+       simtime_t msgArrivalTime = get<1>(*it);
+       int prevNode = get<2>(*it);
+       int nextNode = get<3>(*it);
+       int destNode = get<4>(*it);
+       vector<tuple<int, double, routerMsg*,  Id, simtime_t >> *transList = 
+       &(nodeToDestNodeStruct[destNode].queuedTransUnits);
+       
+       // if grace period has passed
+       if (simTime() > msgArrivalTime + _maxTravelTime){  
+           // check if txn is still in just sender queue, just delete and return then
+           auto iter = find_if(transList->begin(),
+               transList->end(),
+               [&transactionId](tuple<int, double, routerMsg*,  Id, simtime_t> p)
+               { return get<0>(get<3>(p)) == transactionId; });
+
+           if (iter != transList->end()) {
+               deleteTransaction(get<2>(*iter));
+               double amount = get<1>(*iter);
+               transList->erase(iter);
+               make_heap((*transList).begin(), (*transList).end(), _schedulingAlgorithm);
+               nodeToDestNodeStruct[destNode].totalAmtInQueue -= amount;
+               _nodeToDebtQueue[myIndex()][destNode] -= amount;
+           }
+           
+           // go through all payment channels and remove from incoming and outgoing if present
+           for (auto pIt = nodeToPaymentChannel.begin(); pIt != nodeToPaymentChannel.end(); ++pIt) {
+               PaymentChannel* channel  = &(pIt->second);
+               unordered_map<Id, double, hashId> *incomingTransUnits = 
+                   &(channel->incomingTransUnits);
+               auto iterIncoming = find_if((*incomingTransUnits).begin(),
+                 (*incomingTransUnits).end(),
+                 [&transactionId](const pair<tuple<int, int >, double> & p)
+                 { return get<0>(p.first) == transactionId; });
+               
+               if (iterIncoming != (*incomingTransUnits).end()){
+                   channel->totalAmtIncomingInflight -= iterIncoming->second;
+                   iterIncoming = (*incomingTransUnits).erase(iterIncoming);
+               }
+           }
+       }
+               
+       // remove from outgoing transUnits if present
+       if (simTime() > msgArrivalTime + _maxTravelTime + _maxOneHopDelay){  
+           for (auto pIt = nodeToPaymentChannel.begin(); pIt != nodeToPaymentChannel.end(); ++pIt) {
+               PaymentChannel* channel  = &(pIt->second);
+               unordered_map<Id, double, hashId> *outgoingTransUnits = 
+                   &(channel->outgoingTransUnits);
+               
+               auto iterOutgoing = find_if((*outgoingTransUnits).begin(),
+                 (*outgoingTransUnits).end(),
+                 [&transactionId](const pair<tuple<int, int >, double> &q)
+                 { return get<0>(q.first) == transactionId; });
+               
+               if (iterOutgoing != (*outgoingTransUnits).end()){
+                   double amount = iterOutgoing->second;
+                   channel->totalAmtOutgoingInflight -= amount;
+                   iterOutgoing = (*outgoingTransUnits).erase(iterOutgoing);
+                   
+                   double updatedBalance = channel->balance + amount;
+                   setPaymentChannelBalanceByNode(pIt->first, updatedBalance);
+                   channel->balanceEWMA = (1 -_ewmaFactor) * channel->balanceEWMA + 
+                       (_ewmaFactor) * updatedBalance;
+               }
+           }
+           
+           // all done, can remove txn and update stats
+           it = canceledTransactions.erase(it);
+       }
+       else{
+           it++;
+       }
+    }
 }
 
 /* main routine for handling transaction messages for celer
@@ -249,6 +310,7 @@ void routerNodeCeler::celerProcessTransactions(int neighborNode){
            }
         }
         while (true){
+            exclude.clear();
             if (positiveKey.size() == 0)
                break;
             
@@ -323,8 +385,10 @@ int routerNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, sim
     if (neighbor->balance <= 0 || transMsg->getAmount() > neighbor->balance){
         return 0;
     }
-    else if (neighbor->incomingTransUnits.count(thisTrans) > 0) {
-        // don't cause cycles
+    else if (neighbor->incomingTransUnits.count(thisTrans) > 0 ||
+            neighbor->outgoingTransUnits.count(thisTrans) > 0 || 
+            (nextNode < _numHostNodes && nextNode != dest)) {
+        // don't cause cycles, don't send to end host that's not destination
         return -1;
     }
     else {
@@ -348,7 +412,6 @@ int routerNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, sim
 
         //increment statAmtSent for channel in-balance calculations
         neighbor->statAmtSent+=  transMsg->getAmount();
-
         return routerNodeBase::forwardTransactionMessage(msg, nextNode, arrivalTime);
     }
     return 1;

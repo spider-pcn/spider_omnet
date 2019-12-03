@@ -278,6 +278,8 @@ void updateMaxTravelTime(vector<int> route){
                 [&nextNode](const pair<int, int>& element){ return element.first == nextNode;} );
         if (it != (*channel).end()){
             double deltaTime = it->second;
+            if (deltaTime > _maxOneHopDelay)
+                _maxOneHopDelay = deltaTime/1000;
             maxTime = maxTime + deltaTime;
         }
         else{

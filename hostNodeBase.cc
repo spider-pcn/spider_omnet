@@ -15,6 +15,7 @@ int _numNodes;
 int _numRouterNodes;
 int _numHostNodes;
 double _maxTravelTime;
+double _maxOneHopDelay;
 double _statRate;
 double _clearRate;
 int _kValue;
@@ -1305,7 +1306,6 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
  * queues
  */
 void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
-    double waitTime = max(_maxTravelTime, 1.0);
     //reschedule for the next interval
     if (simTime() > _simulationLength){
         delete ttmsg;
@@ -1322,7 +1322,7 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
         int destNode = get<4>(*it);
         
         // if grace period has passed
-        if (simTime() > (msgArrivalTime + waitTime)){
+        if (simTime() > (msgArrivalTime + _maxTravelTime)){
             // remove from queue to next node
             if (nextNode != -1){   
                 vector<tuple<int, double, routerMsg*, Id, simtime_t>>* queuedTransUnits = 
@@ -1345,11 +1345,6 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                     iterQueue = (*queuedTransUnits).erase(iterQueue);
                     delete tMsg;
                     delete rMsg;
-                    
-                    /*iterQueue = find_if((*queuedTransUnits).begin(),
-                     (*queuedTransUnits).end(),
-                     [&transactionId](const tuple<int, double, routerMsg*, Id, simtime_t>& p)
-                     { return (get<0>(get<3>(p)) == transactionId); });*/
                 }
                 
                 // resort the queue based on priority
@@ -1371,8 +1366,10 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                     iterIncoming = (*incomingTransUnits).erase(iterIncoming);
                 }
             }
+        }
 
-            // remove from outgoing transUnits to nextNode and restore balance on own end
+        // remove from outgoing transUnits to nextNode and restore balance on own end
+        if (simTime() > (msgArrivalTime + _maxTravelTime + _maxOneHopDelay)){
             if (nextNode != -1){
                 unordered_map<tuple<int,int>, double, hashId> *outgoingTransUnits = 
                     &(nodeToPaymentChannel[nextNode].outgoingTransUnits);

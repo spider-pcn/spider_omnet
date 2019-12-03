@@ -88,6 +88,41 @@ void hostNodeCeler::handleStatMessage(routerMsg* ttmsg){
     hostNodeBase::handleStatMessage(ttmsg);
 }
 
+/* handler for clearing state associated with timed out transaction
+ * from per dest queues 
+ */
+void hostNodeCeler::handleClearStateMessage(routerMsg* ttmsg) {
+     for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); ++it) {       
+        int transactionId = get<0>(*it);
+        simtime_t msgArrivalTime = get<1>(*it);
+        int prevNode = get<2>(*it);
+        int nextNode = get<3>(*it);
+        int destNode = get<4>(*it);
+        vector<tuple<int, double, routerMsg*,  Id, simtime_t >> *transList = 
+        &(nodeToDestNodeStruct[destNode].queuedTransUnits);
+        
+        // if grace period has passed
+        if (simTime() > (msgArrivalTime + _maxTravelTime)){  
+            // check if txn is still in just sender queue, just delete and return then
+            auto iter = find_if(transList->begin(),
+                transList->end(),
+                [&transactionId](tuple<int, double, routerMsg*,  Id, simtime_t> p)
+                { return get<0>(get<3>(p)) == transactionId; });
+
+            if (iter != transList->end()) {
+                deleteTransaction(get<2>(*iter));
+                double amount = get<1>(*iter);
+                transList->erase(iter);
+                make_heap((*transList).begin(), (*transList).end(), _schedulingAlgorithm);
+                nodeToDestNodeStruct[destNode].totalAmtInQueue -= amount;
+                _nodeToDebtQueue[myIndex()][destNode] -= amount;
+            }
+        }
+     }
+     hostNodeBase::handleClearStateMessage(ttmsg);
+}
+
+
 /* handler for timeout messages that is responsible for removing messages from 
  * per-dest queues if they haven't been sent yet and sends explicit time out messages
  * for messages that have been sent on a path already
@@ -238,7 +273,6 @@ void hostNodeCeler::handleAckMessageSpecialized(routerMsg* ttmsg) {
 
     // update max travel time
     updateMaxTravelTime(ttmsg->getRoute());
-    printVectorReverse(ttmsg->getRoute());
 
     // aggregate stats
     SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
@@ -396,11 +430,20 @@ int hostNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, simti
     if (neighbor->balance <= 0 || transMsg->getAmount() > neighbor->balance){
         return 0;
     }
-    else if (neighbor->incomingTransUnits.count(thisTrans) > 0) {
+    else if (neighbor->incomingTransUnits.count(thisTrans) > 0 || 
+            neighbor->outgoingTransUnits.count(thisTrans) > 0 ) {
         // don't cause cycles
         return -1;
     }
     else {
+        // if cancelled, remove it from queue calculations 
+        auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
+        if (iter != canceledTransactions.end()) {
+            nodeToDestNodeStruct[dest].totalAmtInQueue -= transMsg->getAmount();
+            _nodeToDebtQueue[myIndex()][dest] -= transMsg->getAmount();
+            return hostNodeBase::forwardTransactionMessage(msg, nextNode, arrivalTime);
+        }
+
         //append next destination to the route of the routerMsg
         vector<int> newRoute = msg->getRoute();
         if (newRoute.size() == 0) {
