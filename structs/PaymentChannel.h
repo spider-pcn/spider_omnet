@@ -87,8 +87,9 @@ public:
 
     //statistics - ones for per payment channel
     int statNumProcessed;
-    double statAmtSent = 0.0;
-    double statAmtReceived = 0.0;
+    double deltaAmtSent = 0.0; //used for celer network, reset with clear state message
+    double deltaAmtReceived = 0.0; //used for celer network, reset with clear state message
+    vector<double> channelInbalance = {}; //sliding window
     simsignal_t amtInQueuePerChannelSignal;
     simsignal_t balancePerChannelSignal;
     simsignal_t capacityPerChannelSignal;

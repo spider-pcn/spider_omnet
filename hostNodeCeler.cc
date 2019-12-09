@@ -92,6 +92,20 @@ void hostNodeCeler::handleStatMessage(routerMsg* ttmsg){
  * from per dest queues 
  */
 void hostNodeCeler::handleClearStateMessage(routerMsg* ttmsg) {
+
+
+    for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
+           PaymentChannel *p = &(it->second);
+           int id = it->first;
+           p->channelInbalance.push_back(p->deltaAmtReceived - p->deltaAmtSent);
+           p->deltaAmtReceived = 0;
+           p->deltaAmtSent = 0;
+           if (p->channelInbalance.size() > 5){ //TODO: tune constant for window size
+               p->channelInbalance.erase(p->channelInbalance.begin());
+           }
+
+      }
+
      for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); ++it) {       
         int transactionId = get<0>(*it);
         simtime_t msgArrivalTime = get<1>(*it);
@@ -207,7 +221,7 @@ void hostNodeCeler::handleTransactionMessageSpecialized(routerMsg* ttmsg){
         //if at destination, increment stats and generate ack
         int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
         PaymentChannel *prevNeighbor = &(nodeToPaymentChannel[prevNode]);
-        prevNeighbor->statAmtReceived += transMsg->getAmount();
+        prevNeighbor->deltaAmtReceived += transMsg->getAmount();
         handleTransactionMessage(ttmsg, false); 
     }
     else {
@@ -407,11 +421,13 @@ int hostNodeCeler::findKStar(int neighborNode, unordered_set<int> exclude){
 double hostNodeCeler::calculateCPI(int destNode, int neighborNode){
     PaymentChannel *neighbor = &(nodeToPaymentChannel[neighborNode]);
 
-    double channelImbalance = neighbor->statAmtReceived - neighbor->statAmtSent; //received - sent
+    double channelInbalance = 0;
+    accumulate(neighbor->channelInbalance.begin(), neighbor->channelInbalance.end(), channelInbalance);
+
     double Q_ik = _nodeToDebtQueue[myIndex()][destNode];
     double Q_jk = _nodeToDebtQueue[neighborNode][destNode];
 
-    double W_ijk = Q_ik - Q_jk + _celerBeta*channelImbalance;
+    double W_ijk = Q_ik - Q_jk + _celerBeta*channelInbalance;
     neighbor->destToCPIValue[destNode] = W_ijk;
     return W_ijk;
 }
@@ -456,7 +472,7 @@ int hostNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, simti
         //decrement debt queue stats and payment stats
         nodeToDestNodeStruct[dest].totalAmtInQueue -= transMsg->getAmount();
         _nodeToDebtQueue[myIndex()][dest] -= transMsg->getAmount();
-        neighbor->statAmtSent +=  transMsg->getAmount();
+        neighbor->deltaAmtSent +=  transMsg->getAmount();
 
         return hostNodeBase::forwardTransactionMessage(msg, nextNode, arrivalTime);
     }

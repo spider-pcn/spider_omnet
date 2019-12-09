@@ -10,6 +10,7 @@ class routerNodeCeler : public routerNodeBase {
     private:
         unordered_map<int, DestNodeStruct> nodeToDestNodeStruct;
         unordered_map<int, deque<int>> transToNextHop; 
+        unordered_set<int> adjacentHostNodes = {};
 
     protected:
         virtual void initialize() override; //initialize global debtQueues
