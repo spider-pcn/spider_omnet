@@ -374,7 +374,7 @@ int routerNodeCeler::findKStar(int neighborNode, unordered_set<int> exclude){
     int destNode = -1;
     int highestCPI = -1000000;
     for (int i = 0; i < _numHostNodes; ++i) { //initialize debt queues map
-        if (adjacentHostNodes.count(neighborNode) == 0 && nodeToDestNodeStruct.count(i) > 0 && exclude.count(i) == 0) {
+        if (adjacentHostNodes.count(i) == 0 && nodeToDestNodeStruct.count(i) > 0 && exclude.count(i) == 0) {
             double CPI = calculateCPI(i, neighborNode); 
             if (destNode == -1 || (CPI > highestCPI)){
                 destNode = i;
