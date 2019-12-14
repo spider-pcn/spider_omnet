@@ -8,10 +8,9 @@ void routerNodeCeler::initialize(){
 
     for (int i = 0; i < _numHostNodes; ++i) { 
         _nodeToDebtQueue[myIndex()][i] = 0;
+        nodeToDestNodeStruct[i].queueTimedOutSignal = registerSignalPerDest("queueTimedOut", i, "");
+            nodeToDestNodeStruct[i].destQueueSignal = registerSignalPerDest("destQueue", i, "");
     }
-
-
-
 
 
     for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
@@ -71,10 +70,10 @@ void routerNodeCeler::handleStatMessage(routerMsg* ttmsg){
         }
 
         for (auto destNode = 0; destNode < _numHostNodes; destNode++) {
-            if (nodeToDestNodeStruct.count(destNode) > 0) {
-                DestNodeStruct *destNodeInfo = &(nodeToDestNodeStruct[destNode]);
-                emit(destNodeInfo->destQueueSignal, destNodeInfo->totalAmtInQueue);
-            }
+            DestNodeStruct *destNodeInfo = &(nodeToDestNodeStruct[destNode]);
+            emit(destNodeInfo->queueTimedOutSignal, destNodeInfo->totalNumTimedOut);
+             // TODO: check that queue size matches amt in queue?
+            emit(destNodeInfo->destQueueSignal, destNodeInfo->totalAmtInQueue);
         }
     }
 
@@ -142,7 +141,8 @@ void routerNodeCeler::handleClearStateMessage(routerMsg* ttmsg) {
            PaymentChannel *p = &(it->second);
            int id = it->first;
            p->channelInbalance.push_back(p->deltaAmtReceived - p->deltaAmtSent);
-           p->deltaAmtReceived = 0;
+           emit(p->numSentPerChannelSignal, p->deltaAmtSent);
+	   p->deltaAmtReceived = 0;
            p->deltaAmtSent = 0;
            if (p->channelInbalance.size() > 5){ //TODO: tune constant for window size
                p->channelInbalance.erase(p->channelInbalance.begin());
@@ -175,6 +175,7 @@ void routerNodeCeler::handleClearStateMessage(routerMsg* ttmsg) {
                make_heap((*transList).begin(), (*transList).end(), _schedulingAlgorithm);
                nodeToDestNodeStruct[destNode].totalAmtInQueue -= amount;
                _nodeToDebtQueue[myIndex()][destNode] -= amount;
+               nodeToDestNodeStruct[destNode].totalNumTimedOut = nodeToDestNodeStruct[destNode].totalNumTimedOut + 1;
            }
            
            // go through all payment channels and remove from incoming and outgoing if present
@@ -257,9 +258,11 @@ void routerNodeCeler::handleTransactionMessage(routerMsg* ttmsg){
     nodeToPaymentChannel[prevNode].totalAmtIncomingInflight += transMsg->getAmount();
 
     //add transaction to appropriate queue (sorted based on dest node)
+    /*
     if (nodeToDestNodeStruct.count(destNode) == 0) {
         nodeToDestNodeStruct[destNode].destQueueSignal = registerSignalPerDest("destQueue", destNode, "");
-    } 
+    } */
+
     DestNodeStruct *destStruct = &(nodeToDestNodeStruct[destNode]);
     vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q = &(destStruct->queuedTransUnits);
     tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
@@ -288,7 +291,9 @@ void routerNodeCeler::handleAckMessage(routerMsg* ttmsg) {
         transToNextHop.erase(transactionId);
     if (aMsg->getIsSuccess()) {
         nodeToPaymentChannel[nextNode].deltaAmtReceived +=  aMsg->getAmount();
-    }
+        nodeToPaymentChannel[nextNode].totalAmtReceived +=  aMsg->getAmount();
+   
+ }
 
     routerNodeBase::handleAckMessage(ttmsg);
 }
@@ -441,7 +446,9 @@ int routerNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, sim
 
         //increment statAmtSent for channel in-balance calculations
         neighbor->deltaAmtSent+=  transMsg->getAmount();
-        return routerNodeBase::forwardTransactionMessage(msg, nextNode, arrivalTime);
+       neighbor->totalAmtSent+=  transMsg->getAmount();
+     
+       return routerNodeBase::forwardTransactionMessage(msg, nextNode, arrivalTime);
     }
     return 1;
 }

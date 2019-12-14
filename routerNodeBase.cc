@@ -185,7 +185,11 @@ void routerNodeBase::initialize()
             signal = registerSignalPerChannel("numInQueue", key);
             nodeToPaymentChannel[key].amtInQueuePerChannelSignal = signal;
 
-            signal = registerSignalPerChannel("balance", key);
+            signal = registerSignalPerChannel("numSent", key);
+            nodeToPaymentChannel[key].numSentPerChannelSignal = signal;
+
+
+	    signal = registerSignalPerChannel("balance", key);
             nodeToPaymentChannel[key].balancePerChannelSignal = signal;
 
             signal = registerSignalPerChannel("capacity", key);

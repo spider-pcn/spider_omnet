@@ -136,6 +136,9 @@ parser.add_argument('--cpi',
 parser.add_argument('--perDestQueue',
         action='store_true',
         help='Plot the size of the per dest queue at every intermediary celer router')
+parser.add_argument('--queueTimedOut',
+        action='store_true',
+        help='Plot the number timed out per destination queue at every router/host')
 parser.add_argument('--kStar',
         action='store_true',
         help='Plot celer kstar destination on every payment channel')
@@ -710,6 +713,14 @@ def plot_per_src_dest_stats(args, text_to_add):
             data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "destQueue", \
                     True, is_both=True)
             plot_relevant_stats(data_to_plot, pdf, "Per destination queue sizes")
+
+
+        if args.queueTimedOut:
+            data_to_plot = aggregate_info_per_node(all_timeseries, vec_id_to_info_map, "queueTimedOut", \
+                    True, is_both=True)
+            plot_relevant_stats(data_to_plot, pdf, "Per destination timed out in queue")
+
+
 
     print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
             os.path.basename(args.save) + "_per_src_dest_stats.pdf"

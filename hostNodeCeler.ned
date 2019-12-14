@@ -203,6 +203,10 @@ simple hostNodeCeler
 	
 		@signal[destQueuePerDest*](type="double"); 
 		@statisticTemplate[destQueuePerDestTemplate](record=vector, stats);
+		
+		@signal[queueTimedOutPerDest*](type="double"); 
+		@statisticTemplate[queueTimedOutPerDestTemplate](record=vector, stats);
+		
 
 		@signal[kStarPerChannel*](type="long"); 
 		@statisticTemplate[kStarPerChannelTemplate](record=vector, stats);	

@@ -89,6 +89,8 @@ public:
     int statNumProcessed;
     double deltaAmtSent = 0.0; //used for celer network, reset with clear state message
     double deltaAmtReceived = 0.0; //used for celer network, reset with clear state message
+    double totalAmtSent = 0.0;
+    double totalAmtReceived = 0.0;
     vector<double> channelInbalance = {}; //sliding window
     simsignal_t amtInQueuePerChannelSignal;
     simsignal_t balancePerChannelSignal;
@@ -96,7 +98,8 @@ public:
     simsignal_t numInflightPerChannelSignal;
     simsignal_t queueDelayEWMASignal;
     simsignal_t bankSignal;
-
+    simsignal_t numSentPerChannelSignal;
+    
     simsignal_t explicitRebalancingAmtPerChannelSignal;
     simsignal_t implicitRebalancingAmtPerChannelSignal;
 

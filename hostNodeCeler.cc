@@ -40,6 +40,7 @@ void hostNodeCeler::initialize(){
         if (_destList[myIndex()].count(i) > 0) {
             nodeToDestNodeStruct[i].destQueueSignal = registerSignalPerDest("destQueue", i, ""); 
         }
+        nodeToDestNodeStruct[i].queueTimedOutSignal = registerSignalPerDest("queueTimedOut", i, "");
     }
 }
 
@@ -77,8 +78,9 @@ void hostNodeCeler::handleStatMessage(routerMsg* ttmsg){
             }
         }
         for (auto destNode = 0; destNode < _numHostNodes; destNode++) {
+            DestNodeStruct *destNodeInfo = &(nodeToDestNodeStruct[destNode]);
+            emit(destNodeInfo->queueTimedOutSignal, destNodeInfo->totalNumTimedOut);
             if (_destList[myIndex()].count(destNode) > 0) {
-                DestNodeStruct *destNodeInfo = &(nodeToDestNodeStruct[destNode]);
                 emit(destNodeInfo->destQueueSignal, destNodeInfo->totalAmtInQueue);
             }
         }
@@ -129,6 +131,7 @@ void hostNodeCeler::handleClearStateMessage(routerMsg* ttmsg) {
                 transList->erase(iter);
                 make_heap((*transList).begin(), (*transList).end(), _schedulingAlgorithm);
                 nodeToDestNodeStruct[destNode].totalAmtInQueue -= amount;
+                nodeToDestNodeStruct[destNode].totalNumTimedOut = nodeToDestNodeStruct[destNode].totalNumTimedOut + 1;
                 _nodeToDebtQueue[myIndex()][destNode] -= amount;
             }
         }

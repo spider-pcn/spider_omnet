@@ -148,7 +148,7 @@ INTERESTING_SIGNALS["numTimedOutPerDest"] = ["numTimedOutPerDest"]
 
 per_dest_list = []
 for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", \
-        "fracSuccessful", "demandEstimate", "destQueue"]:
+        "fracSuccessful", "demandEstimate", "destQueue", "queueTimedOut"]:
     INTERESTING_SIGNALS[signal] = signal + "PerDest"
     per_dest_list.append(signal + "PerDest")
 per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", \

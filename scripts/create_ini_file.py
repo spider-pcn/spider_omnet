@@ -172,6 +172,7 @@ if args.capacityFactor != None:
     configname = configname + "_capacityFactorTimes10_" + str(int(float(args.capacityFactor)*10))
 
 print configname
+print "(create_ini_file.py) ini_filename:", args.ini_filename
 
 f = open(args.ini_filename, "w+")
 f.write("[General]\n\n")
