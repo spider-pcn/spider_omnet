@@ -107,14 +107,15 @@ void routerNodeCeler::handleTimeOutMessage(routerMsg* ttmsg) {
     if (nextNode == -1)     
         updateMaxTravelTime(ttmsg->getRoute());
 
+    // if there's an old entry, update with current time
+    // otherwise insert transactions into canceled trans list
     auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
-    if (iter == canceledTransactions.end() ){
-        CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
-        simTime(), prevNode, nextNode, destination);
-        canceledTransactions.insert(ct);
-    } else {
-        get<1>(*iter) == simTime();
-    }
+    if (iter != canceledTransactions.end()){
+        canceledTransactions.erase(iter);
+    } 
+    CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
+    simTime(), prevNode, nextNode, destination);
+    canceledTransactions.insert(ct);
     
     if (nextNode == -1) {
         ttmsg->decapsulate();
