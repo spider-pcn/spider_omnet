@@ -18,14 +18,14 @@ obliviousRoutingEnabled=false
 kspYenEnabled=false
 
 #general parameters that do not affect config names
-simulationLength=1010
-statCollectionRate=10
+simulationLength=610
+statCollectionRate=2
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-transStatStart=800
-transStatEnd=1000
+transStatStart=300
+transStatEnd=500
 mtu=1.0
 
 # scheme specific parameters
@@ -46,7 +46,7 @@ serviceArrivalWindow=300
 windowBeta=0.1
 windowAlpha=10
 queueThreshold=160
-queueDelayThreshold=300
+queueDelayThreshold=80
 balanceThreshold=0.1
 minDCTCPWindow=1
 rateDecreaseFrequency=3.0
@@ -67,29 +67,28 @@ if [ -z "$pathChoice" ]; then
 fi
 
 if [ -z "$schedulingAlgorithm" ]; then
-    schedulingAlgorithm="LIFO"
+    schedulingAlgorithm="FIFO"
 fi
 
-prefix="sw_50_routers"
-workload_prefix="sw_50_routers"
+prefix="sf_10_routers"
+workload_prefix="sf_10_routers"
 if [ -z "$capacity_type" ]; then
     random_capacity=false
     lnd_capacity=false
-    echo "uniform dist"
+    echo "constant capacity"
 elif [ $capacity_type == "random" ]; then
     random_capacity=true
-    prefix="sw_50_routers_randomCap"
+    prefix="sf_50_routers_randomCap"
     echo "normal dist"
 elif [ $capacity_type == "lnd" ]; then
     lnd_capacity=true
-    prefix="sw_50_routers_lndCap"
+    prefix="sf_50_routers_lndCap"
     echo "lnd_dist"
 fi
 
 echo $pathChoice
 
-#balance_scale=("100" "200" "400" "800" "1600" "3200") 
-balance_scale=("900" "1350" "2750" "4000" "8750") 
+balance_scale=("100" "200" "400") #800") 
 for num in {0..4}
 do
     echo "doing run $num"
@@ -97,9 +96,9 @@ do
     do
         network="${prefix}_circ_net"
         topofile="${PATH_NAME}${prefix}_topo${balance}.txt"
-        graph_type="small_world"
+        graph_type="scale_free"
         delay="30"
-        scale="3"
+        scale="10"
         
         # generate the graph first to ned file
         workloadname="${workload_prefix}_circ${num}_demand${scale}"
@@ -207,7 +206,7 @@ do
             # run the omnetexecutable with the right parameters
             # in the background
             ./spiderNet -u Cmdenv -f ${inifile} -c\
-            ${network}_${balance}_${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm} -n ${PATH_NAME}\
+            ${network}_${balance}_${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}  -n ${PATH_NAME}\
                 > ${output_file}.txt &
             pids+=($!)
             done
@@ -238,7 +237,7 @@ do
               --balance \
               --queue_info --timeouts --frac_completed \
               --inflight --timeouts_sender \
-              --waiting --bottlenecks --time_inflight --queue_delay
+              --waiting --bottlenecks --time_inflight --queue_delay 
         
 
         #routing schemes where number of path choices matter
@@ -253,7 +252,7 @@ do
                   --detail $signalsEnabled \
                   --vec_file ${vec_file_path} \
                   --sca_file ${sca_file_path} \
-                  --save ${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm} \
+                  --save ${graph_op_prefix}${routing_scheme}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}  \
                   --balance \
                   --queue_info --timeouts --frac_completed \
                   --frac_completed_window \
