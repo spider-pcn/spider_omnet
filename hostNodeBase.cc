@@ -1680,6 +1680,7 @@ void hostNodeBase::initialize() {
             statRateCompleted[i] = 0;
             statAmtCompleted[i] = 0;
             statNumCompleted[i] = 0;
+            statNumRetries[i] = 0;
 
             statRateAttempted[i] = 0;
             statAmtAttempted[i] = 0;
@@ -1742,6 +1743,11 @@ void hostNodeBase::finish() {
             recordScalar(buffer, statRateArrived[it]);
             sprintf(buffer, "amtArrived  %d -> %d", myIndex(), it);
             recordScalar(buffer, statAmtArrived[it]);
+
+            if (statNumRetries[it] > 0) {
+                sprintf(buffer, "numRetries %d -> %d", myIndex(), it);
+                recordScalar(buffer, statNumRetries[it]);
+            }
 
             sprintf(buffer, "completionTime %d -> %d ", myIndex(), it);
             recordScalar(buffer, statCompletionTimes[it]);

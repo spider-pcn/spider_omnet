@@ -378,6 +378,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
 
 
     if "weird" not in filename:
+        print "generting txns here"
         write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
             workload_type, total_time, log_normal, kaggle_size, txn_size_mean, timeout_value)
 

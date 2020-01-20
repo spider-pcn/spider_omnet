@@ -307,6 +307,10 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
             aMsg->decapsulate();
             hostNodeBase::handleAckMessage(msg);
             ttmsg->encapsulate(transMsg);
+            
+            if (transMsg->getTimeSent() >= _transStatStart && 
+                    transMsg->getTimeSent() <= _transStatEnd)
+                statNumRetries[destNode]++;
             handleTransactionMessage(ttmsg, true);
         }   
     }
