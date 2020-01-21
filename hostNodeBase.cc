@@ -271,6 +271,17 @@ simsignal_t hostNodeBase::registerSignalPerDest(string signalStart, int destNode
     return signal;
 }
 
+/* helper function to record the tail completion times for every algorithm
+ * called by each algorithm wheever it computes its completion time
+ */
+void hostNodeBase::recordTailCompletionTime(double completionTime){
+    if (statTailCompletionTimes.size() < maxPercentileHeapSize || completionTime > statTailCompletionTimes.top()) {
+        if (statTailCompletionTimes.size() == maxPercentileHeapSize) {
+            statTailCompletionTimes.pop();
+        }
+        statTailCompletionTimes.push(completionTime);
+    }
+}
 
 /****** MESSAGE GENERATORS **********/
 
@@ -1579,6 +1590,7 @@ void hostNodeBase::initialize() {
     setIndex(getIndex());
     maxPercentileHeapSize =  round(_numSplits[myIndex()].size() * _percentile);
     statNumTries.push(0);
+    statTailCompletionTimes.push(0);
     
     // Assign gates to all the payment channels
     const char * gateName = "out";
@@ -1758,6 +1770,14 @@ void hostNodeBase::finish() {
         sprintf(buffer, "retries top percentile %d ", myIndex());
         recordScalar(buffer, statNumTries.top());
         statNumTries.pop();
+    }
+
+    // print all the PQ items for tail completion times 
+    while (!statTailCompletionTimes.empty()) {
+        char buffer[350];
+        sprintf(buffer, "completion times top percentile %d ", myIndex());
+        recordScalar(buffer, statTailCompletionTimes.top());
+        statTailCompletionTimes.pop();
     }
 
     if (myIndex() == 0) {

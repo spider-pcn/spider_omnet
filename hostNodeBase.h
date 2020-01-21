@@ -51,6 +51,7 @@ class hostNodeBase : public cSimpleModule {
         unordered_map<int, double> statProbabilities = {};
         unordered_map<int, double> statCompletionTimes = {};
         priority_queue<double, vector<double>, greater<double>> statNumTries;
+        priority_queue<double, vector<double>, greater<double>> statTailCompletionTimes;
         double maxPercentileHeapSize;
         int numCleared = 0;
 
@@ -118,6 +119,7 @@ class hostNodeBase : public cSimpleModule {
         virtual simsignal_t registerSignalPerChannel(string signalStart, int id);
         virtual simsignal_t registerSignalPerDest(string signalStart, int destNode, 
                 string suffix);
+        virtual void recordTailCompletionTime(double completionTime);
 
         // generators for the standard messages
         virtual routerMsg* generateTransactionMessageForPath(double amt, 

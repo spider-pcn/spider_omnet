@@ -245,6 +245,7 @@ void hostNodeLandmarkRouting::handleAckMessageSpecialized(routerMsg* ttmsg) {
                     SplitState* splitInfo = &(_numSplits[myIndex()][aMsg->getLargerTxnId()]);
                     double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                     statCompletionTimes[receiver] += timeTaken * 1000;
+                    recordTailCompletionTime(timeTaken * 1000);
                 }
                 statNumCompleted[receiver] += 1; 
                 transToAmtLeftToComplete.erase(aMsg->getTransactionId());

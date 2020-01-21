@@ -165,6 +165,7 @@ void hostNodeDCTCP::handleAckMessageSpecialized(routerMsg* ttmsg) {
                 _transactionCompletionBySize[splitInfo->totalAmount] += 1;
                 double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                 statCompletionTimes[destNode] += timeTaken * 1000;
+                recordTailCompletionTime(timeTaken * 1000);
             }
         }
         if (splitInfo->numTotal == splitInfo->numReceived) 
