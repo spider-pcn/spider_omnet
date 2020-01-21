@@ -29,6 +29,7 @@ double _shortestPathStartTime;
 double _shortestPathEndTime;
 double _splitSize;
 double _bank;
+double _percentile;
 
  //adjacency list format of graph edges of network
 unordered_map<int, vector<pair<int,int>>> _channels;
@@ -1504,6 +1505,7 @@ void hostNodeBase::initialize() {
         _obliviousRoutingEnabled = par("obliviousRoutingEnabled");
 
         _splitSize = par("splitSize");
+        _percentile = 0.01;
 
         _lndBaselineEnabled = par("lndBaselineEnabled");
         _landmarkRoutingEnabled = par("landmarkRoutingEnabled");
@@ -1573,9 +1575,11 @@ void hostNodeBase::initialize() {
         generateChannelsBalancesMap(topologyFile_);
     }
     
-    
+    // set index and compute the top percentile size to choose elements accordingly
     setIndex(getIndex());
-
+    maxPercentileHeapSize =  round(_numSplits[myIndex()].size() * _percentile);
+    statNumTries.push(0);
+    
     // Assign gates to all the payment channels
     const char * gateName = "out";
     cGate *destGate = NULL;
@@ -1680,7 +1684,6 @@ void hostNodeBase::initialize() {
             statRateCompleted[i] = 0;
             statAmtCompleted[i] = 0;
             statNumCompleted[i] = 0;
-            statNumRetries[i] = 0;
 
             statRateAttempted[i] = 0;
             statAmtAttempted[i] = 0;
@@ -1744,14 +1747,17 @@ void hostNodeBase::finish() {
             sprintf(buffer, "amtArrived  %d -> %d", myIndex(), it);
             recordScalar(buffer, statAmtArrived[it]);
 
-            if (statNumRetries[it] > 0) {
-                sprintf(buffer, "numRetries %d -> %d", myIndex(), it);
-                recordScalar(buffer, statNumRetries[it]);
-            }
-
             sprintf(buffer, "completionTime %d -> %d ", myIndex(), it);
             recordScalar(buffer, statCompletionTimes[it]);
         }
+    }
+
+    // print all the PQ items for number of tries 
+    while (!statNumTries.empty()) {
+        char buffer[350];
+        sprintf(buffer, "retries top percentile %d ", myIndex());
+        recordScalar(buffer, statNumTries.top());
+        statNumTries.pop();
     }
 
     if (myIndex() == 0) {

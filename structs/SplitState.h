@@ -10,4 +10,5 @@ public:
     int numAttempted;
     double firstAttemptTime = -1;
     double totalAmount;
+    double numTries;
 };

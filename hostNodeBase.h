@@ -50,7 +50,8 @@ class hostNodeBase : public cSimpleModule {
         unordered_map<int, int> statRateArrived = {};
         unordered_map<int, double> statProbabilities = {};
         unordered_map<int, double> statCompletionTimes = {};
-        unordered_map<int, int> statNumRetries;
+        priority_queue<double, vector<double>, greater<double>> statNumTries;
+        double maxPercentileHeapSize;
         int numCleared = 0;
 
         //store shortest paths 

@@ -11,7 +11,7 @@ prefix=("dag_example" "three_node" "four_node" "five_node_hardcoded" \
    "sf_50_routers" "lnd_july15_2019" "lnd_uniform" \
     "sw_weird_combo" "sf_weird_combo" "dag_example")
 
-scale=1 # "60" "90")
+scale=1 
 random_init_bal=false
 random_capacity=false
 lnd_capacity=true

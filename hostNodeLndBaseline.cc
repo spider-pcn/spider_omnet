@@ -1,5 +1,4 @@
 #include "hostNodeLndBaseline.h"
-
 Define_Module(hostNodeLndBaseline);
 
 
@@ -175,7 +174,8 @@ void hostNodeLndBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
             
             if (splitInfo->numArrived == 1) {       
                 statRateArrived[destNode] += 1; 
-                statRateAttempted[destNode] += 1; 
+                statRateAttempted[destNode] += 1;
+                splitInfo->numTries += 1; 
             }
         }
         if (splitInfo->numArrived == 1)     
@@ -208,12 +208,21 @@ void hostNodeLndBaseline::handleAckMessageNoMoreRoutes(routerMsg *msg, bool toDe
     ackMsg *aMsg = check_and_cast<ackMsg *>(msg->getEncapsulatedPacket());
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(aMsg->getEncapsulatedPacket());
     int numPathsAttempted = aMsg->getPathIndex() + 1;
+    SplitState* splitInfo = &(_numSplits[myIndex()][aMsg->getLargerTxnId()]);
 
     if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) {
         statRateFailed[aMsg->getReceiver()] = statRateFailed[aMsg->getReceiver()] + 1;
         statAmtFailed[aMsg->getReceiver()] += aMsg->getAmount();
     }
-    
+
+    // record top percentile of retries
+    if (splitInfo->numTries > statNumTries.top() || statNumTries.size() < maxPercentileHeapSize) {
+        if (statNumTries.size() == maxPercentileHeapSize) {
+            statNumTries.pop();
+        }
+        statNumTries.push(splitInfo->numTries);
+    }
+
     if (toDelete) {
         aMsg->decapsulate();
         delete transMsg;
@@ -238,6 +247,7 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
     int transactionId = transMsg->getTransactionId();
     int destNode = msg->getRoute()[0];
     double largerTxnId = aMsg->getLargerTxnId();
+    SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
     //guaranteed to be at last step of the path
     
     auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
@@ -250,7 +260,6 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
             canceledTransactions.erase(iter);
 
         if (aMsg->getIsSuccess()) {
-            SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
             splitInfo->numReceived += 1;
 
             if (transMsg->getTimeSent() >= _transStatStart && 
@@ -272,7 +281,15 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
         }
         aMsg->decapsulate();
         delete transMsg;
-        hostNodeBase::handleAckMessage(msg); 
+        hostNodeBase::handleAckMessage(msg);
+        
+        // record top percentile of retries
+        if (splitInfo->numTries > statNumTries.top() || statNumTries.size() < maxPercentileHeapSize) {
+            if (statNumTries.size() == maxPercentileHeapSize) {
+                statNumTries.pop();
+            }
+            statNumTries.push(splitInfo->numTries);
+        }
     }
     else
     { //allowed more attempts
@@ -307,10 +324,7 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
             aMsg->decapsulate();
             hostNodeBase::handleAckMessage(msg);
             ttmsg->encapsulate(transMsg);
-            
-            if (transMsg->getTimeSent() >= _transStatStart && 
-                    transMsg->getTimeSent() <= _transStatEnd)
-                statNumRetries[destNode]++;
+            splitInfo->numTries += 1;
             handleTransactionMessage(ttmsg, true);
         }   
     }

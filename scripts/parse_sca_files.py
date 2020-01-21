@@ -1,5 +1,6 @@
 import sys
 import shlex
+import numpy as np
 
 # parse a line in the scalar file that starts with scalar
 def parse_sca_parameter_line(line):
@@ -86,12 +87,22 @@ def parse_overall_stat_line(line):
     value = data[len(data) - 1]
     return sender, receiver, stat_type, value
 
+def parse_simple_stat_line(line):
+    data = shlex.split(line)
+    scalar_name = data[len(data) - 2]
+    parts = scalar_name.split()
+    stat_type = parts[0]
+    sender = int(parts[3])
+    value = data[len(data) - 1]
+    return sender, stat_type, value
+
+
 def parse_sca_files_overall(filename):
     parameters = ""
     stats = dict()
     stats_3000 = dict()
     amt_added, num_rebalancing = 0, 0
-    num_retries = 0.0
+    num_retries = []
     with open(filename) as f:
         line = f.readline()
         flag = False
@@ -112,9 +123,9 @@ def parse_sca_files_overall(filename):
             elif line.startswith("scalar") and "totalNumRebalancingEvents" in line:
                 sender, receiver, stat_name, value = parse_overall_stat_line(line)
                 num_rebalancing += float(value)
-            elif line.startswith("scalar") and "numRetries" in line:
-                sender, receiver, stat_name, value = parse_overall_stat_line(line)
-                num_retries += float(value)
+            elif line.startswith("scalar") and "retries" in line:
+                sender, stat_name, value = parse_simple_stat_line(line)
+                num_retries.append(float(value))
             elif line.startswith("scalar") and "totalAmtAdded" in line:
                 sender, receiver, stat_name, value = parse_overall_stat_line(line)
                 amt_added += float(value)
@@ -196,7 +207,7 @@ def parse_sca_files_overall(filename):
     print "Success Rate " + str(num_completed/1000.0)
     print "Amt rebalanced " + str(amt_added) 
     print "num rebalanced " + str(num_rebalancing)
-    print "Num retries" + str(num_retries/num_arrived)
+    print "Num retries percentile (99.9) " + str(np.percentile(np.array(num_retries), 90))
 
 
     return "Stats for " + filename + "\nSuccess ratio over arrived: " + str(num_completed/num_arrived) +\
@@ -207,8 +218,7 @@ def parse_sca_files_overall(filename):
             "\nSuccess Rate " + str(vol_completed/1000.0) + \
             "\nAmt rebalanced " + str(amt_added) + \
             "\nnum rebalanced " + str(num_rebalancing) + \
-            "\nNum Retries " + str(num_retries/num_arrived) 
-
+            "\nNum Retries 99.9 percentile " + str(np.percentile(np.array(num_retries), 90))
 
 
 

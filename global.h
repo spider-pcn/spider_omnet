@@ -59,6 +59,7 @@ extern unordered_map<tuple<int,int>, double, hashId> _capacities;
 extern double _statRate;
 extern double _clearRate;
 extern double _maxTravelTime;
+extern double _percentile;
 //unordered_map of balances for each edge; key = <int,int> is <source, destination>
 //extern bool withFailures;
 extern bool _waterfillingEnabled;
