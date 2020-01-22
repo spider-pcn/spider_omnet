@@ -9,7 +9,7 @@ void routerNodeCeler::initialize(){
     for (int i = 0; i < _numHostNodes; ++i) { 
         _nodeToDebtQueue[myIndex()][i] = 0;
         nodeToDestNodeStruct[i].queueTimedOutSignal = registerSignalPerDest("queueTimedOut", i, "");
-            nodeToDestNodeStruct[i].destQueueSignal = registerSignalPerDest("destQueue", i, "");
+        nodeToDestNodeStruct[i].destQueueSignal = registerSignalPerDest("destQueue", i, "");
     }
 
 

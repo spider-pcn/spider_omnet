@@ -39,8 +39,8 @@ void hostNodeCeler::initialize(){
     for (int i = 0; i < _numHostNodes; ++i) {
         if (_destList[myIndex()].count(i) > 0) {
             nodeToDestNodeStruct[i].destQueueSignal = registerSignalPerDest("destQueue", i, ""); 
+            nodeToDestNodeStruct[i].queueTimedOutSignal = registerSignalPerDest("queueTimedOut", i, "");
         }
-        nodeToDestNodeStruct[i].queueTimedOutSignal = registerSignalPerDest("queueTimedOut", i, "");
     }
 }
 
@@ -78,10 +78,10 @@ void hostNodeCeler::handleStatMessage(routerMsg* ttmsg){
             }
         }
         for (auto destNode = 0; destNode < _numHostNodes; destNode++) {
-            DestNodeStruct *destNodeInfo = &(nodeToDestNodeStruct[destNode]);
-            emit(destNodeInfo->queueTimedOutSignal, destNodeInfo->totalNumTimedOut);
             if (_destList[myIndex()].count(destNode) > 0) {
+                DestNodeStruct *destNodeInfo = &(nodeToDestNodeStruct[destNode]);
                 emit(destNodeInfo->destQueueSignal, destNodeInfo->totalAmtInQueue);
+                emit(destNodeInfo->queueTimedOutSignal, destNodeInfo->totalNumTimedOut);
             }
         }
     }
