@@ -119,7 +119,7 @@ class hostNodeBase : public cSimpleModule {
         virtual simsignal_t registerSignalPerChannel(string signalStart, int id);
         virtual simsignal_t registerSignalPerDest(string signalStart, int destNode, 
                 string suffix);
-        virtual void recordTailCompletionTime(double completionTime);
+        virtual void recordTailCompletionTime(simtime_t timeSent, double completionTime);
 
         // generators for the standard messages
         virtual routerMsg* generateTransactionMessageForPath(double amt, 

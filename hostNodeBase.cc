@@ -274,12 +274,15 @@ simsignal_t hostNodeBase::registerSignalPerDest(string signalStart, int destNode
 /* helper function to record the tail completion times for every algorithm
  * called by each algorithm wheever it computes its completion time
  */
-void hostNodeBase::recordTailCompletionTime(double completionTime){
-    if (statTailCompletionTimes.size() < maxPercentileHeapSize || completionTime > statTailCompletionTimes.top()) {
-        if (statTailCompletionTimes.size() == maxPercentileHeapSize) {
-            statTailCompletionTimes.pop();
+void hostNodeBase::recordTailCompletionTime(simtime_t timeSent, double completionTime){
+    if (timeSent >= _transStatStart && timeSent <= _transStatEnd) {
+        if (statTailCompletionTimes.size() < maxPercentileHeapSize || 
+                completionTime > statTailCompletionTimes.top()) {
+            if (statTailCompletionTimes.size() == maxPercentileHeapSize) {
+                statTailCompletionTimes.pop();
+            }
+            statTailCompletionTimes.push(completionTime);
         }
-        statTailCompletionTimes.push(completionTime);
     }
 }
 
@@ -1019,6 +1022,7 @@ void hostNodeBase::handleAckMessageSpecialized(routerMsg* ttmsg) {
         // stats
         double timeTaken = simTime().dbl() - aMsg->getTimeSent();
         statCompletionTimes[destNode] += timeTaken * 1000;
+        recordTailCompletionTime(aMsg->getTimeSent(), timeTaken * 1000);
     }
     else 
         statNumCompleted[destNode] += 1;
