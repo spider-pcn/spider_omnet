@@ -77,6 +77,8 @@ extern bool _windowEnabled;
 extern vector<tuple<int,int>> _landmarksWithConnectivityList;//pair: (number of edges, node number)
 extern unordered_map<double, int> _transactionCompletionBySize;
 extern unordered_map<double, int> _transactionArrivalBySize;
+extern unordered_map<double, double> _txnAvgCompTimeBySize;
+extern unordered_map<double, priority_queue<double, vector<double>, greater<double>>> _txnTailCompTimesBySize;
 
 // for silentWhispers
 extern vector<int> _landmarks;

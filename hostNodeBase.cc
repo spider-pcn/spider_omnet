@@ -8,6 +8,8 @@
 unordered_map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
 unordered_map<double, int> _transactionCompletionBySize;
 unordered_map<double, int> _transactionArrivalBySize;
+unordered_map<double, double> _txnAvgCompTimeBySize;
+unordered_map<double, priority_queue<double, vector<double>, greater<double>>> _txnTailCompTimesBySize;
 unordered_map<int, set<int>> _destList;
 unordered_map<int, unordered_map<double, SplitState>> _numSplits;
 unordered_map<int, unordered_map<int, vector<vector<int>>>> _pathsMap;
@@ -274,7 +276,7 @@ simsignal_t hostNodeBase::registerSignalPerDest(string signalStart, int destNode
 /* helper function to record the tail completion times for every algorithm
  * called by each algorithm wheever it computes its completion time
  */
-void hostNodeBase::recordTailCompletionTime(simtime_t timeSent, double completionTime){
+void hostNodeBase::recordTailCompletionTime(simtime_t timeSent, double amount, double completionTime){
     if (timeSent >= _transStatStart && timeSent <= _transStatEnd) {
         if (statTailCompletionTimes.size() < maxPercentileHeapSize || 
                 completionTime > statTailCompletionTimes.top()) {
@@ -282,6 +284,14 @@ void hostNodeBase::recordTailCompletionTime(simtime_t timeSent, double completio
                 statTailCompletionTimes.pop();
             }
             statTailCompletionTimes.push(completionTime);
+        }
+        
+        double maxSize = _percentile *  _transactionArrivalBySize[amount];
+        if (_txnTailCompTimesBySize[amount].size() < maxSize || completionTime > _txnTailCompTimesBySize[amount].top()) {
+            if (_txnTailCompTimesBySize[amount].size() == maxSize) {
+                _txnTailCompTimesBySize[amount].pop();
+            }
+            _txnTailCompTimesBySize[amount].push(completionTime);
         }
     }
 }
@@ -1022,7 +1032,8 @@ void hostNodeBase::handleAckMessageSpecialized(routerMsg* ttmsg) {
         // stats
         double timeTaken = simTime().dbl() - aMsg->getTimeSent();
         statCompletionTimes[destNode] += timeTaken * 1000;
-        recordTailCompletionTime(aMsg->getTimeSent(), timeTaken * 1000);
+        _txnAvgCompTimeBySize[aMsg->getAmount()] += timeTaken * 1000;
+        recordTailCompletionTime(aMsg->getTimeSent(), aMsg->getAmount(), timeTaken * 1000);
     }
     else 
         statNumCompleted[destNode] += 1;
@@ -1797,10 +1808,14 @@ void hostNodeBase::finish() {
             double amount = x.first;
             int completed = x.second;
             int arrived = _transactionArrivalBySize[amount];
+            double avg = _txnAvgCompTimeBySize[amount];
+            double tail = _txnTailCompTimesBySize[amount].top();
 
             char buffer[60];
             sprintf(buffer, "size %d: arrived (%d) completed", int(amount), arrived);
             recordScalar(buffer, completed);
+            sprintf(buffer, "size %d: avg_comp_time (%f) tail", int(amount), avg);
+            recordScalar(buffer, tail);
         }
     }
 }
