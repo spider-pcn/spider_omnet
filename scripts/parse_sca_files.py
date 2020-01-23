@@ -186,6 +186,7 @@ def parse_sca_files_overall(filename):
     vol_arrived, num_arrived = 0.0, 0.0
     vol_completed, num_completed = 0.0, 0.0
     completion_time = 0.0
+    str_to_add = ""
     
     for src_dst_pair, stat in stats.items():
         for s in stat:
@@ -215,7 +216,9 @@ def parse_sca_files_overall(filename):
     print "Success Rate " + str(num_completed/1000.0)
     print "Amt rebalanced " + str(amt_added) 
     print "num rebalanced " + str(num_rebalancing)
-    print "Num retries percentile (99.9) " + str(np.percentile(num_retries, 90))
+    if len(num_retries) > 0:
+        str_to_add = "\nNum retries percentile (99.9) " + str(np.percentile(num_retries, 90))
+        print str_to_add
     print "Comp Times percentile (99), 99.9 " + str(min(comp_times)) + " " + str(np.percentile(comp_times, 90))
 
 
@@ -227,5 +230,5 @@ def parse_sca_files_overall(filename):
             "\nSuccess Rate " + str(vol_completed/1000.0) + \
             "\nAmt rebalanced " + str(amt_added) + \
             "\nnum rebalanced " + str(num_rebalancing) + \
-            "\nNum Retries 99.9 percentile " + str(np.percentile(num_retries, 90)) + \
+            str_to_add + \
             "\nComp Times percentile (99), 99.9 " + str(min(comp_times)) + " " + str(np.percentile(comp_times, 90))
