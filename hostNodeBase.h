@@ -51,7 +51,6 @@ class hostNodeBase : public cSimpleModule {
         unordered_map<int, double> statProbabilities = {};
         unordered_map<int, double> statCompletionTimes = {};
         priority_queue<double, vector<double>, greater<double>> statNumTries;
-        vector<double> statTailCompletionTimes;
         double maxPercentileHeapSize;
         int numCleared = 0;
 

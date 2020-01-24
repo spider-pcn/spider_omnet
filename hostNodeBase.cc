@@ -10,7 +10,6 @@ unordered_map<double, int> _transactionCompletionBySize;
 unordered_map<double, int> _transactionArrivalBySize;
 unordered_map<double, double> _txnAvgCompTimeBySize;
 unordered_map<double, vector<double>> _txnTailCompTimesBySize;
-ofstream _tailCompTimesFile;
 ofstream _tailCompBySizeFile;
 unordered_map<int, set<int>> _destList;
 unordered_map<int, unordered_map<double, SplitState>> _numSplits;
@@ -280,15 +279,6 @@ simsignal_t hostNodeBase::registerSignalPerDest(string signalStart, int destNode
  */
 void hostNodeBase::recordTailCompletionTime(simtime_t timeSent, double amount, double completionTime){
     if (timeSent >= _transStatStart && timeSent <= _transStatEnd) {
-        statTailCompletionTimes.push_back(completionTime);
-        if (statTailCompletionTimes.size() == 1000) {
-            for (auto const& time : statTailCompletionTimes) 
-                _tailCompTimesFile  << time << " ";
-            _tailCompTimesFile << endl;
-            _tailCompTimesFile.flush();
-            statTailCompletionTimes.clear();
-        }
-        
         _txnTailCompTimesBySize[amount].push_back(completionTime);
         if (_txnTailCompTimesBySize[amount].size() == 1000) {
             _tailCompBySizeFile << amount << ": ";
@@ -1531,7 +1521,6 @@ void hostNodeBase::initialize() {
         _shortestPathStartTime = 0;
         _shortestPathEndTime = 5000;
 
-        _tailCompTimesFile.open(resultPrefix + "_tailComp.txt");
         _tailCompBySizeFile.open(resultPrefix + "_tailCompBySize.txt");
 
         _widestPathsEnabled = par("widestPathsEnabled");
@@ -1818,10 +1807,14 @@ void hostNodeBase::finish() {
                 double avg = _txnAvgCompTimeBySize[amount] / completed;
                 sprintf(buffer, "size %d: avg_comp_time ", int(amount));
                 recordScalar(buffer, avg);
+
+                _tailCompBySizeFile << amount << ": ";
+                for (auto const& time : _txnTailCompTimesBySize[amount]) 
+                    _tailCompBySizeFile << time << " ";
+                _tailCompBySizeFile << endl;
+                _txnTailCompTimesBySize[amount].clear();
             }
         }
-
-        _tailCompTimesFile.close(); 
         _tailCompBySizeFile.close(); 
     }
 }

@@ -189,7 +189,7 @@ void generateTransUnitList(string workloadFile){
                 }
                 else {
                     _transactionCompletionBySize[amount] = 0;
-                    _transactionArrivalBySize[amount] = 0;
+                    _transactionArrivalBySize[amount] = 1;
                     _txnAvgCompTimeBySize[amount] = 0;
                 }
             }
