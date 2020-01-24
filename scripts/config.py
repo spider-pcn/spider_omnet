@@ -173,7 +173,7 @@ INTERESTING_SIGNALS["per_channel_plot"] = per_channel_list
 PLOT_DIR = "data/"
 GGPLOT_DATA_DIR = "ggplot_data/"
 SUMMARY_DIR = "figures/timeouts/"
-RESULT_DIR = "../benchmarks/circulations/results/"
+RESULT_DIR = "/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulations/results/"
 
 # define scheme codes for ggplot
 SCHEME_CODE = { "priceSchemeWindow": "PS",\

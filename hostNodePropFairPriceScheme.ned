@@ -5,6 +5,7 @@ simple hostNodePropFairPriceScheme
 	    
 		string topologyFile = default("sample-topology.txt");
 		string workloadFile = default("sample-workload.txt");
+                string resultPrefix = default("");
 
 		double simulationLength = default(30.0);
 		double statRate = default(0.2);

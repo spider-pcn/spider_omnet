@@ -22,6 +22,7 @@
 #include <deque>
 #include <unordered_map>
 #include <fstream>
+#include <iostream>
 #include <list>
 #include "structs/PaymentChannel.h"
 #include "structs/PathInfo.h"
@@ -78,7 +79,7 @@ extern vector<tuple<int,int>> _landmarksWithConnectivityList;//pair: (number of 
 extern unordered_map<double, int> _transactionCompletionBySize;
 extern unordered_map<double, int> _transactionArrivalBySize;
 extern unordered_map<double, double> _txnAvgCompTimeBySize;
-extern unordered_map<double, priority_queue<double, vector<double>, greater<double>>> _txnTailCompTimesBySize;
+extern unordered_map<double, vector<double>> _txnTailCompTimesBySize;
 
 // for silentWhispers
 extern vector<int> _landmarks;

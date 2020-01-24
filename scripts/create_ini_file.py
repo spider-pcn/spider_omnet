@@ -1,5 +1,6 @@
 import argparse
 import os
+from config import RESULT_DIR
 
 # parse arguments
 parser = argparse.ArgumentParser(description="Create ini file for the given arguments")
@@ -191,6 +192,7 @@ f.write("**.serviceArrivalWindow = " + str(args.serviceArrivalWindow) + "\n")
 f.write("**.transStatStart = " + str(args.transStatStart) + "\n")
 f.write("**.transStatEnd = " + str(args.transStatEnd) + "\n")
 f.write("**.splitSize = " + str(args.mtu) + "\n")
+f.write("**.resultPrefix = \"" + RESULT_DIR + configname + "\"\n")
 
 if args.routingScheme in ['waterfilling', 'smoothWaterfilling']:
     f.write("**.waterfillingEnabled = true\n")
