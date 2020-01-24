@@ -285,6 +285,7 @@ void hostNodeBase::recordTailCompletionTime(simtime_t timeSent, double amount, d
             for (auto const& time : statTailCompletionTimes) 
                 _tailCompTimesFile  << time << " ";
             _tailCompTimesFile << endl;
+            _tailCompTimesFile.flush();
             statTailCompletionTimes.clear();
         }
         
@@ -294,6 +295,7 @@ void hostNodeBase::recordTailCompletionTime(simtime_t timeSent, double amount, d
             for (auto const& time : _txnTailCompTimesBySize[amount]) 
                 _tailCompBySizeFile << time << " ";
             _tailCompBySizeFile << endl;
+            _tailCompBySizeFile.flush();
             _txnTailCompTimesBySize[amount].clear();
         }
     }
@@ -1529,8 +1531,8 @@ void hostNodeBase::initialize() {
         _shortestPathStartTime = 0;
         _shortestPathEndTime = 5000;
 
-        _tailCompTimesFile.open(resultPrefix + "tailComp.txt");
-        _tailCompBySizeFile.open(resultPrefix + "tailCompBySize.txt");
+        _tailCompTimesFile.open(resultPrefix + "_tailComp.txt");
+        _tailCompBySizeFile.open(resultPrefix + "_tailCompBySize.txt");
 
         _widestPathsEnabled = par("widestPathsEnabled");
         _heuristicPathsEnabled = par("heuristicPathsEnabled");

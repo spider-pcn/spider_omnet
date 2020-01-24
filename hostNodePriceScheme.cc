@@ -574,8 +574,8 @@ void hostNodePriceScheme::handleAckMessageSpecialized(routerMsg* ttmsg){
                 _transactionCompletionBySize[splitInfo->totalAmount] += 1;
                 double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                 statCompletionTimes[destNode] += timeTaken * 1000;
-                _txnAvgCompTimeBySize[aMsg->getAmount()] += timeTaken * 1000;
-                recordTailCompletionTime(aMsg->getTimeSent(), aMsg->getAmount(), timeTaken * 1000);
+                _txnAvgCompTimeBySize[splitInfo->totalAmount] += timeTaken * 1000;
+                recordTailCompletionTime(aMsg->getTimeSent(), splitInfo->totalAmount, timeTaken * 1000);
             }
         }
         nodeToShortestPathsMap[destNode][pathIndex].statRateCompleted += 1;
