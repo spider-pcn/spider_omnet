@@ -1,6 +1,10 @@
 #include "hostNodeLndBaseline.h"
 Define_Module(hostNodeLndBaseline);
 
+//instaniate global parameter for hostNodeLndBaseline
+double _restorePeriod;
+int _numAttemptsLndBaseline;
+vector<int> succRetriesList, failRetriesList;
 
 /* helper function for sorting heap by prune time */
 bool sortPrunedChannelsFunction(tuple<simtime_t, tuple<int,int>> x, tuple<simtime_t, tuple<int, int>> y){
@@ -9,9 +13,29 @@ bool sortPrunedChannelsFunction(tuple<simtime_t, tuple<int,int>> x, tuple<simtim
     return xTime > yTime; //makes smallest simtime_t appear first
 } 
 
-//instaniate global parameter for hostNodeLndBaseline
-double _restorePeriod;
-int _numAttemptsLndBaseline;
+
+/* helper function to record the tail retries for successful and failed transactions
+ * for LND */
+void hostNodeLndBaseline::recordTailRetries(simtime_t timeSent, bool success, int retries){
+    if (timeSent >= _transStatStart && timeSent <= _transStatEnd) {
+        vector<int> *retryList = success ? &succRetriesList : &failRetriesList;
+        retryList->push_back(retries);
+        if (retryList->size() == 1000) {
+            if (success) {
+                for (auto const& time : *retryList) 
+                    _succRetriesFile << time << " ";
+                _succRetriesFile << endl;
+            } else {
+                for (auto const& time : *retryList) 
+                    _failRetriesFile << time << " ";
+                _failRetriesFile << endl;
+            }
+            retryList->clear();
+        }
+    }
+}
+
+
 
 /*initializeMyChannels - makes copy of global _channels data structure, without 
   delay, as paths are calculated using BFS (not weight ed edges) */
@@ -100,6 +124,25 @@ void hostNodeLndBaseline::initialize(){
 
     //initialize list for channels we pruned 
     _prunedChannelsList = {};
+}
+
+
+/* calls base method and also reports any unreported success and failure retries
+ */
+void hostNodeLndBaseline::finish(){
+    hostNodeBase::finish();
+
+    if (myIndex() == 0) {
+        for (auto const& t : succRetriesList) 
+            _succRetriesFile << t << " ";
+        _succRetriesFile << endl;
+        _succRetriesFile.close();
+
+        for (auto const& t : failRetriesList) 
+            _failRetriesFile << t << " ";
+        _failRetriesFile << endl;
+        _failRetriesFile.close();
+    }
 }
 
 /* generateAckMessage that encapsulates transaction message to use for reattempts 
@@ -213,14 +256,7 @@ void hostNodeLndBaseline::handleAckMessageNoMoreRoutes(routerMsg *msg, bool toDe
     if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) {
         statRateFailed[aMsg->getReceiver()] = statRateFailed[aMsg->getReceiver()] + 1;
         statAmtFailed[aMsg->getReceiver()] += aMsg->getAmount();
-    }
-
-    // record top percentile of retries
-    if (splitInfo->numTries > statNumTries.top() || statNumTries.size() < maxPercentileHeapSize) {
-        if (statNumTries.size() == maxPercentileHeapSize) {
-            statNumTries.pop();
-        }
-        statNumTries.push(splitInfo->numTries);
+        recordTailRetries(aMsg->getTimeSent(), false, splitInfo->numTries); 
     }
 
     if (toDelete) {
@@ -273,6 +309,7 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
                     statCompletionTimes[destNode] += timeTaken * 1000;
                     _txnAvgCompTimeBySize[splitInfo->totalAmount] += timeTaken * 1000;
                     recordTailCompletionTime(aMsg->getTimeSent(), splitInfo->totalAmount, timeTaken * 1000);
+                    recordTailRetries(aMsg->getTimeSent(), true, splitInfo->numTries);
                 }
             }
             if (splitInfo->numTotal == splitInfo->numReceived) 
@@ -284,14 +321,6 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
         aMsg->decapsulate();
         delete transMsg;
         hostNodeBase::handleAckMessage(msg);
-        
-        // record top percentile of retries
-        if (splitInfo->numTries > statNumTries.top() || statNumTries.size() < maxPercentileHeapSize) {
-            if (statNumTries.size() == maxPercentileHeapSize) {
-                statNumTries.pop();
-            }
-            statNumTries.push(splitInfo->numTries);
-        }
     }
     else
     { //allowed more attempts

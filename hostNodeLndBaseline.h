@@ -23,11 +23,13 @@ class hostNodeLndBaseline : public hostNodeBase {
         virtual void handleAckMessageSpecialized(routerMsg *msg) override;
         virtual void handleAckMessageNoMoreRoutes(routerMsg *msg, bool toDelete);
         virtual routerMsg *generateAckMessage(routerMsg *msg, bool isSuccess = true) override;
+        virtual void finish() override;
 
         //HELPER FUNCTIONS
         virtual void initializeMyChannels();
         virtual void pruneEdge(int sourceNode, int destNode);
         virtual vector<int> generateNextPath(int destNode);
+        virtual void recordTailRetries(simtime_t timeSent, bool success, int retries);
 
 
 };

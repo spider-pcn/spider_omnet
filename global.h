@@ -80,6 +80,7 @@ extern unordered_map<double, int> _transactionCompletionBySize;
 extern unordered_map<double, int> _transactionArrivalBySize;
 extern unordered_map<double, double> _txnAvgCompTimeBySize;
 extern unordered_map<double, vector<double>> _txnTailCompTimesBySize;
+extern ofstream _succRetriesFile, _failRetriesFile;
 
 // for silentWhispers
 extern vector<int> _landmarks;

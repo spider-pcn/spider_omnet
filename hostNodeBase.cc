@@ -10,6 +10,7 @@ unordered_map<double, int> _transactionCompletionBySize;
 unordered_map<double, int> _transactionArrivalBySize;
 unordered_map<double, double> _txnAvgCompTimeBySize;
 unordered_map<double, vector<double>> _txnTailCompTimesBySize;
+ofstream _succRetriesFile, _failRetriesFile;
 ofstream _tailCompBySizeFile;
 unordered_map<int, set<int>> _destList;
 unordered_map<int, unordered_map<double, SplitState>> _numSplits;
@@ -1522,6 +1523,10 @@ void hostNodeBase::initialize() {
         _shortestPathEndTime = 5000;
 
         _tailCompBySizeFile.open(resultPrefix + "_tailCompBySize.txt");
+        if (_lndBaselineEnabled) {
+            _succRetriesFile.open(resultPrefix + "_succRetries.txt");
+            _failRetriesFile.open(resultPrefix + "_failRetries.txt");
+        }
 
         _widestPathsEnabled = par("widestPathsEnabled");
         _heuristicPathsEnabled = par("heuristicPathsEnabled");
