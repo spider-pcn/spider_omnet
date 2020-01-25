@@ -216,6 +216,9 @@ def parse_sca_files_overall(filename):
     print "Success Rate " + str(num_completed/1000.0)
     print "Amt rebalanced " + str(amt_added) 
     print "num rebalanced " + str(num_rebalancing)
+    print "Num arrived " + str(num_arrived) 
+    print "Num completed " + str(num_completed) 
+
     if len(num_retries) > 0:
         str_to_add = "\nNum retries percentile (99.9) " + str(np.percentile(num_retries, 90))
         print str_to_add
@@ -228,5 +231,7 @@ def parse_sca_files_overall(filename):
             "\nAvg completion time " + str(completion_time/max(num_completed, 1.0)) + \
             "\nSuccess Rate " + str(vol_completed/1000.0) + \
             "\nAmt rebalanced " + str(amt_added) + \
-            "\nnum rebalanced " + str(num_rebalancing) + \
+            "\nNum rebalanced " + str(num_rebalancing) + \
+            "\nNum arrived " + str(num_arrived) + \
+            "\nNum completed " + str(num_completed) + \
             str_to_add 
