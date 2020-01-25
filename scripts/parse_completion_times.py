@@ -66,6 +66,9 @@ parser.add_argument('--num-max',
 parser.add_argument('--num-buckets',
         type=int,
         help='Single number denoting the maximum number of buckets to group txn sizes into', default="20")
+parser.add_argument('--lnd-retry-data',
+        action='store_true',
+        help='whether to parse overall lnd retry information')
 
 # collect all arguments
 args = parser.parse_args()
@@ -76,7 +79,7 @@ path_type = args.path_type
 num_paths = args.path_num
 scheme_list = args.scheme_list
 
-
+succ_retries, fail_retries = [],[]
 output_file = open(GGPLOT_DATA_DIR + args.save, "w+")
 output_file.write("Topo,CreditType,Scheme,Credit,SizeStart,SizeEnd,Point,AvgCompTime,TailCompTime90,TailCompTime99,Demand\n")
 
@@ -94,6 +97,21 @@ elif "lnd_july15" in args.topo or "lndCap" in args.topo:
 else:
     credit_type = "uniform"
 
+# parse and print the retry data for LND
+def collect_retry_stats(succ_retry_file, fail_retry_file):
+    for i, file_name in enumerate([succ_retry_file, fail_retry_file]):
+        retries = fail_retries if i else succ_retries
+        try:
+            with open(RESULT_DIR + file_name) as f:
+                for line in f:
+                    parts = line.split()
+                    for t in parts:
+                        retries.append(float(t))
+        except IOError:
+            print "error with", file_name
+            continue
+
+
 
 # go through all relevant files and aggregate probability by size
 for scheme in scheme_list:
@@ -109,8 +127,13 @@ for scheme in scheme_list:
             "_demand" + str(demand/10) + "_" + path_type
         if scheme != "shortestPath":
             file_name += "_" + str(num_paths)
+
+        if scheme == 'lndBaseline' and args.lnd_retry_data:
+            succ_retry_file = file_name + "_LIFO_succRetries.txt"
+            fail_retry_file = file_name + "_LIFO_failRetries.txt"
+            collect_retry_stats(succ_retry_file, fail_retry_file)
+            
         file_name += "_LIFO_tailCompBySize.txt"
-        
         try:
             with open(RESULT_DIR + file_name) as f:
                 for line in f:
@@ -129,6 +152,12 @@ for scheme in scheme_list:
     sorted_sizes = [5]
     sorted_sizes.extend(sorted(size_to_comp_times.keys()))
     print sorted_sizes
+    if scheme == 'lndBaseline' and args.lnd_retry_data:
+        print "Successful transaction LND retries Average:", np.average(np.array(succ_retries)), \
+                "99%:" , np.percentile(np.array(succ_retries), 99)
+        print "Failed transaction retries LND Average:", np.average(np.array(fail_retries)), \
+                "99%:" , np.percentile(np.array(fail_retries), 99)
+    
     for i, size in enumerate(sorted_sizes[1:]):
         comp_times = np.array(size_to_comp_times[size])
         output_file.write(topo_type + "," + credit_type + "," + \
@@ -137,4 +166,5 @@ for scheme in scheme_list:
                     math.sqrt(size * sorted_sizes[i]), \
                     np.average(comp_times), np.percentile(comp_times, 90), np.percentile(comp_times, 99),
                      demand))
+
 output_file.close()

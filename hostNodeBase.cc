@@ -1522,12 +1522,6 @@ void hostNodeBase::initialize() {
         _shortestPathStartTime = 0;
         _shortestPathEndTime = 5000;
 
-        _tailCompBySizeFile.open(resultPrefix + "_tailCompBySize.txt");
-        if (_lndBaselineEnabled) {
-            _succRetriesFile.open(resultPrefix + "_succRetries.txt");
-            _failRetriesFile.open(resultPrefix + "_failRetries.txt");
-        }
-
         _widestPathsEnabled = par("widestPathsEnabled");
         _heuristicPathsEnabled = par("heuristicPathsEnabled");
         _kspYenEnabled = par("kspYenEnabled");
@@ -1556,6 +1550,12 @@ void hostNodeBase::initialize() {
         _computeBalanceRate = par("minBalanceComputeRate");
         _bank = 0;
 
+        // files for recording tail completion and retries
+        _tailCompBySizeFile.open(resultPrefix + "_tailCompBySize.txt");
+        if (_lndBaselineEnabled) {
+            _succRetriesFile.open(resultPrefix + "_succRetries.txt");
+            _failRetriesFile.open(resultPrefix + "_failRetries.txt");
+        }
 
         // path choices
         string pathFileName;
