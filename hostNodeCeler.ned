@@ -1,22 +1,21 @@
-simple hostNodeBase
+simple hostNodeCeler
 {
 	parameters:
 	    bool isHost = true;
 	    
 		string topologyFile = default("sample-topology.txt");
 		string workloadFile = default("sample-workload.txt");
-                string resultPrefix = default("");
 
 		double simulationLength = default(30.0);
 		double statRate = default(0.2);
 		bool signalsEnabled = default(false);
-		bool loggingEnabled = default(false);
+		bool loggingEnabled = default(true);
                 double splitSize = default(5.0);
 
-		bool timeoutEnabled = default(true);
+		bool timeoutEnabled = default(false);
 		double timeoutClearRate = default(0.5);
 
-		bool celerEnabled = default(false);
+		bool celerEnabled = default(true);
 		bool waterfillingEnabled = default(false);
 		bool priceSchemeEnabled = default(false);
 		bool smoothWaterfillingEnabled = default(false);
@@ -29,7 +28,7 @@ simple hostNodeBase
                 bool obliviousRoutingEnabled = default(false);
                 bool kspYenEnabled = default(false);
                 
-                bool LIFOEnabled = default(false);
+                bool LIFOEnabled = default(true);
                 bool FIFOEnabled = default(false);
                 bool SPFEnabled = default(false);
                 bool RREnabled = default(false);
@@ -65,7 +64,7 @@ simple hostNodeBase
                 int serviceArrivalWindow = default(100);
                 double routerQueueDrainTime = default(1);
                 
-                bool splittingEnabled = default(false);
+                bool splittingEnabled = default(true);
                 double tau = default(10);
                 double normalizer = default(100);
 
@@ -83,10 +82,10 @@ simple hostNodeBase
 		@signal[explicitRebalancingAmtPerChannel*](type="double"); 
 		@statisticTemplate[explicitRebalancingAmtPerChannelTemplate](record=vector, stats);  
 		
-		@signal[numInQueuePerChannel*](type="unsigned long"); 
+		@signal[numInQueuePerChannel*](type="double"); 
 		@statisticTemplate[numInQueuePerChannelTemplate](record=vector,stats);   
                 
-                @signal[numInflightPerChannel*](type="unsigned long"); 
+                @signal[numInflightPerChannel*](type="double"); 
 		@statisticTemplate[numInflightPerChannelTemplate](record=vector, stats);
 
 		@signal[numProcessedPerChannel*](type="long");  
@@ -110,7 +109,7 @@ simple hostNodeBase
  		@signal[numWaitingPerDest*](type="long");  
 		@statisticTemplate[numWaitingPerDestTemplate](record=vector, stats);  
 	
-		@signal[fracSuccessfulPerDest*](type="long");  
+		@signal[fracSuccessfulPerDest*](type="double");  
 		@statisticTemplate[fracSuccessfulPerDestTemplate](record=vector, stats);   
 		
 		@signal[pathPerTransPerDest*](type="long");  
@@ -198,6 +197,19 @@ simple hostNodeBase
 		@statisticTemplate[isSendTimerSetPerDestPerPathTemplate](record=vector, stats);
 		
 		
+		//celer network signals
+		@signal[cpiPerChannelPerDest*](type="double"); 
+		@statisticTemplate[cpiPerChannelPerDestTemplate](record=vector, stats);
+	
+		@signal[destQueuePerDest*](type="double"); 
+		@statisticTemplate[destQueuePerDestTemplate](record=vector, stats);
+		
+		@signal[queueTimedOutPerDest*](type="double"); 
+		@statisticTemplate[queueTimedOutPerDestTemplate](record=vector, stats);
+		
+
+		@signal[kStarPerChannel*](type="long"); 
+		@statisticTemplate[kStarPerChannelTemplate](record=vector, stats);	
 		
 
 	gates:

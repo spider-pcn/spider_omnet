@@ -32,6 +32,7 @@
 #include "structs/DestInfo.h"
 #include "structs/PathRateTuple.h"
 #include "structs/ProbeInfo.h"
+#include "structs/DestNodeStruct.h"
 
 #define MSGSIZE 100
 using namespace std;
@@ -60,7 +61,9 @@ extern unordered_map<tuple<int,int>, double, hashId> _capacities;
 extern double _statRate;
 extern double _clearRate;
 extern double _maxTravelTime;
+extern double _maxOneHopDelay;
 extern double _percentile;
+
 //unordered_map of balances for each edge; key = <int,int> is <source, destination>
 //extern bool withFailures;
 extern bool _waterfillingEnabled;
@@ -169,4 +172,11 @@ extern bool _changingPathsEnabled;
 extern int _maxPathsToConsider;
 extern double _windowThresholdForChange; 
 
+// celer network params
+extern bool _celerEnabled;
+//global debt queues 
+extern unordered_map<int, unordered_map<int, double>> _nodeToDebtQueue; // = {};
+// (key1, (key2, value)) where key1 is nodeA (whose debt queue), and key2 is nodeB (dest node),
+ // and value is amt needs to be transferred from nodeA to nodeB
+extern double _celerBeta;  // denotes how much to weigh the imbalance in the per node weight
 

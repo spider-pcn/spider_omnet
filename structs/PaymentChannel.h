@@ -2,7 +2,8 @@
 using namespace std;
 using namespace omnetpp;
 
-typedef tuple<int,int> Id;
+typedef tuple<int,int> Id; // first is transaction id, second is htlc index
+
 struct hashId {
     size_t operator()(const tuple<int, int> &tid ) const
     {
@@ -86,15 +87,27 @@ public:
 
     //statistics - ones for per payment channel
     int statNumProcessed;
-    int statNumSent;
+    double deltaAmtSent = 0.0; //used for celer network, reset with clear state message
+    double deltaAmtReceived = 0.0; //used for celer network, reset with clear state message
+    double totalAmtSent = 0.0;
+    double totalAmtReceived = 0.0;
+    vector<double> channelInbalance = {}; //sliding window
     simsignal_t amtInQueuePerChannelSignal;
     simsignal_t balancePerChannelSignal;
     simsignal_t capacityPerChannelSignal;
     simsignal_t numInflightPerChannelSignal;
     simsignal_t queueDelayEWMASignal;
     simsignal_t bankSignal;
-
+    simsignal_t numSentPerChannelSignal;
+    
     simsignal_t explicitRebalancingAmtPerChannelSignal;
     simsignal_t implicitRebalancingAmtPerChannelSignal;
+
+
+    //statistics for celer_network
+    map<int, simsignal_t> destToCPISignal = {};
+    map<int, double>  destToCPIValue = {};
+    simsignal_t kStarSignal;
+
 
 };

@@ -149,7 +149,7 @@ INTERESTING_SIGNALS["numTimedOutPerDest"] = ["numTimedOutPerDest"]
 
 per_dest_list = []
 for signal in ["numWaiting", "probability", "bottleneck", "pathPerTrans", \
-        "fracSuccessful", "demandEstimate"]:
+        "fracSuccessful", "demandEstimate", "destQueue", "queueTimedOut"]:
     INTERESTING_SIGNALS[signal] = signal + "PerDest"
     per_dest_list.append(signal + "PerDest")
 per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", \
@@ -161,13 +161,23 @@ per_dest_list.extend(["rateCompletedPerDest_Total", "rateArrivedPerDest_Total", 
 
 per_channel_list = []
 for signal in ["balance", "numInQueue", "lambda", "muLocal", "xLocal", "nValue", "serviceRate", "arrivalRate",
-        "inflightOutgoing", "inflightIncoming", 'queueDelayEWMA', 'fakeRebalanceQ', "capacity", "bank",\
+        "inflightOutgoing", "inflightIncoming", 'queueDelayEWMA', 'fakeRebalanceQ', "capacity", "bank", "kStar", \
         "numSent", "muRemote", "numInflight", "timeInFlight", "explicitRebalancingAmt", "implicitRebalancingAmt"]:
     INTERESTING_SIGNALS[signal] = signal + "PerChannel"
     per_channel_list.append(signal + "PerChannel")
 
 INTERESTING_SIGNALS["per_src_dest_plot"] = per_dest_list
 INTERESTING_SIGNALS["per_channel_plot"] = per_channel_list
+
+# added for celer_network
+per_channel_dest_list = []
+for signal in ["cpi"]:
+    INTERESTING_SIGNALS[signal] = signal + "PerChannelPerDest"
+    per_channel_dest_list.append(signal + "PerChannelPerDest")
+
+INTERESTING_SIGNALS["per_channel_dest_plot"] = per_channel_dest_list
+
+
 
 
 ## ggplot related constants
@@ -185,7 +195,8 @@ SCHEME_CODE = { "priceSchemeWindow": "PS",\
         "DCTCP": "DCTCP",\
         "DCTCPRate": "DCTCPRate", \
         "DCTCPQ": "DCTCP_qdelay", \
-        "DCTCPBal": "DCTCPBal"}
+        "DCTCPBal": "DCTCPBal",\
+        "celer": "celer"}
 
 # define actual dag percent mapping for ggplot
 PERCENT_MAPPING = { '0' : 0,\

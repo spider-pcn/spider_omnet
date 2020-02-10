@@ -5,14 +5,14 @@ Define_Module(routerNodeDCTCP);
 /* handles forwarding of  transactions out of the queue
  * the way other schemes' routers do except that it marks the packet
  * if the queue is larger than the threshold, therfore mostly similar to the base code */ 
-bool routerNodeDCTCP::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) {
+int routerNodeDCTCP::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
     int nextDest = msg->getRoute()[msg->getHopCount()+1];
     PaymentChannel *neighbor = &(nodeToPaymentChannel[nextDest]);
     
     //don't mark yet if the packet can't be sent out
     if (neighbor->balance <= 0 || transMsg->getAmount() > neighbor->balance){
-        return false;
+        return 0;
     }
  
     // else mark before forwarding if need be

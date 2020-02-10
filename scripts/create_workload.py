@@ -345,16 +345,17 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
     
 
     if "two_node_imbalance" in filename:
+        demand_dict = dict()
         demand_dict[0, 1] = MEAN_RATE
         demand_dict[1, 0] = 5 * MEAN_RATE
         print demand_dict
     elif "two_node_capacity" in filename:
+        demand_dict = dict()
         demand_dict[0, 1] = 2 * MEAN_RATE
         demand_dict[1, 0] = 5 * MEAN_RATE
         print demand_dict
 
     if "three_node" in filename:
-        print "hitting here"
         demand_dict = dict()
         demand_dict[0, 2] = MEAN_RATE
         demand_dict[1, 2] = MEAN_RATE

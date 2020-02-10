@@ -51,7 +51,7 @@ balanceThreshold=0.1
 minDCTCPWindow=1
 rateDecreaseFrequency=3.0
 
-for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
+for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP" "Celer"
 do
     cp hostNode${suffix}.ned ${PATH_NAME}
     cp routerNode${suffix}.ned ${PATH_NAME}

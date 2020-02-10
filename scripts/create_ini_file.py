@@ -18,7 +18,7 @@ parser.add_argument('--timeout-clear-rate', type=str, help='rate of clearing dat
 parser.add_argument('--timeout-enabled', type=str, help='are timeouts enabled?', dest='timeoutEnabled', default='true')
 parser.add_argument('--routing-scheme', type=str, help='must be in [shortestPath, waterfilling, LP,' +
         'silentWhispers, smoothWaterfilling, priceScheme, landmarkRouting, lndBaseline, DCTCP, DCTCPBal,\
-                DCTCPRate, DCTCPQ, TCP],' +  
+                DCTCPRate, DCTCPQ, TCP, celer],' +  
         'else will default to waterfilling', 
         dest='routingScheme', default='default')
 parser.add_argument('--num-path-choices', type=str, help='number of path choices', dest='numPathChoices', default='default')
@@ -131,7 +131,7 @@ if args.capacity is not None:
 if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'silentWhispers', \
         'smoothWaterfilling', 'priceSchemeWindow', 'priceSchemeWindowNoQueue', 'priceSchemeWindowNoSplit',\
         'landmarkRouting', 'lndBaseline', 'priceSchemeNoQueue', 'lndBaselineSplit', 'DCTCP', 'DCTCPBal', \
-        'DCTCPRate', 'DCTCPQ', 'TCP']:
+        'DCTCPRate', 'DCTCPQ', 'TCP', 'celer']:
     if args.routingScheme != 'default':
         print "******************"
         print "WARNING: ill-specified routing scheme, defaulting to waterfilling,",\
@@ -173,6 +173,7 @@ if args.capacityFactor != None:
     configname = configname + "_capacityFactorTimes10_" + str(int(float(args.capacityFactor)*10))
 
 print configname
+print "(create_ini_file.py) ini_filename:", args.ini_filename
 
 f = open(args.ini_filename, "w+")
 f.write("[General]\n\n")
@@ -196,6 +197,7 @@ f.write("**.resultPrefix = \"" + RESULT_DIR + configname + "\"\n")
 
 if args.routingScheme in ['waterfilling', 'smoothWaterfilling']:
     f.write("**.waterfillingEnabled = true\n")
+
 if 'priceScheme' in args.routingScheme:
     f.write("**.priceSchemeEnabled = true\n")
     f.write("**.eta = " + str(args.eta) + "\n")
@@ -245,6 +247,8 @@ if 'TCP' in args.routingScheme:
     if 'TCP' == args.routingScheme:
         f.write("**.TCPEnabled = true\n")
 
+if args.routingScheme == 'celer':
+    f.write("**.celerEnabled = true\n")
 
 
 if args.pathChoice == "oblivious":

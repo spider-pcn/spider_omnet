@@ -65,7 +65,7 @@ balanceThreshold=0.01
 minDCTCPWindow=1
 rateDecreaseFrequency=3.0
 
-for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP"
+for suffix in "Base" "Waterfilling" "LndBaseline" "PriceScheme" "DCTCP" "Celer"
 do
     cp hostNode${suffix}.ned ${PATH_NAME}
     cp routerNode${suffix}.ned ${PATH_NAME}
@@ -83,7 +83,12 @@ if [ -z "$pathChoice" ]; then
     pathChoice="shortest"
 fi
 
+if [ -z "$schedulingAlgorithm" ]; then
+    schedulingAlgorithm="LIFO"
+fi
+
 echo $pathChoice
+echo $schedulingAlgorithm
 
 echo "${#num_nodes[@]}"
 
@@ -176,7 +181,7 @@ do
                     --payment-graph-dag-percentage 0\
                     --topo-filename $topofile\
                     --experiment-time $simulationLength \
-                    --balance-per-channel $balance\
+                    --balance-list $balance\
                     --generate-json-also \
                     --timeout-value 5 \
                     --scale-amount $scale \
@@ -330,7 +335,8 @@ do
                       --waiting --bottlenecks --probabilities \
                       --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
                       --inflight_incoming --rate_to_send --price --mu_remote --demand \
-                      --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked --queue_delay
+                      --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked --queue_delay \
+                      --cpi --perDestQueue --kStar
                   done
               fi
 

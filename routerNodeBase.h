@@ -35,18 +35,24 @@ class routerNodeBase : public cSimpleModule
 
         // helper methods
         virtual int myIndex();
-        virtual void checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id, simtime_t >> queuedTransUnits, int node);
+        virtual void checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id, simtime_t >> 
+                queuedTransUnits, int node);
         virtual void printNodeToPaymentChannel();
         virtual simsignal_t registerSignalPerChannel(string signalStart, int id);
+        virtual simsignal_t registerSignalPerDest(string signalStart, int id, string suffix);
+        virtual simsignal_t registerSignalPerChannelPerDest(string signalStart,
+              int pathIdx, int destNode);
         virtual double getTotalAmount(int x);
         virtual double getTotalAmountIncomingInflight(int x);
         virtual double getTotalAmountOutgoingInflight(int x);
         virtual void performRebalancing();
+        virtual void setPaymentChannelBalanceByNode(int node, double balance);
+        virtual void deleteTransaction(routerMsg* ttmsg);
 
         // core simulator functions 
         virtual void initialize() override;
         virtual void finish() override;
-        virtual void processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q);
+        virtual bool processTransUnits(int dest, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q);
         virtual void deleteMessagesInQueues();
 
         // generators for standard messages
@@ -61,7 +67,7 @@ class routerNodeBase : public cSimpleModule
 
         // message forwarders
         virtual void forwardMessage(routerMsg *msg);
-        virtual bool forwardTransactionMessage(routerMsg *msg, int dest, simtime_t);
+        virtual int forwardTransactionMessage(routerMsg *msg, int dest, simtime_t);
 
         // message handlers
         virtual void handleMessage(cMessage *msg) override;

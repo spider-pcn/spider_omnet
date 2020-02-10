@@ -109,6 +109,7 @@ class hostNodeBase : public cSimpleModule {
         virtual double getTotalAmount(int x);
         virtual double getTotalAmountIncomingInflight(int x);
         virtual double getTotalAmountOutgoingInflight(int x);
+        virtual void setPaymentChannelBalanceByNode(int node, double balance);
 
         virtual void pushIntoSenderQueue(DestInfo* destInfo, routerMsg* msg);
         virtual void deleteTransaction(routerMsg* msg);
@@ -118,6 +119,8 @@ class hostNodeBase : public cSimpleModule {
         virtual simsignal_t registerSignalPerChannel(string signalStart, int id);
         virtual simsignal_t registerSignalPerDest(string signalStart, int destNode, 
                 string suffix);
+        virtual simsignal_t registerSignalPerChannelPerDest(string signalStart,
+              int pathIdx, int destNode);
         virtual void recordTailCompletionTime(simtime_t timeSent, double amount, double completionTime);
 
         // generators for the standard messages
@@ -157,13 +160,13 @@ class hostNodeBase : public cSimpleModule {
         virtual void handleClearStateMessage(routerMsg *msg);
         
         // message forwarders
-        virtual bool forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime);
+        virtual int forwardTransactionMessage(routerMsg *msg, int dest, simtime_t arrivalTime);
         virtual void forwardMessage(routerMsg *msg);
 
         // core simulator functions
         virtual void initialize() override;
         virtual void finish() override;
-        virtual void processTransUnits(int dest, 
+        virtual bool processTransUnits(int dest, 
                 vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q);
         virtual void deleteMessagesInQueues();
 };

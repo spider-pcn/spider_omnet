@@ -4,12 +4,12 @@ from parse_vec_files import *
 
 # parse a vector declaration line that maps a vector id to the signal that it is recording
 def parse_vec_declaration(line):
-    
     words = line.split(" ")
     if words[0] != "vector":
         print "Invalid line no vector"
         return None, "Invalid line"
-    
+
+
     vector_id = int(words[1])
     owner_node = int(words[2].split("[")[1].split("]")[0])
     owner_node_type = words[2].split(".")[1].split("[")[0]

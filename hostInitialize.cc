@@ -221,7 +221,7 @@ void generateTransUnitList(string workloadFile){
             // instantiate all the transUnits that need to be sent
             int numSplits = 0;
             double totalAmount = amount;
-            while (amount >= _splitSize && (_waterfillingEnabled || _priceSchemeEnabled || _lndBaselineEnabled || _dctcpEnabled)
+            while (amount >= _splitSize && (_waterfillingEnabled || _priceSchemeEnabled || _lndBaselineEnabled || _dctcpEnabled || _celerEnabled)
                    && _splittingEnabled) {
                 TransUnit tempTU = TransUnit(_splitSize, timeSent, 
                         sender, receiver, priorityClass, hasTimeOut, timeOut, largerTxnID);
@@ -279,6 +279,8 @@ void updateMaxTravelTime(vector<int> route){
                 [&nextNode](const pair<int, int>& element){ return element.first == nextNode;} );
         if (it != (*channel).end()){
             double deltaTime = it->second;
+            if (deltaTime > _maxOneHopDelay)
+                _maxOneHopDelay = deltaTime/1000;
             maxTime = maxTime + deltaTime;
         }
         else{
@@ -927,6 +929,14 @@ void printVector(vector<int> v){
     }
     cout << endl;
 }
+
+void printVectorReverse(vector<int> v){
+    for (auto it = v.rbegin(); it != v.rend(); ++it) {
+        cout << *it << ", ";
+    }
+    cout << endl;
+}
+
 
 
 /*

@@ -2,8 +2,7 @@
 PATH_NAME="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulations/"
 GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
 
-balance=100
-
+# generally run DCTCPQ with LIFO and celer with FIFO
 routing_scheme=$1
 capacity_type=$2
 pathChoice=$3
@@ -18,14 +17,14 @@ obliviousRoutingEnabled=false
 kspYenEnabled=false
 
 #general parameters that do not affect config names
-simulationLength=1010
+simulationLength=610
 statCollectionRate=10
 timeoutClearRate=1
 timeoutEnabled=true
 signalsEnabled=true
 loggingEnabled=false
-transStatStart=800
-transStatEnd=1000
+transStatStart=400
+transStatEnd=600
 mtu=1.0
 
 # scheme specific parameters
@@ -70,26 +69,12 @@ if [ -z "$schedulingAlgorithm" ]; then
     schedulingAlgorithm="LIFO"
 fi
 
-prefix="sf_50_routers"
-workload_prefix="sf_50_routers"
-if [ -z "$capacity_type" ]; then
-    random_capacity=false
-    lnd_capacity=false
-    echo "constant capacity"
-elif [ $capacity_type == "random" ]; then
-    random_capacity=true
-    prefix="sf_50_routers_randomCap"
-    echo "normal dist"
-elif [ $capacity_type == "lnd" ]; then
-    lnd_capacity=true
-    prefix="sf_50_routers_lndCap"
-    echo "lnd_dist"
-fi
-
+prefix="sf_10_routers"
+workload_prefix="sf_10_routers"
 echo $pathChoice
 
-#balance_scale=("100" "200" "400" "800" "1600" "3200") #"1200" "2400" "4800" "9600") 
-balance_scale=("2750" "4000" "5900" "8750" "12000") # #300 400 800 1600 3200 600 1200 2400 4800 9600
+# celer experiment list for 10 nodes
+balance_scale=("200" "400" "800" "1600" "3200" "6400") 
 for num in {0..4}
 do
     echo "doing run $num"
@@ -209,7 +194,7 @@ do
             ./spiderNet -u Cmdenv -f ${inifile} -c\
             ${network}_${balance}_${routing_scheme}_circ${num}_demand${scale}_${pathChoice}_${numPathChoices}_${schedulingAlgorithm}  -n ${PATH_NAME}\
                 > ${output_file}.txt &
-            pids+=($!)
+             pids+=($!)
             done
         fi
         wait # for all algorithms to complete for this demand
@@ -261,7 +246,8 @@ do
                   --waiting --bottlenecks --probabilities \
                   --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
                   --inflight_incoming --rate_to_send --price --mu_remote --demand \
-                  --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked --queue_delay
+                  --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked --queue_delay \
+                  --cpi --perDestQueue --kStar
               done
           fi
 

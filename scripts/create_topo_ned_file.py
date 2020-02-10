@@ -112,7 +112,7 @@ def write_ned_file(topo_filename, output_filename, network_name, routing_alg):
     outfile.write('\tsubmodules:\n')
     outfile.write('\t\thost['+str(max_host)+']: ' + host_node_type + ' {} \n')
     outfile.write('\t\trouter['+str(max_router)+']: ' + router_node_type + ' {} \n')
-    outfile.write('connections: \n')
+    outfile.write('\tconnections: \n')
 
     for link in linklist:
         a = link[0]
@@ -299,7 +299,7 @@ parser.add_argument('--lnd-channel-capacity', type=str, dest='lnd_capacity', \
 parser.add_argument('--rebalancing-enabled', type=str, dest="rebalancing_enabled",\
         help="should the end host router channel be reasonably sized", default="false")
 routing_alg_list = ['shortestPath', 'priceScheme', 'waterfilling', 'landmarkRouting', 'lndBaseline', \
-        'DCTCP', 'DCTCPBal', 'DCTCPRate', 'DCTCPQ', 'TCP']
+        'DCTCP', 'DCTCPBal', 'DCTCPRate', 'DCTCPQ', 'TCP', 'celer']
 
 
 args = parser.parse_args()
