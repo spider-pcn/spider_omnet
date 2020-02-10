@@ -1,7 +1,10 @@
 #include "hostNodeLndBaseline.h"
-
 Define_Module(hostNodeLndBaseline);
 
+//instaniate global parameter for hostNodeLndBaseline
+double _restorePeriod;
+int _numAttemptsLndBaseline;
+vector<int> succRetriesList, failRetriesList;
 
 /* helper function for sorting heap by prune time */
 bool sortPrunedChannelsFunction(tuple<simtime_t, tuple<int,int>> x, tuple<simtime_t, tuple<int, int>> y){
@@ -10,9 +13,29 @@ bool sortPrunedChannelsFunction(tuple<simtime_t, tuple<int,int>> x, tuple<simtim
     return xTime > yTime; //makes smallest simtime_t appear first
 } 
 
-//instaniate global parameter for hostNodeLndBaseline
-double _restorePeriod;
-int _numAttemptsLndBaseline;
+
+/* helper function to record the tail retries for successful and failed transactions
+ * for LND */
+void hostNodeLndBaseline::recordTailRetries(simtime_t timeSent, bool success, int retries){
+    if (timeSent >= _transStatStart && timeSent <= _transStatEnd) {
+        vector<int> *retryList = success ? &succRetriesList : &failRetriesList;
+        retryList->push_back(retries);
+        if (retryList->size() == 1000) {
+            if (success) {
+                for (auto const& time : *retryList) 
+                    _succRetriesFile << time << " ";
+                _succRetriesFile << endl;
+            } else {
+                for (auto const& time : *retryList) 
+                    _failRetriesFile << time << " ";
+                _failRetriesFile << endl;
+            }
+            retryList->clear();
+        }
+    }
+}
+
+
 
 /*initializeMyChannels - makes copy of global _channels data structure, without 
   delay, as paths are calculated using BFS (not weight ed edges) */
@@ -103,6 +126,25 @@ void hostNodeLndBaseline::initialize(){
     _prunedChannelsList = {};
 }
 
+
+/* calls base method and also reports any unreported success and failure retries
+ */
+void hostNodeLndBaseline::finish(){
+    hostNodeBase::finish();
+
+    if (myIndex() == 0) {
+        for (auto const& t : succRetriesList) 
+            _succRetriesFile << t << " ";
+        _succRetriesFile << endl;
+        _succRetriesFile.close();
+
+        for (auto const& t : failRetriesList) 
+            _failRetriesFile << t << " ";
+        _failRetriesFile << endl;
+        _failRetriesFile.close();
+    }
+}
+
 /* generateAckMessage that encapsulates transaction message to use for reattempts 
 Note: this is different from the hostNodeBase version that will delete the 
 passed in transaction message */
@@ -175,7 +217,8 @@ void hostNodeLndBaseline::handleTransactionMessageSpecialized(routerMsg* ttmsg){
             
             if (splitInfo->numArrived == 1) {       
                 statRateArrived[destNode] += 1; 
-                statRateAttempted[destNode] += 1; 
+                statRateAttempted[destNode] += 1;
+                splitInfo->numTries += 1; 
             }
         }
         if (splitInfo->numArrived == 1)     
@@ -208,12 +251,14 @@ void hostNodeLndBaseline::handleAckMessageNoMoreRoutes(routerMsg *msg, bool toDe
     ackMsg *aMsg = check_and_cast<ackMsg *>(msg->getEncapsulatedPacket());
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(aMsg->getEncapsulatedPacket());
     int numPathsAttempted = aMsg->getPathIndex() + 1;
+    SplitState* splitInfo = &(_numSplits[myIndex()][aMsg->getLargerTxnId()]);
 
     if (aMsg->getTimeSent() >= _transStatStart && aMsg->getTimeSent() <= _transStatEnd) {
         statRateFailed[aMsg->getReceiver()] = statRateFailed[aMsg->getReceiver()] + 1;
         statAmtFailed[aMsg->getReceiver()] += aMsg->getAmount();
+        recordTailRetries(aMsg->getTimeSent(), false, splitInfo->numTries); 
     }
-    
+
     if (toDelete) {
         aMsg->decapsulate();
         delete transMsg;
@@ -238,6 +283,7 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
     int transactionId = transMsg->getTransactionId();
     int destNode = msg->getRoute()[0];
     double largerTxnId = aMsg->getLargerTxnId();
+    SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
     //guaranteed to be at last step of the path
     
     auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
@@ -250,7 +296,6 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
             canceledTransactions.erase(iter);
 
         if (aMsg->getIsSuccess()) {
-            SplitState* splitInfo = &(_numSplits[myIndex()][largerTxnId]);
             splitInfo->numReceived += 1;
 
             if (transMsg->getTimeSent() >= _transStatStart && 
@@ -262,6 +307,9 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
                     _transactionCompletionBySize[splitInfo->totalAmount] += 1;
                     double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                     statCompletionTimes[destNode] += timeTaken * 1000;
+                    _txnAvgCompTimeBySize[splitInfo->totalAmount] += timeTaken * 1000;
+                    recordTailCompletionTime(aMsg->getTimeSent(), splitInfo->totalAmount, timeTaken * 1000);
+                    recordTailRetries(aMsg->getTimeSent(), true, splitInfo->numTries);
                 }
             }
             if (splitInfo->numTotal == splitInfo->numReceived) 
@@ -272,7 +320,7 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
         }
         aMsg->decapsulate();
         delete transMsg;
-        hostNodeBase::handleAckMessage(msg); 
+        hostNodeBase::handleAckMessage(msg);
     }
     else
     { //allowed more attempts
@@ -307,6 +355,7 @@ void hostNodeLndBaseline::handleAckMessageSpecialized(routerMsg *msg)
             aMsg->decapsulate();
             hostNodeBase::handleAckMessage(msg);
             ttmsg->encapsulate(transMsg);
+            splitInfo->numTries += 1;
             handleTransactionMessage(ttmsg, true);
         }   
     }

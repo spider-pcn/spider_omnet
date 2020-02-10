@@ -99,6 +99,7 @@ REASONABLE_ROUTER_BALANCE = 1000
 MIN_TXN_SIZE = 0.1
 MAX_TXN_SIZE = 10
 SMALLEST_UNIT=1
+MEASUREMENT_INTERVAL = 200 # transStatEnd - start in experiments
 
 EC2_INSTANCE_ADDRESS="ec2-34-224-216-215.compute-1.amazonaws.com"
 PORT_NUMBER=8000
@@ -183,7 +184,7 @@ INTERESTING_SIGNALS["per_channel_dest_plot"] = per_channel_dest_list
 PLOT_DIR = "data/"
 GGPLOT_DATA_DIR = "ggplot_data/"
 SUMMARY_DIR = "figures/timeouts/"
-RESULT_DIR = "../benchmarks/circulations/results/"
+RESULT_DIR = "/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulations/results/"
 
 # define scheme codes for ggplot
 SCHEME_CODE = { "priceSchemeWindow": "PS",\

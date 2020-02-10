@@ -11,10 +11,10 @@ prefix=("dag_example" "three_node" "four_node" "five_node_hardcoded" \
    "sf_50_routers" "lnd_july15_2019" "lnd_uniform" \
     "sw_weird_combo" "sf_weird_combo" "dag_example")
 
-scale=1 # "60" "90")
+scale=1 
 random_init_bal=false
 random_capacity=false
-lnd_capacity=false
+lnd_capacity=true
 
 
 #general parameters that do not affect config names
@@ -45,13 +45,12 @@ arraylength=${#prefix[@]}
 PYTHON="/usr/bin/python"
 mkdir -p ${PATH_PREFIX}
 
-dag_percent=("20") # "45" "65")
-balance=100
+dag_percent=("45") # "20" "65")
+balance=4000
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
-#array=( 0 1 4 5 8 19 32)
-array=(0) #10 11 13 22 24)
+array=(10) 
 for i in "${array[@]}" 
 do    
     # create workload files and run different demand levels

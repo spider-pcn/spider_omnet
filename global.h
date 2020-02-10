@@ -22,6 +22,7 @@
 #include <deque>
 #include <unordered_map>
 #include <fstream>
+#include <iostream>
 #include <list>
 #include "structs/PaymentChannel.h"
 #include "structs/PathInfo.h"
@@ -61,6 +62,8 @@ extern double _statRate;
 extern double _clearRate;
 extern double _maxTravelTime;
 extern double _maxOneHopDelay;
+extern double _percentile;
+
 //unordered_map of balances for each edge; key = <int,int> is <source, destination>
 //extern bool withFailures;
 extern bool _waterfillingEnabled;
@@ -78,6 +81,9 @@ extern bool _windowEnabled;
 extern vector<tuple<int,int>> _landmarksWithConnectivityList;//pair: (number of edges, node number)
 extern unordered_map<double, int> _transactionCompletionBySize;
 extern unordered_map<double, int> _transactionArrivalBySize;
+extern unordered_map<double, double> _txnAvgCompTimeBySize;
+extern unordered_map<double, vector<double>> _txnTailCompTimesBySize;
+extern ofstream _succRetriesFile, _failRetriesFile;
 
 // for silentWhispers
 extern vector<int> _landmarks;

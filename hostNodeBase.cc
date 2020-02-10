@@ -8,6 +8,10 @@
 unordered_map<int, priority_queue<TransUnit, vector<TransUnit>, LaterTransUnit>> _transUnitList;
 unordered_map<double, int> _transactionCompletionBySize;
 unordered_map<double, int> _transactionArrivalBySize;
+unordered_map<double, double> _txnAvgCompTimeBySize;
+unordered_map<double, vector<double>> _txnTailCompTimesBySize;
+ofstream _succRetriesFile, _failRetriesFile;
+ofstream _tailCompBySizeFile;
 unordered_map<int, set<int>> _destList;
 unordered_map<int, unordered_map<double, SplitState>> _numSplits;
 unordered_map<int, unordered_map<int, vector<vector<int>>>> _pathsMap;
@@ -30,6 +34,7 @@ double _shortestPathStartTime;
 double _shortestPathEndTime;
 double _splitSize;
 double _bank;
+double _percentile;
 
  //adjacency list format of graph edges of network
 unordered_map<int, vector<pair<int,int>>> _channels;
@@ -297,6 +302,22 @@ simsignal_t hostNodeBase::registerSignalPerDest(string signalStart, int destNode
     return signal;
 }
 
+/* helper function to record the tail completion times for every algorithm
+ * called by each algorithm wheever it computes its completion time
+ */
+void hostNodeBase::recordTailCompletionTime(simtime_t timeSent, double amount, double completionTime){
+    if (timeSent >= _transStatStart && timeSent <= _transStatEnd) {
+        _txnTailCompTimesBySize[amount].push_back(completionTime);
+        if (_txnTailCompTimesBySize[amount].size() == 1000) {
+            _tailCompBySizeFile << amount << ": ";
+            for (auto const& time : _txnTailCompTimesBySize[amount]) 
+                _tailCompBySizeFile << time << " ";
+            _tailCompBySizeFile << endl;
+            _tailCompBySizeFile.flush();
+            _txnTailCompTimesBySize[amount].clear();
+        }
+    }
+}
 
 /****** MESSAGE GENERATORS **********/
 
@@ -1034,6 +1055,8 @@ void hostNodeBase::handleAckMessageSpecialized(routerMsg* ttmsg) {
         // stats
         double timeTaken = simTime().dbl() - aMsg->getTimeSent();
         statCompletionTimes[destNode] += timeTaken * 1000;
+        _txnAvgCompTimeBySize[aMsg->getAmount()] += timeTaken * 1000;
+        recordTailCompletionTime(aMsg->getTimeSent(), aMsg->getAmount(), timeTaken * 1000);
     }
     else 
         statNumCompleted[destNode] += 1;
@@ -1511,6 +1534,7 @@ void hostNodeBase::initialize() {
         _splittingEnabled = par("splittingEnabled");
         cout << "splitting" << _splittingEnabled << endl;
         _serviceArrivalWindow = par("serviceArrivalWindow");
+        string resultPrefix = par("resultPrefix");
 
         _hasQueueCapacity = true;
         _queueCapacity = 12000;
@@ -1528,6 +1552,7 @@ void hostNodeBase::initialize() {
         _obliviousRoutingEnabled = par("obliviousRoutingEnabled");
 
         _splitSize = par("splitSize");
+        _percentile = 0.01;
 
         _celerEnabled = par("celerEnabled");
         _lndBaselineEnabled = par("lndBaselineEnabled");
@@ -1551,6 +1576,12 @@ void hostNodeBase::initialize() {
         _computeBalanceRate = par("minBalanceComputeRate");
         _bank = 0;
 
+        // files for recording tail completion and retries
+        _tailCompBySizeFile.open(resultPrefix + "_tailCompBySize.txt");
+        if (_lndBaselineEnabled) {
+            _succRetriesFile.open(resultPrefix + "_succRetries.txt");
+            _failRetriesFile.open(resultPrefix + "_failRetries.txt");
+        }
 
         // path choices
         string pathFileName;
@@ -1601,9 +1632,11 @@ void hostNodeBase::initialize() {
         generateChannelsBalancesMap(topologyFile_);
     }
     
-    
+    // set index and compute the top percentile size to choose elements accordingly
     setIndex(getIndex());
-
+    maxPercentileHeapSize =  round(_numSplits[myIndex()].size() * _percentile);
+    statNumTries.push(0);
+    
     // Assign gates to all the payment channels
     const char * gateName = "out";
     cGate *destGate = NULL;
@@ -1776,6 +1809,15 @@ void hostNodeBase::finish() {
         }
     }
 
+    // print all the PQ items for number of tries 
+    while (!statNumTries.empty()) {
+        char buffer[350];
+        sprintf(buffer, "retries top percentile %d ", myIndex());
+        recordScalar(buffer, statNumTries.top());
+        statNumTries.pop();
+    }
+
+
     if (myIndex() == 0) {
         // can be done on a per node basis also if need be
         // all in seconds
@@ -1789,11 +1831,24 @@ void hostNodeBase::finish() {
             double amount = x.first;
             int completed = x.second;
             int arrived = _transactionArrivalBySize[amount];
-
+            
             char buffer[60];
             sprintf(buffer, "size %d: arrived (%d) completed", int(amount), arrived);
             recordScalar(buffer, completed);
+            
+            if (completed > 0) {
+                double avg = _txnAvgCompTimeBySize[amount] / completed;
+                sprintf(buffer, "size %d: avg_comp_time ", int(amount));
+                recordScalar(buffer, avg);
+
+                _tailCompBySizeFile << amount << ": ";
+                for (auto const& time : _txnTailCompTimesBySize[amount]) 
+                    _tailCompBySizeFile << time << " ";
+                _tailCompBySizeFile << endl;
+                _txnTailCompTimesBySize[amount].clear();
+            }
         }
+        _tailCompBySizeFile.close(); 
     }
 }
 

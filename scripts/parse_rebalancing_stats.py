@@ -74,7 +74,7 @@ output_file.write("Topo,CreditType,NumPaths,PathType,SchedulingAlg," + \
         "Threshold,RebalancingRate,SuccRatio,SuccRatioMin,SuccRatioMax,SuccVolume," + \
         "SuccVolumeMin," +\
         "SuccVolumeMax,CompTime,CompTimeMin,CompTimeMax," +
-        "RebalancingAmt,RebalancingAmtMin,RebalancingAmtMax\n")
+        "RebalancingAmt,RebalancingAmtMin,RebalancingAmtMax,Offloading,OffloadingMin,OffloadingMax\n")
 
 # determine topology and credit type
 if "sw" in args.topo or "sf" in args.topo:
@@ -107,7 +107,7 @@ for credit in credit_list:
                     for percent in dag_percent_list:
                         for alg in scheduling_algorithms:
                             for rr in rebalancing_rate_list:
-                                succ_ratios, succ_vols,comp_times, rebalances = [], [], [], []
+                                succ_ratios, succ_vols,comp_times, rebalances, offloadings = [], [], [], [], []
                                 for run_num in range(0, args.num_max  + 1):
                                     if args.payment_graph_type == "circ" or percent == '0':
                                         file_name = topo + str(credit) + "_circ" + str(run_num)
@@ -144,10 +144,20 @@ for credit in credit_list:
                                                     comp_time = float(line.split(" ")[3][:-1])
                                                 elif line.startswith("Amt rebalanced"):
                                                     amt_rebalanced = float(line.split(" ")[2][:-1])/num_nodes
+                                                elif line.startswith("Num rebalanced"):
+                                                    num_rebalanced = float(line.split(" ")[2][:-1])*MEASUREMENT_INTERVAL
+                                                elif line.startswith("Num arrived"):
+                                                    num_arrived = float(line.split(" ")[2][:-1])
+                                                elif line.startswith("Num completed"):
+                                                    num_completed = float(line.split(" ")[2][:-1])
                                             succ_ratios.append(succ_ratio * 100)
                                             succ_vols.append(succ_volume * 100)
                                             comp_times.append(comp_time)
                                             rebalances.append(amt_rebalanced)
+                                            
+                                            num_failed = num_arrived - num_completed
+                                            offloading = (num_rebalanced + num_failed)/num_completed
+                                            offloadings.append(offloading)
                                     except IOError:
                                         print "error with " , file_name
                                         continue
@@ -175,12 +185,14 @@ for credit in credit_list:
                                         + str(alg) + "," \
                                         + str(queue_threshold) + "," \
                                         + str(rr) + "," \
-                                        + ("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (stat.mean(succ_ratios), \
+                                        + ("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % \
+                                            (stat.mean(succ_ratios), \
                                         min(succ_ratios), \
                                         max(succ_ratios), stat.mean(succ_vols), min(succ_vols),  \
                                         max(succ_vols), \
                                         stat.mean(comp_times), min(comp_times), max(comp_times), \
-                                        stat.mean(rebalances), min(rebalances), max(rebalances))))
+                                        stat.mean(rebalances), min(rebalances), max(rebalances),
+                                        stat.mean(offloadings), min(offloadings), max(offloadings))))
     
 
 output_file.close()

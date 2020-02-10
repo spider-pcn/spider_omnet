@@ -19,7 +19,7 @@ prefix=("two_node_imbalance" "two_node_capacity" "three_node" "four_node" "five_
     "parallel_graphs")
 
 
-demand_scale=("20") # "60" "90")
+demand_scale=("3") # 10 for implementation comparison 
 random_init_bal=false
 random_capacity=false
 lnd_capacity=false
@@ -64,11 +64,11 @@ mkdir -p ${PATH_NAME}
 
 # TODO: find the indices in prefix of the topologies you want to run on and then specify them in array
 # adjust experiment time as needed
-#array=( 0 1 4 5 8 19 32)
-array=(11) #10 11 13 22 24)
+array=(20) 
 for i in "${array[@]}" 
 do
-    for balance in 2750 4000 5900 8750 12000 #300 400 800 1600 3200 600 1200 2400 4800 9600
+    for balance in 100 200 400 # 50 100 200 400      
+        # 900 1350 2750 4000 8750
     do
         if [ $random_capacity == "true" ]; then
             prefix_to_use="${prefix[i]}_randomCap"
@@ -106,6 +106,7 @@ do
         if [ ${prefix_to_use:0:3} == "two" ]; then
             delay="120"
         else
+            # delay="150" for implementation comparison
             delay="30"
         fi
         
@@ -116,7 +117,7 @@ do
                 --num-nodes ${num_nodes[i]}\
                 --balance-per-channel $balance\
                 --separate-end-hosts \
-                --delay-per-channel $delay\
+                --delay-per-channel $delay \
                 --randomize-start-bal $random_init_bal\
                 --random-channel-capacity $random_capacity\
                 --lnd-channel-capacity $lnd_capacity
@@ -156,7 +157,7 @@ do
                     --payment-graph-dag-percentage 0\
                     --topo-filename $topofile\
                     --experiment-time $simulationLength \
-                    --balance-list $balance\
+                    --balance-list $balance \
                     --generate-json-also \
                     --timeout-value 5 \
                     --scale-amount $scale\

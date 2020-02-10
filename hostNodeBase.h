@@ -50,6 +50,8 @@ class hostNodeBase : public cSimpleModule {
         unordered_map<int, int> statRateArrived = {};
         unordered_map<int, double> statProbabilities = {};
         unordered_map<int, double> statCompletionTimes = {};
+        priority_queue<double, vector<double>, greater<double>> statNumTries;
+        double maxPercentileHeapSize;
         int numCleared = 0;
 
         //store shortest paths 
@@ -119,6 +121,7 @@ class hostNodeBase : public cSimpleModule {
                 string suffix);
         virtual simsignal_t registerSignalPerChannelPerDest(string signalStart,
               int pathIdx, int destNode);
+        virtual void recordTailCompletionTime(simtime_t timeSent, double amount, double completionTime);
 
         // generators for the standard messages
         virtual routerMsg* generateTransactionMessageForPath(double amt, 

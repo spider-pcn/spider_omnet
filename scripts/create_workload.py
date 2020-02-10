@@ -269,7 +269,7 @@ def generate_json_files(filename, graph, inside_graph, start_nodes, end_nodes, a
                 cap = ENDHOST_LND_ONE_WAY_CAPACITY
                 node_type = "e"
             else:
-                cap = balance * 200 / 2
+                cap = balance * 800 / 2
                 node_type = "r"
 
             if u <= v: 
@@ -379,6 +379,7 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
 
 
     if "weird" not in filename:
+        print "generting txns here"
         write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
             workload_type, total_time, log_normal, kaggle_size, txn_size_mean, timeout_value)
 

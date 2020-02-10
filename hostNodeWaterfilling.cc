@@ -432,6 +432,8 @@ void hostNodeWaterfilling::handleAckMessageSpecialized(routerMsg* ttmsg) {
                         _transactionCompletionBySize[splitInfo->totalAmount] += 1;
                         double timeTaken = simTime().dbl() - splitInfo->firstAttemptTime;
                         statCompletionTimes[receiver] += timeTaken * 1000;
+                        _txnAvgCompTimeBySize[splitInfo->totalAmount] += timeTaken * 1000;
+                        recordTailCompletionTime(aMsg->getTimeSent(), splitInfo->totalAmount, timeTaken * 1000);
                     }
                 }
                 
