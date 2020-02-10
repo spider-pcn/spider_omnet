@@ -194,7 +194,8 @@ SCHEME_CODE = { "priceSchemeWindow": "PS",\
         "DCTCP": "DCTCP",\
         "DCTCPRate": "DCTCPRate", \
         "DCTCPQ": "DCTCP_qdelay", \
-        "DCTCPBal": "DCTCPBal"}
+        "DCTCPBal": "DCTCPBal",\
+        "celer": "celer"}
 
 # define actual dag percent mapping for ggplot
 PERCENT_MAPPING = { '0' : 0,\
