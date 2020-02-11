@@ -93,7 +93,6 @@ for credit in credit_list:
             if path_type == "shortest" and len(scheme_list) > 1 and scheme in ["waterfilling", "DCTCPQ"] and \
                     credit_type == "lnd":
                 continue
-            scheduling_alg = "FIFO" if scheme in ["celer"] else "LIFO"
 
             for queue_threshold in queue_threshold_list:
                 for num_paths in path_num_list:
@@ -114,12 +113,14 @@ for credit in credit_list:
                                     file_name += "_" + str(num_paths) 
                                 if alg is not None:
                                     file_name += "_" + alg
+                                elif scheme == "celer":
+                                    file_name += "_FIFO"
+                                else:
+                                    file_name += "_LIFO"
                                 
                                 if queue_threshold is not None and percent != '0' and scheme == "DCTCPQ":
                                     file_name += "_qd" + str(queue_threshold)
-
-
-                                file_name += "_" + scheduling_alg + "_summary.txt"
+                                file_name += "_summary.txt"
                                 
                                 try: 
                                     with open(SUMMARY_DIR + file_name) as f:
