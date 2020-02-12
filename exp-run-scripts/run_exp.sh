@@ -1,6 +1,6 @@
 #!/bin/bash
-PATH_NAME="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulations/"
-GRAPH_PATH="/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/figures/"
+PATH_NAME="$HOME/$OMNET/samples/spider_omnet/benchmarks/circulations/"
+GRAPH_PATH="$HOME/$OMNET/samples/spider_omnet/scripts/figures/"
 
 num_nodes=("2" "2" "3" "4" "5" "5" "5" "0" "0" "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" \
     "10" "20" "50" "60" "80" "100" "200" "400" "600" "800" "1000" "40" "10" "20" "30" "40" "0" "0" "11" "4")
@@ -76,7 +76,7 @@ cp hostNodePropFairPriceScheme.ned ${PATH_NAME}
 
 
 arraylength=${#prefix[@]}
-PYTHON="/usr/bin/python"
+PYTHON="python"
 mkdir -p ${PATH_NAME}
 
 if [ -z "$pathChoice" ]; then
@@ -291,7 +291,7 @@ do
             # TODO: add plotting script
             echo "Plotting"
             payment_graph_type='circ' 
-            if [ "$timeoutEnabled" = true ] ; then timeout="timeouts"; else timeout="no_timeouts"; fi
+            if [ "$timeoutEnabled" = true ] ; then timeout=""; else timeout="no_timeouts"; fi
             if [ "$random_init_bal" = true ] ; then suffix="randomInitBal_"; else suffix=""; fi
             if [ "$random_capacity" = true ]; then suffix="${suffix}randomCapacity_"; fi
             echo $suffix

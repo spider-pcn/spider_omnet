@@ -1,5 +1,5 @@
 import networkx as nx
-
+import os
 
 # create simple line graph
 simple_line_graph = nx.Graph()
@@ -80,7 +80,9 @@ parallel_graph.add_edge(0,2)
 parallel_graph.add_edge(1,3)
 
 # Filenames for Kaggle data
-KAGGLE_PATH = '/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/scripts/data/'
+HOME = os.getenv('HOME')
+OMNET = os.getenv('OMNET')
+KAGGLE_PATH = HOME + '/' + OMNET + '/samples/spider_omnet/scripts/data/'
 KAGGLE_AMT_DIST_FILENAME = KAGGLE_PATH + 'amt_dist.npy'
 KAGGLE_AMT_MODIFIED_DIST_FILENAME = KAGGLE_PATH + 'amt_dist_cutoff.npy'
 KAGGLE_TIME_DIST_FILENAME = KAGGLE_PATH + 'time_dist.npy'
@@ -107,7 +109,7 @@ PORT_NUMBER=8000
 # json parameters for lnd testbed
 ENDHOST_LND_ONE_WAY_CAPACITY = 1000000000
 ROUTER_CAPACITY = 100
-LND_FILE_PATH = "/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/lnd_data/"
+LND_FILE_PATH = HOME + "/" + OMNET + "/samples/spider_omnet/lnd_data/"
 LOG_NORMAL_MEAN=-0.6152
 LOG_NORMAL_SCALE=0.7310
 
@@ -183,8 +185,8 @@ INTERESTING_SIGNALS["per_channel_dest_plot"] = per_channel_dest_list
 ## ggplot related constants
 PLOT_DIR = "data/"
 GGPLOT_DATA_DIR = "ggplot_data/"
-SUMMARY_DIR = "figures/timeouts/"
-RESULT_DIR = "/home/ubuntu/omnetpp-5.4.1/samples/spider_omnet/benchmarks/circulations/results/"
+SUMMARY_DIR = "figures/"
+RESULT_DIR = HOME + "/" + OMNET + "/samples/spider_omnet/benchmarks/circulations/results/"
 
 # define scheme codes for ggplot
 SCHEME_CODE = { "priceSchemeWindow": "PS",\

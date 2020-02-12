@@ -601,8 +601,8 @@ def plot_per_payment_channel_stats(args, text_to_add):
                     True, is_both=True)
             plot_relevant_stats(data_to_plot, pdf, "kstar")
 
-    print("http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
-            os.path.basename(args.save) + "_per_channel_info.pdf")
+    #print("http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/" + \
+    #        os.path.basename(args.save) + "_per_channel_info.pdf")
     
 
 
@@ -722,8 +722,8 @@ def plot_per_src_dest_stats(args, text_to_add):
 
 
 
-    print("http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
-            os.path.basename(args.save) + "_per_src_dest_stats.pdf")
+    #print("http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/" + \
+    #        os.path.basename(args.save) + "_per_src_dest_stats.pdf")
 
 
 # plot per router channel information on a per destination basis depending on the type of signal wanted
@@ -753,8 +753,8 @@ def plot_per_channel_dest_stats(args, text_to_add):
                     is_both=True, aggregate_per_dest=True)
             plot_relevant_stats(data_to_plot, pdf, "cpi", per_path_info = True)
 
-    print("http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
-            os.path.basename(args.save) + "_per_channel_dest_stats.pdf")
+    #print("http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/" + \
+    #        os.path.basename(args.save) + "_per_channel_dest_stats.pdf")
 
 
 def main():
@@ -775,7 +775,7 @@ def main():
         plot_per_payment_channel_stats(args, text_to_add)
         plot_per_src_dest_stats(args, text_to_add)
         plot_per_channel_dest_stats(args, text_to_add)
-	path_dist = collections.Counter(num_paths)
+        path_dist = collections.Counter(num_paths)
         print(path_dist)
     ggplot.close()
 
