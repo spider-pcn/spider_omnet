@@ -63,7 +63,7 @@ def parse_sca_files(filename):
     sum_attempted = 0.0
     sum_arrived = 0.0
     sum_completed = 0.0
-    for src_dst_pair, stat in data.items():
+    for src_dst_pair, stat in list(data.items()):
         for s in stat:
             stat_type = s[0]
             value = float(s[1])
@@ -155,7 +155,7 @@ def parse_sca_files_overall(filename):
     num_retries = np.array(num_retries)
     num_retries = num_retries[num_retries != 0]
 
-    for src_dst_pair, stat in stats_3000.items():
+    for src_dst_pair, stat in list(stats_3000.items()):
         for s in stat:
             stat_type = s[0]
             value = float(s[1])
@@ -177,13 +177,13 @@ def parse_sca_files_overall(filename):
 
     
     if num_arrived > 0 and vol_arrived > 0:
-        print "Stats for first 3000 seconds of  ", filename
-        print " Success ratio over arrived: ", num_completed/num_arrived, " over attempted", \
-                num_completed/num_attempted
-        print " Success volume  over arrived: ", vol_completed/vol_arrived, \
-                " over attempted", vol_completed/vol_attempted
-        print " Avg completion time ", completion_time/num_completed
-        print "Success Rate " + str(num_completed/1000.0)
+        print("Stats for first 3000 seconds of  ", filename)
+        print(" Success ratio over arrived: ", num_completed/num_arrived, " over attempted", \
+                num_completed/num_attempted)
+        print(" Success volume  over arrived: ", vol_completed/vol_arrived, \
+                " over attempted", vol_completed/vol_attempted)
+        print(" Avg completion time ", completion_time/num_completed)
+        print("Success Rate " + str(num_completed/1000.0))
 
 
     vol_attempted, num_attempted = 0.0, 0.0
@@ -192,7 +192,7 @@ def parse_sca_files_overall(filename):
     completion_time = 0.0
     str_to_add = ""
     
-    for src_dst_pair, stat in stats.items():
+    for src_dst_pair, stat in list(stats.items()):
         for s in stat:
             stat_type = s[0]
             value = float(s[1])
@@ -212,20 +212,20 @@ def parse_sca_files_overall(filename):
             else:
                 completion_time += value
 
-    print "Stats for last part of", filename
-    print " Success ratio over arrived: ", num_completed/num_arrived, " over attempted", num_completed/num_attempted
-    print " Success volume  over arrived: ", vol_completed/vol_arrived, \
-            " over attempted", vol_completed/vol_attempted
-    print " Avg completion time ", completion_time/num_completed
-    print "Success Rate " + str(num_completed/1000.0)
-    print "Amt rebalanced " + str(amt_added) 
-    print "Num rebalanced " + str(num_rebalancing)
-    print "Num arrived " + str(num_arrived) 
-    print "Num completed " + str(num_completed) 
+    print("Stats for last part of", filename)
+    print(" Success ratio over arrived: ", num_completed/num_arrived, " over attempted", num_completed/num_attempted)
+    print(" Success volume  over arrived: ", vol_completed/vol_arrived, \
+            " over attempted", vol_completed/vol_attempted)
+    print(" Avg completion time ", completion_time/num_completed)
+    print("Success Rate " + str(num_completed/1000.0))
+    print("Amt rebalanced " + str(amt_added)) 
+    print("Num rebalanced " + str(num_rebalancing))
+    print("Num arrived " + str(num_arrived)) 
+    print("Num completed " + str(num_completed)) 
 
     if len(num_retries) > 0:
         str_to_add = "\nNum retries percentile (99.9) " + str(np.percentile(num_retries, 90))
-        print str_to_add
+        print(str_to_add)
 
 
     stats_str = "Stats for " + filename + "\nSuccess ratio over arrived: " + str(num_completed/num_arrived) +\

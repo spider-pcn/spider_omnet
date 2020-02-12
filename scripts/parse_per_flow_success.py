@@ -70,7 +70,7 @@ else:
 
 output_file = open(GGPLOT_DATA_DIR + args.save, "w+")
 output_file.write("Topo,CreditType,Scheme,Credit,SuccVol,Demand\n")
-print "scheme objective numberOfZeroes"
+print("scheme objective numberOfZeroes")
 
 
 # go through all relevant files and aggregate probability by size
@@ -114,7 +114,7 @@ for i, scheme in enumerate(scheme_list):
         output_file.write(topo_type + "," + credit_type + "," + \
                 str(SCHEME_CODE[scheme]) +  "," + str(credit) +  "," + \
             "%f,%f\n" % (entry, demand))
-    print scheme, sum_fairness/(args.num_max + 1), count_zero
+    print(scheme, sum_fairness/(args.num_max + 1), count_zero)
 
     if i == 0:
         for entry in sorted(flow_arrival_list):

@@ -24,11 +24,11 @@ def compute_buckets(num_buckets, dist_filename):
     # return all the bucket end markers
     for i, c in enumerate(cdf):
         if c >= break_point:
-            print break_point, i, c
+            print(break_point, i, c)
             buckets.append(int(round(amt_dist.item().get('bins')[i], 1)))
             break_point += gap
     # buckets.append(int(round(amt_dist.item().get('bins')[-1], 1)))
-    print buckets, len(buckets)
+    print(buckets, len(buckets))
     return buckets
 
 delay = 30
@@ -108,7 +108,7 @@ def collect_retry_stats(succ_retry_file, fail_retry_file):
                     for t in parts:
                         retries.append(float(t))
         except IOError:
-            print "error with", file_name
+            print("error with", file_name)
             continue
 
 
@@ -145,18 +145,18 @@ for scheme in scheme_list:
                         comp_times.append(float(t))
                     size_to_comp_times[bucket] = comp_times
         except IOError:
-            print "error with", file_name
+            print("error with", file_name)
             continue
      
 
     sorted_sizes = [5]
     sorted_sizes.extend(sorted(size_to_comp_times.keys()))
-    print sorted_sizes
+    print(sorted_sizes)
     if scheme == 'lndBaseline' and args.lnd_retry_data:
-        print "Successful transaction LND retries Average:", np.average(np.array(succ_retries)), \
-                "99%:" , np.percentile(np.array(succ_retries), 99)
-        print "Failed transaction retries LND Average:", np.average(np.array(fail_retries)), \
-                "99%:" , np.percentile(np.array(fail_retries), 99)
+        print("Successful transaction LND retries Average:", np.average(np.array(succ_retries)), \
+                "99%:" , np.percentile(np.array(succ_retries), 99))
+        print("Failed transaction retries LND Average:", np.average(np.array(fail_retries)), \
+                "99%:" , np.percentile(np.array(fail_retries), 99))
     
     for i, size in enumerate(sorted_sizes[1:]):
         comp_times = np.array(size_to_comp_times[size])

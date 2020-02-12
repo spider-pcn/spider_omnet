@@ -27,19 +27,19 @@ def read_file(filename):
                 n2_id = node_list[n2]
 
             except:
-                print "nodes for edge ", n1, "->", n2, "not found"
+                print("nodes for edge ", n1, "->", n2, "not found")
                 continue
 
             lnd_graph.add_edge(n1_id, n2_id, capacity=cap)
 
-    print "Number of nodes in lnd graph:", lnd_graph.number_of_nodes()
-    print "Number of edge in lnd graph:", lnd_graph.number_of_edges()
+    print("Number of nodes in lnd graph:", lnd_graph.number_of_nodes())
+    print("Number of edge in lnd graph:", lnd_graph.number_of_edges())
 
     capacities = nx.get_edge_attributes(lnd_graph, "capacity")
-    capacities = [float(str(c))/SAT_TO_EUR for c in capacities.values() if float(str(c))/SAT_TO_EUR > 2.0]
-    print len(capacities)
+    capacities = [float(str(c))/SAT_TO_EUR for c in list(capacities.values()) if float(str(c))/SAT_TO_EUR > 2.0]
+    print(len(capacities))
     plt.hist(capacities, bins=100, normed=True, cumulative=True)
-    print np.mean(np.array(capacities)), "stddev" , np.std(np.array(capacities)), "min", min(capacities), "max", max(capacities)
+    print(np.mean(np.array(capacities)), "stddev" , np.std(np.array(capacities)), "min", min(capacities), "max", max(capacities))
     plt.show()
 
     return lnd_graph
@@ -48,8 +48,8 @@ def read_file(filename):
 def remove_nodes_based_on_degree(graph, degree):
     new_nodes = [n for n in graph.nodes() if graph.degree[n] > degree]
     new_graph = graph.subgraph(new_nodes)
-    print "Number of nodes in sub graph:", new_graph.number_of_nodes()
-    print "Number of edge in sub graph:", new_graph.number_of_edges()
+    print("Number of nodes in sub graph:", new_graph.number_of_nodes())
+    print("Number of edge in sub graph:", new_graph.number_of_edges())
 
     """ 
     capacities = nx.get_edge_attributes(new_graph, "capacity")
@@ -74,9 +74,9 @@ def plot_degree_distribution(graph):
 
     degree_sequence = sorted([d for n, d in graph.degree()], reverse=True)  # degree sequence
     degreeCount = collections.Counter(degree_sequence)
-    deg, cnt = zip(*degreeCount.items())
-    print degreeCount
-    print degree_cap
+    deg, cnt = list(zip(*list(degreeCount.items())))
+    print(degreeCount)
+    print(degree_cap)
     fig, ax = plt.subplots()
     plt.plot(deg, cnt)
 

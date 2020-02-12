@@ -6,7 +6,7 @@ from parse_vec_files import *
 def parse_vec_declaration(line):
     words = line.split(" ")
     if words[0] != "vector":
-        print "Invalid line no vector"
+        print("Invalid line no vector")
         return None, "Invalid line"
 
 
@@ -44,7 +44,7 @@ def parse_vec_data_line(columns):
         return vec_id, (time, value)
 
     except:
-        print "Bad line for reading vec data: ", columns
+        print("Bad line for reading vec data: ", columns)
         return None, None, None
 
 # parse the entire file starting from the declarations making a map of them

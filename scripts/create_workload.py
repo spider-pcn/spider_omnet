@@ -8,6 +8,7 @@ import json
 from config import *
 from max_circulation import *
 import pickle
+from functools import reduce
 
 # generates the start and end nodes for a fixed set of topologies - hotnets/line/simple graph
 def generate_workload_standard(filename, payment_graph_topo, workload_type, total_time, \
@@ -37,7 +38,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         start_nodes = [2, 4, 6, 8, 10, 3, 5, 7, 9, 11]
         end_nodes = [3, 5, 7, 9, 11, 2, 4, 6, 8, 10]
         amt_relative = [1] * 10
-        print "here generating topo"
+        print("here generating topo")
         amt_absolute = [SCALE_AMOUNT * MEAN_RATE * x for x in amt_relative]
         graph = toy_dctcp_graph
 
@@ -70,7 +71,7 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
         else:
             num_nodes = 3
             graph = simple_line_graph
-        print num_nodes
+        print(num_nodes)
 
         start_nodes = [0, num_nodes - 1]
         end_nodes = [num_nodes - 1, 0]
@@ -111,17 +112,17 @@ def generate_workload_standard(filename, payment_graph_topo, workload_type, tota
             dag_frac * demand_dict_dag.get(key, 0) \
             for key in set(demand_dict_circ) | set(demand_dict_dag) }
 
-    print demand_dict
+    print(demand_dict)
 
 
-    for i, j in demand_dict.keys():
+    for i, j in list(demand_dict.keys()):
         start_nodes.append(i)
         end_nodes.append(j)
         amt_relative.append(demand_dict[i, j])
     if payment_graph_topo != 'hardcoded_circ':
         amt_absolute = [SCALE_AMOUNT * MEAN_RATE * x for x in amt_relative]
 
-    print amt_absolute
+    print(amt_absolute)
 
 
     if generate_json_also:
@@ -143,7 +144,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
         workload_type, total_time, log_normal, kaggle_size, txn_size_mean, timeout_value, mode="w", start_time=0):
     outfile = open(filename, mode)
     if "newseed" in filename:
-        print "newseed"
+        print("newseed")
         np.random.seed(12493)
 
     if distribution == 'uniform':
@@ -169,7 +170,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
 
     elif distribution == 'poisson':
         if kaggle_size:
-            print "generating from kaggle for size"
+            print("generating from kaggle for size")
             amt_dist = np.load(KAGGLE_AMT_DIST_FILENAME)
             num_amts = amt_dist.item().get('p').size
 
@@ -317,8 +318,8 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         demand_dict_dag = dag_demand(list(inside_graph), mean=MEAN_RATE, \
             std_dev=CIRCULATION_STD_DEV, skew_param=dag_frac*10, gen_method="src_skew")
     
-    circ_total = reduce(lambda x, value: x + value, demand_dict_circ.itervalues(), 0)
-    dag_total = reduce(lambda x, value: x + value, demand_dict_dag.itervalues(), 0)
+    circ_total = reduce(lambda x, value: x + value, iter(demand_dict_circ.values()), 0)
+    dag_total = reduce(lambda x, value: x + value, iter(demand_dict_dag.values()), 0)
 
     if "weird" not in filename or dag_frac == 0.20 or dag_frac == 0.45:
         demand_dict = { key: circ_frac * demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
@@ -328,13 +329,13 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         demand_dict = { key: demand_dict_circ.get(key, 0) + dag_frac * demand_dict_dag.get(key, 0) \
             for key in set(demand_dict_circ) | set(demand_dict_dag) } 
 
-    total = reduce(lambda x, value: x + value, demand_dict.itervalues(), 0)
+    total = reduce(lambda x, value: x + value, iter(demand_dict.values()), 0)
     
-    print "Circulation", circ_total
-    print "Dag", dag_total
-    print "total", total
-    print circ_frac
-    print dag_frac
+    print("Circulation", circ_total)
+    print("Dag", dag_total)
+    print("total", total)
+    print(circ_frac)
+    print(dag_frac)
 
 
     '''
@@ -348,12 +349,12 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         demand_dict = dict()
         demand_dict[0, 1] = MEAN_RATE
         demand_dict[1, 0] = 5 * MEAN_RATE
-        print demand_dict
+        print(demand_dict)
     elif "two_node_capacity" in filename:
         demand_dict = dict()
         demand_dict[0, 1] = 2 * MEAN_RATE
         demand_dict[1, 0] = 5 * MEAN_RATE
-        print demand_dict
+        print(demand_dict)
 
     if "three_node" in filename:
         demand_dict = dict()
@@ -362,31 +363,31 @@ def generate_workload_for_provided_topology(filename, inside_graph, whole_graph,
         demand_dict[2, 1] = MEAN_RATE
         demand_dict[1, 0] = MEAN_RATE
 
-    for i, j in demand_dict.keys():
+    for i, j in list(demand_dict.keys()):
     	start_nodes.append(end_host_map[i])
     	end_nodes.append(end_host_map[j])
     	amt_relative.append(demand_dict[i, j])	
     amt_absolute = [SCALE_AMOUNT * x for x in amt_relative]
 
-    print "generated workload" 
+    print("generated workload") 
 
     max_circ = max_circulation(demand_dict)
     if total != 0:
-        print "ALERT!", "maximum circulation: ", max_circ, " or ", float(max_circ)/total
+        print("ALERT!", "maximum circulation: ", max_circ, " or ", float(max_circ)/total)
 
     if generate_json_also:
         generate_json_files(filename, whole_graph, inside_graph, start_nodes, end_nodes, amt_absolute)
 
 
     if "weird" not in filename:
-        print "generting txns here"
+        print("generting txns here")
         write_txns_to_file(filename + '_workload.txt', start_nodes, end_nodes, amt_absolute,\
             workload_type, total_time, log_normal, kaggle_size, txn_size_mean, timeout_value)
 
     else:
         kaggle_size = False
         start_nodes_circ, end_nodes_circ, amt_relative_circ = [], [], []
-        for i, j in demand_dict_circ.keys():
+        for i, j in list(demand_dict_circ.keys()):
             start_nodes_circ.append(end_host_map[i])
             end_nodes_circ.append(end_host_map[j])
             amt_relative_circ.append(demand_dict_circ[i, j])
@@ -448,7 +449,7 @@ def parse_topo(topo_filename):
             n1 = parse_node(line.split()[0])
             n2 = parse_node(line.split()[1])
             if n1 == -1 or n2 == -1:
-                print "Bad line " + line
+                print("Bad line " + line)
                 continue
 
             g.add_edge(n1[1], n2[1])
@@ -468,7 +469,7 @@ def parse_topo(topo_filename):
 # with average total demand at a node equal to 'mean', and a 
 # perturbation of 'std_dev' 
 def circ_demand(node_list, mean, std_dev):
-    print "MEAN DEMAND", mean
+    print("MEAN DEMAND", mean)
 
     assert type(mean) is int
     assert type(std_dev) is int
@@ -482,26 +483,26 @@ def circ_demand(node_list, mean, std_dev):
     for i in range(mean):
         perm = np.random.permutation(node_list)
         for j, k in enumerate(perm):
-            if (j, k) in demand_dict.keys():
+            if (j, k) in list(demand_dict.keys()):
                 demand_dict[j, k] += 1
             else:
                 demand_dict[j, k] = 1
 
     """ add 'std_dev' number of additional cycles to the demand """
     for i in range(std_dev):
-        cycle_len = np.random.choice(range(1, num_nodes+1))
+        cycle_len = np.random.choice(list(range(1, num_nodes+1)))
         cycle = np.random.choice(node_list, cycle_len)
         cycle = set(cycle)
         cycle = list(cycle)
         cycle.append(cycle[0])
         for j in range(len(cycle[:-1])):
-            if (cycle[j], cycle[j+1]) in demand_dict.keys():
+            if (cycle[j], cycle[j+1]) in list(demand_dict.keys()):
                 demand_dict[cycle[j], cycle[j+1]] += 1
             else:
                 demand_dict[cycle[j], cycle[j+1]] = 1			
 
     """ remove diagonal entries of demand matrix """
-    for (i, j) in demand_dict.keys():
+    for (i, j) in list(demand_dict.keys()):
         if i == j:
             del demand_dict[i, j]
 
@@ -511,7 +512,7 @@ def circ_demand(node_list, mean, std_dev):
 # with average total demand out of a node equal to 'mean', and a 
 # perturbation of 'std_dev' 
 def dag_demand(node_list, mean, std_dev, skew_param=5,gen_method="topological_sort"):
-        print "DAG_DEMAND", mean
+        print("DAG_DEMAND", mean)
 
         assert type(mean) is int
         assert type(std_dev) is int
@@ -535,7 +536,7 @@ def dag_demand(node_list, mean, std_dev, skew_param=5,gen_method="topological_so
                 demand_dict[sender, receiver] = demand_dict.get((sender, receiver), 0) + 1
         else:
             perm = np.random.permutation(node_list)
-            print "root is ", perm[0]
+            print("root is ", perm[0])
 
             """ use a random ordering of the nodes """
             """ as the topological sort of the DAG demand to produce """
@@ -550,7 +551,7 @@ def dag_demand(node_list, mean, std_dev, skew_param=5,gen_method="topological_so
                     demand_dict[node, receiver] = demand_dict.get((node, receiver), 0) + 1
 
         """ remove diagonal entries of demand matrix """
-        for (i, j) in demand_dict.keys():
+        for (i, j) in list(demand_dict.keys()):
                 if i == j:
                         del demand_dict[i, j]
 

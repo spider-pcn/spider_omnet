@@ -24,11 +24,11 @@ def compute_buckets(num_buckets, dist_filename):
     # return all the bucket end markers
     for i, c in enumerate(cdf):
         if c >= break_point:
-            print break_point, i, c
+            print(break_point, i, c)
             buckets.append(int(round(amt_dist.item().get('bins')[i], 1)))
             break_point += gap
     # buckets.append(int(round(amt_dist.item().get('bins')[-1], 1)))
-    print buckets, len(buckets)
+    print(buckets, len(buckets))
     return buckets
 
 delay = 30
@@ -124,19 +124,19 @@ for scheme in scheme_list:
                         bucket = buckets[np.searchsorted(buckets, size)]
                         if num_arrived > 0:
                             if num_arrived < num_completed:
-                                print "problem with ", scheme, " on run ", run_num
-                                print "Num arrived", num_arrived, "num completed", num_completed, "for size", size
+                                print("problem with ", scheme, " on run ", run_num)
+                                print("Num arrived", num_arrived, "num completed", num_completed, "for size", size)
                                 num_arrived = num_completed
                             size_to_arrival[bucket] = size_to_arrival.get(bucket, 0) + num_arrived
                             size_to_completion[bucket] = size_to_completion.get(bucket, 0) + num_completed
         except IOError:
-            print "error with", file_name
+            print("error with", file_name)
             continue
      
 
     sorted_sizes = [5]
     sorted_sizes.extend(sorted(size_to_completion.keys()))
-    print sorted_sizes
+    print(sorted_sizes)
     for i, size in enumerate(sorted_sizes[1:]):
         output_file.write(topo_type + "," + credit_type + "," + \
                 str(SCHEME_CODE[scheme]) +  "," + str(credit) +  "," + \

@@ -121,7 +121,7 @@ def aggregate_across_files(scheme_list, credit_list, topo):
                     all_timeseries, vec_id_to_info_map, parameters = parse_vec_file(RESULT_DIR + file_name, \
                             "timeInFlight")
                     
-                    for vec_id, timeseries in all_timeseries.items():
+                    for vec_id, timeseries in list(all_timeseries.items()):
                         vector_details = vec_id_to_info_map[vec_id]
                         src_node = vector_details[0]
                         src_node_type = vector_details[1]
@@ -138,7 +138,7 @@ def aggregate_across_files(scheme_list, credit_list, topo):
                         if len(values) > 0:
                             out_file.write(scheme + "," + str(credit) + "," + str(np.average(values)) + "\n")
                 except IOError:
-                    print "error with " , file_name
+                    print("error with " , file_name)
                     continue
     out_file.close()
 
@@ -179,7 +179,7 @@ if __name__ == "__main__":
         if summary:
             for e in attr_set:
                 parameter = e
-                print signal_map[parameter]
+                print(signal_map[parameter])
                 node_type = "router" if parameter == "queue" else "host"
                 data_points = parse_for_timeseries(vec_filename, start_time, end_time, node_type, 0, 0, \
                         signal_map[parameter])
@@ -192,12 +192,12 @@ if __name__ == "__main__":
                     else:
                         out_file.write(str(x[0]) + "," + str(x[1]) + "\n")
                 out_file.close()
-                print max(data_points)
+                print(max(data_points))
         else:
             for entry in attr_list:
                 parameter = entry[0]
                 src, dest = int(entry[1]), int(entry[2])
-                print signal_map[parameter]
+                print(signal_map[parameter])
                 node_type = "router" if parameter == "queue" else "host"
                 data_points = parse_for_timeseries(vec_filename, start_time, end_time, node_type, src, dest, \
                         signal_map[parameter])
@@ -210,7 +210,7 @@ if __name__ == "__main__":
                     else:
                         out_file.write(str(x[0]) + "," + str(x[1]) + "\n")
                 out_file.close()
-                print max(data_points)
+                print(max(data_points))
                 
     else:
         """ aggregate stats for a bunch of files with a common prefix and for a set of schemes """

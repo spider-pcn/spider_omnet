@@ -57,14 +57,14 @@ def write_ned_file(topo_filename, output_filename, network_name, routing_alg):
 
         n1 = parse_node_name(line.split()[0], max_router, max_host)
         if(n1 == -1):
-            print "Bad line " + line
+            print("Bad line " + line)
             continue
         max_router = n1[1]
         max_host = n1[2]
 
         n2 = parse_node_name(line.split()[1], max_router, max_host)
         if(n2 == -1):
-            print "Bad line " + line
+            print("Bad line " + line)
             continue
         max_router = n2[1]
         max_host = n2[2]
@@ -78,7 +78,7 @@ def write_ned_file(topo_filename, output_filename, network_name, routing_alg):
     max_host = max_host + 1
 
     # generic routerNode and hostNode definition that every network will have
-    print routing_alg
+    print(routing_alg)
     if (routing_alg == 'shortestPath'):
         host_node_type = 'hostNodeBase'
         router_node_type = 'routerNodeBase'
@@ -96,7 +96,7 @@ def write_ned_file(topo_filename, output_filename, network_name, routing_alg):
             router_node_type = 'routerNodeDCTCP'
         else:
             router_node_type = 'routerNode' + routing_alg[0].upper() + routing_alg[1:]
-        print router_node_type
+        print(router_node_type)
 
     outfile.write("import " + router_node_type + ";\n")
     outfile.write("import " + host_node_type + ";\n\n")
@@ -152,10 +152,10 @@ def generate_graph(size, graph_type):
     G.remove_edges_from(G.selfloop_edges())
     G = nx.Graph(G)
 
-    print 'Generated a ', graph_type, ' graph'
-    print 'number of nodes: ', G.number_of_nodes()
-    print 'Number of Edges: ', G.number_of_edges()
-    print 'Number of connected components: ', nx.number_connected_components(G)
+    print('Generated a ', graph_type, ' graph')
+    print('number of nodes: ', G.number_of_nodes())
+    print('Number of Edges: ', G.number_of_edges())
+    print('Number of connected components: ', nx.number_connected_components(G))
     return G
 
 
@@ -209,7 +209,7 @@ def print_topology_in_format(G, balance_per_channel, delay_per_channel, output_f
 
     # get lnd capacity data
     lnd_capacities_graph = nx.read_edgelist(LND_FILE_PATH + 'lnd_july15_2019_reducedsize' + '.edgelist')
-    lnd_capacities = nx.get_edge_attributes(lnd_capacities_graph, 'capacity').values() 
+    lnd_capacities = list(nx.get_edge_attributes(lnd_capacities_graph, 'capacity').values()) 
 
     # write rest of topology
     real_rtts = np.loadtxt(LND_FILE_PATH + "ping_times_data")
@@ -324,7 +324,7 @@ elif args.graph_type in ['small_world', 'scale_free', 'tree', 'random']:
 elif args.graph_type == 'toy_dctcp':
     G = toy_dctcp_graph
 elif args.graph_type == 'dag_example':
-    print "generating dag example"
+    print("generating dag example")
     G = dag_example_graph
 elif args.graph_type == 'parallel_graph':
     G = parallel_graph

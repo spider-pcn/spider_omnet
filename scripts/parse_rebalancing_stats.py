@@ -159,7 +159,7 @@ for credit in credit_list:
                                             offloading = (num_rebalanced + num_failed)/num_completed
                                             offloadings.append(offloading)
                                     except IOError:
-                                        print "error with " , file_name
+                                        print("error with " , file_name)
                                         continue
 
                                 if "lndtopo" in args.save and "lnd_credit" in args.save:

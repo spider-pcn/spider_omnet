@@ -21,7 +21,7 @@ for topo, op_prefix in zip(topo_filelist, file_prefix):
         output_filename = OP_FILE_PATH + op_prefix + ".txt" + op_suffix
         output_file = open(output_filename, "w+")
 
-        for (sender, receiver) in paths.keys():
+        for (sender, receiver) in list(paths.keys()):
             output_file.write("pair " + str(sender) + " " + str(receiver) + "\n")
             num_paths.append(len(paths[(sender, receiver)]))
             for path in paths[(sender, receiver)]:
@@ -29,5 +29,5 @@ for topo, op_prefix in zip(topo_filelist, file_prefix):
                 output_file.write(" ".join(path_str) + "\n")
 
         ctr = collections.Counter(num_paths)
-        print filename, ctr
+        print(filename, ctr)
         output_file.close()

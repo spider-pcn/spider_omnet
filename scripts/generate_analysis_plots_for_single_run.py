@@ -166,7 +166,7 @@ def aggregate_info_per_node(all_timeseries, vec_id_to_info_map, signal_type, is_
 
     # aggregate information on a per router node basis
     # and then on a per channel basis for that router node
-    for vec_id, timeseries in all_timeseries.items():
+    for vec_id, timeseries in list(all_timeseries.items()):
         #print "vec_id: ", vec_id, "; timeseries: ", timeseries
         vector_details = vec_id_to_info_map[vec_id]
         src_node = vector_details[0]
@@ -243,9 +243,9 @@ def aggregate_info_per_node(all_timeseries, vec_id_to_info_map, signal_type, is_
 def aggregate_inflight_info(bal_timeseries):
     node_signal_info = dict()
 
-    for router, channel_info in bal_timeseries.items():
+    for router, channel_info in list(bal_timeseries.items()):
         inflight_info = dict()
-        for partner, router_partner_TS in channel_info.items():
+        for partner, router_partner_TS in list(channel_info.items()):
             if router < partner:
                 inflight_TS = []
                 partner_router_TS = bal_timeseries[partner][router]
@@ -263,9 +263,9 @@ def aggregate_inflight_info(bal_timeseries):
 def aggregate_frac_successful_info(success, attempted):
     node_signal_info = dict()
 
-    for router, channel_info in success.items():
+    for router, channel_info in list(success.items()):
         frac_successful = dict()
-        for partner, success_TS in channel_info.items():
+        for partner, success_TS in list(channel_info.items()):
             frac_succ_TS = []
             attempt_TS = attempted[router][partner]
 
@@ -284,8 +284,8 @@ def aggregate_frac_successful_info(success, attempted):
 # plot time series of tpt
 def plot_tpt_timeseries(num_completed, num_arrived, pdf):
     total_arrived, total_completed  = dict(), dict()
-    for src, dest_info in num_arrived.items():
-        for dest, info in dest_info.items():
+    for src, dest_info in list(num_arrived.items()):
+        for dest, info in list(dest_info.items()):
             for i, (time, value) in enumerate(info[1:-1]):
                 cur_completed = total_completed.get(time, 0)
                 cur_arrived = total_arrived.get(time, 0)
@@ -327,7 +327,7 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
     router_wealth_info =[]
     sum_vals = 0
     
-    for router, channel_info in data.items():
+    for router, channel_info in list(data.items()):
         channel_bal_timeseries = []
         plt.figure()
         plt.rc('axes', prop_cycle = (cycler('color', ['r', 'g', 'b', 'y', 'c', 'm', 'y', 'k']) +
@@ -336,7 +336,7 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
 
         
         i = 0
-        for channel, info in channel_info.items():
+        for channel, info in list(channel_info.items()):
             # making labels and titles sensible if there are both end host and router data
             if router < 0:
                 router_name = "e" + str(-1 * router)
@@ -355,9 +355,9 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
             if per_path_info:
                 color_cycle_for_path = cycle(['r', 'g', 'b', 'y', 'c', 'm', 'y', 'k'])
                 if signal_type == "Price per path":
-                    num_paths.append(len(info.items()))
+                    num_paths.append(len(list(info.items())))
                 sum_values, num_values = 0.0, 0.0
-                for path, path_signals in info.items():
+                for path, path_signals in list(info.items()):
                     time = [t[0] for t in path_signals]
                     values = [t[1] for t in path_signals]
                     
@@ -467,13 +467,13 @@ def plot_relevant_stats(data, pdf, signal_type, compute_router_wealth=False, per
 
 
     if ("Explicit" in signal_type):
-        print "explicit sum", sum_vals
+        print("explicit sum", sum_vals)
 
 
 # see if infligh plus balance was ever more than capacity
 def find_problem(balance_timeseries, inflight_timeseries) :
-    for router, channel_info in balance_timeseries.items():
-            for channel, info in channel_info.items():
+    for router, channel_info in list(balance_timeseries.items()):
+            for channel, info in list(channel_info.items()):
                 for i, (time, value) in enumerate(info):
                     my_balance = value
                     try:
@@ -482,10 +482,10 @@ def find_problem(balance_timeseries, inflight_timeseries) :
                         # num inflight might be a little inconsistent depending on clear state
                         # but others should tally up
                         if my_balance + remote_balance > ROUTER_CAPACITY:
-                            print " problem at router", router, "with ", channel,   " at time " , time
-                            print my_balance, remote_balance, inflight
+                            print(" problem at router", router, "with ", channel,   " at time " , time)
+                            print(my_balance, remote_balance, inflight)
                     except:
-                        print channel, router, i
+                        print(channel, router, i)
         
 
 
@@ -601,8 +601,8 @@ def plot_per_payment_channel_stats(args, text_to_add):
                     True, is_both=True)
             plot_relevant_stats(data_to_plot, pdf, "kstar")
 
-    print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
-            os.path.basename(args.save) + "_per_channel_info.pdf"
+    print("http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
+            os.path.basename(args.save) + "_per_channel_info.pdf")
     
 
 
@@ -722,8 +722,8 @@ def plot_per_src_dest_stats(args, text_to_add):
 
 
 
-    print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
-            os.path.basename(args.save) + "_per_src_dest_stats.pdf"
+    print("http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
+            os.path.basename(args.save) + "_per_src_dest_stats.pdf")
 
 
 # plot per router channel information on a per destination basis depending on the type of signal wanted
@@ -753,8 +753,8 @@ def plot_per_channel_dest_stats(args, text_to_add):
                     is_both=True, aggregate_per_dest=True)
             plot_relevant_stats(data_to_plot, pdf, "cpi", per_path_info = True)
 
-    print "http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
-            os.path.basename(args.save) + "_per_channel_dest_stats.pdf"
+    print("http://" + EC2_INSTANCE_ADDRESS + ":" + str(PORT_NUMBER) + "/scripts/figures/timeouts/" + \
+            os.path.basename(args.save) + "_per_channel_dest_stats.pdf")
 
 
 def main():
@@ -776,7 +776,7 @@ def main():
         plot_per_src_dest_stats(args, text_to_add)
         plot_per_channel_dest_stats(args, text_to_add)
 	path_dist = collections.Counter(num_paths)
-        print path_dist
+        print(path_dist)
     ggplot.close()
 
 

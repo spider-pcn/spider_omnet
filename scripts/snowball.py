@@ -126,19 +126,19 @@ for filename in lnd_file_list:
                     edge_cap = 25
                     count += 1
 		sampled_graph.edges[e]['capacity'] = edge_cap
-        print "massaged", count, "out of", len(sampled_graph.edges()), "edges"
+        print("massaged", count, "out of", len(sampled_graph.edges()), "edges")
 	
         """ make all node numbers start from 0 """
 	numbered_graph = nx.convert_node_labels_to_integers(sampled_graph)
-	print "graph size: ", numbered_graph.number_of_nodes(), " nodes" , \
-			numbered_graph.number_of_edges(), " edges"
+	print("graph size: ", numbered_graph.number_of_nodes(), " nodes" , \
+			numbered_graph.number_of_edges(), " edges")
 
 	nx.write_edgelist(numbered_graph, LND_FILE_PATH + filename + "_reducedsize" + ".edgelist")
         
         capacities = nx.get_edge_attributes(sampled_graph, 'capacity')
-        capacities = [float(c) for c in capacities.values()]
+        capacities = [float(c) for c in list(capacities.values())]
         write_capacities_to_file("lnd_july15_data_min25", capacities)
         #plt.hist(capacities, bins=100, normed=True, cumulative=True)
-        print np.mean(np.array(capacities)), "stddev" , np.std(np.array(capacities),), min(capacities), \
-                np.median(np.array(capacities)), np.percentile(np.array(capacities), 25)
+        print(np.mean(np.array(capacities)), "stddev" , np.std(np.array(capacities),), min(capacities), \
+                np.median(np.array(capacities)), np.percentile(np.array(capacities), 25))
         #plt.show()

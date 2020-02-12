@@ -36,8 +36,8 @@ for i in range(1, len(new_pdf)):
 #plt.plot(cut_off_sizes, new_cdf)
 #plt.show()
 
-print math.sqrt(exp_x2)
-print mean
+print(math.sqrt(exp_x2))
+print(mean)
 
 
 

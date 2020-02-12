@@ -12,18 +12,18 @@ def max_circulation(demand_dict):
 	xvar = {}
 
 	""" create variables """
-	for i, j in demand_dict.keys():
+	for i, j in list(demand_dict.keys()):
 		xvar[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb=0.0, ub=demand_dict[i, j], obj=1.0)
 
 	""" add circulation constraints """
 	nonzero_demand_nodes = set()
-	nonzero_demand_nodes = nonzero_demand_nodes | {i for i, j in demand_dict.keys()}
-	nonzero_demand_nodes = nonzero_demand_nodes | {j for i, j in demand_dict.keys()}
+	nonzero_demand_nodes = nonzero_demand_nodes | {i for i, j in list(demand_dict.keys())}
+	nonzero_demand_nodes = nonzero_demand_nodes | {j for i, j in list(demand_dict.keys())}
 	nonzero_demand_nodes = list(nonzero_demand_nodes)
 
 	for k in nonzero_demand_nodes:
-		incoming = list({i for i, j in demand_dict.keys() if j == k})
-		outgoing = list({j for i, j in demand_dict.keys() if i == k})
+		incoming = list({i for i, j in list(demand_dict.keys()) if j == k})
+		outgoing = list({j for i, j in list(demand_dict.keys()) if i == k})
 		expr = 0.0
 		for i in incoming:
 			expr += xvar[i, k]
@@ -38,7 +38,7 @@ def max_circulation(demand_dict):
 
 	""" return computed solution """
 	obj = 0.0
-	for i, j in demand_dict.keys():
+	for i, j in list(demand_dict.keys()):
 		obj += xvar[i, j].X 
 
 	return obj
@@ -53,7 +53,7 @@ def main():
 	demand_dict[3, 0] = 1.0
 	demand_dict[3, 1] = 1.0
 	demand_dict[2, 0] = 1.0
-	print max_circulation(demand_dict)
+	print(max_circulation(demand_dict))
 
 if __name__=='__main__':
 	main()

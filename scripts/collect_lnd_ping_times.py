@@ -39,7 +39,7 @@ def ping_node(ip_addr):
     try: 
         return ping_parser.parse(result.stdout).as_dict()
     except: 
-        print result
+        print(result)
         return None
 
 
@@ -57,13 +57,13 @@ def ping_nodes(addr_list):
         if rtt_avg is not None:
             overall_rtts.append(rtt_avg)
             if (rtt_avg) < 10:
-                print ip_address, rtt_avg
+                print(ip_address, rtt_avg)
             f.write(str(rtt_avg) + "\n")
     f.close()
 
-    print "Mean", stat.mean(overall_rtts)
-    print "Median", stat.median(overall_rtts)
-    print "Variance", stat.variance(overall_rtts)
+    print("Mean", stat.mean(overall_rtts))
+    print("Median", stat.median(overall_rtts))
+    print("Variance", stat.variance(overall_rtts))
 
     return overall_rtts
 
@@ -83,15 +83,15 @@ def visualize_rtts(rtts):
     f = plt.figure()
     plt.hist(rtts, 100, density=True, histtype='step', cumulative=True)
     f.savefig("lnd_ping_rtt_spread.pdf")
-    print "Mean", stat.mean(rtts)
-    print "Median", stat.median(rtts)
-    print "Variance", stat.variance(rtts)
-    print "Max", max(rtts)
-    print "Min", min(rtts)
+    print("Mean", stat.mean(rtts))
+    print("Median", stat.median(rtts))
+    print("Variance", stat.variance(rtts))
+    print("Max", max(rtts))
+    print("Min", min(rtts))
 
 
 
 address_list = parse_json_data()
-print len(address_list)
+print(len(address_list))
 all_rtts = ping_nodes(address_list) if args.rerun_ping else parse_rtts_from_file()
 visualize_rtts(all_rtts)

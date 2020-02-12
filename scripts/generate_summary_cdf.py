@@ -40,7 +40,7 @@ def compute_avg_path_completion_rates(filename, shortest=True):
     total_attempted = 0
 
     # aggregate information on a per src_Dest pair and per path level
-    for vec_id, timeseries in all_timeseries.items():
+    for vec_id, timeseries in list(all_timeseries.items()):
         vector_details = vec_id_to_info_map[vec_id]
         src_dest_pair = (vector_details[0], vector_details[3])
 
@@ -69,23 +69,23 @@ def compute_avg_path_completion_rates(filename, shortest=True):
             avg_rate_completed[src_dest_pair] = cur_info
             total_completed += np.sum(signal_values)
         else: 
-            print "UNINTERESTING TIME SERIES OF VECTOR of type", signal_name, "FOUND"
+            print("UNINTERESTING TIME SERIES OF VECTOR of type", signal_name, "FOUND")
 
 
     # aggregate all the information across all source destination pairs and paths onto 
     # a single list with the completion fractions for all of them
-    for key in avg_rate_attempted.keys():
+    for key in list(avg_rate_attempted.keys()):
         rates_attempted_across_paths = avg_rate_attempted[key]
         rates_completed_across_paths = avg_rate_completed.get(key, dict())
 
-        for path_id, attempt_rate in rates_attempted_across_paths.items():
+        for path_id, attempt_rate in list(rates_attempted_across_paths.items()):
             if attempt_rate > 0: 
                 completion_fractions.append(rates_completed_across_paths.get(path_id, 0)/attempt_rate)
 
     overall_success = total_completed/float(total_attempted)
-    print filename, ": "
-    print "Average across source destinations: ", np.average(np.array(completion_fractions))
-    print "Overall success rate: ", total_completed, float(total_attempted)
+    print(filename, ": ")
+    print("Average across source destinations: ", np.average(np.array(completion_fractions)))
+    print("Overall success rate: ", total_completed, float(total_attempted))
     return overall_success, completion_fractions
 
 

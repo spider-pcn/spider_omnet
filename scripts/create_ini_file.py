@@ -122,7 +122,7 @@ if 'newseed' in args.workload_filename:
     configname += "_newseed"
 
 
-print "in ini file, path choice", args.pathChoice, " capacity : ",args.capacity
+print("in ini file, path choice", args.pathChoice, " capacity : ",args.capacity)
 configname += "_" + args.pathChoice
 if args.capacity is not None:
     configname += '_cap' + str(args.capacity)
@@ -133,10 +133,10 @@ if args.routingScheme not in ['shortestPath', 'waterfilling', 'priceScheme', 'si
         'landmarkRouting', 'lndBaseline', 'priceSchemeNoQueue', 'lndBaselineSplit', 'DCTCP', 'DCTCPBal', \
         'DCTCPRate', 'DCTCPQ', 'TCP', 'celer', 'TCPCubic']:
     if args.routingScheme != 'default':
-        print "******************"
-        print "WARNING: ill-specified routing scheme, defaulting to waterfilling,",\
-            "with no special config generated"
-        print "******************"
+        print("******************")
+        print("WARNING: ill-specified routing scheme, defaulting to waterfilling,",\
+            "with no special config generated")
+        print("******************")
     args.routingScheme = 'waterfilling'
 
 if args.routingScheme == 'smoothWaterfilling':
@@ -172,8 +172,8 @@ if args.routingScheme == "DCTCPQ" and ((args.queueDelayThreshold != 300 and args
 if args.capacityFactor != None:
     configname = configname + "_capacityFactorTimes10_" + str(int(float(args.capacityFactor)*10))
 
-print configname
-print "(create_ini_file.py) ini_filename:", args.ini_filename
+print(configname)
+print("(create_ini_file.py) ini_filename:", args.ini_filename)
 
 f = open(args.ini_filename, "w+")
 f.write("[General]\n\n")
