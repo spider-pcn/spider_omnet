@@ -9,3 +9,5 @@ spiderNet
 *.vci
 *.pyc
 out
+*_m.cc
+*_m.h
