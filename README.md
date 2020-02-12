@@ -1,7 +1,7 @@
 This is a simulator that models the flow of transactions through a payment channel network. 
 
 ## Omnet Installation and Setup
-To setup, first follow the omnet installation instructions from [Omnet Installation Link](https://omnetpp.org/doc/omnetpp/InstallGuide.pdf).
+To setup, first follow the omnet installation instructions from [Omnet Installation](https://omnetpp.org/doc/omnetpp/InstallGuide.pdf).
 Based on your version of omnet, add this line to your default shell rc file.
 ```
 export OMNET="omnetpp-5.6"
@@ -15,12 +15,11 @@ make
 
 ### Using the IDE
 To use the Omnet IDE, run `omnetpp` which opens the IDE allowing you to click on the `simpleNet.ned` file and run the OmnetSimulation from there.
-Once you have completed installation, navigate to the folder with setenv (should be first level inside the omnet simulation folder) and run 
+Once you have completed installation, navigate to the folder with setenv (should be first level inside the omnet simulation folder) and run the following to save rebuilding time.
 ```
 . setenv
 omnetpp
 ```
-to save time in rebuilding the omnet setup. 
 Open the simpleNet.ned file and click the green run button to run the simulation.
 
 ### Additional setup for running experiments
@@ -34,7 +33,6 @@ To run from the command line, either use the `run_exp.sh` script or by running s
 ```
 ./spiderNet -u Cmdenv -f omnetpp.ini -c simpleNet -n .
 ```
-
 If you use the `run_exp.sh` script, the plots can be found in the `scripts/figures` directory.
 
 ## Collecting Statistics in the IDE and Plotting Graphs
