@@ -33,7 +33,6 @@ class hostNodeBase : public cSimpleModule {
         unordered_map<int, DestInfo> nodeToDestInfo; //one structure per destination;
         unordered_set<int> destList; // list of destinations with non zero demand
              
-        //TODO: incorporate the signals into nodeToDestInfo
         // statistic collection related variables
         unordered_map<int, int> statNumFailed = {};
         unordered_map<int, double> statAmtFailed = {};
@@ -55,7 +54,6 @@ class hostNodeBase : public cSimpleModule {
         int numCleared = 0;
 
         //store shortest paths 
-        // TODO: remove the first one's use all together and use the second for shortest paths
         unordered_map<int, vector<int>> destNodeToPath = {};
         unordered_map<int, unordered_map<int, PathInfo>> nodeToShortestPathsMap = {};  
 

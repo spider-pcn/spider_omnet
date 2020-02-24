@@ -197,12 +197,12 @@ void hostNodeBase::generateNextTransaction() {
       TransUnit j = _transUnitList[myIndex()].top();
       double timeSent = j.timeSent;
       
-      routerMsg *msg = generateTransactionMessage(j); //TODO: flag to whether to calculate path
+      routerMsg *msg = generateTransactionMessage(j);
 
+      // override default shortest path 
       if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled || _lndBaselineEnabled 
               || _dctcpEnabled || _celerEnabled){
          vector<int> blankPath = {};
-         //Radhika TODO: maybe no need to compute path to begin with?
          msg->setRoute(blankPath);
       }
 
@@ -433,15 +433,6 @@ routerMsg *hostNodeBase::generateDuplicateTransactionMessage(ackMsg* aMsg) {
    sprintf(msgname, "tic-%d-to-%d router-transaction-Msg %f", sender, receiver, aMsg->getTimeSent());
    
    routerMsg *rMsg = new routerMsg(msgname);
-   // compute route only once
-   if (destNodeToPath.count(receiver) == 0){ 
-      vector<int> route = getRoute(sender,receiver);
-      destNodeToPath[receiver] = route;
-      rMsg->setRoute(route);
-   }
-   else{
-      rMsg->setRoute(destNodeToPath[receiver]);
-   }
    rMsg->setHopCount(0);
    rMsg->setMessageType(TRANSACTION_MSG);
    rMsg->encapsulate(msg);
@@ -643,7 +634,6 @@ routerMsg *hostNodeBase::generateAddFundsMessage(map<int, double> fundsToBeAdded
 void hostNodeBase::handleMessage(cMessage *msg){
     routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
  
-    //Radhika TODO: figure out what's happening here
     if (simTime() > _simulationLength){
         auto encapMsg = (ttmsg->getEncapsulatedPacket());
         ttmsg->decapsulate();
@@ -663,7 +653,7 @@ void hostNodeBase::handleMessage(cMessage *msg){
             if (_loggingEnabled) cout << "[AFTER HANDLING:]" <<endl;
             break;
 
-        case TRANSACTION_MSG: 
+        case TRANSACTION_MSG:
             { 
                 if (_loggingEnabled) 
                     cout<< "[HOST "<< myIndex() <<": RECEIVED TRANSACTION MSG]  "
@@ -680,8 +670,8 @@ void hostNodeBase::handleMessage(cMessage *msg){
                 }
                 handleTransactionMessageSpecialized(ttmsg);
                 if (_loggingEnabled) cout << "[AFTER HANDLING:]" << endl;
+                break;
             }
-            break;
 
         case UPDATE_MSG:
             if (_loggingEnabled) cout<< "[HOST "<< myIndex() 
@@ -738,12 +728,15 @@ void hostNodeBase::handleMessage(cMessage *msg){
             break;
         
         default:
-                handleMessage(ttmsg);
+            handleMessage(ttmsg);
 
     }
 
 }
 
+/* Specialized function to handle transactions as per the algorithm
+ * Since this is shortest path, no other fancy handler required 
+ */
 void hostNodeBase::handleTransactionMessageSpecialized(routerMsg *ttmsg) {
     handleTransactionMessage(ttmsg);
 }
@@ -778,27 +771,26 @@ void hostNodeBase::handleTransactionMessage(routerMsg* ttmsg, bool revisit){
     if (ttmsg->getHopCount() ==  ttmsg->getRoute().size() - 1) {
         // add to incoming trans units 
         int prevNode = ttmsg->getRoute()[ttmsg->getHopCount() - 1];
-        unordered_map<Id, double, hashId> *incomingTransUnits = &(nodeToPaymentChannel[prevNode].incomingTransUnits);
+        unordered_map<Id, double, hashId> *incomingTransUnits = 
+            &(nodeToPaymentChannel[prevNode].incomingTransUnits);
         (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] = 
             transMsg->getAmount();
         nodeToPaymentChannel[prevNode].totalAmtIncomingInflight += transMsg->getAmount();
         
         if (_timeoutEnabled){
-            //TODO: what if we have multiple HTLC's per transaction id?
             auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
             if (iter != canceledTransactions.end()) {
                 canceledTransactions.erase(iter);
             }
         }
 
-        // keep track of how much you need to refund this sender if rebalancing is enabled
-        
         // send ack even if it has timed out because txns wait till _maxTravelTime before being 
         // cleared by clearState
         routerMsg* newMsg =  generateAckMessage(ttmsg);
         forwardMessage(newMsg);
         return;
-    } 
+    }
+
     else{
         //at the sender
         int destNode = transMsg->getReceiver();
@@ -916,7 +908,6 @@ void hostNodeBase::handleComputeMinAvailableBalanceMessage(routerMsg* ttmsg) {
     
     for (auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
         PaymentChannel *p = &(it->second);
-
         if (p->balance < p->minAvailBalance)
             p->minAvailBalance = p->balance;
     }
@@ -989,8 +980,6 @@ void hostNodeBase::handleTriggerRebalancingMessage(routerMsg* ttmsg) {
             pcsNeedingFunds[id] = addableFunds;
             _bank -= addableFunds;
             p->entitledFunds -= addableFunds;
-            //cout << "rebalancing event triggered at " << simTime() << " at " << myIndex() << " adding " 
-             //   << addableFunds << " to " << it->first << " bank balance " << _bank << endl;
         } 
     }
 
@@ -1014,7 +1003,8 @@ void hostNodeBase::handleAddFundsMessage(routerMsg* ttmsg) {
 
         // add funds at this end
         setPaymentChannelBalanceByNode(pcIdentifier, p->balance + fundsToAdd);
-        tuple<int, int> senderReceiverTuple = (pcIdentifier < myIndex()) ? make_tuple(pcIdentifier, myIndex()) :
+        tuple<int, int> senderReceiverTuple = (pcIdentifier < myIndex()) ? 
+            make_tuple(pcIdentifier, myIndex()) :
             make_tuple(myIndex(), pcIdentifier);
         _capacities[senderReceiverTuple] +=  fundsToAdd;
         
@@ -1092,11 +1082,9 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
                 (1 -_ewmaFactor) * prevChannel->balanceEWMA + (_ewmaFactor) * updatedBalance; 
             setPaymentChannelBalanceByNode(prevNode, updatedBalance);
             prevChannel->totalAmtOutgoingInflight -= aMsg->getAmount();
-            
         }
-
         
-            // no relevant incoming_trans_units because no node on fwd path before this
+        // no relevant incoming_trans_units because no node on fwd path before this
         if (ttmsg->getHopCount() < ttmsg->getRoute().size() - 1) {
             int nextNode = ttmsg->getRoute()[ttmsg->getHopCount()+1];
             unordered_map<Id, double, hashId> *incomingTransUnits = 
@@ -1118,9 +1106,9 @@ void hostNodeBase::handleAckMessage(routerMsg* ttmsg){
         forwardMessage(uMsg);
 
         // keep track of how much you have sent to others if rebalancing is enabled
-        // and how much of that needs to be replenished
-        int dest = aMsg->getReceiver();
+        // and how much of that needs to be replenished and
         // replenish my end host - router link immediately to make up (simulates receiving money back)
+        int dest = aMsg->getReceiver();
         if (_rebalancingEnabled) {
             tuple<int, int> senderReceiverTuple = make_tuple(myIndex(), prevNode);
             _capacities[senderReceiverTuple] += aMsg->getAmount();
@@ -1149,7 +1137,6 @@ void hostNodeBase::handleAckMessageTimeOut(routerMsg* ttmsg){
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
     int transactionId = aMsg->getTransactionId();
     
-    //TODO: what if there are multiple HTLC's per transaction? 
     // only if it isn't waterfilling
     if (aMsg->getIsSuccess()) {
         auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
@@ -1222,7 +1209,6 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
             int id = it->first;
             if (myIndex() == 0) {
                 emit(p->bankSignal, _bank);
-
                 double sumCapacities = accumulate(begin(_capacities), end(_capacities), 0,
                     [] (double value, const std::map<tuple<int,int>, double>::value_type& p)
                    { return value + p.second; }
@@ -1238,7 +1224,6 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
                     getTotalAmountOutgoingInflight(it->first));
             p->sumTimeInFlight = 0;
             p->timeInFlightSamples = 0;
-            
             p->amtExplicitlyRebalanced = 0;
             p->amtImplicitlyRebalanced = 0;
             
@@ -1250,76 +1235,72 @@ void hostNodeBase::handleStatMessage(routerMsg* ttmsg){
 
     recordScalar("time", simTime());
     for (auto it = 0; it < _numHostNodes; it++){
-       if (simTime().dbl() >  2999 && simTime().dbl() < 3001 && _transStatEnd == 4001) {
-           if (_transStatStart < 3000)
-               _transStatStart = 3800;
-            if (_destList[myIndex()].count(it) > 0) {
-                char buffer[30];
-                sprintf(buffer, "rateCompleted %d -> %d", myIndex(), it);
-                recordScalar(buffer, statRateCompleted[it]);
-                sprintf(buffer, "amtCompleted %d -> %d", myIndex(), it);
-                recordScalar(buffer, statAmtCompleted[it]);
+        if (_destList[myIndex()].count(it) > 0) {
+            char buffer[30];
+            sprintf(buffer, "rateCompleted %d -> %d", myIndex(), it);
+            recordScalar(buffer, statRateCompleted[it]);
+            sprintf(buffer, "amtCompleted %d -> %d", myIndex(), it);
+            recordScalar(buffer, statAmtCompleted[it]);
 
-                sprintf(buffer, "rateAttempted %d -> %d", myIndex(), it);
-                recordScalar(buffer, statRateAttempted[it]);
-                sprintf(buffer, "amtAttempted  %d -> %d", myIndex(), it);
-                recordScalar(buffer, statAmtAttempted[it]);
+            sprintf(buffer, "rateAttempted %d -> %d", myIndex(), it);
+            recordScalar(buffer, statRateAttempted[it]);
+            sprintf(buffer, "amtAttempted  %d -> %d", myIndex(), it);
+            recordScalar(buffer, statAmtAttempted[it]);
 
-                sprintf(buffer, "rateArrived %d -> %d", myIndex(), it);
-                recordScalar(buffer, statRateArrived[it]);
-                sprintf(buffer, "amtArrived  %d -> %d", myIndex(), it);
-                recordScalar(buffer, statAmtArrived[it]);
+            sprintf(buffer, "rateArrived %d -> %d", myIndex(), it);
+            recordScalar(buffer, statRateArrived[it]);
+            sprintf(buffer, "amtArrived  %d -> %d", myIndex(), it);
+            recordScalar(buffer, statAmtArrived[it]);
 
-                sprintf(buffer, "completionTime %d -> %d ", myIndex(), it);
-                recordScalar(buffer, statCompletionTimes[it]);
+            sprintf(buffer, "completionTime %d -> %d ", myIndex(), it);
+            recordScalar(buffer, statCompletionTimes[it]);
 
-                statRateAttempted[it] = 0;
-                statAmtAttempted[it] = 0;
-                statRateArrived[it] = 0;
-                statAmtArrived[it] = 0;
-                statAmtCompleted[it] = 0;
-                statRateCompleted[it] = 0;
-            }
+            statRateAttempted[it] = 0;
+            statAmtAttempted[it] = 0;
+            statRateArrived[it] = 0;
+            statAmtArrived[it] = 0;
+            statAmtCompleted[it] = 0;
+            statRateCompleted[it] = 0;
         }
 
-       // per destination stats
-       if (it != getIndex() && _destList[myIndex()].count(it) > 0) {
-           if (nodeToShortestPathsMap.count(it) > 0) {
-               for (auto p: nodeToShortestPathsMap[it]) {
-                   PathInfo *pathInfo = &(nodeToShortestPathsMap[it][p.first]);
-                   
-                   //emit rateCompleted per path
-                   pathInfo->statRateAttempted = 0;
-                   pathInfo->statRateCompleted = 0;
-                   
-                   //emit rateAttempted per path
-                   if (_signalsEnabled) {
-                       emit(pathInfo->rateAttemptedPerDestPerPathSignal, 
-                           pathInfo->statRateAttempted);
-                       emit(pathInfo->rateCompletedPerDestPerPathSignal, 
-                           pathInfo->statRateCompleted);
-                   }
-               }
-           }
+        // per destination stats
+        if (it != getIndex() && _destList[myIndex()].count(it) > 0) {
+            if (nodeToShortestPathsMap.count(it) > 0) {
+                for (auto p: nodeToShortestPathsMap[it]) {
+                    PathInfo *pathInfo = &(nodeToShortestPathsMap[it][p.first]);
+                    
+                    //emit rateCompleted per path
+                    pathInfo->statRateAttempted = 0;
+                    pathInfo->statRateCompleted = 0;
+                    
+                    //emit rateAttempted per path
+                    if (_signalsEnabled) {
+                        emit(pathInfo->rateAttemptedPerDestPerPathSignal, 
+                            pathInfo->statRateAttempted);
+                        emit(pathInfo->rateCompletedPerDestPerPathSignal, 
+                            pathInfo->statRateCompleted);
+                    }
+                }
+            }
 
-           if (_signalsEnabled) {
-               if (_hasQueueCapacity){
-                   emit(rateFailedPerDestSignals[it], statRateFailed[it]);
-               }
-               emit(rateCompletedPerDestSignals[it], statRateCompleted[it]);
-               emit(rateAttemptedPerDestSignals[it], statRateAttempted[it]);
-               emit(rateArrivedPerDestSignals[it], statRateArrived[it]);
-               
-               emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
-               emit(numPendingPerDestSignals[it], destNodeToNumTransPending[it]);
-               emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
-               emit(numArrivedPerDestSignals[it], statNumArrived[it]);
-               double frac = ((float(statNumCompleted[it]))/(max(statNumArrived[it],1)));
-               statNumCompleted[it] = 0;
-               statNumArrived[it] = 0;
-               emit(fracSuccessfulPerDestSignals[it],frac);
-           }
-       }
+            if (_signalsEnabled) {
+                if (_hasQueueCapacity){
+                    emit(rateFailedPerDestSignals[it], statRateFailed[it]);
+                }
+                emit(rateCompletedPerDestSignals[it], statRateCompleted[it]);
+                emit(rateAttemptedPerDestSignals[it], statRateAttempted[it]);
+                emit(rateArrivedPerDestSignals[it], statRateArrived[it]);
+                
+                emit(numTimedOutPerDestSignals[it], statNumTimedOut[it]);
+                emit(numPendingPerDestSignals[it], destNodeToNumTransPending[it]);
+                emit(numCompletedPerDestSignals[it], statNumCompleted[it]);
+                emit(numArrivedPerDestSignals[it], statNumArrived[it]);
+                double frac = ((float(statNumCompleted[it]))/(max(statNumArrived[it],1)));
+                statNumCompleted[it] = 0;
+                statNumArrived[it] = 0;
+                emit(fracSuccessfulPerDestSignals[it],frac);
+            }
+        }
     }
 }
 
@@ -1359,7 +1340,6 @@ void hostNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                 // delete first occurences of this transaction in the queue
                 // tids are unique, so this can't be a problem (we do splitting before hand)
                 // especially if there are splits
-                // TODO: change to while if you modify this again
                 if (iterQueue != (*queuedTransUnits).end()){
                     routerMsg * rMsg = get<2>(*iterQueue);
                     auto tMsg = rMsg->getEncapsulatedPacket();
@@ -1464,7 +1444,8 @@ int hostNodeBase::forwardTransactionMessage(routerMsg *msg, int dest, simtime_t 
         msg->setHopCount(msg->getHopCount()+1);
 
         // update service arrival times
-        neighbor->serviceArrivalTimeStamps.push_back(make_tuple(transMsg->getAmount(), simTime(), arrivalTime));
+        neighbor->serviceArrivalTimeStamps.push_back(
+                make_tuple(transMsg->getAmount(), simTime(), arrivalTime));
         neighbor->sumServiceWindowTxns += transMsg->getAmount();
         if (neighbor->serviceArrivalTimeStamps.size() > _serviceArrivalWindow) {
             double frontAmt = get<0>(neighbor->serviceArrivalTimeStamps.front());
@@ -1512,13 +1493,9 @@ void hostNodeBase::forwardMessage(routerMsg* msg){
  * payment channels and destinations
  */
 void hostNodeBase::initialize() {
-    // completionTimeSignal = registerSignal("completionTime");
     successfulDoNotSendTimeOut = {};
-    
-
     string topologyFile_ = par("topologyFile");
     string workloadFile_ = par("workloadFile");
-
 
     // initialize global parameters once
     if (getIndex() == 0){  
@@ -1617,18 +1594,15 @@ void hostNodeBase::initialize() {
 
         _epsilon = pow(10, -6);
         cout << "epsilon" << _epsilon << endl;
+        _maxTravelTime = 0.0;
+        _delta = 0.01; // to avoid divide by zero 
         
         if (_waterfillingEnabled || _priceSchemeEnabled || _landmarkRoutingEnabled || _dctcpEnabled){
            _kValue = par("numPathChoices");
         }
-
-        _maxTravelTime = 0.0;
-        _delta = 0.01; // to avoid divide by zero 
+        
         setNumNodes(topologyFile_);
-        // add all the TransUnits into global list
         generateTransUnitList(workloadFile_);
-
-        //create "channels" map - from topology file
         generateChannelsBalancesMap(topologyFile_);
     }
     
@@ -1715,10 +1689,13 @@ void hostNodeBase::initialize() {
             if (_signalsEnabled) {
                 signal = registerSignalPerDest("rateCompleted", i, "_Total");
                 rateCompletedPerDestSignals[i] = signal;
+
                 signal = registerSignalPerDest("rateAttempted", i, "_Total");
                 rateAttemptedPerDestSignals[i] = signal;
+
                 signal = registerSignalPerDest("rateArrived", i, "_Total");
                 rateArrivedPerDestSignals[i] = signal;
+
                 signal = registerSignalPerDest("numTimedOut", i, "_Total");
                 numTimedOutPerDestSignals[i] = signal;
 
@@ -1741,17 +1718,12 @@ void hostNodeBase::initialize() {
             statRateCompleted[i] = 0;
             statAmtCompleted[i] = 0;
             statNumCompleted[i] = 0;
-
             statRateAttempted[i] = 0;
             statAmtAttempted[i] = 0;
-
             statRateArrived[i] = 0;
             statNumArrived[i] = 0;
             statAmtArrived[i] = 0;
-
-
             statNumTimedOut[i] = 0;;
-
             statRateFailed[i] = 0;
             statAmtFailed[i] = 0;
             statCompletionTimes[i] = 0;
