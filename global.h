@@ -176,6 +176,7 @@ extern double _windowThresholdForChange;
 
 // celer network params
 extern bool _celerEnabled;
+extern int _maxImbalanceWindow;
 //global debt queues 
 extern unordered_map<int, unordered_map<int, double>> _nodeToDebtQueue; // = {};
 // (key1, (key2, value)) where key1 is nodeA (whose debt queue), and key2 is nodeB (dest node),

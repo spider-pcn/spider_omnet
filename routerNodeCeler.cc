@@ -12,7 +12,6 @@ void routerNodeCeler::initialize(){
         nodeToDestNodeStruct[i].destQueueSignal = registerSignalPerDest("destQueue", i, "");
     }
 
-
     for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
         PaymentChannel *p = &(it->second);
         int id = it->first;
@@ -20,22 +19,18 @@ void routerNodeCeler::initialize(){
         if (id < _numHostNodes){
             adjacentHostNodes.insert(id);
         }
-
         p->kStarSignal = registerSignalPerChannel("kStar", id); 
-
         for (int destNode = 0; destNode < _numHostNodes; destNode++){
             simsignal_t signal;
             signal = registerSignalPerChannelPerDest("cpi", id, destNode);
-            //naming: signal_(paymentChannel endNode)destNode
             p->destToCPISignal[destNode] = signal;
             p->destToCPIValue[destNode] = -1;
         }
     }
 }
 
-/* end routine to get rid of messages in queues */
+/* end routine to get rid of messages in per router queues to every destination */
 void routerNodeCeler::finish() {
-    // go through per dest queues if any 
     for (int i = 0; i < _numHostNodes; ++i) {
         if (nodeToDestNodeStruct.count(i) > 0) {
             vector<tuple<int, double, routerMsg*,  Id, simtime_t >> *q = 
@@ -53,26 +48,23 @@ void routerNodeCeler::finish() {
     routerNodeBase::finish();
 }
 
-
 /* handler for the statistic message triggered every x seconds
+ * emits kstar for every payment channel and queue sizes to every destination
  */
 void routerNodeCeler::handleStatMessage(routerMsg* ttmsg){
     if (_signalsEnabled) {
         for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
-            int node = it->first; //key
+            int node = it->first; 
             PaymentChannel* p = &(nodeToPaymentChannel[node]);
             unordered_set<int> exclude;
             emit(p->kStarSignal, findKStar(node, exclude));
-
             for (auto destNode = 0; destNode < _numHostNodes; destNode++){
                 emit(p->destToCPISignal[destNode], p->destToCPIValue[destNode]);
             }
         }
-
         for (auto destNode = 0; destNode < _numHostNodes; destNode++) {
             DestNodeStruct *destNodeInfo = &(nodeToDestNodeStruct[destNode]);
             emit(destNodeInfo->queueTimedOutSignal, destNodeInfo->totalNumTimedOut);
-             // TODO: check that queue size matches amt in queue?
             emit(destNodeInfo->destQueueSignal, destNodeInfo->totalAmtInQueue);
         }
     }
@@ -137,64 +129,62 @@ void routerNodeCeler::handleClearStateMessage(routerMsg* ttmsg) {
         scheduleAt(simTime()+_clearRate, ttmsg);
     }
 
-
     for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
-           PaymentChannel *p = &(it->second);
-           int id = it->first;
-           p->channelInbalance.push_back(p->deltaAmtReceived - p->deltaAmtSent);
-           emit(p->numSentPerChannelSignal, p->deltaAmtSent);
-	   p->deltaAmtReceived = 0;
-           p->deltaAmtSent = 0;
-           if (p->channelInbalance.size() > 5){ //TODO: tune constant for window size
-               p->channelInbalance.erase(p->channelInbalance.begin());
-           }
+        PaymentChannel *p = &(it->second);
+        int id = it->first;
+        p->channelImbalance.push_back(p->deltaAmtReceived - p->deltaAmtSent);
+        emit(p->numSentPerChannelSignal, p->deltaAmtSent);
+	p->deltaAmtReceived = 0;
+        p->deltaAmtSent = 0;
+        if (p->channelImbalance.size() > _maxImbalanceWindow){ 
+            p->channelImbalance.erase(p->channelImbalance.begin());
+        }
+    }
+    
+    for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); ) {      
+        int transactionId = get<0>(*it);
+        simtime_t msgArrivalTime = get<1>(*it);
+        int prevNode = get<2>(*it);
+        int nextNode = get<3>(*it);
+        int destNode = get<4>(*it);
+        vector<tuple<int, double, routerMsg*,  Id, simtime_t >> *transList = 
+        &(nodeToDestNodeStruct[destNode].queuedTransUnits);
+        
+        // if grace period has passed
+        if (simTime() > msgArrivalTime + _maxTravelTime){  
+            // check if txn is still in just sender queue, just delete and return then
+            auto iter = find_if(transList->begin(),
+                transList->end(),
+                [&transactionId](tuple<int, double, routerMsg*,  Id, simtime_t> p)
+                { return get<0>(get<3>(p)) == transactionId; });
 
-      }
-
-
-    for ( auto it = canceledTransactions.begin(); it!= canceledTransactions.end(); ) {       
-       int transactionId = get<0>(*it);
-       simtime_t msgArrivalTime = get<1>(*it);
-       int prevNode = get<2>(*it);
-       int nextNode = get<3>(*it);
-       int destNode = get<4>(*it);
-       vector<tuple<int, double, routerMsg*,  Id, simtime_t >> *transList = 
-       &(nodeToDestNodeStruct[destNode].queuedTransUnits);
-       
-       // if grace period has passed
-       if (simTime() > msgArrivalTime + _maxTravelTime){  
-           // check if txn is still in just sender queue, just delete and return then
-           auto iter = find_if(transList->begin(),
-               transList->end(),
-               [&transactionId](tuple<int, double, routerMsg*,  Id, simtime_t> p)
-               { return get<0>(get<3>(p)) == transactionId; });
-
-           if (iter != transList->end()) {
-               deleteTransaction(get<2>(*iter));
-               double amount = get<1>(*iter);
-               transList->erase(iter);
-               make_heap((*transList).begin(), (*transList).end(), _schedulingAlgorithm);
-               nodeToDestNodeStruct[destNode].totalAmtInQueue -= amount;
-               _nodeToDebtQueue[myIndex()][destNode] -= amount;
-               nodeToDestNodeStruct[destNode].totalNumTimedOut = nodeToDestNodeStruct[destNode].totalNumTimedOut + 1;
-           }
-           
-           // go through all payment channels and remove from incoming and outgoing if present
-           for (auto pIt = nodeToPaymentChannel.begin(); pIt != nodeToPaymentChannel.end(); ++pIt) {
-               PaymentChannel* channel  = &(pIt->second);
-               unordered_map<Id, double, hashId> *incomingTransUnits = 
-                   &(channel->incomingTransUnits);
-               auto iterIncoming = find_if((*incomingTransUnits).begin(),
-                 (*incomingTransUnits).end(),
-                 [&transactionId](const pair<tuple<int, int >, double> & p)
-                 { return get<0>(p.first) == transactionId; });
-               
-               if (iterIncoming != (*incomingTransUnits).end()){
-                   channel->totalAmtIncomingInflight -= iterIncoming->second;
-                   iterIncoming = (*incomingTransUnits).erase(iterIncoming);
-               }
-           }
-       }
+            if (iter != transList->end()) {
+                deleteTransaction(get<2>(*iter));
+                double amount = get<1>(*iter);
+                transList->erase(iter);
+                make_heap((*transList).begin(), (*transList).end(), _schedulingAlgorithm);
+                nodeToDestNodeStruct[destNode].totalAmtInQueue -= amount;
+                _nodeToDebtQueue[myIndex()][destNode] -= amount;
+                nodeToDestNodeStruct[destNode].totalNumTimedOut = 
+                    nodeToDestNodeStruct[destNode].totalNumTimedOut + 1;
+            }
+            
+            // go through all payment channels and remove from incoming and outgoing if present
+            for (auto pIt = nodeToPaymentChannel.begin(); pIt != nodeToPaymentChannel.end(); ++pIt) {
+                PaymentChannel* channel  = &(pIt->second);
+                unordered_map<Id, double, hashId> *incomingTransUnits = 
+                    &(channel->incomingTransUnits);
+                auto iterIncoming = find_if((*incomingTransUnits).begin(),
+                  (*incomingTransUnits).end(),
+                  [&transactionId](const pair<tuple<int, int >, double> & p)
+                  { return get<0>(p.first) == transactionId; });
+                
+                if (iterIncoming != (*incomingTransUnits).end()){
+                    channel->totalAmtIncomingInflight -= iterIncoming->second;
+                    iterIncoming = (*incomingTransUnits).erase(iterIncoming);
+                }
+            }
+        }
                
        // remove from outgoing transUnits if present
        if (simTime() > msgArrivalTime + _maxTravelTime + _maxOneHopDelay){  
@@ -219,7 +209,6 @@ void routerNodeCeler::handleClearStateMessage(routerMsg* ttmsg) {
                        (_ewmaFactor) * updatedBalance;
                }
            }
-           
            // all done, can remove txn and update stats
            it = canceledTransactions.erase(it);
        }
@@ -238,7 +227,6 @@ void routerNodeCeler::handleTransactionMessage(routerMsg* ttmsg){
     int hopcount = ttmsg->getHopCount();
     int destNode = transMsg->getReceiver();
     int transactionId = transMsg->getTransactionId();
-    
 
     // ignore if txn is already cancelled
     auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
@@ -257,13 +245,8 @@ void routerNodeCeler::handleTransactionMessage(routerMsg* ttmsg){
     (*incomingTransUnits)[make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex())] =
             transMsg->getAmount();
     nodeToPaymentChannel[prevNode].totalAmtIncomingInflight += transMsg->getAmount();
-
-    //add transaction to appropriate queue (sorted based on dest node)
-    /*
-    if (nodeToDestNodeStruct.count(destNode) == 0) {
-        nodeToDestNodeStruct[destNode].destQueueSignal = registerSignalPerDest("destQueue", destNode, "");
-    } */
-
+    
+    // queue the transaction
     DestNodeStruct *destStruct = &(nodeToDestNodeStruct[destNode]);
     vector<tuple<int, double , routerMsg *, Id, simtime_t>> *q = &(destStruct->queuedTransUnits);
     tuple<int,int > key = make_tuple(transMsg->getTransactionId(), transMsg->getHtlcIndex());
@@ -293,13 +276,9 @@ void routerNodeCeler::handleAckMessage(routerMsg* ttmsg) {
     if (aMsg->getIsSuccess()) {
         nodeToPaymentChannel[nextNode].deltaAmtReceived +=  aMsg->getAmount();
         nodeToPaymentChannel[nextNode].totalAmtReceived +=  aMsg->getAmount();
-   
- }
-
+    }
     routerNodeBase::handleAckMessage(ttmsg);
 }
-
-
 
 /* special type of time out message for celer designed for a specific path 
  * that is contructed dynamically or one hop at a time, until the transaction
@@ -395,13 +374,12 @@ int routerNodeCeler::findKStar(int neighborNode, unordered_set<int> exclude){
  */
 double routerNodeCeler::calculateCPI(int destNode, int neighborNode){
     PaymentChannel *neighbor = &(nodeToPaymentChannel[neighborNode]);
-
-    double channelInbalance = 0;
-    accumulate(neighbor->channelInbalance.begin(), neighbor->channelInbalance.end(), channelInbalance);
+    double channelImbalance = 0;
+    accumulate(neighbor->channelImbalance.begin(), neighbor->channelImbalance.end(), channelImbalance);
     double Q_ik = _nodeToDebtQueue[myIndex()][destNode];
     double Q_jk = _nodeToDebtQueue[neighborNode][destNode];
 
-    double W_ijk = Q_ik - Q_jk + _celerBeta*channelInbalance;
+    double W_ijk = Q_ik - Q_jk + _celerBeta*channelImbalance;
     neighbor->destToCPIValue[destNode] = W_ijk;
     return W_ijk;
 }
@@ -447,9 +425,8 @@ int routerNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, sim
 
         //increment statAmtSent for channel in-balance calculations
         neighbor->deltaAmtSent+=  transMsg->getAmount();
-       neighbor->totalAmtSent+=  transMsg->getAmount();
-     
-       return routerNodeBase::forwardTransactionMessage(msg, nextNode, arrivalTime);
+        neighbor->totalAmtSent+=  transMsg->getAmount();
+        return routerNodeBase::forwardTransactionMessage(msg, nextNode, arrivalTime);
     }
     return 1;
 }
@@ -459,12 +436,12 @@ int routerNodeCeler::forwardTransactionMessage(routerMsg *msg, int nextNode, sim
  * more payments that can be sent via celer
  */
 void routerNodeCeler::setPaymentChannelBalanceByNode(int node, double amt){
-       bool addedFunds = false;
-       if (amt > nodeToPaymentChannel[node].balance){
-           addedFunds = true;
-       }
-       nodeToPaymentChannel[node].balance = amt;
-       if (addedFunds){
-           celerProcessTransactions(node);
-       }
+    bool addedFunds = false;
+    if (amt > nodeToPaymentChannel[node].balance){
+        addedFunds = true;
+    }
+    nodeToPaymentChannel[node].balance = amt;
+    if (addedFunds){
+        celerProcessTransactions(node);
+    }
 }

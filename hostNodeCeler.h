@@ -1,7 +1,6 @@
 #ifndef ROUTERNODE_CELER_H
 #define ROUTERNODE_CELER_H
 
-//#include "probeMsg_m.h"
 #include "hostNodeBase.h"
 
 using namespace std;

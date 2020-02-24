@@ -51,7 +51,8 @@ public:
     
     double sumArrivalWindowTxns = 0;
     double sumServiceWindowTxns = 0;
-    list<tuple<double, simtime_t, simtime_t>> serviceArrivalTimeStamps; //each entry is amount and service and arrival time of
+    list<tuple<double, simtime_t, simtime_t>> serviceArrivalTimeStamps; 
+    //each entry is amount and service and arrival time of
     
     // to keep track of how long every transaction spent in flight
     unordered_map<Id, simtime_t, hashId> txnSentTimes;
@@ -91,7 +92,7 @@ public:
     double deltaAmtReceived = 0.0; //used for celer network, reset with clear state message
     double totalAmtSent = 0.0;
     double totalAmtReceived = 0.0;
-    vector<double> channelInbalance = {}; //sliding window
+    vector<double> channelImbalance = {}; //sliding window
     simsignal_t amtInQueuePerChannelSignal;
     simsignal_t balancePerChannelSignal;
     simsignal_t capacityPerChannelSignal;
@@ -99,10 +100,8 @@ public:
     simsignal_t queueDelayEWMASignal;
     simsignal_t bankSignal;
     simsignal_t numSentPerChannelSignal;
-    
     simsignal_t explicitRebalancingAmtPerChannelSignal;
     simsignal_t implicitRebalancingAmtPerChannelSignal;
-
 
     //statistics for celer_network
     map<int, simsignal_t> destToCPISignal = {};
