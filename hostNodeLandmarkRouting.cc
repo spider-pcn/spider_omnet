@@ -58,8 +58,6 @@ void hostNodeLandmarkRouting::forwardProbeMessage(routerMsg *msg){
  */
 void hostNodeLandmarkRouting::handleMessage(cMessage *msg) {
     routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
-    
-    //Radhika TODO: figure out what's happening here
     if (simTime() > _simulationLength){
         auto encapMsg = (ttmsg->getEncapsulatedPacket());
         ttmsg->decapsulate();
@@ -129,7 +127,7 @@ void hostNodeLandmarkRouting::handleTransactionMessageSpecialized(routerMsg* ttm
 }
 
 
-/* handles the special time out mechanism for waterfilling which is responsible
+/* handles the special time out mechanism for landmark routing which is responsible
  * for sending time out messages on all paths that may have seen this txn and 
  * marking the txn as cancelled
  */
@@ -145,8 +143,7 @@ void hostNodeLandmarkRouting::handleTimeOutMessage(routerMsg* ttmsg){
                 delete ttmsg;
                 return;
         }
-
-       
+        
         for (auto p : (nodeToShortestPathsMap[destination])){
             int pathIndex = p.first;
             tuple<int,int> key = make_tuple(transactionId, pathIndex);
@@ -158,12 +155,10 @@ void hostNodeLandmarkRouting::handleTimeOutMessage(routerMsg* ttmsg){
             }
             
             if (transPathToAckState[key].amtSent > transPathToAckState[key].amtReceived + _epsilon) {
-                // TODO: what if a transaction on two different paths have same next hop?
                 int nextNode = nodeToShortestPathsMap[destination][pathIndex].path[1];
                 CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), 
                         simTime(), -1, nextNode, destination);
                 canceledTransactions.insert(ct);
-                // forwardMessage(lrTimeOutMsg);
             }
             else {
                 transPathToAckState.erase(key);
@@ -196,7 +191,6 @@ void hostNodeLandmarkRouting::handleAckMessageTimeOut(routerMsg* ttmsg){
     if (aMsg->getIsSuccess()) {
         double totalAmtReceived = (transToAmtLeftToComplete[transactionId]).amtReceived +
             aMsg->getAmount();
-        
         if (totalAmtReceived != transToAmtLeftToComplete[transactionId].amtSent) 
             return;
         
@@ -251,8 +245,6 @@ void hostNodeLandmarkRouting::handleAckMessageSpecialized(routerMsg* ttmsg) {
                 statNumCompleted[receiver] += 1; 
                 transToAmtLeftToComplete.erase(aMsg->getTransactionId());
             }
-           
-            //increment transaction amount ack on a path. 
             transPathToAckState[key].amtReceived += aMsg->getAmount();
         }
     }
@@ -319,7 +311,6 @@ void hostNodeLandmarkRouting::handleProbeMessage(routerMsg* ttmsg){
 
        // once all probes are back
        if (probeInfo->numProbesWaiting == 0){ 
-           // find total number of paths
            int numPathsPossible = 0;
            for (auto bottleneck: probeInfo->probeBottlenecks){
                if (bottleneck > 0){
@@ -420,11 +411,6 @@ bool hostNodeLandmarkRouting::randomSplit(double totalAmt, vector<double> bottle
         }       
         pathsPossible = nextSet;
     }
-    
-    /*cout << "splits were ";
-    for (double amt : amtPerPath)
-        cout << amt << ", ";
-    cout << " hence returning " << (remainingAmt<= _epsilon) << endl;*/
     return (remainingAmt <= _epsilon);
 }
 
@@ -450,7 +436,8 @@ void hostNodeLandmarkRouting::initializePathInfoLandmarkRouting(vector<vector<in
  * the msg passed is the transaction that triggered this set of probes which also
  * corresponds to the txn that needs to be sent out once all probes return
  */
-void hostNodeLandmarkRouting::initializeLandmarkRoutingProbes(routerMsg * msg, int transactionId, int destNode){
+void hostNodeLandmarkRouting::initializeLandmarkRoutingProbes(routerMsg * msg, 
+        int transactionId, int destNode){
     ProbeInfo probeInfoTemp =  {};
     probeInfoTemp.messageToSend = msg; //message to send out once all probes return
     probeInfoTemp.probeReturnTimes = {}; //probeReturnTimes[0] is return time of first probe

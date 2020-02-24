@@ -13,8 +13,6 @@ class hostNodeLandmarkRouting : public hostNodeBase {
 
     protected:
         virtual routerMsg *generateProbeMessage(int destNode, int pathIdx, vector<int> path);
-
-        // forwards probes
         virtual void forwardProbeMessage(routerMsg *msg);
 
         // message handlers
