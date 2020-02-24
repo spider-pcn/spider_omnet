@@ -9,10 +9,8 @@ using namespace std;
 using namespace omnetpp;
 
 class hostNodeDCTCP : public hostNodeBase {
-
     private:
         // DCTCP signals
-        //
         unordered_map<int, simsignal_t> numWaitingPerDestSignals = {};
         unordered_map<int, simsignal_t> demandEstimatePerDestSignals = {};
 
