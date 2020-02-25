@@ -93,8 +93,6 @@ routerMsg * routerNodePriceScheme::generatePriceUpdateMessage(double nLocal, dou
  */
 void routerNodePriceScheme::handleMessage(cMessage *msg) {
     routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
- 
-    //Radhika TODO: figure out what's happening here
     if (simTime() > _simulationLength){
         auto encapMsg = (ttmsg->getEncapsulatedPacket());
         ttmsg->decapsulate();
@@ -140,35 +138,26 @@ void routerNodePriceScheme::handleStatMessage(routerMsg* ttmsg) {
         for ( auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
             int node = it->first; //key
             PaymentChannel* p = &(nodeToPaymentChannel[node]);
-            
             emit(p->nValueSignal, p->lastNValue);
             emit(p->fakeRebalanceQSignal, p->fakeRebalancingQueue);
             emit(p->inflightOutgoingSignal, getTotalAmountOutgoingInflight(it->first));
             emit(p->inflightIncomingSignal, getTotalAmountIncomingInflight(it->first));
             emit(p->serviceRateSignal, p->arrivalRate/p->serviceRate);
-            //emit(p->arrivalRateSignal, p->arrivalRate);
             emit(p->lambdaSignal, p->lambda);
             emit(p->muLocalSignal, p->muLocal);
         }
     }
-
-    // call the base method to output rest of the stats
     routerNodeBase::handleStatMessage(ttmsg);
 }
 
 /* main routine for handling a new transaction under the pricing scheme,
  * updates the nvalue and then calls the usual handler
  */
-
 void routerNodePriceScheme::handleTransactionMessage(routerMsg* ttmsg){ 
-    //increment nValue
     int hopcount = ttmsg->getHopCount();
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
-
-    //not a self-message, add to incoming_trans_units
     int nextNode = ttmsg->getRoute()[hopcount + 1];
     nodeToPaymentChannel[nextNode].nValue += transMsg->getAmount();
-
     routerNodeBase::handleTransactionMessage(ttmsg);
 }
 
@@ -202,7 +191,6 @@ void routerNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
         auto firstTransTimes = neighborChannel->serviceArrivalTimeStamps.front();
         auto lastTransTimes =  neighborChannel->serviceArrivalTimeStamps.back();
         double serviceTimeDiff = get<1>(lastTransTimes).dbl() - get<1>(firstTransTimes).dbl(); 
-        // double arrivalTimeDiff = get<1>(lastTransTimes).dbl() - get<1>(firstTransTimes).dbl(); 
         double arrivalTimeDiff = get<1>(neighborChannel->arrivalTimeStamps.back()).dbl() - 
             get<1>(neighborChannel->arrivalTimeStamps.front()).dbl();
 
@@ -219,10 +207,10 @@ void routerNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
         routerMsg * priceUpdateMsg = generatePriceUpdateMessage(neighborChannel->nValue, 
                 neighborChannel->serviceRate, neighborChannel->arrivalRate, 
             neighborChannel->lastQueueSize, it->first);
+        
         neighborChannel->lastNValue = neighborChannel->nValue;
         neighborChannel->nValue = 0;
         neighborChannel->numUpdateMessages = 0;
-        
         forwardMessage(priceUpdateMsg);
     }
 }
@@ -232,7 +220,6 @@ void routerNodePriceScheme::handleTriggerPriceUpdateMessage(routerMsg* ttmsg) {
  * payment channel
  * Nesterov and secondOrderOptimization are two means to speed up the convergence
  */
-
 void routerNodePriceScheme::handlePriceUpdateMessage(routerMsg* ttmsg){
     // compute everything to do with the neighbor
     priceUpdateMsg *puMsg = check_and_cast<priceUpdateMsg *>(ttmsg->getEncapsulatedPacket());
@@ -270,38 +257,21 @@ void routerNodePriceScheme::handlePriceUpdateMessage(routerMsg* ttmsg){
     double newLambdaGrad;
     if (_useQueueEquation) {
         newLambdaGrad = inflightLocal*arrivalRateLocal/serviceRateLocal + 
-                            inflightRemote * arrivalRateRemote/serviceRateRemote + 
-                            2*_xi*min(qLocal, qRemote) - (_capacityFactor * cValue);
+            inflightRemote * arrivalRateRemote/serviceRateRemote + 
+            2*_xi*min(qLocal, qRemote) - (_capacityFactor * cValue);
     } else {
         newLambdaGrad = inflightLocal*arrivalRateLocal/serviceRateLocal + 
-                            inflightRemote * arrivalRateRemote/serviceRateRemote - (_capacityFactor * cValue); 
+            inflightRemote * arrivalRateRemote/serviceRateRemote - (_capacityFactor * cValue); 
     }
-    
-    /*
-    if (sender >= _numHostNodes && (oldLambda > 0 || newLambdaGrad > 0)) {
-        cout << "to sender " << sender << " from  " << myIndex() << " at time " << simTime();
-        cout << " old lambda" << oldLambda << " new lambda grad "
-             << newLambdaGrad << " service rate local " << serviceRateLocal 
-             << " service rate remote " << serviceRateRemote << " arrival rate local " 
-             << arrivalRateLocal << " arrival rate remote " << arrivalRateRemote 
-             << "extra term " << serviceRateRemote * _avgDelay/1000 << " inflightLocal " 
-             << inflightLocal << "inflightRemote " << inflightRemote << "cValue " 
-             << cValue  << "updateRateLocal " << updateRateLocal
-             << "qLocal" << qLocal << "qRemote" << qRemote << endl; 
-    }*/ 
         
     // compute the new delta to mulocal
     double newMuLocalGrad;
     if (_useQueueEquation) {
         newMuLocalGrad = nLocal - nRemote + qLocal*_tUpdate/_routerQueueDrainTime - 
-                            qRemote*_tUpdate/_routerQueueDrainTime;
+                        qRemote*_tUpdate/_routerQueueDrainTime;
     } else {
         newMuLocalGrad = nLocal - nRemote;
     }
-    /* cout << " to sender " << sender << " from " << myIndex() << " at time " << simTime();
-            << "nLocal " << nLocal << " nRemote " << nRemote << " qlocal and term " << qLocal 
-            << " " << qLocal * _tUpdate / _routerQueueDrainTime << "qRemote " << qRemote
-            << " " << qLocal * _tUpdate / _routerQueueDrainTime << endl;*/
     
     // use all parts to compute the new mu/lambda taking a step in its direction
     double newLambda = 0.0;
@@ -352,4 +322,3 @@ void routerNodePriceScheme::handlePriceQueryMessage(routerMsg* ttmsg){
         forwardMessage(ttmsg);
     }
 }
-

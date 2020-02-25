@@ -55,10 +55,8 @@ class hostNodePriceScheme : public hostNodeBase {
         // initialize price probes for a given set of paths to a destination and store the paths
         // for that destination
         virtual void initializePriceProbes(vector<vector<int>> kShortestPaths, int destNode);
-
         // updates timers once rates have been updated on a certain path
         virtual void updateTimers(int destNode, int pathIndex, double newRate);
-        
         virtual void initialize() override;
 };
 #endif

@@ -11,8 +11,6 @@ using namespace omnetpp;
 class routerNodePriceScheme : public routerNodeBase {
     protected:
         virtual void initialize() override;
-
-        // message generators
         virtual routerMsg *generateTriggerPriceUpdateMessage();
         virtual routerMsg *generatePriceUpdateMessage(double nLocal, double serviceRate, double arrivalRate, 
                 double queueSize, int reciever);
