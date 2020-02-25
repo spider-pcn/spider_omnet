@@ -1,10 +1,9 @@
 #include "routerNodeLndBaseline.h"
-
 Define_Module(routerNodeLndBaseline);
 
 /* generateAckMessage that encapsulates transaction message to use for reattempts 
-Note: this is different from the routerNodeBase version that will delete the 
-passed in transaction message */
+ * Note: this is different from the routerNodeBase version that will delete the
+ * passed in transaction message */
 routerMsg *routerNodeLndBaseline::generateAckMessage(routerMsg* ttmsg, bool isSuccess) {
     int sender = (ttmsg->getRoute())[0];
     int receiver = (ttmsg->getRoute())[(ttmsg->getRoute()).size() - 1];
@@ -40,7 +39,6 @@ routerMsg *routerNodeLndBaseline::generateAckMessage(routerMsg* ttmsg, bool isSu
 
     //need to reverse path from current hop number in case of partial failure
     msg->setHopCount((route.size() - 1) - ttmsg->getHopCount());
-
     msg->setMessageType(ACK_MSG);
     ttmsg->decapsulate();
     aMsg->encapsulate(transMsg);
