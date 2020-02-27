@@ -16,7 +16,6 @@ class hostNodePropFairPriceScheme : public hostNodeBase {
         vector<simsignal_t> numTimedOutAtSenderSignals = {};
         map<int, simsignal_t> demandEstimatePerDestSignals = {};
 
-
     protected:
         // message generators
         virtual routerMsg *generateTriggerTransactionSendMessage(vector<int> route, 
@@ -43,7 +42,6 @@ class hostNodePropFairPriceScheme : public hostNodeBase {
         // special messages for priceScheme
         virtual void handleTriggerTransactionSendMessage(routerMsg* ttmsg);
 
-
         /**** CORE LOGIC ******/
         // initialize price probes for a given set of paths to a destination and store the paths
         // for that destination
@@ -51,7 +49,6 @@ class hostNodePropFairPriceScheme : public hostNodeBase {
 
         // updates timers once rates have been updated on a certain path
         virtual void updateTimers(int destNode, int pathIndex, double newRate);
-        
         virtual void initialize() override;
 };
 #endif
