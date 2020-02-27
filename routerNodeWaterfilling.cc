@@ -7,8 +7,6 @@ Define_Module(routerNodeWaterfilling);
  */
 void routerNodeWaterfilling::handleMessage(cMessage *msg) {
     routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
-
-    //Radhika TODO: figure out what's happening here
     if (simTime() > _simulationLength){
         auto encapMsg = (ttmsg->getEncapsulatedPacket());
         ttmsg->decapsulate();
@@ -34,7 +32,6 @@ void routerNodeWaterfilling::handleProbeMessage(routerMsg* ttmsg){
     probeMsg *pMsg = check_and_cast<probeMsg *>(ttmsg->getEncapsulatedPacket());
     bool isReversed = pMsg->getIsReversed();
     int nextDest = ttmsg->getRoute()[ttmsg->getHopCount()+1];
-
     forwardProbeMessage(ttmsg);
 }
 
@@ -45,13 +42,10 @@ void routerNodeWaterfilling::handleProbeMessage(routerMsg* ttmsg){
 void routerNodeWaterfilling::forwardProbeMessage(routerMsg *msg){
     int prevDest = msg->getRoute()[msg->getHopCount() - 1];
     bool updateOnReverse = true;
-    
-    // Increment hop count.
-    msg->setHopCount(msg->getHopCount()+1);
-    //use hopCount to find next destination
     int nextDest = msg->getRoute()[msg->getHopCount()];
-
+    
     probeMsg *pMsg = check_and_cast<probeMsg *>(msg->getEncapsulatedPacket());
+    msg->setHopCount(msg->getHopCount()+1);
 
     if (pMsg->getIsReversed() == true && updateOnReverse == true){
         vector<double> *pathBalances = & ( pMsg->getPathBalances());

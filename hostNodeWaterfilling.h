@@ -33,25 +33,12 @@ class hostNodeWaterfilling : public hostNodeBase {
         virtual void handleAckMessageSpecialized(routerMsg *msg) override;
         virtual void handleStatMessage(routerMsg *msg) override;
         
-
         /**** CORE LOGIC ****/
-        //takes a vector of routes for a destination, and puts them into the map and initiates
-        // probes to them
         virtual void initializeProbes(vector<vector<int>> kShortestPaths, int destNode);
-        
-        // restarts probes onces they've been stopped
         virtual void restartProbes(int destNode);
-
-        // forwards probes
         virtual void forwardProbeMessage(routerMsg *msg);
-
-        // splits transactions and decides which paths they should use
         virtual void splitTransactionForWaterfilling(routerMsg * ttMsg, bool firstAttempt);
-
-        // sends entirety of transaciton on path with highest bottleneck balance        
         virtual void attemptTransactionOnBestPath(routerMsg * ttMsg, bool firstAttempt);
-
-        // helper functions
         virtual int updatePathProbabilities(vector<double> bottleneckBalances, int destNode);
 
 
