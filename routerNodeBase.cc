@@ -8,12 +8,11 @@ int routerNodeBase::myIndex(){
    return getIndex() + _numHostNodes;
 }
 
-
 /* helper function to go through all transactions in a queue and print their details out
  * meant for debugging 
  */
-void routerNodeBase::checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id, simtime_t>> queuedTransUnits, 
-        int nextNode){
+void routerNodeBase::checkQueuedTransUnits(vector<tuple<int, double, routerMsg*,  Id, simtime_t>> 
+        queuedTransUnits, int nextNode){
     if (queuedTransUnits.size() > 0) {
         cout << "simTime(): " << simTime() << endl;
         cout << "queuedTransUnits size: " << queuedTransUnits.size() << endl;
@@ -79,16 +78,16 @@ void routerNodeBase::deleteTransaction(routerMsg* ttmsg) {
  * and return the signal created
  */
 simsignal_t routerNodeBase::registerSignalPerChannel(string signalStart, int id) {
-    string signalPrefix = signalStart + "PerChannel";
     char signalName[64];
+    string signalPrefix = signalStart + "PerChannel";
     string templateString = signalPrefix + "Template";
-
     if (id < _numHostNodes){
         sprintf(signalName, "%s(host %d)", signalPrefix.c_str(), id);
     } else{
         sprintf(signalName, "%s(router %d [%d] )", signalPrefix.c_str(),
                 id - _numHostNodes, id);
     }
+    
     simsignal_t signal = registerSignal(signalName);
     cProperty *statisticTemplate = getProperties()->get("statisticTemplate", 
             templateString.c_str());
@@ -100,15 +99,17 @@ simsignal_t routerNodeBase::registerSignalPerChannel(string signalStart, int id)
  * and return the signal created
  */
 simsignal_t routerNodeBase::registerSignalPerChannelPerDest(string signalStart, int chnlEndNode, int destNode) {
-    string signalPrefix = signalStart + "PerChannelPerDest";
     char signalName[64];
+    string signalPrefix = signalStart + "PerChannelPerDest";
     string templateString = signalPrefix + "Template";
+    
     if (chnlEndNode < _numHostNodes){
         sprintf(signalName, "%s_%d(host %d)", signalPrefix.c_str(), destNode, chnlEndNode);
-    } else{
+    } else {
         sprintf(signalName, "%s_%d(router %d [%d] )", signalPrefix.c_str(),
              destNode, chnlEndNode - _numHostNodes, chnlEndNode);
     }
+
     simsignal_t signal = registerSignal(signalName);
     cProperty *statisticTemplate = getProperties()->get("statisticTemplate",
             templateString.c_str());
@@ -123,13 +124,12 @@ simsignal_t routerNodeBase::registerSignalPerDest(string signalStart, int destNo
     string signalPrefix = signalStart + "PerDest" + suffix;
     char signalName[64];
     string templateString = signalStart + "PerDestTemplate"; 
-
     sprintf(signalName, "%s(host node %d)", signalPrefix.c_str(), destNode);  
+    
     simsignal_t signal = registerSignal(signalName);
     cProperty *statisticTemplate = getProperties()->get("statisticTemplate", 
             templateString.c_str());
     getEnvir()->addResultRecorders(this, signal, signalName,  statisticTemplate);
-
     return signal;
 }
 
@@ -142,7 +142,6 @@ void routerNodeBase::initialize()
     // Assign gates to all payment channels
     const char * gateName = "out";
     cGate *destGate = NULL;
-
     int i = 0;
     int gateSize = gate(gateName, 0)->size();
 
@@ -164,9 +163,7 @@ void routerNodeBase::initialize()
     //initialize everything for adjacent nodes/nodes with payment channel to me
     for(auto iter = nodeToPaymentChannel.begin(); iter != nodeToPaymentChannel.end(); ++iter)
     {
-        int key =  iter->first; //node
-
-        //fill in balance field of nodeToPaymentChannel
+        int key =  iter->first; 
         nodeToPaymentChannel[key].balance = _balances[make_tuple(myIndex(),key)];
         nodeToPaymentChannel[key].balanceEWMA = nodeToPaymentChannel[key].balance;
 
@@ -187,7 +184,6 @@ void routerNodeBase::initialize()
 
             signal = registerSignalPerChannel("numSent", key);
             nodeToPaymentChannel[key].numSentPerChannelSignal = signal;
-
 
 	    signal = registerSignalPerChannel("balance", key);
             nodeToPaymentChannel[key].balancePerChannelSignal = signal;
@@ -221,15 +217,6 @@ void routerNodeBase::initialize()
         routerMsg *clearStateMsg = generateClearStateMessage();
         scheduleAt(simTime() + _clearRate, clearStateMsg);
     }
-
-    // generate rebalancing trigger messages
-    if (_rebalancingEnabled) {
-        //routerMsg *triggerRebalancingMsg = generateTriggerRebalancingMessage();
-        //scheduleAt(simTime() + _rebalanceRate, triggerRebalancingMsg);
-        
-        //routerMsg *computeMinBalanceMsg = generateComputeMinBalanceMessage();
-        //scheduleAt(simTime() + _computeBalanceRate, computeMinBalanceMsg);
-    }
 }
 
 /* function that is called at the end of the simulation that
@@ -237,7 +224,6 @@ void routerNodeBase::initialize()
  */
 void routerNodeBase::finish(){
     deleteMessagesInQueues();
-    
     double numPoints = (_transStatEnd - _transStatStart)/(double) _statRate;
     double sumRebalancing = 0;
     double sumAmtAdded = 0;
@@ -261,13 +247,13 @@ void routerNodeBase::finish(){
     recordScalar(buffer, sumAmtAdded/(_transStatEnd - _transStatStart));
 }
 
-/*
- *  given an adjacent node, and TransUnit queue of things to send to that node, sends
+/*  given an adjacent node, and TransUnit queue of things to send to that node, sends
  *  TransUnits until channel funds are too low
  *  calls forwardTransactionMessage on every individual TransUnit
  *  returns true when it still can continue processing more transactions
  */
-bool routerNodeBase:: processTransUnits(int neighbor, vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
+bool routerNodeBase:: processTransUnits(int neighbor, 
+        vector<tuple<int, double , routerMsg *, Id, simtime_t>>& q) {
     int successful = true;
     while ((int)q.size() > 0 && successful == 1) {
         pop_heap(q.begin(), q.end(), _schedulingAlgorithm);
@@ -298,7 +284,6 @@ void routerNodeBase::deleteMessagesInQueues(){
         }
     }
 }
-
 
 
 /********** MESSAGE GENERATOR ********************/
@@ -414,7 +399,6 @@ routerMsg *routerNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) 
 
     //need to reverse path from current hop number in case of partial failure
     msg->setHopCount((route.size()-1) - ttmsg->getHopCount());
-
     msg->setMessageType(ACK_MSG); 
     ttmsg->decapsulate();
     delete transMsg;
@@ -428,14 +412,13 @@ routerMsg *routerNodeBase::generateAckMessage(routerMsg* ttmsg, bool isSuccess) 
  * and how much funds they need, will be processed a few seconds/minutes later to 
  * actually add the funds to those payment channels */
 routerMsg *routerNodeBase::generateAddFundsMessage(map<int, double> fundsToBeAdded) {
-    map<int,double> pcsNeedingFunds = fundsToBeAdded;
-    
     char msgname[MSGSIZE];
+    map<int,double> pcsNeedingFunds = fundsToBeAdded;
     sprintf(msgname, "addfundmessage-at-%d", myIndex());
+    
     routerMsg *msg = new routerMsg(msgname);
     addFundsMsg *afMsg = new addFundsMsg(msgname);
     afMsg->setPcsNeedingFunds(pcsNeedingFunds);
-
     msg->setMessageType(ADD_FUNDS_MSG); 
     msg->encapsulate(afMsg);
     return msg;
@@ -448,9 +431,7 @@ routerMsg *routerNodeBase::generateAddFundsMessage(map<int, double> fundsToBeAdd
  * in particular, looks up the next node's interface and sends out the message
  */
 void routerNodeBase::forwardMessage(routerMsg* msg){
-   // Increment hop count.
    msg->setHopCount(msg->getHopCount()+1);
-   //use hopCount to find next destination
    int nextDest = msg->getRoute()[msg->getHopCount()];
    if (_loggingEnabled) cout << "forwarding " << msg->getMessageType() << " at " 
        << simTime() << endl;
@@ -464,9 +445,8 @@ void routerNodeBase::forwardMessage(routerMsg* msg){
  */
 int routerNodeBase::forwardTransactionMessage(routerMsg *msg, int neighborIdx, simtime_t arrivalTime) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(msg->getEncapsulatedPacket());
-    int nextDest = neighborIdx; // msg->getRoute()[msg->getHopCount()+1];
+    int nextDest = neighborIdx; 
     int transactionId = transMsg->getTransactionId();
-
     PaymentChannel *neighbor = &(nodeToPaymentChannel[nextDest]);
     int amt = transMsg->getAmount();
 
@@ -522,8 +502,6 @@ int routerNodeBase::forwardTransactionMessage(routerMsg *msg, int neighborIdx, s
  */
 void routerNodeBase::handleMessage(cMessage *msg){
     routerMsg *ttmsg = check_and_cast<routerMsg *>(msg);
- 
-    //Radhika TODO: figure out what's happening here
     if (simTime() > _simulationLength){
         auto encapMsg = (ttmsg->getEncapsulatedPacket());
         ttmsg->decapsulate();
@@ -591,26 +569,12 @@ void routerNodeBase::handleMessage(cMessage *msg){
             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
             break;
         
-        /*case TRIGGER_REBALANCING_MSG:
-            if (_loggingEnabled) cout<< "[ROUTER "<< myIndex() 
-                <<": RECEIVED TRIGGER REBALANCE MSG] "<< msg->getName() << endl;
-                handleTriggerRebalancingMessage(ttmsg);
-            if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
-            break;*/
-
         case COMPUTE_BALANCE_MSG:
             if (_loggingEnabled) cout<< "[ROUTER "<< myIndex() 
                 <<": RECEIVED COMPUTE BALANCE MSG] "<< msg->getName() << endl;
                 handleComputeMinAvailableBalanceMessage(ttmsg);
             if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
             break;
-
-        /*case ADD_FUNDS_MSG:
-            if (_loggingEnabled) cout<< "[ROUTER "<< myIndex() 
-                <<": RECEIVED ADD FUNDS MSG] "<< msg->getName() << endl;
-                handleAddFundsMessage(ttmsg);
-            if (_loggingEnabled) cout<< "[AFTER HANDLING:]  "<< endl;
-            break;*/
 
         default:
                 handleMessage(ttmsg);
@@ -635,7 +599,6 @@ void routerNodeBase::handleTransactionMessage(routerMsg* ttmsg) {
     // ignore if txn is already cancelled
     auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
     if ( iter!=canceledTransactions.end() ){
-        //delete yourself, message won't be encountered again
         ttmsg->decapsulate();
         delete transMsg;
         delete ttmsg;
@@ -663,7 +626,6 @@ void routerNodeBase::handleTransactionMessage(routerMsg* ttmsg) {
         neighbor->arrivalTimeStamps.pop_front(); 
         neighbor->sumArrivalWindowTxns -= frontAmt;
     }
-
 
     // if balance is insufficient at the first node, return failure ack
     if (_hasQueueCapacity && _queueCapacity == 0) {
@@ -693,11 +655,9 @@ void routerNodeBase::handleTransactionMessage(routerMsg* ttmsg) {
 bool routerNodeBase::handleTransactionMessageTimeOut(routerMsg* ttmsg) {
     transactionMsg *transMsg = check_and_cast<transactionMsg *>(ttmsg->getEncapsulatedPacket());
     int transactionId = transMsg->getTransactionId();
-
-    // look for transaction in cancelled txn set and delete if present
     auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
-    if ( iter!=canceledTransactions.end() ){
-        //delete yourself
+    
+    if (iter != canceledTransactions.end() ){
         ttmsg->decapsulate();
         delete transMsg;
         delete ttmsg;
@@ -720,8 +680,8 @@ void routerNodeBase::handleTimeOutMessage(routerMsg* ttmsg){
     timeOutMsg *toutMsg = check_and_cast<timeOutMsg *>(ttmsg->getEncapsulatedPacket());
     int nextNode = (ttmsg->getRoute())[ttmsg->getHopCount()+1];
     int prevNode = (ttmsg->getRoute())[ttmsg->getHopCount()-1];
-    
-    CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), simTime(), prevNode, nextNode, toutMsg->getReceiver());
+    CanceledTrans ct = make_tuple(toutMsg->getTransactionId(), simTime(), 
+            prevNode, nextNode, toutMsg->getReceiver());
     canceledTransactions.insert(ct);
     forwardMessage(ttmsg);
 }
@@ -731,7 +691,6 @@ void routerNodeBase::handleTimeOutMessage(routerMsg* ttmsg){
  * and triggering an update message to the next node on the path
  * before forwarding the ack back to the previous node
  */
-
 void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
     assert(myIndex() == ttmsg->getRoute()[ttmsg->getHopCount()]);
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
@@ -767,15 +726,14 @@ void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
     }
     else { 
         // mark the time it spent inflight
+        routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), prevNode, 
+                aMsg->getAmount(), aMsg->getHtlcIndex() );
         prevChannel->sumTimeInFlight += timeInflight;
         prevChannel->timeInFlightSamples += 1;
         prevChannel->totalAmtOutgoingInflight -= aMsg->getAmount();
-        
-        routerMsg* uMsg =  generateUpdateMessage(aMsg->getTransactionId(), prevNode, 
-                aMsg->getAmount(), aMsg->getHtlcIndex() );
         prevChannel->numUpdateMessages += 1;
         forwardMessage(uMsg);
-
+        
         amtSuccessfulSoFar += aMsg->getAmount();
         if (amtSuccessfulSoFar > _rebalanceRate && _rebalancingEnabled) {
             amtSuccessfulSoFar = 0;
@@ -792,15 +750,13 @@ void routerNodeBase::handleAckMessage(routerMsg* ttmsg){
 void routerNodeBase::handleAckMessageTimeOut(routerMsg* ttmsg){
     ackMsg *aMsg = check_and_cast<ackMsg *>(ttmsg->getEncapsulatedPacket());
     int transactionId = aMsg->getTransactionId();
-    
     auto iter = canceledTransactions.find(make_tuple(transactionId, 0, 0, 0, 0));
     if (iter != canceledTransactions.end()) {
         canceledTransactions.erase(iter);
     }
 }
 
-/*
- * handleUpdateMessage - called when receive update message, increment back funds, see if we can
+/* handleUpdateMessage - called when receive update message, increment back funds, see if we can
  *      process more jobs with new funds, delete update message
  */
 void routerNodeBase::handleUpdateMessage(routerMsg* msg) {
@@ -809,12 +765,12 @@ void routerNodeBase::handleUpdateMessage(routerMsg* msg) {
     updateMsg *uMsg = check_and_cast<updateMsg *>(msg->getEncapsulatedPacket());
     PaymentChannel *prevChannel = &(nodeToPaymentChannel[prevNode]);
     
-    //remove transaction from incoming_trans_units
+    // remove transaction from incoming_trans_units
     unordered_map<Id, double, hashId> *incomingTransUnits = &(prevChannel->incomingTransUnits);
     (*incomingTransUnits).erase(make_tuple(uMsg->getTransactionId(), uMsg->getHtlcIndex()));
     prevChannel->totalAmtIncomingInflight -= uMsg->getAmount();
     
-    //increment the in flight funds back
+    // increment the in flight funds back
     double newBalance = prevChannel->balance + uMsg->getAmount();
     setPaymentChannelBalanceByNode(prevNode, newBalance); 
     prevChannel->balanceEWMA = (1 -_ewmaFactor) * prevChannel->balanceEWMA 
@@ -824,7 +780,7 @@ void routerNodeBase::handleUpdateMessage(routerMsg* msg) {
     delete uMsg;
     delete msg; //delete update message
 
-    //see if we can send more jobs out
+    // see if we can send more jobs out
     q = &(prevChannel->queuedTransUnits);
     processTransUnits(prevNode, *q);
 } 
@@ -850,7 +806,8 @@ void routerNodeBase::handleComputeMinAvailableBalanceMessage(routerMsg* ttmsg) {
 
 /* handler for the periodic rebalancing message that gets triggered 
  * that is responsible for equalizing the available balance across all of the
- * payment channels of a given router */
+ * payment channels of a given router 
+ */
 void routerNodeBase::performRebalancing() {
     // compute avalable stash to redistribute
     double stash = 0.0;
@@ -860,7 +817,6 @@ void routerNodeBase::performRebalancing() {
         stash += p->balance;
         numChannels += 1;
     }
-
 
     // figure out how much to give each channel
     double targetBalancePerChannel = int(stash/numChannels); // target will always be lower as a result
@@ -893,12 +849,11 @@ void routerNodeBase::performRebalancing() {
                 p->amtAdded += differential; 
                 p->numRebalanceEvents += 1;
             }
+            
             totalToRemove -= differential;
-            
             if (p->balance < 0) 
-                cout << "abhishtu" << differential << " balance " << p->balance << "min available balance "
+                cout << "terrible: " << differential << " balance " << p->balance << "min available balance "
                     << p->minAvailBalance << endl;
-            
             tuple<int, int> senderReceiverTuple = (id < myIndex()) ? make_tuple(id, myIndex()) :
                 make_tuple(myIndex(), id);
             _capacities[senderReceiverTuple] -=  differential;
@@ -916,13 +871,11 @@ void routerNodeBase::performRebalancing() {
  * is received 
  */
 void routerNodeBase::addFunds(map<int, double> pcsNeedingFunds) {
-    // addFundsMsg *afMsg = check_and_cast<addFundsMsg *>(ttmsg->getEncapsulatedPacket());
-    // map<int, double> pcsNeedingFunds = afMsg->getPcsNeedingFunds();
     for (auto it = pcsNeedingFunds.begin(); it!= pcsNeedingFunds.end(); it++) {
         int pcIdentifier = it->first;
         double fundsToAdd = it->second;
         PaymentChannel *p = &(nodeToPaymentChannel[pcIdentifier]);
-
+        
         // add funds at this end
         setPaymentChannelBalanceByNode(pcIdentifier, p->balance+fundsToAdd);
         p->balanceEWMA += fundsToAdd;
@@ -930,6 +883,7 @@ void routerNodeBase::addFunds(map<int, double> pcsNeedingFunds) {
             make_tuple(myIndex(), pcIdentifier);
         _capacities[senderReceiverTuple] +=  fundsToAdd;
         
+        // track statistics
         if (simTime() > _transStatStart && simTime() < _transStatEnd) {
             p->numRebalanceEvents += 1;
             p->amtAdded += fundsToAdd;
@@ -939,7 +893,6 @@ void routerNodeBase::addFunds(map<int, double> pcsNeedingFunds) {
         // process as many new transUnits as you can for this payment channel
         processTransUnits(pcIdentifier, p->queuedTransUnits);
     }
-    
 }
 
 
@@ -947,7 +900,6 @@ void routerNodeBase::addFunds(map<int, double> pcsNeedingFunds) {
  * until the end of the simulation
  */
 void routerNodeBase::handleStatMessage(routerMsg* ttmsg){
-    // reschedule this message to be sent again
     if (simTime() > _simulationLength){
         delete ttmsg;
     }
@@ -959,7 +911,6 @@ void routerNodeBase::handleStatMessage(routerMsg* ttmsg){
     for (auto it = nodeToPaymentChannel.begin(); it!= nodeToPaymentChannel.end(); it++){
         PaymentChannel *p = &(it->second);
         int id = it->first;
-
         if (simTime() > _transStatStart && simTime() < _transStatEnd)
             p->queueSizeSum += getTotalAmount(it->first);
 
@@ -992,7 +943,6 @@ void routerNodeBase::handleStatMessage(routerMsg* ttmsg){
  * queues
  */
 void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
-    //reschedule for the next interval
     if (simTime() > _simulationLength){
         delete ttmsg;
     }
@@ -1009,8 +959,7 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
 
         // if grace period has passed
         if (simTime() > (msgArrivalTime + _maxTravelTime)){
-            // remove from queue to next node
-            if (nextNode != -1){   
+            if (nextNode != -1) {   
                 vector<tuple<int, double, routerMsg*, Id, simtime_t>>* queuedTransUnits = 
                     &(nodeToPaymentChannel[nextNode].queuedTransUnits);
 
@@ -1031,13 +980,12 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                     iterQueue = (*queuedTransUnits).erase(iterQueue);
                 }
                 
-                // resort the queue based on priority
                 make_heap((*queuedTransUnits).begin(), (*queuedTransUnits).end(), 
                         _schedulingAlgorithm);
             }
 
             // remove from incoming TransUnits from the previous node
-            if (prevNode != -1){
+            if (prevNode != -1) {
                 unordered_map<Id, double, hashId> *incomingTransUnits = 
                     &(nodeToPaymentChannel[prevNode].incomingTransUnits);
                 auto iterIncoming = find_if((*incomingTransUnits).begin(),
@@ -1052,9 +1000,9 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
             }
         }
 
-            // remove from outgoing transUnits to nextNode and restore balance on own end
-        if (simTime() > (msgArrivalTime + _maxTravelTime + _maxOneHopDelay)){
-            if (nextNode != -1){
+        // remove from outgoing transUnits to nextNode and restore balance on own end
+        if (simTime() > (msgArrivalTime + _maxTravelTime + _maxOneHopDelay)) {
+            if (nextNode != -1) {
                 unordered_map<Id, double, hashId> *outgoingTransUnits = 
                     &(nodeToPaymentChannel[nextNode].outgoingTransUnits);
                 
@@ -1075,7 +1023,6 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
                         (_ewmaFactor) * updatedBalance;
                 }
             }
-            
             // all done, can remove txn and update stats
             it = canceledTransactions.erase(it);
         }
@@ -1087,6 +1034,6 @@ void routerNodeBase::handleClearStateMessage(routerMsg* ttmsg){
 
 /* helper method to set a particular payment channel's balance to the passed in amount 
  */ 
-void routerNodeBase::setPaymentChannelBalanceByNode(int node, double amt){
+void routerNodeBase::setPaymentChannelBalanceByNode(int node, double amt) {
        nodeToPaymentChannel[node].balance = amt;
 }

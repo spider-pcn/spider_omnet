@@ -48,6 +48,7 @@ class routerNodeBase : public cSimpleModule
         virtual void performRebalancing();
         virtual void setPaymentChannelBalanceByNode(int node, double balance);
         virtual void deleteTransaction(routerMsg* ttmsg);
+        virtual void addFunds(map<int, double> pcsNeedingFunds);
 
         // core simulator functions 
         virtual void initialize() override;
@@ -57,7 +58,6 @@ class routerNodeBase : public cSimpleModule
 
         // generators for standard messages
         virtual routerMsg *generateUpdateMessage(int transId, int receiver, double amount, int htlcIndex);
-        //just generates routerMsg with no encapsulated msg inside
         virtual routerMsg *generateStatMessage();
         virtual routerMsg *generateComputeMinBalanceMessage();
         virtual routerMsg *generateTriggerRebalancingMessage();
@@ -72,12 +72,8 @@ class routerNodeBase : public cSimpleModule
         // message handlers
         virtual void handleMessage(cMessage *msg) override;
         virtual void handleTransactionMessage(routerMsg *msg);
-        // virtual void handleTriggerRebalancingMessage(routerMsg* ttmsg);
-        virtual void addFunds(map<int, double> pcsNeedingFunds);
         virtual void handleComputeMinAvailableBalanceMessage(routerMsg* ttmsg);
-        // returns true if message has timed out
         virtual bool handleTransactionMessageTimeOut(routerMsg *msg);
-
         virtual void handleTimeOutMessage(routerMsg *msg);
         virtual void handleAckMessage(routerMsg *msg);
         virtual void handleAckMessageTimeOut(routerMsg *msg);
