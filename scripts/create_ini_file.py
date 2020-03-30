@@ -164,11 +164,6 @@ if args.rebalancingEnabled:
     configname += str(int(args.rebalancingDelay))
     configname += "_rate" + str(int(args.rebalancingRate))
 
-if args.routingScheme == "DCTCPQ" and ((args.queueDelayThreshold != 300 and args.queueDelayThreshold != 500) or \
-        "weird" in args.topo_filename or args.dagNum != None):
-    configname += "_qd" + str(int(args.queueDelayThreshold))
-
-
 if args.capacityFactor != None:
     configname = configname + "_capacityFactorTimes10_" + str(int(float(args.capacityFactor)*10))
 
