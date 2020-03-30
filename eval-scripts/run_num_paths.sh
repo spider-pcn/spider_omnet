@@ -5,7 +5,8 @@
 # Do not use this script as is, without first judging the capabilities of
 # your system to run experiments in parallel
 
-# small world, kaggle data 
+# small world topology, kaggle data for transactions
+# make sure widest paths are avilable first for all topologues
 for num_paths in 1 2 4 8
 do
     ./run_experiment_set.sh \
@@ -22,7 +23,7 @@ do
 done
 wait
 
-# scale free, kaggle data
+# scale free topology, kaggle transaction data
 for num_paths in 1 2 4 8
 do
     ./run_experiment_set.sh \
@@ -39,7 +40,7 @@ do
 done
 wait
 
-# lnd, kaggle data
+# lnd topology, kaggle transaction data
 for num_paths in 1 2 4 8
 do
     ./run_experiment_set.sh \
