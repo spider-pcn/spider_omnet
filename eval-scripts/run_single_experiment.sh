@@ -2,7 +2,7 @@
 source parameters.sh
 source setup.sh
 
-function run_single_experiment {
+function run_single_circ_experiment {
     prefix=$1
     balance=$2
     num=$3
@@ -10,6 +10,26 @@ function run_single_experiment {
     path_choice=$5
     num_paths=$6
     scheduling_alg=$7
+    demand_scale=$8
+    exp_type=$9
+
+    if [[ "$exp_type" == "impl" ]]
+    then
+        queueDelayThreshold=80
+        simulationLength=610
+        statCollectionRate=2
+        transStatStart=300
+        transStatEnd=500
+        demand_scale=10
+    elif [[ "$exp_type" == "celer" ]]
+    then
+        simulationLength=610
+        transStatStart=400
+        transStatEnd=600
+    fi
+    
+    echo "transstatstart"
+    echo $transStatStart
     
     network="${prefix}_circ_net"
     topofile="${PATH_NAME}${prefix}_topo${balance}.txt"

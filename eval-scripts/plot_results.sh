@@ -10,6 +10,7 @@ function process_single_experiment_results {
     path_choice=$5
     num_paths=$6
     scheduling_alg=$7
+    demand_scale=$8
 
     network="${prefix}_circ_net"
     config_name=${network}_${balance}_${routing_scheme}
@@ -33,5 +34,6 @@ function process_single_experiment_results {
       --waiting --bottlenecks --probabilities \
       --mu_local --lambda --n_local --service_arrival_ratio --inflight_outgoing \
       --inflight_incoming --rate_to_send --price --mu_remote --demand \
-      --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked --queue_delay
+      --rate_sent --amt_inflight_per_path --rate_acked --fraction_marked --queue_delay \
+      --cpi --perDestQueue --kStar
 }

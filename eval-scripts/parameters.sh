@@ -2,7 +2,6 @@
 
 # generally fixed parameters
 delay="30"
-demand_scale="3"
 
 #general parameters that do not affect config names
 simulationLength=1010
