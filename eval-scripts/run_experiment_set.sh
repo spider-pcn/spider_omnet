@@ -1,6 +1,7 @@
 #!/bin/bash
 source run_single_experiment.sh
 source plot_results.sh
+source setup.sh
 
 # default arguments
 prefix="sw_50_routers"
@@ -83,8 +84,6 @@ while [ "$1" != "" ]; do
     shift
 done
 
-# run basic setup
-./setup.sh
 
 #iterate through balance list and between the start and end circulations
 for ((num=$num_start;num<=$num_end;num+=1));
@@ -96,19 +95,49 @@ do
     echo $balance
     echo $num
 
-    workloadname="${workload_prefix}_circ${num}_demand${demand_scale}"
-    workload="${PATH_NAME}$workloadname"
-    inifile="${PATH_NAME}${workloadname}_default.ini"
-    network="${prefix}_circ_net"
-    topofile="${PATH_NAME}${prefix}_topo${balance}.txt"
 
-    # run this one circulation experiment
-    run_single_circ_experiment $prefix $balance $num $routing_scheme \
-        $path_choice $num_paths $scheduling_alg $demand_scale $exp_type
 
-    # plot results
-    process_single_experiment_results $prefix $balance $num $routing_scheme \
-        $path_choice $num_paths $scheduling_alg $demand_scale
+    if [[ "$exp_type" == "rebalance"]]
+    then
+    elif [[ "$exp_type" == "dag" ]]
+    then
+        for dag_amt in $dag_list
+        do
+            DAG_PATH_NAME="${PATH_PREFIX}dag${dag_amt}/"
+            setup $DAG_PATH_NAME
+
+            workloadname="${workload_prefix}_demand${scale}_dag${dag_amt}_num${num}"
+            workload="${DAG_PATH_NAME}$workloadname"
+            inifile="${DAG_PATH_NAME}${workloadname}_default.ini"
+            network="${prefix}_dag${dag_amt}_net"
+            topofile="${DAG_PATH_NAME}${prefix}_topo${balance}.txt"
+    
+            # run this one circulation experiment
+            run_single_dag_experiment $prefix $balance $num $routing_scheme \
+                $path_choice $num_paths $scheduling_alg $demand_scale $dag_amt $exp_type
+
+            # plot results
+            process_single_dag_experiment_results $prefix $balance $num $routing_scheme \
+                $path_choice $num_paths $scheduling_alg $demand_scale $dag_amt
+        done
+    else 
+        setup ${CIRC_PATH_NAME}
+        workloadname="${workload_prefix}_circ${num}_demand${demand_scale}"
+        workload="${CIRC_PATH_NAME}$workloadname"
+        inifile="${CIRC_PATH_NAME}${workloadname}_default.ini"
+        network="${prefix}_circ_net"
+        topofile="${CIRC_PATH_NAME}${prefix}_topo${balance}.txt"
+        
+        # run this one circulation experiment
+        run_single_circ_experiment $prefix $balance $num $routing_scheme \
+            $path_choice $num_paths $scheduling_alg $demand_scale $exp_type
+
+        # plot results
+        process_single_circ_experiment_results $prefix $balance $num $routing_scheme \
+            $path_choice $num_paths $scheduling_alg $demand_scale
+    fi
     done
 done
+
+
 
