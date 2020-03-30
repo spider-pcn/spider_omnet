@@ -12,6 +12,8 @@ balance_list=("100" "200" "400" "800" "1600")
 path_choice="widest"
 scheduling_alg="LIFO"
 num_paths=4
+exp_type="circ"
+demand_scale="3"
 
 # help message
 function usage {
@@ -20,6 +22,7 @@ function usage {
     echo -e "\t-h --help"
     echo -e "\t--prefix=$prefix"
     echo -e "\t--workload-prefix=$workload_prefix"
+    echo -e "\t--exp-type=$exp_type"
     echo -e "\t--balance-list=\"100 200 400 800\""
     echo -e "\t--routing-scheme=$routing_scheme"
     echo -e "\t--num-start=$num_start"
@@ -48,6 +51,7 @@ while [ "$1" != "" ]; do
             ;;
         --routing-scheme)
             routing_scheme=$VALUE
+            echo $routing_scheme
             ;;
         --num-start)
             num_start=$VALUE
@@ -63,6 +67,9 @@ while [ "$1" != "" ]; do
             ;;
         --num-paths)
             num_paths=$VALUE
+            ;;
+        --exp-type)
+            exp_type=$VALUE
             ;;
         --scheduling-alg)
             scheduling_alg=$VALUE
@@ -80,28 +87,28 @@ done
 ./setup.sh
 
 #iterate through balance list and between the start and end circulations
-for balance in $balance_list
+for ((num=$num_start;num<=$num_end;num+=1));
 do
-    for ((num=$num_start;num<=$num_end;num+=1));
+    for balance in $balance_list
     do
     # generate the graph first to ned file
     echo $prefix
     echo $balance
     echo $num
 
-    workloadname="${workload_prefix}_circ${num}_demand${scale}"
+    workloadname="${workload_prefix}_circ${num}_demand${demand_scale}"
     workload="${PATH_NAME}$workloadname"
     inifile="${PATH_NAME}${workloadname}_default.ini"
     network="${prefix}_circ_net"
     topofile="${PATH_NAME}${prefix}_topo${balance}.txt"
-     
-    # run this one experiment
-    run_single_experiment $prefix $balance $num $routing_scheme \
-        $path_choice $num_paths $scheduling_alg
+
+    # run this one circulation experiment
+    run_single_circ_experiment $prefix $balance $num $routing_scheme \
+        $path_choice $num_paths $scheduling_alg $demand_scale $exp_type
 
     # plot results
     process_single_experiment_results $prefix $balance $num $routing_scheme \
-        $path_choice $num_paths $scheduling_alg 
+        $path_choice $num_paths $scheduling_alg $demand_scale
     done
 done
 

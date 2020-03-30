@@ -5,22 +5,20 @@
 # Do not use this script as is, without first judging the capabilities of
 # your system to run experiments in parallel
 
-# scale free
-# no kaggle sizes for the data - just use unit size transactions to 
-# parallel pre-split transactions for the implementation
+# scale free, kaggle size data
 
-for scheme in "DCTCPQ" "lndBaseline"
+for scheme in "DCTCPQ" "celer"
 do
     ./run_experiment_set.sh \
         --prefix=sf_10_routers \
         --workload-prefix=sf_10_routers \
-        --exp-type=impl \
+        --exp-type=celer \
         --routing-scheme=${scheme} \
         --num_start=0 --num_end=4 \
-        --balance-list="25 50 100 200 400" \
+        --balance-list="200 400 800 1600 3200 6400" \
         --path-choice=shortest \
         --num-paths=4 \
-        --demand-scale=10 \
-        --scheduling-alg=FIFO &
+        --demand-scale=3 \
+        --scheduling-alg=LIFO &
 done
 wait
