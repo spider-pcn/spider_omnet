@@ -171,7 +171,7 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
     elif distribution == 'poisson':
         if kaggle_size:
             print("generating from kaggle for size")
-            amt_dist = np.load(KAGGLE_AMT_DIST_FILENAME)
+            amt_dist = np.load(KAGGLE_AMT_DIST_FILENAME, allow_pickle=True)
             num_amts = amt_dist.item().get('p').size
 
         # constant transaction size to be sent in a poisson fashion
@@ -205,8 +205,8 @@ def write_txns_to_file(filename, start_nodes, end_nodes, amt_absolute,\
 
     elif distribution == 'kaggle':
         # load the data
-        amt_dist = np.load(KAGGLE_AMT_DIST_FILENAME)
-        time_dist = np.load(KAGGLE_TIME_DIST_FILENAME)
+        amt_dist = np.load(KAGGLE_AMT_DIST_FILENAME, allow_pickle=True)
+        time_dist = np.load(KAGGLE_TIME_DIST_FILENAME, allow_pickle=True)
         num_amts = amt_dist.item().get('p').size
         num_times = time_dist.item().get('p').size
         # transaction sizes drawn from kaggle data, as is inter-transaction time

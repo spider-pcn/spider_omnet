@@ -149,7 +149,7 @@ def generate_graph(size, graph_type):
         G = nx.random_tree(size, seed=SEED)
 
     # remove self loops and parallel edges
-    G.remove_edges_from(G.selfloop_edges())
+    G.remove_edges_from(nx.selfloop_edges(G))
     G = nx.Graph(G)
 
     print('Generated a ', graph_type, ' graph')
