@@ -113,8 +113,7 @@ def aggregate_across_files(scheme_list, credit_list, topo):
             for run_num in range(0, args.num_max  + 1):
                 file_name = topo + "_circ_net_" + str(credit) + "_" + str(scheme) + "_circ"
                 file_name += str(run_num) + "_demand" + str(demand/10) + "_" + path_type
-                if scheme != "shortestPath":
-                    file_name += "_" + str(num_paths) 
+                file_name += "_" + str(num_paths) 
                 file_name += "_" + scheduling_alg + "-#0.vec"
                                 
                 try: 

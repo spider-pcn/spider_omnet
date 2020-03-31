@@ -108,8 +108,7 @@ for scheme in scheme_list:
         file_name = topo + "_" + args.payment_graph_type + "_net_" + str(credit) + "_" + scheme + "_" + \
                 args.payment_graph_type + str(run_num) + \
             "_demand" + str(demand/10) + "_" + path_type
-        if scheme != "shortestPath":
-            file_name += "_" + str(num_paths)
+        file_name += "_" + str(num_paths)
         file_name += "-#0.sca"
         
         try:

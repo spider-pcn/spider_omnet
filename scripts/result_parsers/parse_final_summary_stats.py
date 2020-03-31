@@ -109,8 +109,7 @@ for credit in credit_list:
                                 file_name += "_delay" + str(delay) + "_demand" + str(demand) + "_" + scheme + \
                                         "_" + path_type 
 
-                                if scheme != "shortestPath":
-                                    file_name += "_" + str(num_paths) 
+                                file_name += "_" + str(num_paths) 
                                 if alg is not None:
                                     file_name += "_" + alg
                                 elif scheme == "celer":

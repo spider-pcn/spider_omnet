@@ -119,13 +119,12 @@ for credit in credit_list:
                                             scheme + \
                                             "_" + path_type 
 
-                                    if scheme != "shortestPath":
-                                        file_name += "_" + str(num_paths) 
-                                        if alg is not None:
-                                            file_name += "_" + alg
+                                    file_name += "_" + str(num_paths) 
+                                    if alg is not None:
+                                        file_name += "_" + alg
 
                                     if rr is not None:
-                                        file_name += "_rebalancing1_rate" + str(rr)
+                                        file_name += "_rebalancing" + str(rr)
                                     
                                     if queue_threshold is not None and percent != '0' and scheme == "DCTCPQ":
                                         file_name += "_qd" + str(queue_threshold)

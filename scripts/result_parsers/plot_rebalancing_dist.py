@@ -116,9 +116,8 @@ for scheme in scheme_list:
                 file_name = topo + "_dag" +  str(dag_percent) + "_net_" + str(credit) + "_" + scheme + "_" + \
                         "dag" + str(run_num) + \
                     "_demand" + str(demand/10) + "_" + path_type
-                if scheme != "shortestPath":
-                    file_name += "_" + str(num_paths)
-                file_name += "_" + scheduling_alg + "_rebalancing1_rate" + str(rebalancing_rate) 
+                file_name += "_" + str(num_paths)
+                file_name += "_" + scheduling_alg + "_rebalancing" + str(rebalancing_rate) 
                 if queue_threshold is not None and scheme == "DCTCPQ":
                     file_name += "_qd" + str(queue_threshold)
                 file_name += "-#0.sca"
