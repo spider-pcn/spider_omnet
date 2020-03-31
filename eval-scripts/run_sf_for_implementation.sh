@@ -1,4 +1,5 @@
 #!/bin/bash
+# Figure 8 of https://people.csail.mit.edu/vibhaa/files/spider_nsdi.pdf
 # NOTE: while a single OMNET experiment uses a single core,
 # the memory consumption of each one of these runs can be on the order of 
 # 5 GB for these 10 node scale free graphs 

@@ -15,6 +15,8 @@ scheduling_alg="LIFO"
 num_paths=4
 exp_type="circ"
 demand_scale="3"
+dag_percent_list=("20" "45" "65")
+rebalancing_rate_list=("10" "100" "1000" "10000" "100000")
 
 # help message
 function usage {
@@ -25,6 +27,8 @@ function usage {
     echo -e "\t--workload-prefix=$workload_prefix"
     echo -e "\t--exp-type=$exp_type"
     echo -e "\t--balance-list=\"100 200 400 800\""
+    echo -e "\t--dag-percent-list=\"25 45 65\""
+    echo -e "\t--rebalancing-rate-list=\"10 100 1000 10000 100000\""
     echo -e "\t--routing-scheme=$routing_scheme"
     echo -e "\t--num-start=$num_start"
     echo -e "\t--num-end=$num_end"
@@ -63,6 +67,12 @@ while [ "$1" != "" ]; do
         --balance-list)
             balance_list=$(echo $VALUE | tr " " "\n")
             ;;
+        --dag-percent-list)
+            dag_percent_list=$(echo $VALUE | tr " " "\n")
+            ;;
+        --rebalancing-rate-list)
+            rebalancing_rate_list=$(echo $VALUE | tr " " "\n")
+            ;;
         --path-choice)
             path_choice=$VALUE
             ;;
@@ -95,13 +105,11 @@ do
     echo $balance
     echo $num
 
-
-
     if [[ "$exp_type" == "rebalance"]]
     then
     elif [[ "$exp_type" == "dag" ]]
     then
-        for dag_amt in $dag_list
+        for dag_amt in $dag_percent_list
         do
             DAG_PATH_NAME="${PATH_PREFIX}dag${dag_amt}/"
             setup $DAG_PATH_NAME

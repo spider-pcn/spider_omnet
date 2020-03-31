@@ -13,6 +13,7 @@
 
 # LND balances
 # make sure widest paths are generated
+# Figures 9-10 of https://people.csail.mit.edu/vibhaa/files/spider_nsdi.pdf
 for scheme in "DCTCPQ" "waterfilling" "lndBaseline" "landmarkRouting" "shortestPath"
 do
     ./run_experiment_set.sh \
@@ -30,6 +31,7 @@ done
 wait
 
 # uniform balances
+# Figures 22-23 of https://people.csail.mit.edu/vibhaa/files/spider_nsdi.pdf
 for scheme in "DCTCPQ" "waterfilling" "lndBaseline" "landmarkRouting" "shortestPath"
 do
     ./run_experiment_set.sh \

@@ -1,4 +1,5 @@
 #!/bin/bash
+# Figure 17 of https://people.csail.mit.edu/vibhaa/files/spider_nsdi.pdf
 # NOTE: while a single OMNET experiment uses a single core,
 # the memory consumption of each one of these runs can be on the order of 
 # 50 GB for small world/ scale free and 100 GB for the LND topology
@@ -15,7 +16,7 @@ do
         --exp-type=circ \
         --routing-scheme=DCTCPQ \
         --num_start=0 --num_end=4 \
-        --balance-list="900 1350 2750 4000 8750" \
+        --balance-list="4000" \
         --path-choice=widest \
         --num-paths=4 \
         --demand-scale="3" \
@@ -32,7 +33,7 @@ do
         --exp-type=circ \
         --routing-scheme=DCTCPQ \
         --num_start=0 --num_end=4 \
-        --balance-list="900 1350 2750 4000 8750" \
+        --balance-list="4000" \
         --path-choice=widest \
         --num-paths=4 \
         --demand-scale="3" \
@@ -49,7 +50,7 @@ do
         --exp-type=circ \
         --routing-scheme=DCTCPQ \
         --num_start=0 --num_end=4 \
-        --balance-list="10 20 40 80 160" \
+        --balance-list="40" \
         --path-choice=widest \
         --num-paths=4 \
         --demand-scale="3" \
