@@ -107,6 +107,29 @@ do
 
     if [[ "$exp_type" == "rebalance"]]
     then
+        for dag_amt in $dag_percent_list
+        do
+            for rate in $rebalancing_rate_list
+            do
+                DAG_PATH_NAME="${PATH_PREFIX}dag${dag_amt}/"
+                setup $DAG_PATH_NAME
+
+                workloadname="${workload_prefix}_demand${demand_scale}_dag${dag_amt}_num${num}"
+                workload="${DAG_PATH_NAME}$workloadname"
+                inifile="${DAG_PATH_NAME}${workloadname}_default.ini"
+                network="${prefix}_dag${dag_amt}_net"
+                topofile="${DAG_PATH_NAME}${prefix}_topo${balance}_rb.txt"
+        
+                # run this one circulation experiment
+                run_single_rebalancing_experiment $prefix $balance $num $routing_scheme \
+                    $path_choice $num_paths $scheduling_alg $demand_scale $dag_amt $rate
+
+                # plot results
+                process_single_rebalancing_experiment_results $prefix $balance $num $routing_scheme \
+                    $path_choice $num_paths $scheduling_alg $demand_scale $dag_amt $rate
+            done
+        done
+
     elif [[ "$exp_type" == "dag" ]]
     then
         for dag_amt in $dag_percent_list
@@ -114,7 +137,7 @@ do
             DAG_PATH_NAME="${PATH_PREFIX}dag${dag_amt}/"
             setup $DAG_PATH_NAME
 
-            workloadname="${workload_prefix}_demand${scale}_dag${dag_amt}_num${num}"
+            workloadname="${workload_prefix}_demand${demand_scale}_dag${dag_amt}_num${num}"
             workload="${DAG_PATH_NAME}$workloadname"
             inifile="${DAG_PATH_NAME}${workloadname}_default.ini"
             network="${prefix}_dag${dag_amt}_net"

@@ -160,9 +160,7 @@ else:
 configname += "_" + args.schedulingAlgorithm
 
 if args.rebalancingEnabled:
-    configname += "_rebalancing"
-    configname += str(int(args.rebalancingDelay))
-    configname += "_rate" + str(int(args.rebalancingRate))
+    configname += "_rebalancing" + str(int(args.rebalancingRate))
 
 if args.capacityFactor != None:
     configname = configname + "_capacityFactorTimes10_" + str(int(float(args.capacityFactor)*10))
