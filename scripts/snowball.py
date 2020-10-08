@@ -114,7 +114,7 @@ for filename in lnd_file_list:
     """ max_sample_size is the maximum size of sampled graph. Returned graph 
     might be smaller than that. k is how many neighbors to sample (by each node)
     in each round """
-    sampled_graph = snowball_sample(graph, init_seed, max_sample_size=500, k=8)
+    sampled_graph = snowball_sample(graph, init_seed, max_sample_size=500, k=6)
 
     """ prune out degree one nodes until there are no degree one nodes """
     graph_size = len(sampled_graph.nodes()) + 1
