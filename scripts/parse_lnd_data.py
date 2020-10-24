@@ -13,6 +13,7 @@ def read_file(filename, file_format="LND"):
     else:
         lnd_graph, capacity_list =  read_file_c_lightning(filename)
     
+    print("Connectedness", nx.is_connected(lnd_graph))
     print("Number of nodes in lnd graph:", lnd_graph.number_of_nodes())
     print("Number of edge in lnd graph:", lnd_graph.number_of_edges())
 
@@ -129,10 +130,41 @@ def plot_degree_distribution(graph):
     plt.show()
 
 
-lnd_file_list = ["lnd_dec4_2018", "lnd_dec28_2018", "lnd_july15_2019", "clightning_oct5_2020"]
+# plot a histogram of shortest path between randomly sampled
+# sender receiver pairs
+def plot_shortest_path_distribution(graph):
+    random_tries = 10000
+    connected_components = list(nx.connected_components(graph))
+    connected_components = [list(c) for c in connected_components if len(c) > 2]
+    print(len(connected_components))
+    shortest_paths = []
+    
+    for i in range(random_tries):
+        comp_id = np.random.choice(len(connected_components))
+        srcdest = np.random.choice(connected_components[comp_id], 2, replace = False)
+        src = srcdest[0]
+        dest = srcdest[1]
+        path = nx.shortest_path(graph, source=src, target=dest)
+        shortest_paths.append(len(path) - 1)
+    
+    shortest_paths.sort()
+    path_len_counter = collections.Counter(shortest_paths)
+    plen, cnt = list(zip(*list(path_len_counter.items())))
+    fig, ax = plt.subplots()
+    plt.plot(plen, cnt)
+
+    plt.title("Path Length Histogram")
+    plt.ylabel("Count")
+    plt.xlabel("Path Length")
+    plt.xscale("log")
+    plt.show()
+
+#lnd_file_list = ["lnd_dec4_2018", "lnd_dec28_2018", "lnd_july15_2019", "clightning_oct5_2020"]
+lnd_file_list = ["clightning_oct5_2020"]
 for filename in lnd_file_list:
     file_format = "LND" if "lnd" in filename else "c-lightning"
     graph = read_file(LND_FILE_PATH + filename, file_format)
-    #new_graph = remove_nodes_based_on_degree(graph, 6)
+    new_graph = remove_nodes_based_on_degree(graph, 6)
     plot_degree_distribution(graph)
+    plot_shortest_path_distribution(graph)
     nx.write_edgelist(graph, LND_FILE_PATH + filename + ".edgelist")
