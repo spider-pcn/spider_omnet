@@ -4,6 +4,8 @@ To generate the benchmarks, run one of the two commands depending on your needs.
     generate_circulation_benchmarks.sh
     generate_dag_benchmarks.sh
 ```
+Make sure that the scheme that is run is "DCTCPQ" in order to reproduce Spider's algorithm. Some more examples of a cleaner experiment routine
+can be found in the `refactor-scripts` branch.
 These two basically go through all the types of graphs: really small ones to much larger ones and generate
 the topology, workload, ini files and ned files for every one of them. The circulations are placed in 
 `../benchmarks/circulations` and the dags are placed in `../benchmarks/dagx` where `x` denotes the dag percentage
