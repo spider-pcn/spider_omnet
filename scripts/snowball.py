@@ -109,12 +109,12 @@ for filename in lnd_file_list:
         graph.edges[e]['capacity'] = edge_cap
     print("massaged", count, "out of", len(graph.edges()), "edges")
     
-    init_seed = {784, 549}
+    init_seed = {303, 549, 989}
 
     """ max_sample_size is the maximum size of sampled graph. Returned graph 
     might be smaller than that. k is how many neighbors to sample (by each node)
     in each round """
-    sampled_graph = snowball_sample(graph, init_seed, max_sample_size=500, k=6)
+    sampled_graph = snowball_sample(graph, init_seed, max_sample_size=1000, k=15)
 
     """ prune out degree one nodes until there are no degree one nodes """
     graph_size = len(sampled_graph.nodes()) + 1
