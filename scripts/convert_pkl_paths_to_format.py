@@ -5,7 +5,7 @@ import collections
 OP_FILE_PATH="../benchmarks/circulations/"
 
 topo_filelist = ['sw_50_routers_lndCap_topo4000', 'sf_50_routers_lndCap_topo4000', 'lnd_july15_2019_topo40'] 
-topo_filelist = ['sw_50_routers_lndCap_topo4000', 'sf_50_routers_lndCap_topo4000', 'lnd_july15_2019_topo40'] 
+file_prefix = ['sw_50_routers_lndCap_topo4000', 'sf_50_routers_lndCap_topo4000', 'lnd_july15_2019_topo40'] 
 path_type_list = ['ksp_yen', 'oblivious', 'ksp_edge_disjoint', 'heuristic', 'kwp_edge_disjoint']
 op_suffix_list = ['_kspYenPaths', '_obliviousPaths', '_edgeDisjointPaths', '_heuristicPaths', '_widestPaths']
 
